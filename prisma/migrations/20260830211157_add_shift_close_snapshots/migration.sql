@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE "ShiftClose" ADD COLUMN     "closedBy" TEXT,
+ADD COLUMN     "fishBuybackVnd" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "note" TEXT,
+ADD COLUMN     "otherExpenseVnd" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "totalExpenseVnd" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "totalRevenueVnd" INTEGER NOT NULL DEFAULT 0,
+ALTER COLUMN "totalCashVnd" SET DEFAULT 0,
+ALTER COLUMN "totalTransferVnd" SET DEFAULT 0;

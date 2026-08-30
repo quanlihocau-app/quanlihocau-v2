@@ -409,8 +409,14 @@ model Shift {
 model ShiftClose {
   id               String   @id @default(uuid())
   shiftId          String
-  totalCashVnd     Int
-  totalTransferVnd Int
+  totalCashVnd     Int      @default(0)
+  totalTransferVnd Int      @default(0)
+  totalRevenueVnd  Int      @default(0)
+  totalExpenseVnd  Int      @default(0)
+  fishBuybackVnd   Int      @default(0)
+  otherExpenseVnd  Int      @default(0)
+  closedBy         String?
+  note             String?
   createdAt        DateTime @default(now())
 
   shift Shift @relation(fields: [shiftId], references: [id])
