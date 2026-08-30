@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 
 import { CreateInvoiceButton } from "./create-invoice-button";
+import { PaymentHistory } from "./payment-history";
 import { RecordPaymentButton } from "./record-payment-button";
 
 function formatVnd(amount: number): string {
@@ -136,7 +137,12 @@ export default async function InvoicesPage() {
                     id: true,
                     amountVnd: true,
                     method: true,
+                    direction: true,
+                    reversalOfId: true,
                     createdAt: true,
+                },
+                orderBy: {
+                    createdAt: "desc",
                 },
             },
         },
@@ -349,10 +355,10 @@ export default async function InvoicesPage() {
                                             key={invoice.id}
                                             className="transition hover:bg-slate-50/50"
                                         >
-                                            <td className="px-4 py-3.5 font-mono text-xs text-slate-500">
+                                            <td className="px-4 py-3.5 font-mono text-xs text-slate-500 align-top">
                                                 {invoice.id.slice(0, 8)}...
                                             </td>
-                                            <td className="px-4 py-3.5">
+                                            <td className="px-4 py-3.5 align-top">
                                                 <p className="font-medium text-slate-900">
                                                     {invoice.customer?.name ??
                                                         "Khách vãng lai"}
@@ -367,7 +373,7 @@ export default async function InvoicesPage() {
                                                     </p>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3.5">
+                                            <td className="px-4 py-3.5 align-top">
                                                 {invoice.lines.length > 0 ? (
                                                     <ul className="space-y-0.5 text-xs">
                                                         {invoice.lines.map((line) => (
@@ -393,24 +399,29 @@ export default async function InvoicesPage() {
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3.5 font-semibold text-slate-900">
+                                            <td className="px-4 py-3.5 font-semibold text-slate-900 align-top">
                                                 {formatVnd(invoice.totalAmountVnd)}
                                             </td>
-                                            <td className="px-4 py-3.5 font-medium text-emerald-600">
-                                                {formatVnd(paidAmount)}
+                                            <td className="px-4 py-3.5 align-top">
+                                                <p className="font-medium text-emerald-600">
+                                                    {formatVnd(paidAmount)}
+                                                </p>
+                                                <PaymentHistory
+                                                    payments={invoice.payments}
+                                                />
                                             </td>
-                                            <td className="px-4 py-3.5 font-medium text-amber-600">
+                                            <td className="px-4 py-3.5 font-medium text-amber-600 align-top">
                                                 {formatVnd(
                                                     remaining > 0 ? remaining : 0,
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3.5">
+                                            <td className="px-4 py-3.5 align-top">
                                                 {getStatusBadge(invoice.status)}
                                             </td>
-                                            <td className="px-4 py-3.5 text-xs text-slate-500">
+                                            <td className="px-4 py-3.5 text-xs text-slate-500 align-top">
                                                 {formatDateTime(invoice.createdAt)}
                                             </td>
-                                            <td className="px-4 py-3.5 text-right">
+                                            <td className="px-4 py-3.5 text-right align-top">
                                                 {canManageInvoices && isPayable && (
                                                     <RecordPaymentButton
                                                         invoiceId={invoice.id}
