@@ -397,3 +397,66 @@ export async function POST(request: Request, { params }: RouteParams) {
         return NextResponse.json({ error: "Lỗi hệ thống." }, { status: 500 });
     }
 }
+
+export async function GET(request: Request, { params }: RouteParams) {
+    try {
+        const { invoiceId } = await params;
+
+        // Validate invoiceId UUID
+        const parsedInvoiceId = uuidSchema.safeParse(invoiceId);
+        if (!parsedInvoiceId.success) {
+            return NextResponse.json(
+                { error: "Mã hóa đơn (invoiceId) không đúng định dạng UUID." },
+                { status: 400 },
+            );
+        }
+
+        // requireTenantContext() for all valid tenant memberships
+        const tenantContext = await requireTenantContext();
+
+        // Verify invoice belongs to this tenant lake
+        const invoice = await prisma.invoice.findFirst({
+            where: {
+                id: invoiceId,
+                lakeId: tenantContext.lakeId,
+            },
+            select: { id: true },
+        });
+
+        if (!invoice) {
+            return NextResponse.json(
+                { error: "Hóa đơn không tồn tại hoặc không thuộc hồ câu này." },
+                { status: 404 },
+            );
+        }
+
+        // Fetch payments belonging to this invoice and lake
+        const payments = await prisma.payment.findMany({
+            where: {
+                invoiceId: invoice.id,
+                lakeId: tenantContext.lakeId,
+            },
+            select: {
+                id: true,
+                amountVnd: true,
+                method: true,
+                direction: true,
+                reversalOfId: true,
+                createdAt: true,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+
+        return NextResponse.json(payments, { status: 200 });
+    } catch (error) {
+        if (error instanceof AuthenticationError) {
+            return NextResponse.json({ error: error.message }, { status: 401 });
+        }
+        if (error instanceof ForbiddenError) {
+            return NextResponse.json({ error: error.message }, { status: 403 });
+        }
+        return NextResponse.json({ error: "Lỗi hệ thống." }, { status: 500 });
+    }
+}
