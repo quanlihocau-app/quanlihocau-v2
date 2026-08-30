@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "${{ secrets.CI_DATABASE_URL || 'postgresql://ci:ci@127.0.0.1:5432/quanlihocau_ci?schema=public' }}"
 
     steps:
       - name: Checkout code
@@ -24,13 +26,9 @@ jobs:
 
       - name: Prisma Validate
         run: npx prisma validate
-        env:
-          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
 
       - name: Prisma Generate
         run: npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
 
       - name: Lint
         run: npm run lint
