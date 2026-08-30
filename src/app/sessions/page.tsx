@@ -111,6 +111,23 @@ export default async function SessionsPage() {
         },
     });
 
+    // ── Fetch active packages for extensions ─────────────────────────────
+    const packages = await prisma.package.findMany({
+        where: {
+            lakeId: tenantContext.lakeId,
+            deletedAt: null,
+        },
+        select: {
+            id: true,
+            name: true,
+            durationMinutes: true,
+            priceVnd: true,
+        },
+        orderBy: {
+            createdAt: "asc",
+        },
+    });
+
     const totalHuts = allHuts.length;
     const availableHuts = allHuts.filter(
         (h) => h.currentSessionId === null,
@@ -264,6 +281,7 @@ export default async function SessionsPage() {
                                         canComplete={canComplete}
                                         canCancel={canCancel}
                                         invoiceId={draftInvoiceId}
+                                        packages={packages}
                                     />
                                 </div>
                             </div>
