@@ -3,11 +3,23 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+export interface ActionPackage {
+    id: string;
+    name: string;
+    durationMinutes: number;
+    priceVnd: number;
+}
+
 interface SessionActionsProps {
     sessionId: string;
     canComplete: boolean;
     canCancel: boolean;
     invoiceId?: string | null;
+    packages?: ActionPackage[];
+}
+
+function formatPrice(vnd: number): string {
+    return new Intl.NumberFormat("vi-VN").format(vnd) + "đ";
 }
 
 export function SessionActions({
@@ -15,13 +27,26 @@ export function SessionActions({
     canComplete,
     canCancel,
     invoiceId,
+    packages = [],
 }: SessionActionsProps) {
     const router = useRouter();
+
+    // Main action states
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [confirmAction, setConfirmAction] = useState<
         "COMPLETE" | "CANCEL" | null
     >(null);
+    const [showNoInvoiceNotice, setShowNoInvoiceNotice] = useState(false);
+
+    // Extension modal states
+    const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
+    const [selectedPackageId, setSelectedPackageId] = useState<string>(
+        packages[0]?.id ?? "",
+    );
+    const [isExtending, setIsExtending] = useState(false);
+    const [extensionError, setExtensionError] = useState("");
+    const [extensionSuccess, setExtensionSuccess] = useState("");
 
     async function handleAction(action: "COMPLETE" | "CANCEL") {
         const label = action === "COMPLETE" ? "kết thúc" : "hủy";
@@ -60,6 +85,80 @@ export function SessionActions({
         }
     }
 
+    function handleAddProduct() {
+        if (invoiceId) {
+            router.push(`/invoices/${invoiceId}`);
+        } else {
+            setShowNoInvoiceNotice((prev) => !prev);
+        }
+    }
+
+    function openExtensionModal() {
+        setExtensionError("");
+        setExtensionSuccess("");
+        if (packages.length > 0 && !selectedPackageId) {
+            setSelectedPackageId(packages[0].id);
+        }
+        setIsExtensionModalOpen(true);
+    }
+
+    async function handleConfirmExtension() {
+        if (!selectedPackageId) {
+            setExtensionError("Vui lòng chọn gói câu gia hạn.");
+            return;
+        }
+
+        setIsExtending(true);
+        setExtensionError("");
+        setExtensionSuccess("");
+
+        const idempotencyKey = crypto.randomUUID();
+
+        try {
+            const response = await fetch(
+                `/api/fishing-sessions/${sessionId}/extensions`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Idempotency-Key": idempotencyKey,
+                    },
+                    body: JSON.stringify({
+                        packageId: selectedPackageId,
+                    }),
+                },
+            );
+
+            const data = (await response.json()) as {
+                error?: string;
+                message?: string;
+            };
+
+            if (!response.ok) {
+                setExtensionError(
+                    data.error ?? "Không thể gia hạn phiên câu.",
+                );
+                setIsExtending(false);
+                return;
+            }
+
+            setExtensionSuccess(data.message ?? "Đã gia hạn thành công!");
+            setIsExtending(false);
+
+            setTimeout(() => {
+                setIsExtensionModalOpen(false);
+                router.refresh();
+            }, 800);
+        } catch {
+            setExtensionError(
+                "Lỗi kết nối mạng khi gia hạn. Vui lòng thử lại.",
+            );
+            setIsExtending(false);
+        }
+    }
+
+    const selectedPkg = packages.find((p) => p.id === selectedPackageId);
+
     if (!canComplete && !canCancel && !invoiceId) {
         return null;
     }
@@ -73,6 +172,53 @@ export function SessionActions({
                     </p>
                 </div>
             ) : null}
+
+            {/* Notice when session has no linked DRAFT invoice */}
+            {showNoInvoiceNotice && (
+                <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 space-y-2">
+                    <div className="flex items-start gap-2">
+                        <svg
+                            className="h-4 w-4 text-[#9E6B05] mt-0.5 shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
+                            />
+                        </svg>
+                        <div>
+                            <p className="text-xs font-bold text-amber-900">
+                                Phiên câu chưa có hóa đơn nháp liên kết
+                            </p>
+                            <p className="text-[11px] text-amber-800 mt-0.5">
+                                Hóa đơn phiên câu sẽ tự động lập sau khi bấm
+                                &quot;Kết thúc&quot;, hoặc bạn có thể lập hóa đơn
+                                bán lẻ trực tiếp tại mục Bán hàng.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                        <button
+                            type="button"
+                            onClick={() => router.push("/invoices")}
+                            className="h-9 rounded-lg bg-[#9E6B05] px-3 text-xs font-bold text-white shadow-sm transition-all duration-150 ease-out active:scale-95"
+                        >
+                            Đến mục Bán hàng
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowNoInvoiceNotice(false)}
+                            className="h-9 rounded-lg border border-[#EAE4D7] bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-150 ease-out active:scale-95"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Confirmation overlay */}
             {confirmAction ? (
@@ -110,18 +256,114 @@ export function SessionActions({
                     </div>
                 </div>
             ) : (
-                <div className="flex flex-wrap gap-2">
-                    {invoiceId ? (
+                <div className="space-y-2">
+                    {/* Primary Button Row: Thêm hàng — Gia hạn — Kết thúc */}
+                    <div className="grid grid-cols-3 gap-2">
+                        {/* 1. Thêm hàng */}
                         <button
                             type="button"
-                            onClick={() =>
-                                router.push(`/invoices/${invoiceId}`)
-                            }
-                            className="h-11 min-w-[44px] rounded-xl border border-[#EAE4D7] bg-white px-4 text-xs font-bold text-[#9E6B05] shadow-sm transition-all duration-150 ease-out active:scale-95"
+                            onClick={handleAddProduct}
+                            className="h-11 min-w-11 rounded-xl border border-[#EAE4D7] bg-white px-2 text-xs font-bold text-[#9E6B05] shadow-sm transition-all duration-150 ease-out active:scale-95 flex items-center justify-center gap-1"
                         >
-                            <span className="flex items-center gap-1.5">
+                            <svg
+                                className="h-4 w-4 shrink-0"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+                                />
+                            </svg>
+                            <span>Thêm hàng</span>
+                        </button>
+
+                        {/* 2. Gia hạn */}
+                        <button
+                            type="button"
+                            onClick={openExtensionModal}
+                            className="h-11 min-w-11 rounded-xl border border-[#EAE4D7] bg-[#F7F4EE] px-2 text-xs font-bold text-[#8A5B00] shadow-sm transition-all duration-150 ease-out active:scale-95 flex items-center justify-center gap-1 hover:border-[#9E6B05]"
+                        >
+                            <svg
+                                className="h-4 w-4 shrink-0"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                />
+                            </svg>
+                            <span>Gia hạn</span>
+                        </button>
+
+                        {/* 3. Kết thúc */}
+                        {canComplete ? (
+                            <button
+                                type="button"
+                                onClick={() => setConfirmAction("COMPLETE")}
+                                className="h-11 min-w-11 rounded-xl bg-[#9E6B05] px-2 text-xs font-bold text-white shadow-sm transition-all duration-150 ease-out active:scale-95 flex items-center justify-center"
+                            >
+                                Kết thúc
+                            </button>
+                        ) : null}
+                    </div>
+
+                    {/* Secondary Action: Hủy phiên */}
+                    {canCancel ? (
+                        <div className="flex justify-end pt-1">
+                            <button
+                                type="button"
+                                onClick={() => setConfirmAction("CANCEL")}
+                                className="text-[11px] font-semibold text-red-500 hover:text-red-700 transition-colors"
+                            >
+                                Hủy phiên câu
+                            </button>
+                        </div>
+                    ) : null}
+                </div>
+            )}
+
+            {/* Extension Popup Modal */}
+            {isExtensionModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-[#EAE4D7] pb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EAE2CE]">
+                                    <svg
+                                        className="h-4 w-4 text-[#9E6B05]"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth={2}
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                        />
+                                    </svg>
+                                </div>
+                                <h3 className="text-base font-bold text-slate-900">
+                                    Gia hạn phiên câu
+                                </h3>
+                            </div>
+                            <button
+                                type="button"
+                                disabled={isExtending}
+                                onClick={() => setIsExtensionModalOpen(false)}
+                                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-[#F7F4EE]"
+                            >
                                 <svg
-                                    className="h-4 w-4"
+                                    className="h-5 w-5"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     strokeWidth={2}
@@ -130,33 +372,132 @@ export function SessionActions({
                                     <path
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
-                                        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+                                        d="M6 18L18 6M6 6l12 12"
                                     />
                                 </svg>
-                                Thêm hàng
-                            </span>
-                        </button>
-                    ) : null}
+                            </button>
+                        </div>
 
-                    {canComplete ? (
-                        <button
-                            type="button"
-                            onClick={() => setConfirmAction("COMPLETE")}
-                            className="h-11 min-w-[44px] rounded-xl bg-[#9E6B05] px-4 text-xs font-bold text-white shadow-sm transition-all duration-150 ease-out active:scale-95"
-                        >
-                            Kết thúc
-                        </button>
-                    ) : null}
+                        {/* Error or Success notification */}
+                        {extensionError && (
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 font-medium">
+                                {extensionError}
+                            </div>
+                        )}
+                        {extensionSuccess && (
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 font-medium">
+                                {extensionSuccess}
+                            </div>
+                        )}
 
-                    {canCancel ? (
-                        <button
-                            type="button"
-                            onClick={() => setConfirmAction("CANCEL")}
-                            className="h-11 min-w-[44px] rounded-xl border border-red-200 bg-white px-4 text-xs font-bold text-red-600 shadow-sm transition-all duration-150 ease-out active:scale-95"
-                        >
-                            Hủy phiên
-                        </button>
-                    ) : null}
+                        {/* Package List */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                                Chọn gói câu gia hạn:
+                            </label>
+                            {packages.length === 0 ? (
+                                <div className="rounded-xl bg-[#F7F4EE] border border-[#EAE4D7] p-3 text-center text-xs text-slate-500">
+                                    Không có gói câu nào đang hoạt động.
+                                </div>
+                            ) : (
+                                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                    {packages.map((pkg) => {
+                                        const isSelected =
+                                            selectedPackageId === pkg.id;
+                                        return (
+                                            <div
+                                                key={pkg.id}
+                                                onClick={() =>
+                                                    setSelectedPackageId(
+                                                        pkg.id,
+                                                    )
+                                                }
+                                                className={`cursor-pointer rounded-xl border p-3 flex items-center justify-between transition-all duration-150 ease-out active:scale-98 ${
+                                                    isSelected
+                                                        ? "border-[#9E6B05] bg-[#F7F4EE] ring-1 ring-[#9E6B05]"
+                                                        : "border-[#EAE4D7] bg-white hover:border-slate-300"
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2.5">
+                                                    <div
+                                                        className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                                            isSelected
+                                                                ? "border-[#9E6B05] bg-[#9E6B05]"
+                                                                : "border-slate-300 bg-white"
+                                                        }`}
+                                                    >
+                                                        {isSelected && (
+                                                            <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-900">
+                                                            {pkg.name}
+                                                        </p>
+                                                        <p className="text-[10px] text-slate-500">
+                                                            +
+                                                            {
+                                                                pkg.durationMinutes
+                                                            }{" "}
+                                                            phút
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-xs font-bold text-[#9E6B05]">
+                                                    {formatPrice(
+                                                        pkg.priceVnd,
+                                                    )}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Summary */}
+                        {selectedPkg && (
+                            <div className="rounded-xl bg-[#F7F4EE] border border-[#EAE4D7] p-3 text-xs flex items-center justify-between">
+                                <span className="text-slate-600 font-medium">
+                                    Thêm:{" "}
+                                    <span className="font-bold text-slate-900">
+                                        +{selectedPkg.durationMinutes} phút
+                                    </span>
+                                </span>
+                                <span className="font-bold text-[#9E6B05]">
+                                    +{formatPrice(selectedPkg.priceVnd)}
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 pt-2">
+                            <button
+                                type="button"
+                                disabled={isExtending}
+                                onClick={() =>
+                                    setIsExtensionModalOpen(false)
+                                }
+                                className="h-11 flex-1 rounded-xl border border-[#EAE4D7] bg-white text-xs font-semibold text-slate-700 shadow-sm transition-all duration-150 ease-out active:scale-95 disabled:opacity-60"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                type="button"
+                                disabled={
+                                    isExtending ||
+                                    !selectedPackageId ||
+                                    packages.length === 0
+                                }
+                                onClick={handleConfirmExtension}
+                                className="h-11 flex-[2] rounded-xl bg-[#9E6B05] text-xs font-bold text-white shadow-md transition-transform duration-150 ease-out active:scale-95 disabled:opacity-60"
+                            >
+                                {isExtending
+                                    ? "Đang gia hạn…"
+                                    : "Xác nhận gia hạn"}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
