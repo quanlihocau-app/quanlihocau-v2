@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useCallback, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 export interface CustomerItem {
     id: string;
@@ -28,6 +28,8 @@ export function CustomerManager({
     const [searchError, setSearchError] = useState("");
     const abortControllerRef = useRef<AbortController | null>(null);
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Monotonically increasing request version — only the latest request may write state
+    const requestVersionRef = useRef(0);
 
     // Create state
     const [name, setName] = useState("");
@@ -55,12 +57,7 @@ export function CustomerManager({
             : initialCustomers;
 
     const performSearch = useCallback(
-        (query: string) => {
-            // Cancel any pending request
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
-
+        (query: string, version: number) => {
             if (!query.trim()) {
                 setSearchResults(null);
                 setIsSearching(false);
@@ -90,14 +87,17 @@ export function CustomerManager({
                     return res.json() as Promise<CustomerItem[]>;
                 })
                 .then((data) => {
+                    // Only apply if this is still the latest request
+                    if (version !== requestVersionRef.current) return;
                     setSearchResults(data);
                     setIsSearching(false);
                 })
                 .catch((err: unknown) => {
                     if (err instanceof Error && err.name === "AbortError") {
-                        // Request was intentionally cancelled; do nothing
                         return;
                     }
+                    // Only apply if this is still the latest request
+                    if (version !== requestVersionRef.current) return;
                     const message =
                         err instanceof Error
                             ? err.message
@@ -109,16 +109,37 @@ export function CustomerManager({
         [],
     );
 
+    // Cleanup on unmount: clear debounce timer and abort in-flight request
+    useEffect(() => {
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
+
     function handleSearchChange(value: string) {
         setSearchTerm(value);
+
+        // Immediately abort any in-flight request so its response cannot land
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
 
         // Clear the previous debounce timer
         if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
         }
 
+        // Bump request version so any pending .then() from a previous request is discarded
+        const version = ++requestVersionRef.current;
+
         debounceTimerRef.current = setTimeout(() => {
-            performSearch(value);
+            performSearch(value, version);
         }, 300);
     }
 
