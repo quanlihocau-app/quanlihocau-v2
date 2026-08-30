@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+
 export interface DailyReportSummary {
     revenueVnd: number;
     expenseVnd: number;
@@ -404,6 +406,8 @@ export function DailyReportView({
                     </div>
                 </div>
             )}
+
+            <MobileBottomNav />
         </main>
     );
 }

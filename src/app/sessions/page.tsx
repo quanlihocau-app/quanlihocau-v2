@@ -9,6 +9,7 @@ import { getTenantContext } from "@/lib/tenant";
 
 import { SessionActions } from "./session-actions";
 import { SessionCountdown } from "./session-countdown";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 export default async function SessionsPage() {
     const session = await getServerSession(authOptions);
@@ -313,6 +314,8 @@ export default async function SessionsPage() {
                     ) : null}
                 </div>
             )}
+
+            <MobileBottomNav />
         </main>
     );
 }

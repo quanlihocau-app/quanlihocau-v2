@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 
 import { OpenSessionForm } from "./open-session-form";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 export default async function NewSessionPage() {
     const session = await getServerSession(authOptions);
@@ -116,6 +117,8 @@ export default async function NewSessionPage() {
                 packages={packages}
                 huts={huts}
             />
+
+            <MobileBottomNav />
         </main>
     );
 }
