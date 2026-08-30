@@ -196,6 +196,10 @@ export async function POST(request: Request) {
                                 startAt: now,
                                 plannedEndAt,
                                 status: SessionStatus.ACTIVE,
+                                packageNameSnapshot: pkg.name,
+                                packageDurationMinutesSnapshot: pkg.durationMinutes,
+                                packagePriceVndSnapshot: pkg.priceVnd,
+                                overtimeHourlyVndSnapshot: pkg.overtimeHourlyVnd,
                             },
                         });
 

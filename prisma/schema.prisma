@@ -202,6 +202,12 @@ model FishingSession {
   endedAt      DateTime?
   status       SessionStatus
   version      Int           @default(1)
+
+  packageNameSnapshot            String
+  packageDurationMinutesSnapshot Int
+  packagePriceVndSnapshot        Int
+  overtimeHourlyVndSnapshot      Int
+
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
@@ -322,6 +328,7 @@ model Invoice {
   lines          InvoiceLine[]
   payments       Payment[]
 
+  @@unique([lakeId, fishingSessionId])
   @@index([lakeId, status])
   @@index([lakeId, createdAt])
 }
