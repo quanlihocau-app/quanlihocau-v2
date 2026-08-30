@@ -372,14 +372,14 @@ export default async function DashboardPage() {
                 </Link>
 
                 <Link
-                    href="/fish-buybacks"
-                    className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm transition hover:border-emerald-500 hover:bg-emerald-50/30"
+                    href="/reports/daily"
+                    className="flex flex-col items-center justify-center rounded-xl border border-amber-200 bg-amber-50/40 p-3 text-center shadow-sm transition hover:border-[#9E6B05] hover:bg-amber-100/60"
                 >
-                    <span className="text-sm font-semibold text-slate-900">
-                        Thu mua cá
+                    <span className="text-sm font-semibold text-amber-950">
+                        Báo cáo ngày
                     </span>
-                    <span className="mt-0.5 text-xs text-slate-500">
-                        Sổ cân & Tiền cá
+                    <span className="mt-0.5 text-xs text-amber-700">
+                        Doanh thu & Chốt ca
                     </span>
                 </Link>
 
