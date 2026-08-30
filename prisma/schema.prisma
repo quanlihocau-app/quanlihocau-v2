@@ -350,15 +350,16 @@ model InvoiceLine {
 }
 
 model Payment {
-  id           String           @id @default(uuid())
-  lakeId       String
-  invoiceId    String?
-  expenseId    String?
-  amountVnd    Int
-  method       PaymentMethod
-  direction    PaymentDirection
-  reversalOfId String?
-  createdAt    DateTime         @default(now())
+  id             String           @id @default(uuid())
+  lakeId         String
+  invoiceId      String?
+  expenseId      String?
+  amountVnd      Int
+  method         PaymentMethod
+  direction      PaymentDirection
+  reversalOfId   String?
+  idempotencyKey String?
+  createdAt      DateTime         @default(now())
 
   lake       Lake      @relation(fields: [lakeId], references: [id])
   invoice    Invoice?  @relation(fields: [invoiceId], references: [id])
@@ -366,6 +367,7 @@ model Payment {
   reversalOf Payment?  @relation("PaymentReversals", fields: [reversalOfId], references: [id])
   reversals  Payment[] @relation("PaymentReversals")
 
+  @@unique([lakeId, idempotencyKey])
   @@index([lakeId, createdAt])
 }
 
