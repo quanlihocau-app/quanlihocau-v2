@@ -385,14 +385,14 @@ export default async function DashboardPage() {
 
                 {tenantContext.role === Role.OWNER && (
                     <Link
-                        href="/settings/members"
+                        href="/settings"
                         className="flex flex-col items-center justify-center rounded-xl border border-purple-200 bg-purple-50/40 p-3 text-center shadow-sm transition hover:border-purple-500 hover:bg-purple-100/60"
                     >
                         <span className="text-sm font-semibold text-purple-900">
-                            Nhân sự
+                            Cài đặt
                         </span>
                         <span className="mt-0.5 text-xs text-purple-700">
-                            Quản lý nhân viên
+                            Kho & Nhân sự
                         </span>
                     </Link>
                 )}
