@@ -25,32 +25,51 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const query = searchParams.get("q")?.trim();
 
+        type PhoneOrClause = {
+            name?: { contains: string; mode: "insensitive" };
+            phoneNormalized?: { contains: string };
+        };
+
         const whereCondition: {
             lakeId: string;
             deletedAt: null;
-            OR?: Array<{
-                name?: { contains: string; mode: "insensitive" };
-                phoneNormalized?: { contains: string };
-            }>;
+            OR?: PhoneOrClause[];
         } = {
             lakeId: tenantContext.lakeId,
             deletedAt: null,
         };
 
         if (query) {
-            whereCondition.OR = [
-                {
-                    name: {
-                        contains: query,
-                        mode: "insensitive",
-                    },
-                },
-                {
-                    phoneNormalized: {
-                        contains: query,
-                    },
-                },
+            // Build phone search variants so that entering "090...", "84...", "+84..."
+            // all match the stored E.164 form "+84...". Partial matching is supported.
+            const phoneSearchTerms = new Set<string>([query]);
+
+            const cleaned = query.replace(/[\s.\-()]/g, "");
+            if (cleaned.startsWith("+84")) {
+                // "+8490..." → also search bare digits "84..." and "90..."
+                phoneSearchTerms.add(cleaned); // +8490...
+                phoneSearchTerms.add(cleaned.slice(1)); // 8490...
+                phoneSearchTerms.add("0" + cleaned.slice(3)); // 090...
+            } else if (cleaned.startsWith("84") && cleaned.length > 2) {
+                // "8490..." → also search "+8490..." and "090..."
+                phoneSearchTerms.add("+" + cleaned); // +8490...
+                phoneSearchTerms.add("0" + cleaned.slice(2)); // 090...
+            } else if (cleaned.startsWith("0") && cleaned.length > 1) {
+                // "090..." → stored as "+8490..."
+                const e164 = "+84" + cleaned.slice(1);
+                phoneSearchTerms.add(e164); // +8490...
+                phoneSearchTerms.add("84" + cleaned.slice(1)); // 8490...
+            }
+
+            const orClauses: PhoneOrClause[] = [
+                { name: { contains: query, mode: "insensitive" } },
             ];
+
+            for (const term of phoneSearchTerms) {
+                orClauses.push({ phoneNormalized: { contains: term } });
+            }
+
+            whereCondition.OR = orClauses;
         }
 
         const customers = await prisma.customer.findMany({
