@@ -364,7 +364,13 @@ export default async function InvoicesPage() {
                                             className="transition hover:bg-slate-50/50"
                                         >
                                             <td className="px-4 py-3.5 font-mono text-xs text-slate-500 align-top">
-                                                {invoice.id.slice(0, 8)}...
+                                                <Link
+                                                    href={`/invoices/${invoice.id}`}
+                                                    className="font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
+                                                    title="Xem chi tiết hóa đơn"
+                                                >
+                                                    {invoice.id.slice(0, 8)}...
+                                                </Link>
                                             </td>
                                             <td className="px-4 py-3.5 align-top">
                                                 <p className="font-medium text-slate-900">
@@ -431,14 +437,22 @@ export default async function InvoicesPage() {
                                                 {formatDateTime(invoice.createdAt)}
                                             </td>
                                             <td className="px-4 py-3.5 text-right align-top">
-                                                {canManageInvoices && isPayable && (
-                                                    <RecordPaymentButton
-                                                        invoiceId={invoice.id}
-                                                        remainingAmountVnd={
-                                                            remaining
-                                                        }
-                                                    />
-                                                )}
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Link
+                                                        href={`/invoices/${invoice.id}`}
+                                                        className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+                                                    >
+                                                        Xem chi tiết
+                                                    </Link>
+                                                    {canManageInvoices && isPayable && (
+                                                        <RecordPaymentButton
+                                                            invoiceId={invoice.id}
+                                                            remainingAmountVnd={
+                                                                remaining
+                                                            }
+                                                        />
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     );
