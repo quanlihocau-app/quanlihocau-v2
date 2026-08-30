@@ -12,6 +12,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 
+import { InvoiceLinesSection } from "./invoice-lines-section";
 import { PrintReceiptButton } from "./print-receipt-button";
 
 const uuidSchema = z.string().uuid();
@@ -172,6 +173,8 @@ export default async function InvoiceDetailPage({
                   lines: {
                       select: {
                           id: true,
+                          productId: true,
+                          fishBuybackId: true,
                           name: true,
                           unitPrice: true,
                           quantity: true,
@@ -248,6 +251,73 @@ export default async function InvoiceDetailPage({
     );
     const paidAmount = Math.max(0, netPaid);
     const remaining = Math.max(0, invoice.totalAmountVnd - paidAmount);
+
+    // Fetch active products & their stock if invoice is DRAFT
+    const isDraft = invoice.status === InvoiceStatus.DRAFT;
+    let availableProducts: Array<{
+        id: string;
+        name: string;
+        sku: string | null;
+        priceVnd: number;
+        currentStock: number;
+    }> = [];
+
+    if (isDraft) {
+        const rawProducts = await prisma.product.findMany({
+            where: {
+                lakeId: tenantContext.lakeId,
+                deletedAt: null,
+            },
+            orderBy: {
+                name: "asc",
+            },
+            select: {
+                id: true,
+                name: true,
+                sku: true,
+                priceVnd: true,
+            },
+        });
+
+        const productStocks = await prisma.inventoryMovement.groupBy({
+            by: ["productId"],
+            where: {
+                lakeId: tenantContext.lakeId,
+                productId: {
+                    in: rawProducts.map((p) => p.id),
+                },
+            },
+            _sum: {
+                quantity: true,
+            },
+        });
+
+        const stockMap = new Map<string, number>();
+        for (const ps of productStocks) {
+            stockMap.set(
+                ps.productId,
+                ps._sum.quantity ? Number(ps._sum.quantity) : 0,
+            );
+        }
+
+        availableProducts = rawProducts.map((p) => ({
+            id: p.id,
+            name: p.name,
+            sku: p.sku,
+            priceVnd: p.priceVnd,
+            currentStock: stockMap.get(p.id) ?? 0,
+        }));
+    }
+
+    const safeLines = invoice.lines.map((l) => ({
+        id: l.id,
+        productId: l.productId,
+        fishBuybackId: l.fishBuybackId,
+        name: l.name,
+        unitPrice: l.unitPrice,
+        quantity: Number(l.quantity),
+        totalVnd: l.totalVnd,
+    }));
 
     return (
         <div className="min-h-screen bg-slate-50 py-8 print:bg-white print:py-0">
@@ -366,52 +436,14 @@ export default async function InvoiceDetailPage({
                         </div>
                     </div>
 
-                    {/* Invoice Lines Table */}
+                    {/* Invoice Lines Section */}
                     <div className="mt-6">
-                        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                            Chi tiết các mục
-                        </h2>
-                        <div className="mt-3 overflow-x-auto">
-                            <table className="w-full text-left text-sm text-slate-600">
-                                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500 print:bg-slate-100">
-                                    <tr>
-                                        <th className="px-4 py-2.5">Mục / Dịch vụ</th>
-                                        <th className="px-4 py-2.5 text-right">Đơn giá</th>
-                                        <th className="px-4 py-2.5 text-center">Số lượng</th>
-                                        <th className="px-4 py-2.5 text-right">Thành tiền</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {invoice.lines.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan={4}
-                                                className="px-4 py-6 text-center text-sm text-slate-400"
-                                            >
-                                                Không có mục chi tiết nào trong hóa đơn.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        invoice.lines.map((line) => (
-                                            <tr key={line.id}>
-                                                <td className="px-4 py-3 font-medium text-slate-900">
-                                                    {line.name}
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    {formatVnd(line.unitPrice)}
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    {line.quantity.toString()}
-                                                </td>
-                                                <td className="px-4 py-3 text-right font-medium text-slate-900">
-                                                    {formatVnd(line.totalVnd)}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        <InvoiceLinesSection
+                            invoiceId={invoice.id}
+                            isDraft={isDraft}
+                            lines={safeLines}
+                            availableProducts={availableProducts}
+                        />
                     </div>
 
                     {/* Financial Summary */}
