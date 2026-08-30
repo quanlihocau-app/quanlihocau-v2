@@ -198,6 +198,17 @@ export async function POST(request: Request) {
                 { status: 409 },
             );
         }
+        if (
+            typeof error === "object" &&
+            error !== null &&
+            "code" in error &&
+            error.code === "P2002"
+        ) {
+            return NextResponse.json(
+                { error: "Email này đã được sử dụng trên hệ thống." },
+                { status: 409 },
+            );
+        }
         return NextResponse.json(
             { error: "Đã xảy ra lỗi khi tạo nhân sự." },
             { status: 500 },
