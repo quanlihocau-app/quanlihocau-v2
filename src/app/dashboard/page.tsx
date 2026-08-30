@@ -271,8 +271,8 @@ export default async function DashboardPage() {
             <div
                 className={`mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 ${
                     tenantContext.role === Role.OWNER
-                        ? "lg:grid-cols-7"
-                        : "lg:grid-cols-6"
+                        ? "lg:grid-cols-8"
+                        : "lg:grid-cols-7"
                 }`}
             >
                 <Link
@@ -344,6 +344,18 @@ export default async function DashboardPage() {
                     </span>
                     <span className="mt-0.5 text-xs text-slate-500">
                         Danh mục & Giá
+                    </span>
+                </Link>
+
+                <Link
+                    href="/inventory"
+                    className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm transition hover:border-emerald-500 hover:bg-emerald-50/30"
+                >
+                    <span className="text-sm font-semibold text-slate-900">
+                        Kho hàng
+                    </span>
+                    <span className="mt-0.5 text-xs text-slate-500">
+                        Nhập / Xuất kho
                     </span>
                 </Link>
 
