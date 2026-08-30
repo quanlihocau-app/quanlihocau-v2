@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 
 import { NegativeInventoryToggle } from "./negative-inventory-toggle";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 export default async function SettingsPage() {
     const session = await getServerSession(authOptions);
@@ -46,7 +47,7 @@ export default async function SettingsPage() {
     const isOwner = tenantContext.role === Role.OWNER;
 
     return (
-        <main className="mx-auto min-h-screen max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <main className="mx-auto min-h-screen max-w-5xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
             {/* Header */}
             <div className="mb-8 flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center">
                 <div>
@@ -128,6 +129,8 @@ export default async function SettingsPage() {
                     </section>
                 )}
             </div>
+
+            <MobileBottomNav />
         </main>
     );
 }

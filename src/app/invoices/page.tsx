@@ -15,6 +15,7 @@ import { getTenantContext } from "@/lib/tenant";
 import { CreateInvoiceButton } from "./create-invoice-button";
 import { PaymentHistory } from "./payment-history";
 import { RecordPaymentButton } from "./record-payment-button";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 function formatVnd(amount: number): string {
     return new Intl.NumberFormat("vi-VN").format(amount) + " đ";
@@ -193,7 +194,7 @@ export default async function InvoicesPage() {
     });
 
     return (
-        <main className="mx-auto min-h-screen max-w-6xl px-6 py-12">
+        <main className="mx-auto min-h-screen max-w-6xl px-6 pb-24 pt-8">
             <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900">
@@ -462,6 +463,8 @@ export default async function InvoicesPage() {
                     </div>
                 )}
             </section>
+
+            <MobileBottomNav />
         </main>
     );
 }
