@@ -2,12 +2,18 @@ import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { InvoiceStatus, Role, SessionStatus } from "@/generated/prisma/client";
+import {
+    InvoiceStatus,
+    PaymentDirection,
+    Role,
+    SessionStatus,
+} from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 
 import { CreateInvoiceButton } from "./create-invoice-button";
+import { RecordPaymentButton } from "./record-payment-button";
 
 function formatVnd(amount: number): string {
     return new Intl.NumberFormat("vi-VN").format(amount) + " đ";
@@ -89,7 +95,7 @@ export default async function InvoicesPage() {
         tenantContext.role === Role.MANAGER ||
         tenantContext.role === Role.STAFF;
 
-    // Fetch invoices for current tenant
+    // Fetch invoices for current tenant including valid incoming payments
     const invoices = await prisma.invoice.findMany({
         where: {
             lakeId: tenantContext.lakeId,
@@ -118,6 +124,19 @@ export default async function InvoicesPage() {
                     unitPrice: true,
                     quantity: true,
                     totalVnd: true,
+                },
+            },
+            payments: {
+                where: {
+                    lakeId: tenantContext.lakeId,
+                    direction: PaymentDirection.IN,
+                    reversalOfId: null,
+                },
+                select: {
+                    id: true,
+                    amountVnd: true,
+                    method: true,
+                    createdAt: true,
                 },
             },
         },
@@ -170,10 +189,12 @@ export default async function InvoicesPage() {
             <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900">
-                        Quản lý Hóa đơn
+                        Quản lý Hóa đơn & Thanh toán
                     </h1>
                     <p className="mt-1 text-sm text-slate-600">
-                        Hồ câu: <span className="font-medium">{tenantContext.lakeName}</span> | Vai trò:{" "}
+                        Hồ câu:{" "}
+                        <span className="font-medium">{tenantContext.lakeName}</span>{" "}
+                        | Vai trò:{" "}
                         <span className="font-medium">{tenantContext.role}</span>
                     </p>
                 </div>
@@ -198,10 +219,12 @@ export default async function InvoicesPage() {
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-900">
-                            Phiên câu đã hoàn tất chờ lập hóa đơn ({pendingSessions.length})
+                            Phiên câu đã hoàn tất chờ lập hóa đơn (
+                            {pendingSessions.length})
                         </h2>
                         <p className="mt-0.5 text-xs text-slate-500">
-                            Các phiên câu đã kết thúc thành công và chưa được tạo hóa đơn DRAFT.
+                            Các phiên câu đã kết thúc thành công và chưa được tạo hóa
+                            đơn DRAFT.
                         </p>
                     </div>
                 </div>
@@ -223,18 +246,26 @@ export default async function InvoicesPage() {
                                             {sessionItem.packageNameSnapshot}
                                         </span>
                                         <span className="text-xs font-medium text-emerald-600">
-                                            {formatVnd(sessionItem.packagePriceVndSnapshot)}
+                                            {formatVnd(
+                                                sessionItem.packagePriceVndSnapshot,
+                                            )}
                                         </span>
                                     </div>
                                     <p className="text-xs text-slate-600">
                                         Khách:{" "}
                                         <span className="font-medium">
-                                            {sessionItem.customer?.name ?? "Khách vãng lai"}
+                                            {sessionItem.customer?.name ??
+                                                "Khách vãng lai"}
                                         </span>
                                         {sessionItem.customer?.phoneNormalized && (
                                             <span className="text-slate-400">
                                                 {" "}
-                                                ({sessionItem.customer.phoneNormalized})
+                                                (
+                                                {
+                                                    sessionItem.customer
+                                                        .phoneNormalized
+                                                }
+                                                )
                                             </span>
                                         )}
                                         {" • "}
@@ -249,7 +280,8 @@ export default async function InvoicesPage() {
                                         </span>
                                     </p>
                                     <p className="text-xs text-slate-400">
-                                        Bắt đầu: {formatDateTime(sessionItem.startAt)} • Kết thúc:{" "}
+                                        Bắt đầu: {formatDateTime(sessionItem.startAt)}{" "}
+                                        • Kết thúc:{" "}
                                         {formatDateTime(sessionItem.endedAt)}
                                     </p>
                                 </div>
@@ -273,7 +305,7 @@ export default async function InvoicesPage() {
                             Danh sách hóa đơn ({invoices.length})
                         </h2>
                         <p className="mt-0.5 text-xs text-slate-500">
-                            Tất cả hóa đơn được tạo cho hồ câu này.
+                            Tất cả hóa đơn và tiến độ thanh toán của hồ câu này.
                         </p>
                     </div>
                 </div>
@@ -291,59 +323,106 @@ export default async function InvoicesPage() {
                                     <th className="px-4 py-3">Khách hàng</th>
                                     <th className="px-4 py-3">Chi tiết mục gói</th>
                                     <th className="px-4 py-3">Tổng tiền</th>
+                                    <th className="px-4 py-3">Đã thu</th>
+                                    <th className="px-4 py-3">Còn lại</th>
                                     <th className="px-4 py-3">Trạng thái</th>
                                     <th className="px-4 py-3">Ngày tạo</th>
+                                    <th className="px-4 py-3 text-right">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {invoices.map((invoice) => (
-                                    <tr
-                                        key={invoice.id}
-                                        className="transition hover:bg-slate-50/50"
-                                    >
-                                        <td className="px-4 py-3.5 font-mono text-xs text-slate-500">
-                                            {invoice.id.slice(0, 8)}...
-                                        </td>
-                                        <td className="px-4 py-3.5">
-                                            <p className="font-medium text-slate-900">
-                                                {invoice.customer?.name ?? "Khách vãng lai"}
-                                            </p>
-                                            {invoice.customer?.phoneNormalized && (
-                                                <p className="text-xs text-slate-400">
-                                                    {invoice.customer.phoneNormalized}
+                                {invoices.map((invoice) => {
+                                    const paidAmount = invoice.payments.reduce(
+                                        (sum, p) => sum + p.amountVnd,
+                                        0,
+                                    );
+                                    const remaining =
+                                        invoice.totalAmountVnd - paidAmount;
+                                    const isPayable =
+                                        (invoice.status === InvoiceStatus.DRAFT ||
+                                            invoice.status ===
+                                                InvoiceStatus.PARTIALLY_PAID) &&
+                                        remaining > 0;
+
+                                    return (
+                                        <tr
+                                            key={invoice.id}
+                                            className="transition hover:bg-slate-50/50"
+                                        >
+                                            <td className="px-4 py-3.5 font-mono text-xs text-slate-500">
+                                                {invoice.id.slice(0, 8)}...
+                                            </td>
+                                            <td className="px-4 py-3.5">
+                                                <p className="font-medium text-slate-900">
+                                                    {invoice.customer?.name ??
+                                                        "Khách vãng lai"}
                                                 </p>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3.5">
-                                            {invoice.lines.length > 0 ? (
-                                                <ul className="space-y-0.5 text-xs">
-                                                    {invoice.lines.map((line) => (
-                                                        <li key={line.id}>
-                                                            <span className="font-medium text-slate-800">
-                                                                {line.name}
-                                                            </span>{" "}
-                                                            <span className="text-slate-400">
-                                                                x{line.quantity.toString()} (
-                                                                {formatVnd(line.unitPrice)})
-                                                            </span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            ) : (
-                                                <span className="text-xs text-slate-400">—</span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3.5 font-semibold text-slate-900">
-                                            {formatVnd(invoice.totalAmountVnd)}
-                                        </td>
-                                        <td className="px-4 py-3.5">
-                                            {getStatusBadge(invoice.status)}
-                                        </td>
-                                        <td className="px-4 py-3.5 text-xs text-slate-500">
-                                            {formatDateTime(invoice.createdAt)}
-                                        </td>
-                                    </tr>
-                                ))}
+                                                {invoice.customer
+                                                    ?.phoneNormalized && (
+                                                    <p className="text-xs text-slate-400">
+                                                        {
+                                                            invoice.customer
+                                                                .phoneNormalized
+                                                        }
+                                                    </p>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3.5">
+                                                {invoice.lines.length > 0 ? (
+                                                    <ul className="space-y-0.5 text-xs">
+                                                        {invoice.lines.map((line) => (
+                                                            <li key={line.id}>
+                                                                <span className="font-medium text-slate-800">
+                                                                    {line.name}
+                                                                </span>{" "}
+                                                                <span className="text-slate-400">
+                                                                    x
+                                                                    {line.quantity.toString()}{" "}
+                                                                    (
+                                                                    {formatVnd(
+                                                                        line.unitPrice,
+                                                                    )}
+                                                                    )
+                                                                </span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">
+                                                        —
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3.5 font-semibold text-slate-900">
+                                                {formatVnd(invoice.totalAmountVnd)}
+                                            </td>
+                                            <td className="px-4 py-3.5 font-medium text-emerald-600">
+                                                {formatVnd(paidAmount)}
+                                            </td>
+                                            <td className="px-4 py-3.5 font-medium text-amber-600">
+                                                {formatVnd(
+                                                    remaining > 0 ? remaining : 0,
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3.5">
+                                                {getStatusBadge(invoice.status)}
+                                            </td>
+                                            <td className="px-4 py-3.5 text-xs text-slate-500">
+                                                {formatDateTime(invoice.createdAt)}
+                                            </td>
+                                            <td className="px-4 py-3.5 text-right">
+                                                {canManageInvoices && isPayable && (
+                                                    <RecordPaymentButton
+                                                        invoiceId={invoice.id}
+                                                        remainingAmountVnd={
+                                                            remaining
+                                                        }
+                                                    />
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
