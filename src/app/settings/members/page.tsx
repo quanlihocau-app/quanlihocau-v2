@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 
 import { CreateMemberForm } from "./create-member-form";
+import { DeactivateMemberButton } from "./deactivate-member-button";
 
 function formatDateTime(date: Date | null): string {
     if (!date) return "—";
@@ -201,7 +202,8 @@ export default async function MembersSettingsPage() {
                                         <th className="px-4 py-3">Họ và tên</th>
                                         <th className="px-4 py-3">Email</th>
                                         <th className="px-4 py-3">Vai trò</th>
-                                        <th className="px-4 py-3 text-right">Ngày tham gia</th>
+                                        <th className="px-4 py-3">Ngày tham gia</th>
+                                        <th className="px-4 py-3 text-right">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -224,8 +226,22 @@ export default async function MembersSettingsPage() {
                                             <td className="px-4 py-3.5">
                                                 {getRoleBadge(m.role)}
                                             </td>
-                                            <td className="px-4 py-3.5 text-right text-xs text-slate-400">
+                                            <td className="px-4 py-3.5 text-xs text-slate-400">
                                                 {formatDateTime(m.createdAt)}
+                                            </td>
+                                            <td className="px-4 py-3.5 text-right">
+                                                {m.role !== Role.OWNER &&
+                                                m.user.id !== tenantContext.userId ? (
+                                                    <DeactivateMemberButton
+                                                        membershipId={m.id}
+                                                        memberName={m.user.name}
+                                                        memberEmail={m.user.email}
+                                                    />
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">
+                                                        —
+                                                    </span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
