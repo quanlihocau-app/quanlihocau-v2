@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 export interface CustomerItem {
     id: string;
@@ -21,8 +21,15 @@ export function CustomerManager({
 }: CustomerManagerProps) {
     const router = useRouter();
 
-    // Search state
+    // Search state (server-side)
     const [searchTerm, setSearchTerm] = useState("");
+    const [searchResults, setSearchResults] = useState<CustomerItem[] | null>(null);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchError, setSearchError] = useState("");
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Monotonically increasing request version — only the latest request may write state
+    const requestVersionRef = useRef(0);
 
     // Create state
     const [name, setName] = useState("");
@@ -43,17 +50,98 @@ export function CustomerManager({
     // Action notification
     const [actionMessage, setActionMessage] = useState("");
 
-    const filteredCustomers = useMemo(() => {
-        if (!searchTerm.trim()) {
-            return initialCustomers;
+    // Derive displayed list: use search results when active, else initialCustomers
+    const displayedCustomers =
+        searchTerm.trim() && searchResults !== null
+            ? searchResults
+            : initialCustomers;
+
+    const performSearch = useCallback(
+        (query: string, version: number) => {
+            if (!query.trim()) {
+                setSearchResults(null);
+                setIsSearching(false);
+                setSearchError("");
+                return;
+            }
+
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
+            setIsSearching(true);
+            setSearchError("");
+
+            fetch(
+                `/api/customers?q=${encodeURIComponent(query.trim())}`,
+                { signal: controller.signal },
+            )
+                .then((res) => {
+                    if (!res.ok) {
+                        return res
+                            .json()
+                            .then((data: { error?: string }) => {
+                                throw new Error(
+                                    data.error ?? "Không thể tìm kiếm khách hàng.",
+                                );
+                            });
+                    }
+                    return res.json() as Promise<CustomerItem[]>;
+                })
+                .then((data) => {
+                    // Only apply if this is still the latest request
+                    if (version !== requestVersionRef.current) return;
+                    setSearchResults(data);
+                    setIsSearching(false);
+                })
+                .catch((err: unknown) => {
+                    if (err instanceof Error && err.name === "AbortError") {
+                        return;
+                    }
+                    // Only apply if this is still the latest request
+                    if (version !== requestVersionRef.current) return;
+                    const message =
+                        err instanceof Error
+                            ? err.message
+                            : "Đã xảy ra lỗi khi tìm kiếm.";
+                    setSearchError(message);
+                    setIsSearching(false);
+                });
+        },
+        [],
+    );
+
+    // Cleanup on unmount: clear debounce timer and abort in-flight request
+    useEffect(() => {
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
+
+    function handleSearchChange(value: string) {
+        setSearchTerm(value);
+
+        // Immediately abort any in-flight request so its response cannot land
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
         }
-        const term = searchTerm.trim().toLowerCase();
-        return initialCustomers.filter(
-            (c) =>
-                c.name.toLowerCase().includes(term) ||
-                (c.phoneNormalized && c.phoneNormalized.toLowerCase().includes(term)),
-        );
-    }, [initialCustomers, searchTerm]);
+
+        // Clear the previous debounce timer
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        // Bump request version so any pending .then() from a previous request is discarded
+        const version = ++requestVersionRef.current;
+
+        debounceTimerRef.current = setTimeout(() => {
+            performSearch(value, version);
+        }, 300);
+    }
 
     async function handleCreate(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -238,25 +326,34 @@ export function CustomerManager({
                 </div>
             </form>
 
-            {/* List & Search */}
+            {/* List & Server Search */}
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
                     <h2 className="text-lg font-semibold text-slate-900">
-                        Danh sách Khách hàng ({filteredCustomers.length})
+                        Danh sách Khách hàng ({displayedCustomers.length})
+                        {isSearching ? (
+                            <span className="ml-2 text-xs font-normal text-slate-400">
+                                Đang tìm kiếm...
+                            </span>
+                        ) : null}
                     </h2>
 
                     <div className="w-full sm:w-72">
                         <input
                             type="text"
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => handleSearchChange(e.target.value)}
                             placeholder="Tìm theo tên hoặc số điện thoại..."
                             className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
                         />
                     </div>
                 </div>
 
-                {filteredCustomers.length === 0 ? (
+                {searchError ? (
+                    <p className="mt-4 text-sm text-red-600">{searchError}</p>
+                ) : null}
+
+                {displayedCustomers.length === 0 && !isSearching ? (
                     <p className="mt-6 text-center text-sm text-slate-500">
                         {searchTerm
                             ? "Không tìm thấy khách hàng nào khớp với tìm kiếm."
@@ -273,7 +370,7 @@ export function CustomerManager({
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {filteredCustomers.map((customer) => (
+                                {displayedCustomers.map((customer) => (
                                     <tr
                                         key={customer.id}
                                         className="hover:bg-slate-50"
