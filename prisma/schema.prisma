@@ -1,0 +1,436 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+
+enum Role {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PAID
+  PARTIALLY_PAID
+  VOIDED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+}
+
+enum PaymentDirection {
+  IN
+  OUT
+}
+
+// -----------------------------------------------------------------------------
+// CORE & TENANT
+// -----------------------------------------------------------------------------
+
+model Organization {
+  id        String    @id @default(uuid())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  lakes Lake[]
+}
+
+model Lake {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  memberships        Membership[]
+  customers          Customer[]
+  areas              Area[]
+  huts               Hut[]
+  packages           Package[]
+  fishingSessions    FishingSession[]
+  products           Product[]
+  inventoryMovements InventoryMovement[]
+  invoices           Invoice[]
+  payments           Payment[]
+  expenses           Expense[]
+  fishTypes          FishType[]
+  fishBuybacks       FishBuyback[]
+  shifts             Shift[]
+  auditEvents        AuditEvent[]
+  idempotencyKeys    IdempotencyKey[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+}
+
+model Membership {
+  id        String    @id @default(uuid())
+  userId    String
+  lakeId    String
+  role      Role
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+  lake Lake @relation(fields: [lakeId], references: [id])
+
+  @@unique([userId, lakeId])
+}
+
+// -----------------------------------------------------------------------------
+// CUSTOMER
+// -----------------------------------------------------------------------------
+
+model Customer {
+  id              String    @id @default(uuid())
+  lakeId          String
+  name            String
+  phoneNormalized String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  lake            Lake             @relation(fields: [lakeId], references: [id])
+  fishingSessions FishingSession[]
+  invoices        Invoice[]
+
+  @@unique([lakeId, phoneNormalized])
+  @@index([lakeId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// FACILITIES & PRICING
+// -----------------------------------------------------------------------------
+
+model Area {
+  id        String    @id @default(uuid())
+  lakeId    String
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  lake Lake  @relation(fields: [lakeId], references: [id])
+  huts Hut[]
+
+  @@index([lakeId, createdAt])
+}
+
+model Hut {
+  id               String    @id @default(uuid())
+  lakeId           String
+  areaId           String
+  name             String
+  currentSessionId String?
+  version          Int       @default(1)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  lake           Lake                @relation(fields: [lakeId], references: [id])
+  area           Area                @relation(fields: [areaId], references: [id])
+  currentSession FishingSession?     @relation("CurrentHutSession", fields: [currentSessionId], references: [id])
+  sessionLinks   FishingSessionHut[]
+
+  @@index([lakeId, createdAt])
+}
+
+model Package {
+  id                String    @id @default(uuid())
+  lakeId            String
+  name              String
+  durationMinutes   Int
+  priceVnd          Int
+  overtimeHourlyVnd Int
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  lake            Lake             @relation(fields: [lakeId], references: [id])
+  fishingSessions FishingSession[]
+
+  @@index([lakeId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// OPERATIONS (FISHING SESSIONS)
+// -----------------------------------------------------------------------------
+
+model FishingSession {
+  id           String        @id @default(uuid())
+  lakeId       String
+  customerId   String?
+  packageId    String
+  startAt      DateTime
+  plannedEndAt DateTime
+  endedAt      DateTime?
+  status       SessionStatus
+  version      Int           @default(1)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  lake     Lake      @relation(fields: [lakeId], references: [id])
+  customer Customer? @relation(fields: [customerId], references: [id])
+  package  Package   @relation(fields: [packageId], references: [id])
+  invoices Invoice[]
+
+  hutLinks     FishingSessionHut[]
+  activeInHuts Hut[]               @relation("CurrentHutSession")
+
+  @@index([lakeId, status])
+  @@index([lakeId, createdAt])
+}
+
+model FishingSessionHut {
+  id               String   @id @default(uuid())
+  lakeId           String
+  fishingSessionId String
+  hutId            String
+  createdAt        DateTime @default(now())
+
+  fishingSession FishingSession @relation(fields: [fishingSessionId], references: [id])
+  hut            Hut            @relation(fields: [hutId], references: [id])
+
+  @@unique([fishingSessionId, hutId])
+}
+
+// -----------------------------------------------------------------------------
+// INVENTORY
+// -----------------------------------------------------------------------------
+
+model Product {
+  id        String    @id @default(uuid())
+  lakeId    String
+  sku       String?
+  name      String
+  priceVnd  Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  lake         Lake                @relation(fields: [lakeId], references: [id])
+  movements    InventoryMovement[]
+  invoiceLines InvoiceLine[]
+
+  @@index([lakeId, createdAt])
+}
+
+model InventoryMovement {
+  id        String   @id @default(uuid())
+  lakeId    String
+  productId String
+  quantity  Decimal
+  reason    String
+  createdBy String
+  createdAt DateTime @default(now())
+
+  lake    Lake    @relation(fields: [lakeId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([lakeId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// FISHING RESULTS (BUYBACK)
+// -----------------------------------------------------------------------------
+
+model FishType {
+  id         String    @id @default(uuid())
+  lakeId     String
+  name       String
+  pricePerKg Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  lake     Lake          @relation(fields: [lakeId], references: [id])
+  buybacks FishBuyback[]
+
+  @@index([lakeId, createdAt])
+}
+
+model FishBuyback {
+  id         String   @id @default(uuid())
+  lakeId     String
+  fishTypeId String
+  weight     Decimal
+  pricePerKg Int
+  totalVnd   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  lake         Lake          @relation(fields: [lakeId], references: [id])
+  fishType     FishType      @relation(fields: [fishTypeId], references: [id])
+  invoiceLines InvoiceLine[]
+
+  @@index([lakeId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// FINANCIAL TRANSACTIONS
+// -----------------------------------------------------------------------------
+
+model Invoice {
+  id               String        @id @default(uuid())
+  lakeId           String
+  customerId       String?
+  fishingSessionId String?
+  status           InvoiceStatus
+  totalAmountVnd   Int
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  lake           Lake            @relation(fields: [lakeId], references: [id])
+  customer       Customer?       @relation(fields: [customerId], references: [id])
+  fishingSession FishingSession? @relation(fields: [fishingSessionId], references: [id])
+  lines          InvoiceLine[]
+  payments       Payment[]
+
+  @@index([lakeId, status])
+  @@index([lakeId, createdAt])
+}
+
+model InvoiceLine {
+  id            String   @id @default(uuid())
+  invoiceId     String
+  productId     String?
+  fishBuybackId String?
+  name          String
+  unitPrice     Int
+  quantity      Decimal
+  totalVnd      Int
+  createdAt     DateTime @default(now())
+
+  invoice     Invoice      @relation(fields: [invoiceId], references: [id])
+  product     Product?     @relation(fields: [productId], references: [id])
+  fishBuyback FishBuyback? @relation(fields: [fishBuybackId], references: [id])
+}
+
+model Payment {
+  id           String           @id @default(uuid())
+  lakeId       String
+  invoiceId    String?
+  expenseId    String?
+  amountVnd    Int
+  method       PaymentMethod
+  direction    PaymentDirection
+  reversalOfId String?
+  createdAt    DateTime         @default(now())
+
+  lake       Lake      @relation(fields: [lakeId], references: [id])
+  invoice    Invoice?  @relation(fields: [invoiceId], references: [id])
+  expense    Expense?  @relation(fields: [expenseId], references: [id])
+  reversalOf Payment?  @relation("PaymentReversals", fields: [reversalOfId], references: [id])
+  reversals  Payment[] @relation("PaymentReversals")
+
+  @@index([lakeId, createdAt])
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  lakeId      String
+  description String
+  amountVnd   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lake     Lake      @relation(fields: [lakeId], references: [id])
+  payments Payment[]
+
+  @@index([lakeId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// SHIFTS
+// -----------------------------------------------------------------------------
+
+model Shift {
+  id        String    @id @default(uuid())
+  lakeId    String
+  startTime DateTime
+  endTime   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  lake   Lake         @relation(fields: [lakeId], references: [id])
+  closes ShiftClose[]
+
+  @@index([lakeId, createdAt])
+}
+
+model ShiftClose {
+  id               String   @id @default(uuid())
+  shiftId          String
+  totalCashVnd     Int
+  totalTransferVnd Int
+  createdAt        DateTime @default(now())
+
+  shift Shift @relation(fields: [shiftId], references: [id])
+}
+
+// -----------------------------------------------------------------------------
+// SYSTEM LOGGING & IDEMPOTENCY
+// -----------------------------------------------------------------------------
+
+model AuditEvent {
+  id         String   @id @default(uuid())
+  lakeId     String
+  entityType String
+  entityId   String
+  action     String
+  payload    String
+  createdBy  String
+  createdAt  DateTime @default(now())
+
+  lake Lake @relation(fields: [lakeId], references: [id])
+
+  @@index([lakeId, createdAt])
+}
+
+model IdempotencyKey {
+  id             String   @id @default(uuid())
+  lakeId         String
+  key            String
+  responseStatus Int
+  responseBody   String
+  createdAt      DateTime @default(now())
+
+  lake Lake @relation(fields: [lakeId], references: [id])
+
+  @@unique([lakeId, key])
+}
