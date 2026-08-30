@@ -7,6 +7,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 
+import { SessionActions } from "./session-actions";
+
 export default async function SessionsPage() {
     const session = await getServerSession(authOptions);
 
@@ -215,6 +217,18 @@ export default async function SessionsPage() {
                                             </p>
                                         </div>
                                     </div>
+                                    <SessionActions
+                                        sessionId={s.id}
+                                        canComplete={
+                                            tenantContext.role === Role.OWNER ||
+                                            tenantContext.role === Role.MANAGER ||
+                                            tenantContext.role === Role.STAFF
+                                        }
+                                        canCancel={
+                                            tenantContext.role === Role.OWNER ||
+                                            tenantContext.role === Role.MANAGER
+                                        }
+                                    />
                                 </div>
                             </div>
                         ))}
