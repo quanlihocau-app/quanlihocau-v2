@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
     InvoiceStatus,
     PaymentDirection,
+    Role,
     SessionStatus,
 } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
@@ -267,7 +268,13 @@ export default async function DashboardPage() {
             </div>
 
             {/* Navigation Quick Links */}
-            <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div
+                className={`mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 ${
+                    tenantContext.role === Role.OWNER
+                        ? "lg:grid-cols-7"
+                        : "lg:grid-cols-6"
+                }`}
+            >
                 <Link
                     href="/sessions"
                     className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm transition hover:border-emerald-500 hover:bg-emerald-50/30"
@@ -327,6 +334,20 @@ export default async function DashboardPage() {
                         Cấu hình giá câu
                     </span>
                 </Link>
+
+                {tenantContext.role === Role.OWNER && (
+                    <Link
+                        href="/settings/members"
+                        className="flex flex-col items-center justify-center rounded-xl border border-purple-200 bg-purple-50/40 p-3 text-center shadow-sm transition hover:border-purple-500 hover:bg-purple-100/60"
+                    >
+                        <span className="text-sm font-semibold text-purple-900">
+                            Nhân sự
+                        </span>
+                        <span className="mt-0.5 text-xs text-purple-700">
+                            Quản lý nhân viên
+                        </span>
+                    </Link>
+                )}
 
                 <Link
                     href="/sessions/new"
