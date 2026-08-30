@@ -383,6 +383,18 @@ export default async function DashboardPage() {
                     </span>
                 </Link>
 
+                <Link
+                    href="/expenses"
+                    className="flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/40 p-3 text-center shadow-sm transition hover:border-rose-500 hover:bg-rose-100/60"
+                >
+                    <span className="text-sm font-semibold text-rose-950">
+                        Chi phí khác
+                    </span>
+                    <span className="mt-0.5 text-xs text-rose-700">
+                        Quản lý khoản chi
+                    </span>
+                </Link>
+
                 {tenantContext.role === Role.OWNER && (
                     <Link
                         href="/settings"
