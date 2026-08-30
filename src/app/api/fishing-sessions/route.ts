@@ -175,132 +175,159 @@ export async function POST(request: Request) {
             );
         }
 
-        // Interactive transaction with Serializable isolation
-        const now = new Date();
-        const plannedEndAt = new Date(
-            now.getTime() + pkg.durationMinutes * 60 * 1000,
-        );
+        // Interactive transaction with Serializable isolation + retry on P2034
+        const MAX_RETRIES = 3;
 
-        try {
-            const result = await prisma.$transaction(
-                async (tx) => {
-                    // 1. Create FishingSession
-                    const session = await tx.fishingSession.create({
-                        data: {
-                            lakeId: tenantContext.lakeId,
-                            customerId: customerId ?? null,
-                            packageId,
-                            startAt: now,
-                            plannedEndAt,
-                            status: SessionStatus.ACTIVE,
-                        },
-                    });
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            const now = new Date();
+            const plannedEndAt = new Date(
+                now.getTime() + pkg.durationMinutes * 60 * 1000,
+            );
 
-                    // 2. Atomically claim each hut — only succeeds if currentSessionId is null
-                    for (const hutId of hutIds) {
-                        const updated = await tx.hut.updateMany({
-                            where: {
-                                id: hutId,
-                                lakeId: tenantContext.lakeId,
-                                currentSessionId: null,
-                                deletedAt: null,
-                            },
+            try {
+                const result = await prisma.$transaction(
+                    async (tx) => {
+                        // 1. Create FishingSession
+                        const session = await tx.fishingSession.create({
                             data: {
-                                currentSessionId: session.id,
-                                version: { increment: 1 },
+                                lakeId: tenantContext.lakeId,
+                                customerId: customerId ?? null,
+                                packageId,
+                                startAt: now,
+                                plannedEndAt,
+                                status: SessionStatus.ACTIVE,
                             },
                         });
 
-                        if (updated.count === 0) {
-                            throw new Error("HUT_OCCUPIED");
+                        // 2. Atomically claim each hut — only succeeds if currentSessionId is null
+                        for (const hutId of hutIds) {
+                            const updated = await tx.hut.updateMany({
+                                where: {
+                                    id: hutId,
+                                    lakeId: tenantContext.lakeId,
+                                    currentSessionId: null,
+                                    deletedAt: null,
+                                },
+                                data: {
+                                    currentSessionId: session.id,
+                                    version: { increment: 1 },
+                                },
+                            });
+
+                            if (updated.count === 0) {
+                                throw new Error("HUT_OCCUPIED");
+                            }
                         }
-                    }
 
-                    // 3. Create FishingSessionHut records
-                    await tx.fishingSessionHut.createMany({
-                        data: hutIds.map((hutId) => ({
-                            lakeId: tenantContext.lakeId,
-                            fishingSessionId: session.id,
-                            hutId,
-                        })),
-                    });
+                        // 3. Create FishingSessionHut records
+                        await tx.fishingSessionHut.createMany({
+                            data: hutIds.map((hutId) => ({
+                                lakeId: tenantContext.lakeId,
+                                fishingSessionId: session.id,
+                                hutId,
+                            })),
+                        });
 
-                    // 4. Create AuditEvent
-                    await tx.auditEvent.create({
-                        data: {
-                            lakeId: tenantContext.lakeId,
-                            entityType: "FishingSession",
-                            entityId: session.id,
-                            action: "FISHING_SESSION_OPENED",
-                            payload: JSON.stringify({
-                                packageId,
-                                hutIds,
-                                customerId: customerId ?? null,
-                                startAt: now.toISOString(),
-                                plannedEndAt: plannedEndAt.toISOString(),
-                            }),
-                            createdBy: tenantContext.userId,
-                        },
-                    });
-
-                    // Fetch the full session with relations for the response
-                    const fullSession = await tx.fishingSession.findUniqueOrThrow({
-                        where: { id: session.id },
-                        include: {
-                            customer: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    phoneNormalized: true,
-                                },
+                        // 4. Create AuditEvent
+                        await tx.auditEvent.create({
+                            data: {
+                                lakeId: tenantContext.lakeId,
+                                entityType: "FishingSession",
+                                entityId: session.id,
+                                action: "FISHING_SESSION_OPENED",
+                                payload: JSON.stringify({
+                                    packageId,
+                                    hutIds,
+                                    customerId: customerId ?? null,
+                                    startAt: now.toISOString(),
+                                    plannedEndAt: plannedEndAt.toISOString(),
+                                }),
+                                createdBy: tenantContext.userId,
                             },
-                            package: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    durationMinutes: true,
-                                    priceVnd: true,
+                        });
+
+                        // Fetch the full session with relations for the response
+                        const fullSession = await tx.fishingSession.findUniqueOrThrow({
+                            where: { id: session.id },
+                            include: {
+                                customer: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        phoneNormalized: true,
+                                    },
                                 },
-                            },
-                            hutLinks: {
-                                include: {
-                                    hut: {
-                                        select: {
-                                            id: true,
-                                            name: true,
-                                            area: {
-                                                select: {
-                                                    id: true,
-                                                    name: true,
+                                package: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        durationMinutes: true,
+                                        priceVnd: true,
+                                    },
+                                },
+                                hutLinks: {
+                                    include: {
+                                        hut: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                                area: {
+                                                    select: {
+                                                        id: true,
+                                                        name: true,
+                                                    },
                                                 },
                                             },
                                         },
                                     },
                                 },
                             },
-                        },
-                    });
+                        });
 
-                    return fullSession;
-                },
-                {
-                    isolationLevel: "Serializable",
-                },
-            );
-
-            return NextResponse.json(result, { status: 201 });
-        } catch (txError) {
-            if (
-                txError instanceof Error &&
-                txError.message === "HUT_OCCUPIED"
-            ) {
-                return NextResponse.json(
-                    { error: "Một hoặc nhiều chòi đã có phiên đang hoạt động. Vui lòng chọn chòi khác." },
-                    { status: 409 },
+                        return fullSession;
+                    },
+                    {
+                        isolationLevel: "Serializable",
+                    },
                 );
+
+                return NextResponse.json(result, { status: 201 });
+            } catch (txError) {
+                // HUT_OCCUPIED is a business error — never retry
+                if (
+                    txError instanceof Error &&
+                    txError.message === "HUT_OCCUPIED"
+                ) {
+                    return NextResponse.json(
+                        { error: "Một hoặc nhiều chòi đã có phiên đang hoạt động. Vui lòng chọn chòi khác." },
+                        { status: 409 },
+                    );
+                }
+
+                // P2034: serialization conflict — retry if attempts remain
+                const isSerializationConflict =
+                    typeof txError === "object" &&
+                    txError !== null &&
+                    "code" in txError &&
+                    (txError as { code: string }).code === "P2034";
+
+                if (isSerializationConflict && attempt < MAX_RETRIES) {
+                    continue;
+                }
+
+                if (isSerializationConflict) {
+                    return NextResponse.json(
+                        { error: "Dữ liệu chòi vừa thay đổi bởi người khác. Vui lòng tải lại trang và thử lại." },
+                        { status: 409 },
+                    );
+                }
+
+                throw txError;
             }
-            throw txError;
         }
+
+        // Unreachable — loop always returns or throws — but satisfies TypeScript
+        return NextResponse.json({ error: "Lỗi hệ thống." }, { status: 500 });
     } catch (error) {
         if (error instanceof AuthenticationError) {
             return NextResponse.json({ error: error.message }, { status: 401 });
