@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getTenantContext } from "@/lib/tenant";
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
@@ -11,27 +11,9 @@ export default async function DashboardPage() {
         redirect("/login");
     }
 
-    const membership = await prisma.membership.findFirst({
-        where: {
-            user: {
-                email: session.user.email,
-            },
-            deletedAt: null,
-        },
-        include: {
-            user: true,
-            lake: {
-                include: {
-                    organization: true,
-                },
-            },
-        },
-        orderBy: {
-            createdAt: "asc",
-        },
-    });
+    const tenantContext = await getTenantContext();
 
-    if (!membership) {
+    if (!tenantContext) {
         return (
             <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12">
                 <div className="w-full rounded-xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
@@ -46,13 +28,15 @@ export default async function DashboardPage() {
         );
     }
 
-    const { user, lake, role } = membership;
-    const organization = lake.organization;
+    const { userName, userEmail, lakeName, organizationName, role } =
+        tenantContext;
 
     return (
         <main className="mx-auto min-h-screen max-w-4xl px-6 py-12">
             <header className="mb-8">
-                <h1 className="text-3xl font-bold text-slate-900">Bảng điều khiển</h1>
+                <h1 className="text-3xl font-bold text-slate-900">
+                    Bảng điều khiển
+                </h1>
                 <p className="mt-1 text-sm text-slate-600">
                     Thông tin hồ câu và tài khoản hiện tại.
                 </p>
@@ -67,12 +51,14 @@ export default async function DashboardPage() {
                         <div className="flex justify-between border-b border-slate-100 pb-2">
                             <dt className="text-slate-500">Tổ chức:</dt>
                             <dd className="font-medium text-slate-900">
-                                {organization.name}
+                                {organizationName}
                             </dd>
                         </div>
                         <div className="flex justify-between border-b border-slate-100 pb-2">
                             <dt className="text-slate-500">Tên hồ câu:</dt>
-                            <dd className="font-medium text-slate-900">{lake.name}</dd>
+                            <dd className="font-medium text-slate-900">
+                                {lakeName}
+                            </dd>
                         </div>
                     </dl>
                 </section>
@@ -85,12 +71,14 @@ export default async function DashboardPage() {
                         <div className="flex justify-between border-b border-slate-100 pb-2">
                             <dt className="text-slate-500">Họ và tên:</dt>
                             <dd className="font-medium text-slate-900">
-                                {user.name || session.user.name || "N/A"}
+                                {userName || session.user.name || "N/A"}
                             </dd>
                         </div>
                         <div className="flex justify-between border-b border-slate-100 pb-2">
                             <dt className="text-slate-500">Email:</dt>
-                            <dd className="font-medium text-slate-900">{user.email}</dd>
+                            <dd className="font-medium text-slate-900">
+                                {userEmail}
+                            </dd>
                         </div>
                         <div className="flex justify-between border-b border-slate-100 pb-2">
                             <dt className="text-slate-500">Vai trò (Role):</dt>
