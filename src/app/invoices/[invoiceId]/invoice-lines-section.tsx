@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export interface InvoiceLineItem {
     id: string;
@@ -29,7 +29,7 @@ interface InvoiceLinesSectionProps {
 }
 
 function formatVnd(amount: number): string {
-    return new Intl.NumberFormat("vi-VN").format(amount) + " đ";
+    return new Intl.NumberFormat("vi-VN").format(amount) + "đ";
 }
 
 function calculateEstimatedTotalVnd(
@@ -87,11 +87,14 @@ export function InvoiceLinesSection({
 }: InvoiceLinesSectionProps) {
     const router = useRouter();
 
-    // Add Product Form State & Idempotency Key
-    const [selectedProductId, setSelectedProductId] = useState(
+    // Product search & selection
+    const [productSearch, setProductSearch] = useState("");
+    const [selectedProductId, setSelectedProductId] = useState<string>(
         availableProducts[0]?.id || "",
     );
     const [quantity, setQuantity] = useState<number | string>("1");
+
+    // Idempotency & submission states
     const [addIdempotencyKey, setAddIdempotencyKey] = useState<string>(() =>
         typeof crypto !== "undefined" && crypto.randomUUID
             ? crypto.randomUUID()
@@ -100,10 +103,21 @@ export function InvoiceLinesSection({
     const [addLoading, setAddLoading] = useState(false);
     const [addError, setAddError] = useState<string | null>(null);
     const [addSuccess, setAddSuccess] = useState<string | null>(null);
+    const [negativeWarning, setNegativeWarning] = useState<string | null>(null);
 
     // Delete Line State & Per-Line Idempotency Keys
     const [deletingLineId, setDeletingLineId] = useState<string | null>(null);
     const [deleteKeys, setDeleteKeys] = useState<Record<string, string>>({});
+
+    const filteredProducts = useMemo(() => {
+        if (!productSearch.trim()) return availableProducts;
+        const q = productSearch.toLowerCase().trim();
+        return availableProducts.filter(
+            (p) =>
+                p.name.toLowerCase().includes(q) ||
+                (p.sku && p.sku.toLowerCase().includes(q)),
+        );
+    }, [availableProducts, productSearch]);
 
     const selectedProduct = availableProducts.find(
         (p) => p.id === selectedProductId,
@@ -114,10 +128,17 @@ export function InvoiceLinesSection({
         ? calculateEstimatedTotalVnd(quantity, selectedProduct.priceVnd)
         : null;
 
+    function handleQuantityChange(delta: number) {
+        const current = typeof quantity === "string" ? Number(quantity) || 1 : quantity;
+        const next = Math.max(1, current + delta);
+        setQuantity(next.toString());
+    }
+
     async function handleAddProduct(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setAddError(null);
         setAddSuccess(null);
+        setNegativeWarning(null);
 
         if (!selectedProductId) {
             setAddError("Vui lòng chọn sản phẩm.");
@@ -126,13 +147,6 @@ export function InvoiceLinesSection({
 
         if (typeof numQty !== "number" || isNaN(numQty) || numQty <= 0) {
             setAddError("Số lượng phải là số dương lớn hơn 0.");
-            return;
-        }
-
-        if (selectedProduct && numQty > selectedProduct.currentStock) {
-            setAddError(
-                `Số lượng tồn kho không đủ (hiện có: ${selectedProduct.currentStock}).`,
-            );
             return;
         }
 
@@ -158,7 +172,17 @@ export function InvoiceLinesSection({
                 return;
             }
 
-            setAddSuccess(data.message || "Đã thêm sản phẩm vào hóa đơn.");
+            if (data.negativeInventoryWarning) {
+                setNegativeWarning(
+                    data.warningMessage ||
+                        "Sản phẩm đã được bán nhưng tồn kho đang âm. Hãy kiểm tra và bổ sung kho.",
+                );
+            } else {
+                setAddSuccess(
+                    data.message || "Đã thêm sản phẩm vào hóa đơn thành công.",
+                );
+            }
+
             setQuantity("1");
             setAddIdempotencyKey(crypto.randomUUID());
 
@@ -209,7 +233,6 @@ export function InvoiceLinesSection({
                 return next;
             });
 
-            alert(data.message || "Đã gỡ sản phẩm và hoàn kho thành công.");
             router.refresh();
         } catch {
             alert(
@@ -222,35 +245,242 @@ export function InvoiceLinesSection({
 
     return (
         <div className="space-y-6">
-            {/* Invoice Lines Table */}
-            <div>
+            {/* 1. PRODUCT SELECTION GRID (Only for DRAFT invoices) */}
+            {isDraft && (
+                <div className="rounded-2xl border border-[#EAE4D7] bg-[#F7F4EE] p-4 sm:p-5 shadow-sm space-y-4 print:hidden">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                                Chọn sản phẩm / Đồ dùng bán thêm
+                            </h3>
+                            <p className="text-xs text-slate-500">
+                                Nhấp chọn sản phẩm để xuất bán và cộng trực tiếp vào hóa đơn.
+                            </p>
+                        </div>
+                        <span className="inline-flex items-center rounded-full bg-[#EAE2CE] px-2.5 py-0.5 text-xs font-semibold text-[#8A5B00]">
+                            {availableProducts.length} sản phẩm
+                        </span>
+                    </div>
+
+                    {availableProducts.length === 0 ? (
+                        <p className="text-xs text-slate-500 italic">
+                            Chưa có sản phẩm nào trong danh mục hoặc tất cả sản phẩm đã ngừng bán.
+                        </p>
+                    ) : (
+                        <form onSubmit={handleAddProduct} className="space-y-4">
+                            {/* Search bar */}
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Tìm theo tên hoặc mã SKU..."
+                                    value={productSearch}
+                                    onChange={(e) =>
+                                        setProductSearch(e.target.value)
+                                    }
+                                    className="w-full h-10 rounded-xl border border-[#EAE4D7] bg-white pl-9 pr-3 text-xs font-medium text-slate-900 shadow-sm focus:border-[#9E6B05] focus:outline-none"
+                                />
+                                <svg
+                                    className="absolute left-3 top-3 h-4 w-4 text-slate-400 pointer-events-none"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                                    />
+                                </svg>
+                            </div>
+
+                            {/* Product Card Grid */}
+                            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 max-h-60 overflow-y-auto pr-1">
+                                {filteredProducts.map((p) => {
+                                    const isSelected = selectedProductId === p.id;
+                                    const isOutOfStock = p.currentStock <= 0;
+
+                                    return (
+                                        <div
+                                            key={p.id}
+                                            onClick={() => setSelectedProductId(p.id)}
+                                            className={`cursor-pointer rounded-xl border p-3 flex flex-col justify-between transition-all duration-150 ease-out active:scale-95 ${
+                                                isSelected
+                                                    ? "border-[#9E6B05] bg-white ring-2 ring-[#9E6B05] shadow-sm"
+                                                    : "border-[#EAE4D7] bg-white hover:border-[#9E6B05]"
+                                            }`}
+                                        >
+                                            <div>
+                                                <div className="flex items-center justify-between gap-1 mb-1">
+                                                    <span className="font-bold text-xs text-slate-900 line-clamp-1">
+                                                        {p.name}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs font-bold text-[#9E6B05]">
+                                                    {formatVnd(p.priceVnd)}
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-2 flex items-center justify-between pt-1 border-t border-[#EAE4D7] text-[10px]">
+                                                <span className="text-slate-400 font-mono">
+                                                    {p.sku || "—"}
+                                                </span>
+                                                <span
+                                                    className={`font-semibold rounded px-1.5 py-0.5 ${
+                                                        isOutOfStock
+                                                            ? "bg-red-50 text-red-600 border border-red-200"
+                                                            : "bg-emerald-50 text-emerald-700"
+                                                    }`}
+                                                >
+                                                    {isOutOfStock
+                                                        ? `Tồn: ${p.currentStock}`
+                                                        : `Tồn: ${p.currentStock}`}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Selected Product Action Bar */}
+                            {selectedProduct && (
+                                <div className="rounded-xl border border-[#EAE4D7] bg-white p-3 space-y-3 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-900">
+                                                {selectedProduct.name}
+                                            </p>
+                                            <p className="text-[11px] text-[#9E6B05] font-semibold">
+                                                Đơn giá: {formatVnd(selectedProduct.priceVnd)}
+                                            </p>
+                                        </div>
+
+                                        {/* Quantity Stepper */}
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleQuantityChange(-1)}
+                                                className="h-9 w-9 rounded-lg border border-[#EAE4D7] bg-[#F7F4EE] text-base font-bold text-slate-700 hover:bg-[#EAE2CE] transition-colors flex items-center justify-center active:scale-95"
+                                            >
+                                                -
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                step={1}
+                                                required
+                                                value={quantity}
+                                                onChange={(e) =>
+                                                    setQuantity(e.target.value)
+                                                }
+                                                className="h-9 w-14 rounded-lg border border-[#EAE4D7] text-center text-xs font-bold text-slate-900 focus:border-[#9E6B05] focus:outline-none"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleQuantityChange(1)}
+                                                className="h-9 w-9 rounded-lg border border-[#EAE4D7] bg-[#F7F4EE] text-base font-bold text-slate-700 hover:bg-[#EAE2CE] transition-colors flex items-center justify-center active:scale-95"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Estimated summary & Submit button */}
+                                    <div className="flex items-center justify-between border-t border-[#EAE4D7] pt-2">
+                                        <span className="text-xs text-slate-600">
+                                            Tạm tính:{" "}
+                                            <strong className="text-sm text-[#9E6B05]">
+                                                {estimatedLineTotal !== null
+                                                    ? formatVnd(estimatedLineTotal)
+                                                    : "—"}
+                                            </strong>
+                                        </span>
+
+                                        <button
+                                            type="submit"
+                                            disabled={addLoading}
+                                            className="h-11 min-w-11 px-5 rounded-xl bg-[#9E6B05] text-xs font-bold text-white shadow-md transition-transform duration-150 ease-out active:scale-98 disabled:opacity-60"
+                                        >
+                                            {addLoading
+                                                ? "Đang lưu…"
+                                                : "Xác nhận thêm hàng"}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Notifications */}
+                            {addError && (
+                                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 font-medium">
+                                    {addError}
+                                </div>
+                            )}
+
+                            {negativeWarning && (
+                                <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 shadow-sm">
+                                    <svg
+                                        className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth={2}
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                                        />
+                                    </svg>
+                                    <div>
+                                        <p className="font-semibold">
+                                            {negativeWarning}
+                                        </p>
+                                        <p className="mt-0.5 text-[11px] text-amber-700">
+                                            Vui lòng nhập kho hoặc đối soát tồn kho thực tế của sản phẩm này.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {addSuccess && !negativeWarning && (
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800 font-medium">
+                                    {addSuccess}
+                                </div>
+                            )}
+                        </form>
+                    )}
+                </div>
+            )}
+
+            {/* 2. INVOICE LINES TABLE / LIST */}
+            <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        Chi tiết các mục ({lines.length})
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Chi tiết các mục trong hóa đơn ({lines.length})
                     </h2>
                 </div>
 
-                <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                <div className="overflow-x-auto rounded-2xl border border-[#EAE4D7] bg-white shadow-sm">
                     <table className="w-full text-left text-sm text-slate-600">
-                        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500 print:bg-slate-100">
+                        <thead className="border-b border-[#EAE4D7] bg-[#F7F4EE] text-xs font-bold uppercase text-slate-600 print:bg-slate-100">
                             <tr>
-                                <th className="px-4 py-2.5">Mục / Dịch vụ</th>
-                                <th className="px-4 py-2.5 text-right">Đơn giá</th>
-                                <th className="px-4 py-2.5 text-center">Số lượng</th>
-                                <th className="px-4 py-2.5 text-right">Thành tiền</th>
+                                <th className="px-4 py-3">Mục / Dịch vụ</th>
+                                <th className="px-4 py-3 text-right">Đơn giá</th>
+                                <th className="px-4 py-3 text-center">Số lượng</th>
+                                <th className="px-4 py-3 text-right">Thành tiền</th>
                                 {isDraft && (
-                                    <th className="px-4 py-2.5 text-right print:hidden">
+                                    <th className="px-4 py-3 text-right print:hidden">
                                         Thao tác
                                     </th>
                                 )}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#EAE4D7]">
                             {lines.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan={isDraft ? 5 : 4}
-                                        className="px-4 py-6 text-center text-sm text-slate-400"
+                                        className="px-4 py-6 text-center text-xs text-slate-400"
                                     >
                                         Không có mục chi tiết nào trong hóa đơn.
                                     </td>
@@ -259,18 +489,18 @@ export function InvoiceLinesSection({
                                 lines.map((line) => (
                                     <tr
                                         key={line.id}
-                                        className="transition hover:bg-slate-50/50"
+                                        className="transition hover:bg-[#F7F4EE]/50"
                                     >
-                                        <td className="px-4 py-3 font-medium text-slate-900">
+                                        <td className="px-4 py-3 font-semibold text-slate-900 text-xs">
                                             <div className="flex items-center gap-2">
                                                 <span>{line.name}</span>
                                                 {line.productId ? (
-                                                    <span className="inline-flex items-center rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20 print:hidden">
+                                                    <span className="inline-flex items-center rounded-full bg-[#EAE2CE] px-2 py-0.5 text-[10px] font-semibold text-[#8A5B00] print:hidden">
                                                         Hàng hóa
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20 print:hidden">
-                                                        Gói câu gốc
+                                                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 print:hidden">
+                                                        Gói câu
                                                     </span>
                                                 )}
                                             </div>
@@ -278,10 +508,10 @@ export function InvoiceLinesSection({
                                         <td className="px-4 py-3 text-right text-xs">
                                             {formatVnd(line.unitPrice)}
                                         </td>
-                                        <td className="px-4 py-3 text-center font-mono font-medium text-slate-800">
+                                        <td className="px-4 py-3 text-center font-mono font-bold text-xs text-slate-800">
                                             {line.quantity.toString()}
                                         </td>
-                                        <td className="px-4 py-3 text-right font-medium text-slate-900">
+                                        <td className="px-4 py-3 text-right font-bold text-xs text-[#9E6B05]">
                                             {formatVnd(line.totalVnd)}
                                         </td>
                                         {isDraft && (
@@ -295,7 +525,7 @@ export function InvoiceLinesSection({
                                                         onClick={() =>
                                                             handleDeleteLine(line)
                                                         }
-                                                        className="inline-flex items-center rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-medium text-rose-700 shadow-sm transition hover:bg-rose-50 disabled:opacity-50"
+                                                        className="inline-flex items-center rounded-lg border border-red-200 bg-white px-2.5 py-1 text-xs font-semibold text-red-600 shadow-sm transition hover:bg-red-50 disabled:opacity-50"
                                                     >
                                                         {deletingLineId === line.id
                                                             ? "Đang gỡ..."
@@ -315,143 +545,6 @@ export function InvoiceLinesSection({
                     </table>
                 </div>
             </div>
-
-            {/* Add Product Line Form (Only for DRAFT invoices) */}
-            {isDraft && (
-                <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 sm:p-5 print:hidden">
-                    <div className="flex flex-col justify-between gap-1 border-b border-blue-100 pb-3 sm:flex-row sm:items-center">
-                        <div>
-                            <h3 className="text-sm font-semibold text-blue-950">
-                                Thêm nước uống, mồi câu & đồ dùng vào hóa đơn
-                            </h3>
-                            <p className="text-xs text-slate-500">
-                                Chọn sản phẩm từ danh mục để xuất kho và tính tiền trực tiếp vào hóa đơn nháp này.
-                            </p>
-                        </div>
-                    </div>
-
-                    {availableProducts.length === 0 ? (
-                        <p className="mt-3 text-xs text-slate-500 italic">
-                            Chưa có sản phẩm nào trong danh mục hoặc tất cả sản phẩm đã ngừng bán.
-                        </p>
-                    ) : (
-                        <form
-                            onSubmit={handleAddProduct}
-                            className="mt-4 space-y-4"
-                        >
-                            {addError && (
-                                <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
-                                    {addError}
-                                </div>
-                            )}
-
-                            {addSuccess && (
-                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800">
-                                    {addSuccess}
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
-                                {/* Select Product */}
-                                <div className="sm:col-span-6">
-                                    <label
-                                        htmlFor="invoice-product-select"
-                                        className="block text-xs font-semibold text-slate-700"
-                                    >
-                                        Sản phẩm / Hàng hóa{" "}
-                                        <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        id="invoice-product-select"
-                                        value={selectedProductId}
-                                        onChange={(e) =>
-                                            setSelectedProductId(e.target.value)
-                                        }
-                                        className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    >
-                                        {availableProducts.map((p) => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.name} — {formatVnd(p.priceVnd)} (Tồn kho: {p.currentStock})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Quantity Input */}
-                                <div className="sm:col-span-3">
-                                    <label
-                                        htmlFor="invoice-product-qty"
-                                        className="block text-xs font-semibold text-slate-700"
-                                    >
-                                        Số lượng <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        id="invoice-product-qty"
-                                        type="number"
-                                        min="0.01"
-                                        step="any"
-                                        required
-                                        value={quantity}
-                                        onChange={(e) =>
-                                            setQuantity(e.target.value)
-                                        }
-                                        className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    />
-                                </div>
-
-                                {/* Submit Button */}
-                                <div className="sm:col-span-3">
-                                    <button
-                                        type="submit"
-                                        disabled={addLoading}
-                                        className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {addLoading ? "Đang thêm..." : "+ Thêm vào HĐ"}
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Live Estimation & Stock Info */}
-                            {selectedProduct && (
-                                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-blue-100 bg-white px-3 py-2 text-xs">
-                                    <div className="flex items-center gap-4 text-slate-600">
-                                        <span>
-                                            Tồn kho:{" "}
-                                            <strong
-                                                className={
-                                                    selectedProduct.currentStock <= 0
-                                                        ? "text-red-600"
-                                                        : "text-slate-900"
-                                                }
-                                            >
-                                                {selectedProduct.currentStock}
-                                            </strong>
-                                        </span>
-                                        <span>
-                                            Đơn giá:{" "}
-                                            <strong className="text-slate-900">
-                                                {formatVnd(
-                                                    selectedProduct.priceVnd,
-                                                )}
-                                            </strong>
-                                        </span>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-slate-500">
-                                            Tạm tính dòng:{" "}
-                                        </span>
-                                        <span className="font-bold text-blue-700">
-                                            {estimatedLineTotal !== null
-                                                ? formatVnd(estimatedLineTotal)
-                                                : "—"}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-                        </form>
-                    )}
-                </div>
-            )}
         </div>
     );
 }

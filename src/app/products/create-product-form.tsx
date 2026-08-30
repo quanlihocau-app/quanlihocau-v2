@@ -134,7 +134,7 @@ export function CreateProductForm() {
                     type="number"
                     required
                     min={1}
-                    step={1000}
+                    step={1}
                     value={priceVnd}
                     onChange={(e) => setPriceVnd(e.target.value)}
                     placeholder="Ví dụ: 15000"

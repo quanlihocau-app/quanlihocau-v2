@@ -161,6 +161,12 @@ export default async function MembersSettingsPage() {
 
                 <div className="flex items-center gap-3">
                     <Link
+                        href="/settings"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    >
+                        <span>Cài đặt chung</span>
+                    </Link>
+                    <Link
                         href="/dashboard"
                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
                     >

@@ -365,7 +365,7 @@ export function ProductList({ products, canManage }: ProductListProps) {
                                     type="number"
                                     required
                                     min={1}
-                                    step={1000}
+                                    step={1}
                                     value={editPriceVnd}
                                     onChange={(e) =>
                                         setEditPriceVnd(e.target.value)

@@ -250,6 +250,13 @@ export async function POST(request: Request, { params }: RouteParams) {
                             throw new Error("INVOICE_NOT_DRAFT");
                         }
 
+                        // Fetch lake settings regarding negative inventory
+                        const lake = await tx.lake.findUnique({
+                            where: { id: tenantContext.lakeId },
+                            select: { allowNegativeInventory: true },
+                        });
+                        const allowNegative = lake?.allowNegativeInventory ?? false;
+
                         // Check current inventory stock
                         const stockAgg = await tx.inventoryMovement.aggregate({
                             where: {
@@ -265,7 +272,10 @@ export async function POST(request: Request, { params }: RouteParams) {
                             ? Number(stockAgg._sum.quantity)
                             : 0;
 
-                        if (currentStock < data.quantity) {
+                        const remainingStock = currentStock - data.quantity;
+                        const isNegativeStock = remainingStock < 0;
+
+                        if (isNegativeStock && !allowNegative) {
                             throw new Error("INSUFFICIENT_STOCK");
                         }
 
@@ -311,7 +321,7 @@ export async function POST(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // Record AuditEvent
+                        // Record AuditEvent (reflects negative stock if occurred)
                         await tx.auditEvent.create({
                             data: {
                                 lakeId: tenantContext.lakeId,
@@ -326,13 +336,21 @@ export async function POST(request: Request, { params }: RouteParams) {
                                     unitPrice: product.priceVnd,
                                     lineTotalVnd,
                                     newTotalAmountVnd,
+                                    isNegativeStock,
+                                    remainingStock,
                                 }),
                                 createdBy: tenantContext.userId,
                             },
                         });
 
                         const responsePayload = {
-                            message: `Đã thêm ${data.quantity} "${product.name}" vào hóa đơn thành công.`,
+                            message: isNegativeStock
+                                ? `Đã thêm ${data.quantity} "${product.name}" vào hóa đơn thành công (cảnh báo: tồn kho âm, còn ${remainingStock}).`
+                                : `Đã thêm ${data.quantity} "${product.name}" vào hóa đơn thành công.`,
+                            negativeInventoryWarning: isNegativeStock,
+                            warningMessage: isNegativeStock
+                                ? `Sản phẩm đã được bán nhưng tồn kho đang âm (${remainingStock}). Hãy kiểm tra và bổ sung kho.`
+                                : undefined,
                             line: {
                                 id: line.id,
                                 productId: line.productId,
@@ -412,7 +430,7 @@ export async function POST(request: Request, { params }: RouteParams) {
                 ) {
                     return NextResponse.json(
                         {
-                            error: `Số lượng tồn kho không đủ để xuất bán (cần ${data.quantity}).`,
+                            error: `Số lượng tồn kho không đủ để xuất bán (cần ${data.quantity}). Cấu hình hồ hiện tại không cho phép bán âm kho.`,
                         },
                         { status: 409 },
                     );
