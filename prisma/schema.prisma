@@ -26,7 +26,6 @@ enum SessionStatus {
   ACTIVE
   COMPLETED
   CANCELLED
-  VOIDED
 }
 
 enum InvoiceStatus {
