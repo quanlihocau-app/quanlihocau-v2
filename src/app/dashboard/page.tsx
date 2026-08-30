@@ -269,7 +269,7 @@ export default async function DashboardPage() {
 
             {/* Navigation Quick Links */}
             <div
-                className={`mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 ${
+                className={`mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 ${
                     tenantContext.role === Role.OWNER
                         ? "lg:grid-cols-7"
                         : "lg:grid-cols-6"
@@ -332,6 +332,18 @@ export default async function DashboardPage() {
                     </span>
                     <span className="mt-0.5 text-xs text-slate-500">
                         Cấu hình giá câu
+                    </span>
+                </Link>
+
+                <Link
+                    href="/products"
+                    className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-3 text-center shadow-sm transition hover:border-emerald-500 hover:bg-emerald-50/30"
+                >
+                    <span className="text-sm font-semibold text-slate-900">
+                        Sản phẩm
+                    </span>
+                    <span className="mt-0.5 text-xs text-slate-500">
+                        Danh mục & Giá
                     </span>
                 </Link>
 
