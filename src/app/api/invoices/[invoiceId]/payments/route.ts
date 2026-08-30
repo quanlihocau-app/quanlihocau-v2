@@ -170,24 +170,29 @@ export async function POST(request: Request, { params }: RouteParams) {
                             throw new Error("INVOICE_VOIDED");
                         }
 
-                        // d. Calculate already paid amount (direction = IN, reversalOfId = null)
+                        // d. Calculate already paid amount (direction = IN, direction = OUT)
                         const payments = await tx.payment.findMany({
                             where: {
                                 invoiceId: invoice.id,
                                 lakeId: tenantContext.lakeId,
-                                direction: PaymentDirection.IN,
-                                reversalOfId: null,
                             },
-                            select: { amountVnd: true },
+                            select: { amountVnd: true, direction: true },
                         });
 
-                        const paidAmount = payments.reduce(
-                            (sum, p) => sum + p.amountVnd,
+                        const netPaid = payments.reduce(
+                            (sum, p) =>
+                                p.direction === PaymentDirection.IN
+                                    ? sum + p.amountVnd
+                                    : sum - p.amountVnd,
                             0,
                         );
+                        const paidAmount = Math.max(0, netPaid);
 
                         // e. Calculate remaining balance
-                        const remaining = invoice.totalAmountVnd - paidAmount;
+                        const remaining = Math.max(
+                            0,
+                            invoice.totalAmountVnd - paidAmount,
+                        );
 
                         // f. Overpayment check
                         if (amountVnd > remaining) {

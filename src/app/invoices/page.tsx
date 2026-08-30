@@ -96,7 +96,11 @@ export default async function InvoicesPage() {
         tenantContext.role === Role.MANAGER ||
         tenantContext.role === Role.STAFF;
 
-    // Fetch invoices for current tenant including valid incoming payments
+    const canReversePayments =
+        tenantContext.role === Role.OWNER ||
+        tenantContext.role === Role.MANAGER;
+
+    // Fetch invoices for current tenant including all payments
     const invoices = await prisma.invoice.findMany({
         where: {
             lakeId: tenantContext.lakeId,
@@ -130,8 +134,6 @@ export default async function InvoicesPage() {
             payments: {
                 where: {
                     lakeId: tenantContext.lakeId,
-                    direction: PaymentDirection.IN,
-                    reversalOfId: null,
                 },
                 select: {
                     id: true,
@@ -338,12 +340,18 @@ export default async function InvoicesPage() {
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {invoices.map((invoice) => {
-                                    const paidAmount = invoice.payments.reduce(
-                                        (sum, p) => sum + p.amountVnd,
+                                    const netPaid = invoice.payments.reduce(
+                                        (sum, p) =>
+                                            p.direction === PaymentDirection.IN
+                                                ? sum + p.amountVnd
+                                                : sum - p.amountVnd,
                                         0,
                                     );
-                                    const remaining =
-                                        invoice.totalAmountVnd - paidAmount;
+                                    const paidAmount = Math.max(0, netPaid);
+                                    const remaining = Math.max(
+                                        0,
+                                        invoice.totalAmountVnd - paidAmount,
+                                    );
                                     const isPayable =
                                         (invoice.status === InvoiceStatus.DRAFT ||
                                             invoice.status ===
@@ -408,6 +416,7 @@ export default async function InvoicesPage() {
                                                 </p>
                                                 <PaymentHistory
                                                     payments={invoice.payments}
+                                                    canReverse={canReversePayments}
                                                 />
                                             </td>
                                             <td className="px-4 py-3.5 font-medium text-amber-600 align-top">
