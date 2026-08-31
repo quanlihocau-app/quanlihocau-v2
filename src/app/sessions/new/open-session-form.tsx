@@ -3,6 +3,11 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { InlineAlert } from "@/components/ui/inline-alert";
+
 export interface SelectCustomer {
     id: string;
     name: string;
@@ -217,7 +222,7 @@ export function OpenSessionForm({
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {/* 1. KHÁCH HÀNG */}
-            <div className="rounded-2xl border border-[#EAE4D7] bg-white p-4 shadow-sm space-y-3">
+            <Card className="space-y-3">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
                         Khách hàng
@@ -229,9 +234,9 @@ export function OpenSessionForm({
                                 setSelectedCustomerId(null);
                                 setCustomerSearch("");
                             }}
-                            className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                            className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all ${
                                 selectedCustomerId === null
-                                    ? "bg-[#EAE2CE] text-[#8A5B00]"
+                                    ? "bg-[#102A43] text-white"
                                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                             }`}
                         >
@@ -242,148 +247,87 @@ export function OpenSessionForm({
                             onClick={() =>
                                 setShowQuickAddCustomer((prev) => !prev)
                             }
-                            className="rounded-lg bg-[#9E6B05]/10 px-2.5 py-1 text-[11px] font-bold text-[#9E6B05] hover:bg-[#9E6B05]/20 transition-colors"
+                            className="rounded-lg bg-[#102A43]/10 px-2.5 py-1 text-[11px] font-bold text-[#102A43] hover:bg-[#102A43]/20 transition-all"
                         >
                             + Thêm khách
                         </button>
                     </div>
                 </div>
 
-                {/* Quick Add Customer inline form */}
+                {/* Quick Add Form */}
                 {showQuickAddCustomer && (
-                    <div className="rounded-xl bg-[#F7F4EE] border border-[#EAE4D7] p-3 space-y-2">
-                        <p className="text-xs font-bold text-slate-800">
-                            Thêm nhanh khách hàng
+                    <div className="rounded-xl border border-[#E2DDD2] bg-[#F8F6F0] p-3.5 space-y-3">
+                        <p className="text-xs font-bold text-[#102A43]">
+                            Thêm nhanh khách hàng mới
                         </p>
                         {customerError && (
-                            <p className="text-xs text-red-600 font-medium">
-                                {customerError}
-                            </p>
+                            <InlineAlert type="error" message={customerError} />
                         )}
                         <div className="space-y-2">
-                            <input
-                                type="text"
-                                placeholder="Tên khách (bắt buộc)"
+                            <Input
+                                placeholder="Họ và tên khách..."
                                 value={newCustomerName}
-                                onChange={(e) =>
-                                    setNewCustomerName(e.target.value)
-                                }
-                                className="w-full h-10 rounded-xl border border-[#EAE4D7] bg-white px-3 text-xs font-medium text-slate-900 focus:border-[#9E6B05] focus:outline-none"
+                                onChange={(e) => setNewCustomerName(e.target.value)}
                             />
-                            <input
-                                type="tel"
-                                placeholder="Số điện thoại (tùy chọn)"
+                            <Input
+                                placeholder="Số điện thoại (tùy chọn)..."
                                 value={newCustomerPhone}
-                                onChange={(e) =>
-                                    setNewCustomerPhone(e.target.value)
-                                }
-                                className="w-full h-10 rounded-xl border border-[#EAE4D7] bg-white px-3 text-xs font-medium text-slate-900 focus:border-[#9E6B05] focus:outline-none"
+                                onChange={(e) => setNewCustomerPhone(e.target.value)}
                             />
-                            <div className="flex justify-end gap-2 pt-1">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowQuickAddCustomer(false);
-                                        setCustomerError("");
-                                    }}
-                                    className="h-8 rounded-lg border border-[#EAE4D7] bg-white px-3 text-xs font-semibold text-slate-600"
-                                >
-                                    Đóng
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={isCreatingCustomer}
-                                    onClick={handleQuickCreateCustomer}
-                                    className="h-8 rounded-lg bg-[#9E6B05] px-3 text-xs font-bold text-white disabled:opacity-60"
-                                >
-                                    {isCreatingCustomer
-                                        ? "Đang lưu…"
-                                        : "Lưu khách"}
-                                </button>
-                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="primary"
+                                isLoading={isCreatingCustomer}
+                                loadingText="Đang lưu…"
+                                onClick={handleQuickCreateCustomer}
+                            >
+                                Lưu khách hàng
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowQuickAddCustomer(false)}
+                            >
+                                Hủy
+                            </Button>
                         </div>
                     </div>
                 )}
 
-                {/* Selected Customer Card or Search Bar */}
-                {selectedCustomer ? (
-                    <div className="flex items-center justify-between rounded-xl bg-[#F7F4EE] border border-[#EAE4D7] p-3">
-                        <div className="flex items-center gap-2.5">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAE2CE]">
-                                <svg
-                                    className="h-4 w-4 text-[#9E6B05]"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={2}
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
-                                    />
-                                </svg>
-                            </div>
-                            <div>
-                                <p className="text-xs font-bold text-slate-900">
-                                    {selectedCustomer.name}
+                {/* Customer Search & Selection */}
+                {selectedCustomerId ? (
+                    <div className="flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50/60 p-3">
+                        <div>
+                            <p className="text-xs font-bold text-teal-950">
+                                {selectedCustomer?.name}
+                            </p>
+                            {selectedCustomer?.phoneNormalized && (
+                                <p className="text-[11px] text-teal-700 font-medium">
+                                    {selectedCustomer.phoneNormalized}
                                 </p>
-                                <p className="text-[11px] text-slate-500">
-                                    {selectedCustomer.phoneNormalized ||
-                                        "Chưa có SĐT"}
-                                </p>
-                            </div>
+                            )}
                         </div>
                         <button
                             type="button"
                             onClick={() => setSelectedCustomerId(null)}
-                            className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white"
+                            className="text-xs font-bold text-slate-400 hover:text-red-600"
                         >
-                            <svg
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
+                            Đổi khách
                         </button>
                     </div>
                 ) : (
                     <div className="space-y-2">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="Tìm khách theo tên hoặc SĐT…"
-                                value={customerSearch}
-                                onChange={(e) =>
-                                    setCustomerSearch(e.target.value)
-                                }
-                                className="w-full h-11 rounded-xl border border-[#EAE4D7] bg-white pl-10 pr-4 text-xs font-medium text-slate-900 shadow-sm focus:border-[#9E6B05] focus:outline-none"
-                            />
-                            <svg
-                                className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 pointer-events-none"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                                />
-                            </svg>
-                        </div>
-
-                        {/* Search Matches List */}
+                        <Input
+                            placeholder="Tìm theo tên hoặc số điện thoại..."
+                            value={customerSearch}
+                            onChange={(e) => setCustomerSearch(e.target.value)}
+                        />
                         {filteredCustomers.length > 0 && (
-                            <div className="rounded-xl border border-[#EAE4D7] bg-white divide-y divide-[#EAE4D7] shadow-sm overflow-hidden">
+                            <div className="divide-y divide-[#E2DDD2] rounded-xl border border-[#E2DDD2] bg-white overflow-hidden shadow-xs">
                                 {filteredCustomers.map((c) => (
                                     <div
                                         key={c.id}
@@ -391,19 +335,13 @@ export function OpenSessionForm({
                                             setSelectedCustomerId(c.id);
                                             setCustomerSearch("");
                                         }}
-                                        className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-[#F7F4EE] transition-colors"
+                                        className="cursor-pointer p-3 text-xs hover:bg-[#F8F6F0] flex items-center justify-between transition-colors"
                                     >
-                                        <div>
-                                            <p className="text-xs font-bold text-slate-900">
-                                                {c.name}
-                                            </p>
-                                            <p className="text-[10px] text-slate-500">
-                                                {c.phoneNormalized ||
-                                                    "Không có SĐT"}
-                                            </p>
-                                        </div>
-                                        <span className="text-[11px] font-semibold text-[#9E6B05]">
-                                            Chọn
+                                        <span className="font-bold text-slate-900">
+                                            {c.name}
+                                        </span>
+                                        <span className="text-slate-500 font-mono">
+                                            {c.phoneNormalized ?? "—"}
                                         </span>
                                     </div>
                                 ))}
@@ -411,40 +349,37 @@ export function OpenSessionForm({
                         )}
                     </div>
                 )}
-            </div>
+            </Card>
 
             {/* 2. CHỌN Ô CÂU */}
-            <div className="rounded-2xl border border-[#EAE4D7] bg-white p-4 shadow-sm space-y-3">
+            <Card className="space-y-3">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                        Chọn ô câu *
+                        Chọn ô câu <span className="text-red-500">*</span>
                     </label>
-                    <span className="inline-flex items-center rounded-full bg-[#EAE2CE] px-2.5 py-0.5 text-xs font-semibold text-[#8A5B00]">
-                        {selectedHutIds.length} đã chọn
+                    <span className="text-xs font-bold text-teal-700">
+                        {selectedHutIds.length > 0
+                            ? `Đã chọn ${selectedHutIds.length} ô`
+                            : `Còn ${availableHuts.length} ô trống`}
                     </span>
                 </div>
 
-                {availableHuts.length === 0 ? (
-                    <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-center">
-                        <p className="text-xs text-amber-800 font-medium">
-                            Hiện không còn ô câu nào trống. Vui lòng đợi phiên
-                            khác kết thúc.
-                        </p>
-                    </div>
+                {huts.length === 0 ? (
+                    <p className="text-xs text-slate-500">Chưa có ô câu nào.</p>
                 ) : (
                     <div className="space-y-3">
-                        {[...hutsByArea.entries()].map(
+                        {Array.from(hutsByArea.entries()).map(
                             ([areaId, { areaName, huts: areaHuts }]) => (
                                 <div key={areaId} className="space-y-1.5">
-                                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                                         {areaName}
                                     </p>
-                                    <div className="grid grid-cols-4 gap-2">
+                                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                                         {areaHuts.map((h) => {
-                                            const isSelected =
-                                                selectedHutIds.includes(h.id);
                                             const isOccupied =
                                                 h.currentSessionId !== null;
+                                            const isSelected =
+                                                selectedHutIds.includes(h.id);
 
                                             return (
                                                 <button
@@ -454,12 +389,12 @@ export function OpenSessionForm({
                                                     onClick={() =>
                                                         toggleHut(h.id)
                                                     }
-                                                    className={`h-11 min-w-11 rounded-xl text-xs font-bold transition-all duration-150 ease-out active:scale-95 flex flex-col items-center justify-center ${
+                                                    className={`h-12 min-w-12 rounded-xl text-xs font-bold transition-all duration-150 ease-out active:scale-95 flex flex-col items-center justify-center ${
                                                         isSelected
-                                                            ? "bg-[#9E6B05] text-white shadow-md ring-2 ring-[#9E6B05]/30"
+                                                            ? "bg-[#102A43] text-white shadow-sm ring-2 ring-[#102A43]/40"
                                                             : isOccupied
                                                               ? "bg-slate-100 text-slate-400 border border-slate-200 opacity-60 cursor-not-allowed"
-                                                              : "bg-[#F7F4EE] border border-[#EAE4D7] text-slate-800 hover:border-[#9E6B05]"
+                                                              : "bg-white border border-[#E2DDD2] text-slate-800 hover:border-[#102A43]"
                                                     }`}
                                                 >
                                                     <span>{h.name}</span>
@@ -477,16 +412,16 @@ export function OpenSessionForm({
                         )}
                     </div>
                 )}
-            </div>
+            </Card>
 
             {/* 3. GÓI / CA CÂU */}
-            <div className="rounded-2xl border border-[#EAE4D7] bg-white p-4 shadow-sm space-y-3">
+            <Card className="space-y-3">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                    Gói câu / Ca câu *
+                    Gói câu / Ca câu <span className="text-red-500">*</span>
                 </label>
 
                 {packages.length === 0 ? (
-                    <p className="text-xs text-amber-600">
+                    <p className="text-xs text-orange-600">
                         Chưa có gói câu nào. Vui lòng tạo gói câu trước.
                     </p>
                 ) : (
@@ -497,17 +432,17 @@ export function OpenSessionForm({
                                 <div
                                     key={p.id}
                                     onClick={() => setSelectedPackageId(p.id)}
-                                    className={`cursor-pointer rounded-xl border p-3 flex items-center justify-between transition-all duration-150 ease-out active:scale-98 ${
+                                    className={`cursor-pointer rounded-xl border p-3.5 flex items-center justify-between transition-all duration-150 ease-out active:scale-98 ${
                                         isSelected
-                                            ? "border-[#9E6B05] bg-[#F7F4EE] ring-1 ring-[#9E6B05]"
-                                            : "border-[#EAE4D7] bg-white hover:border-slate-300"
+                                            ? "border-[#0D9488] bg-teal-50/50 ring-1 ring-[#0D9488]"
+                                            : "border-[#E2DDD2] bg-white hover:border-slate-300"
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div
-                                            className={`h-4 w-4 rounded-full border flex items-center justify-center ${
+                                            className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
                                                 isSelected
-                                                    ? "border-[#9E6B05] bg-[#9E6B05]"
+                                                    ? "border-[#0D9488] bg-[#0D9488]"
                                                     : "border-slate-300 bg-white"
                                             }`}
                                         >
@@ -519,13 +454,12 @@ export function OpenSessionForm({
                                             <p className="text-xs font-bold text-slate-900">
                                                 {p.name}
                                             </p>
-                                            <p className="text-[11px] text-slate-500">
-                                                Thời lượng: {p.durationMinutes}{" "}
-                                                phút
+                                            <p className="text-[11px] text-slate-500 font-medium">
+                                                Thời lượng: {p.durationMinutes} phút
                                             </p>
                                         </div>
                                     </div>
-                                    <span className="text-xs font-bold text-[#9E6B05]">
+                                    <span className="text-xs font-extrabold text-[#0D9488] tabular-nums">
                                         {formatPrice(p.priceVnd)}
                                     </span>
                                 </div>
@@ -533,12 +467,12 @@ export function OpenSessionForm({
                         })}
                     </div>
                 )}
-            </div>
+            </Card>
 
-            {/* 4. GIỜ BẮT ĐẦU & TỔNG DỰ KIẾN */}
-            <div className="rounded-2xl border border-[#EAE4D7] bg-white p-4 shadow-sm space-y-2">
+            {/* 4. TỔNG DỰ KIẾN */}
+            <Card className="space-y-2 bg-[#F8F6F0]/60">
                 <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-600 flex items-center gap-1.5">
+                    <span className="text-slate-600 font-medium flex items-center gap-1.5">
                         <svg
                             className="h-4 w-4 text-slate-400"
                             fill="none"
@@ -552,7 +486,7 @@ export function OpenSessionForm({
                                 d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                             />
                         </svg>
-                        Giờ bắt đầu:
+                        Thời gian:
                     </span>
                     <span className="font-semibold text-slate-900">
                         Tự động bắt đầu ngay khi tạo vé
@@ -560,11 +494,11 @@ export function OpenSessionForm({
                 </div>
 
                 {selectedPackage && selectedHutIds.length > 0 && (
-                    <div className="border-t border-[#EAE4D7] pt-2 flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700">
+                    <div className="border-t border-[#E2DDD2] pt-2 flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-800">
                             Tiền gói ({selectedHutIds.length} ô):
                         </span>
-                        <span className="text-sm font-bold text-[#9E6B05]">
+                        <span className="text-base font-extrabold text-[#0D9488] tabular-nums">
                             {formatPrice(
                                 selectedPackage.priceVnd *
                                     selectedHutIds.length,
@@ -572,23 +506,25 @@ export function OpenSessionForm({
                         </span>
                     </div>
                 )}
-            </div>
+            </Card>
 
             {/* Error Display */}
             {formError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 font-medium">
-                    {formError}
-                </div>
+                <InlineAlert type="error" message={formError} />
             )}
 
             {/* 5. SUBMIT BUTTON */}
-            <button
+            <Button
                 type="submit"
-                disabled={isSubmitting || availableHuts.length === 0}
-                className="w-full h-12 rounded-xl bg-[#9E6B05] text-sm font-bold text-white shadow-md transition-transform duration-150 ease-out active:scale-98 disabled:opacity-60"
+                size="lg"
+                variant="primary"
+                isLoading={isSubmitting}
+                loadingText="Đang tạo vé…"
+                disabled={availableHuts.length === 0}
+                className="w-full h-12 text-sm shadow-md"
             >
-                {isSubmitting ? "Đang tạo vé…" : "Tạo vé và mở ô"}
-            </button>
+                Tạo vé và mở ô
+            </Button>
         </form>
     );
 }

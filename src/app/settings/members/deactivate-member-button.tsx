@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+
 interface DeactivateMemberButtonProps {
     membershipId: string;
     memberName: string;
@@ -59,13 +61,15 @@ export function DeactivateMemberButton({
     }
 
     return (
-        <button
+        <Button
             type="button"
-            disabled={loading}
+            size="sm"
+            variant="danger"
+            isLoading={loading}
+            loadingText="Đang xử lý…"
             onClick={handleDeactivate}
-            className="inline-flex items-center rounded-md border border-rose-200 bg-white px-2.5 py-1 text-xs font-medium text-rose-700 shadow-sm transition hover:bg-rose-50 hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
-            {loading ? "Đang xử lý..." : "Vô hiệu hóa"}
-        </button>
+            Vô hiệu hóa
+        </Button>
     );
 }

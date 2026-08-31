@@ -3,6 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { InlineAlert } from "@/components/ui/inline-alert";
+
 interface NegativeInventoryToggleProps {
     initialAllowNegative: boolean;
     canEdit: boolean;
@@ -64,35 +68,27 @@ export function NegativeInventoryToggle({
     return (
         <div className="space-y-3">
             {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                    {error}
-                </div>
+                <InlineAlert type="error" message={error} />
             )}
 
             {message && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
-                    {message}
-                </div>
+                <InlineAlert type="success" message={message} />
             )}
 
-            <div className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
+            <Card className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-900">
+                        <span className="text-sm font-bold text-slate-900">
                             Cho phép bán âm kho
                         </span>
                         {enabled ? (
-                            <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
-                                Đang bật
-                            </span>
+                            <Badge variant="warning">Đang bật</Badge>
                         ) : (
-                            <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
-                                Đang tắt
-                            </span>
+                            <Badge variant="neutral">Đang tắt</Badge>
                         )}
                     </div>
-                    <p className="text-xs text-slate-500">
-                        Khi bật, hệ thống vẫn cho bán khi tồn kho không đủ nhưng sẽ hiển thị cảnh báo.
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                        Khi bật, hệ thống vẫn cho phép xuất bán khi tồn kho không đủ nhưng sẽ hiển thị cảnh báo màu cam.
                     </p>
                 </div>
 
@@ -102,15 +98,15 @@ export function NegativeInventoryToggle({
                             type="button"
                             disabled={loading}
                             onClick={handleToggle}
-                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 disabled:opacity-50 ${
-                                enabled ? "bg-emerald-600" : "bg-slate-300"
+                            className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#102A43] focus:ring-offset-2 disabled:opacity-50 ${
+                                enabled ? "bg-[#0D9488]" : "bg-slate-300"
                             }`}
                             role="switch"
                             aria-checked={enabled}
                         >
                             <span
                                 aria-hidden="true"
-                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                                     enabled ? "translate-x-5" : "translate-x-0"
                                 }`}
                             />
@@ -121,7 +117,7 @@ export function NegativeInventoryToggle({
                         </span>
                     )}
                 </div>
-            </div>
+            </Card>
         </div>
     );
 }

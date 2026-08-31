@@ -9,6 +9,9 @@ import { getTenantContext } from "@/lib/tenant";
 
 import { CreateMemberForm } from "./create-member-form";
 import { DeactivateMemberButton } from "./deactivate-member-button";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 function formatDateTime(date: Date | null): string {
     if (!date) return "—";
@@ -18,6 +21,7 @@ function formatDateTime(date: Date | null): string {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
+        timeZone: "Asia/Ho_Chi_Minh",
     }).format(new Date(date));
 }
 
@@ -25,28 +29,24 @@ function getRoleBadge(role: Role) {
     switch (role) {
         case Role.OWNER:
             return (
-                <span className="inline-flex items-center rounded-md bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                <span className="inline-flex items-center rounded-lg bg-[#102A43]/10 px-2.5 py-1 text-xs font-bold text-[#102A43] border border-[#102A43]/20">
                     Chủ sở hữu (OWNER)
                 </span>
             );
         case Role.MANAGER:
             return (
-                <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                <span className="inline-flex items-center rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800 border border-teal-200">
                     Quản lý (MANAGER)
                 </span>
             );
         case Role.STAFF:
             return (
-                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-700/10">
+                <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-200">
                     Nhân viên (STAFF)
                 </span>
             );
         default:
-            return (
-                <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
-                    {role}
-                </span>
-            );
+            return <Badge variant="neutral">{role}</Badge>;
     }
 }
 
@@ -62,11 +62,11 @@ export default async function MembersSettingsPage() {
     if (!tenantContext) {
         return (
             <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12">
-                <div className="w-full rounded-xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
-                    <h1 className="text-xl font-semibold text-amber-900">
+                <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+                    <h1 className="text-xl font-bold text-red-900">
                         Chưa có quyền truy cập
                     </h1>
-                    <p className="mt-2 text-sm text-amber-700">
+                    <p className="mt-2 text-xs text-red-700">
                         Tài khoản ({session.user.email}) hiện chưa được gán quyền
                         hoặc hồ câu đã bị xóa. Vui lòng liên hệ quản trị viên.
                     </p>
@@ -79,8 +79,8 @@ export default async function MembersSettingsPage() {
     if (tenantContext.role !== Role.OWNER) {
         return (
             <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12">
-                <div className="w-full rounded-xl border border-rose-200 bg-rose-50 p-8 text-center shadow-sm">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+                <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
                         <svg
                             className="h-6 w-6"
                             fill="none"
@@ -95,17 +95,17 @@ export default async function MembersSettingsPage() {
                             />
                         </svg>
                     </div>
-                    <h1 className="text-xl font-semibold text-rose-900">
+                    <h1 className="text-xl font-bold text-red-900">
                         Không có quyền truy cập
                     </h1>
-                    <p className="mt-2 text-sm text-rose-700">
+                    <p className="mt-2 text-xs text-red-700">
                         Chỉ Chủ hồ (OWNER) mới có quyền quản lý danh sách và phân
                         quyền nhân sự của hồ câu này.
                     </p>
                     <div className="mt-6">
                         <Link
                             href="/dashboard"
-                            className="inline-flex items-center rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-700"
+                            className="inline-flex h-11 items-center justify-center rounded-xl bg-[#102A43] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#1E3A5F]"
                         >
                             Về Bảng điều khiển
                         </Link>
@@ -135,104 +135,100 @@ export default async function MembersSettingsPage() {
     });
 
     return (
-        <main className="mx-auto min-h-screen max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <main className="mx-auto min-h-screen max-w-6xl bg-[#F8F6F0] px-4 pb-24 pt-6 sm:px-6">
             {/* Header */}
-            <div className="mb-8 flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center">
-                <div>
-                    <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                            Quản lý nhân sự hồ câu
-                        </h1>
-                        <span className="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-700 ring-1 ring-inset ring-purple-700/10">
-                            Chủ sở hữu
-                        </span>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-600">
-                        Hồ câu:{" "}
-                        <span className="font-semibold text-slate-800">
-                            {tenantContext.lakeName}
-                        </span>{" "}
-                        • Tổ chức:{" "}
-                        <span className="font-semibold text-slate-800">
-                            {tenantContext.organizationName}
-                        </span>
-                    </p>
-                </div>
+            <PageHeader
+                title="Quản lý nhân sự hồ câu"
+                subtitle={`Hồ câu: ${tenantContext.lakeName} • Tổ chức: ${tenantContext.organizationName}`}
+                backHref="/settings"
+                backLabel="Cài đặt chung"
+                badge={<Badge variant="default">Chủ sở hữu</Badge>}
+            />
 
-                <div className="flex items-center gap-3">
-                    <Link
-                        href="/settings"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-                    >
-                        <span>Cài đặt chung</span>
-                    </Link>
-                    <Link
-                        href="/dashboard"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-                    >
-                        <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-                            />
-                        </svg>
-                        <span>Bảng điều khiển</span>
-                    </Link>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 {/* Left 2 Cols: Members List */}
                 <div className="lg:col-span-2">
-                    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <div className="border-b border-slate-100 pb-4">
-                            <h2 className="text-lg font-semibold text-slate-900">
+                    <Card className="p-5 sm:p-6 space-y-4">
+                        <div className="border-b border-[#E2DDD2] pb-4">
+                            <h2 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
                                 Danh sách nhân sự ({memberships.length})
                             </h2>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-slate-500 font-medium">
                                 Tất cả tài khoản có quyền truy cập và thao tác tại hồ câu này.
                             </p>
                         </div>
 
-                        <div className="mt-4 overflow-x-auto">
-                            <table className="w-full text-left text-sm text-slate-600">
-                                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
+                        {/* Mobile Cards */}
+                        <div className="grid grid-cols-1 gap-2.5 md:hidden">
+                            {memberships.map((m) => (
+                                <div
+                                    key={m.id}
+                                    className="flex flex-col gap-2 rounded-xl border border-[#E2DDD2] bg-[#F8F6F0]/40 p-3.5"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-xs font-bold text-slate-900">
+                                                {m.user.name}
+                                            </span>
+                                            {m.user.id === tenantContext.userId && (
+                                                <span className="text-[10px] font-bold text-slate-400">
+                                                    (Bạn)
+                                                </span>
+                                            )}
+                                        </div>
+                                        {getRoleBadge(m.role)}
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 font-mono">
+                                        {m.user.email}
+                                    </p>
+                                    <div className="flex items-center justify-between border-t border-[#E2DDD2] pt-2 text-[10px] text-slate-400">
+                                        <span>Tham gia: {formatDateTime(m.createdAt)}</span>
+                                        {m.role !== Role.OWNER &&
+                                        m.user.id !== tenantContext.userId ? (
+                                            <DeactivateMemberButton
+                                                membershipId={m.id}
+                                                memberName={m.user.name}
+                                                memberEmail={m.user.email}
+                                            />
+                                        ) : null}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop Table */}
+                        <div className="hidden overflow-hidden rounded-xl border border-[#E2DDD2] bg-white md:block">
+                            <table className="w-full text-left text-xs text-slate-600">
+                                <thead className="border-b border-[#E2DDD2] bg-[#F8F6F0] text-[11px] font-bold uppercase tracking-wider text-slate-500">
                                     <tr>
-                                        <th className="px-4 py-3">Họ và tên</th>
-                                        <th className="px-4 py-3">Email</th>
-                                        <th className="px-4 py-3">Vai trò</th>
-                                        <th className="px-4 py-3">Ngày tham gia</th>
-                                        <th className="px-4 py-3 text-right">Thao tác</th>
+                                        <th className="px-4 py-3.5">Họ và tên</th>
+                                        <th className="px-4 py-3.5">Email</th>
+                                        <th className="px-4 py-3.5">Vai trò</th>
+                                        <th className="px-4 py-3.5">Ngày tham gia</th>
+                                        <th className="px-4 py-3.5 text-right">Thao tác</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="divide-y divide-[#E2DDD2]">
                                     {memberships.map((m) => (
                                         <tr
                                             key={m.id}
-                                            className="transition hover:bg-slate-50/50"
+                                            className="hover:bg-[#F8F6F0]/60 transition-colors"
                                         >
-                                            <td className="px-4 py-3.5 font-medium text-slate-900">
+                                            <td className="px-4 py-3.5 font-bold text-slate-900">
                                                 {m.user.name}
                                                 {m.user.id === tenantContext.userId && (
-                                                    <span className="ml-1.5 text-xs text-slate-400">
+                                                    <span className="ml-1.5 text-[11px] text-slate-400 font-normal">
                                                         (Bạn)
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3.5 font-mono text-xs text-slate-600">
+                                            <td className="px-4 py-3.5 font-mono text-slate-600">
                                                 {m.user.email}
                                             </td>
                                             <td className="px-4 py-3.5">
                                                 {getRoleBadge(m.role)}
                                             </td>
-                                            <td className="px-4 py-3.5 text-xs text-slate-400">
+                                            <td className="px-4 py-3.5 text-[11px] text-slate-400">
                                                 {formatDateTime(m.createdAt)}
                                             </td>
                                             <td className="px-4 py-3.5 text-right">
@@ -254,25 +250,23 @@ export default async function MembersSettingsPage() {
                                 </tbody>
                             </table>
                         </div>
-                    </section>
+                    </Card>
                 </div>
 
                 {/* Right 1 Col: Create Member Form */}
                 <div className="lg:col-span-1">
-                    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <div className="border-b border-slate-100 pb-4">
-                            <h2 className="text-lg font-semibold text-slate-900">
+                    <Card className="p-5 sm:p-6 space-y-4">
+                        <div className="border-b border-[#E2DDD2] pb-4">
+                            <h2 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
                                 Thêm nhân sự mới
                             </h2>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-slate-500 font-medium">
                                 Tạo tài khoản đăng nhập cho nhân viên hoặc quản lý.
                             </p>
                         </div>
 
-                        <div className="mt-4">
-                            <CreateMemberForm />
-                        </div>
-                    </section>
+                        <CreateMemberForm />
+                    </Card>
                 </div>
             </div>
         </main>

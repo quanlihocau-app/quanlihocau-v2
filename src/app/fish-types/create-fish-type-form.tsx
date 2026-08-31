@@ -3,6 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { InlineAlert } from "@/components/ui/inline-alert";
+
 export function CreateFishTypeForm() {
     const router = useRouter();
     const [name, setName] = useState("");
@@ -73,63 +77,43 @@ export function CreateFishTypeForm() {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                    {error}
-                </div>
+                <InlineAlert type="error" message={error} />
             )}
 
             {successMessage && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
-                    {successMessage}
-                </div>
+                <InlineAlert type="success" message={successMessage} />
             )}
 
-            <div>
-                <label
-                    htmlFor="fish-name"
-                    className="block text-xs font-semibold text-slate-700"
-                >
-                    Tên loại cá <span className="text-red-500">*</span>
-                </label>
-                <input
-                    id="fish-name"
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ví dụ: Cá chép, Cá trôi, Cá trắm đen..."
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-            </div>
+            <Input
+                label="Tên loại cá *"
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ví dụ: Cá chép, Cá trôi, Cá trắm đen..."
+            />
 
-            <div>
-                <label
-                    htmlFor="fish-price"
-                    className="block text-xs font-semibold text-slate-700"
-                >
-                    Đơn giá thu mua (VNĐ / kg){" "}
-                    <span className="text-red-500">*</span>
-                </label>
-                <input
-                    id="fish-price"
-                    type="number"
-                    required
-                    min={1}
-                    step={1000}
-                    value={pricePerKg}
-                    onChange={(e) => setPricePerKg(e.target.value)}
-                    placeholder="Ví dụ: 35000"
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-            </div>
+            <Input
+                label="Đơn giá thu mua (VNĐ / kg) *"
+                type="number"
+                required
+                min={1}
+                step={1000}
+                value={pricePerKg}
+                onChange={(e) => setPricePerKg(e.target.value)}
+                placeholder="Ví dụ: 35000"
+            />
 
-            <button
+            <Button
                 type="submit"
-                disabled={loading}
-                className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                size="lg"
+                variant="primary"
+                isLoading={loading}
+                loadingText="Đang tạo loại cá…"
+                className="w-full"
             >
-                {loading ? "Đang tạo loại cá..." : "Thêm loại cá mới"}
-            </button>
+                Thêm loại cá mới
+            </Button>
         </form>
     );
 }

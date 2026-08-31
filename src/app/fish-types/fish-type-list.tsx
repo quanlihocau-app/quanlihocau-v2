@@ -3,6 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { InlineAlert } from "@/components/ui/inline-alert";
+
 export interface FishTypeItem {
     id: string;
     name: string;
@@ -28,6 +32,7 @@ function formatDateTime(date: Date | string | null): string {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
+        timeZone: "Asia/Ho_Chi_Minh",
     }).format(new Date(date));
 }
 
@@ -111,7 +116,6 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
                 return;
             }
 
-            alert(data.message || "Cập nhật loại cá thành công.");
             setEditingItem(null);
             router.refresh();
         } catch {
@@ -142,7 +146,6 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
                 return;
             }
 
-            alert(data.message || "Ngừng dùng loại cá thành công.");
             router.refresh();
         } catch {
             alert("Lỗi kết nối mạng, vui lòng thử lại sau.");
@@ -152,62 +155,99 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
     }
 
     return (
-        <div>
+        <div className="space-y-4">
             {/* Search Input */}
-            <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                <div className="relative w-full max-w-sm">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg
-                            className="h-4 w-4 text-slate-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                            />
-                        </svg>
-                    </div>
-                    <input
-                        type="text"
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <div className="w-full max-w-sm">
+                    <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Tìm kiếm theo tên loại cá..."
-                        className="block w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-xs text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-slate-500 font-medium">
                     Hiển thị{" "}
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-bold text-slate-800">
                         {filteredItems.length}
                     </span>{" "}
                     / {fishTypes.length} loại cá
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-slate-600">
-                    <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
-                        <tr>
-                            <th className="px-4 py-3">Tên loại cá</th>
-                            <th className="px-4 py-3 text-right">Giá thu mua</th>
-                            <th className="px-4 py-3">Ngày cập nhật</th>
-                            <th className="px-4 py-3">Trạng thái</th>
+            {/* Mobile Cards */}
+            <div className="grid grid-cols-1 gap-2.5 md:hidden">
+                {filteredItems.length === 0 ? (
+                    <p className="py-8 text-center text-xs text-slate-500 font-medium">
+                        {search
+                            ? "Không tìm thấy loại cá nào khớp với tìm kiếm."
+                            : "Chưa có loại cá nào trong danh mục."}
+                    </p>
+                ) : (
+                    filteredItems.map((ft) => (
+                        <div
+                            key={ft.id}
+                            className="flex flex-col gap-2 rounded-xl border border-[#E2DDD2] bg-[#F8F6F0]/40 p-3.5"
+                        >
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-900">
+                                    {ft.name}
+                                </span>
+                                <span className="text-xs font-extrabold text-[#0D9488] tabular-nums">
+                                    {formatVnd(ft.pricePerKg)}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                <span className="inline-flex items-center rounded-md bg-teal-50 px-2 py-0.5 font-bold text-teal-800 border border-teal-200">
+                                    Đang áp dụng
+                                </span>
+                                <span>{formatDateTime(ft.updatedAt || ft.createdAt)}</span>
+                            </div>
                             {canManage && (
-                                <th className="px-4 py-3 text-right">Thao tác</th>
+                                <div className="flex items-center justify-end gap-2 border-t border-[#E2DDD2] pt-2">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => openEditModal(ft)}
+                                    >
+                                        Sửa
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="danger"
+                                        isLoading={deactivatingId === ft.id}
+                                        onClick={() => handleDeactivate(ft)}
+                                    >
+                                        Ngừng dùng
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden overflow-hidden rounded-xl border border-[#E2DDD2] bg-white md:block">
+                <table className="w-full text-left text-xs text-slate-600">
+                    <thead className="border-b border-[#E2DDD2] bg-[#F8F6F0] text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <tr>
+                            <th className="px-4 py-3.5">Tên loại cá</th>
+                            <th className="px-4 py-3.5 text-right">Giá thu mua</th>
+                            <th className="px-4 py-3.5">Ngày cập nhật</th>
+                            <th className="px-4 py-3.5">Trạng thái</th>
+                            {canManage && (
+                                <th className="px-4 py-3.5 text-right">Thao tác</th>
                             )}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2DDD2]">
                         {filteredItems.length === 0 ? (
                             <tr>
                                 <td
                                     colSpan={canManage ? 5 : 4}
-                                    className="px-4 py-8 text-center text-sm text-slate-400"
+                                    className="px-4 py-8 text-center text-xs text-slate-400"
                                 >
                                     {search
                                         ? "Không tìm thấy loại cá nào khớp với tìm kiếm."
@@ -218,46 +258,42 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
                             filteredItems.map((ft) => (
                                 <tr
                                     key={ft.id}
-                                    className="transition hover:bg-slate-50/50"
+                                    className="hover:bg-[#F8F6F0]/60 transition-colors"
                                 >
-                                    <td className="px-4 py-3.5 font-medium text-slate-900">
+                                    <td className="px-4 py-3.5 font-bold text-slate-900">
                                         {ft.name}
                                     </td>
-                                    <td className="px-4 py-3.5 text-right font-semibold text-emerald-700">
+                                    <td className="px-4 py-3.5 text-right font-extrabold text-[#0D9488] tabular-nums text-sm">
                                         {formatVnd(ft.pricePerKg)}
                                     </td>
                                     <td className="px-4 py-3.5 text-xs text-slate-500">
                                         {formatDateTime(ft.updatedAt || ft.createdAt)}
                                     </td>
-                                    <td className="px-4 py-3.5 text-xs">
-                                        <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/10">
+                                    <td className="px-4 py-3.5">
+                                        <span className="inline-flex items-center rounded-md bg-teal-50 px-2 py-0.5 text-[11px] font-bold text-teal-800 border border-teal-200">
                                             Đang áp dụng
                                         </span>
                                     </td>
                                     {canManage && (
                                         <td className="px-4 py-3.5 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    size="sm"
+                                                    variant="outline"
                                                     onClick={() => openEditModal(ft)}
-                                                    className="inline-flex items-center rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
                                                 >
                                                     Sửa
-                                                </button>
-                                                <button
+                                                </Button>
+                                                <Button
                                                     type="button"
-                                                    disabled={
-                                                        deactivatingId === ft.id
-                                                    }
-                                                    onClick={() =>
-                                                        handleDeactivate(ft)
-                                                    }
-                                                    className="inline-flex items-center rounded-md border border-rose-200 bg-white px-2.5 py-1 text-xs font-medium text-rose-700 shadow-sm transition hover:bg-rose-50 disabled:opacity-50"
+                                                    size="sm"
+                                                    variant="danger"
+                                                    isLoading={deactivatingId === ft.id}
+                                                    onClick={() => handleDeactivate(ft)}
                                                 >
-                                                    {deactivatingId === ft.id
-                                                        ? "Đang xử lý..."
-                                                        : "Ngừng dùng"}
-                                                </button>
+                                                    Ngừng dùng
+                                                </Button>
                                             </div>
                                         </td>
                                     )}
@@ -271,9 +307,9 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
             {/* Edit Modal */}
             {editingItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="text-base font-semibold text-slate-900">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between border-b border-[#E2DDD2] pb-3">
+                            <h3 className="text-base font-bold text-[#102A43]">
                                 Chỉnh sửa loại cá
                             </h3>
                             <button
@@ -282,86 +318,56 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
                                 onClick={closeEditModal}
                                 className="text-slate-400 hover:text-slate-600"
                             >
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={2}
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M6 18 18 6M6 6l12 12"
-                                    />
-                                </svg>
+                                ✕
                             </button>
                         </div>
 
-                        <form onSubmit={handleUpdate} className="mt-4 space-y-4">
+                        <form onSubmit={handleUpdate} className="space-y-3.5">
+                            <Input
+                                label="Tên loại cá *"
+                                type="text"
+                                required
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                            />
+
+                            <Input
+                                label="Đơn giá thu mua (VNĐ / kg) *"
+                                type="number"
+                                required
+                                min={1}
+                                step={1000}
+                                value={editPricePerKg}
+                                onChange={(e) =>
+                                    setEditPricePerKg(e.target.value)
+                                }
+                            />
+
                             {editError && (
-                                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                                    {editError}
-                                </div>
+                                <InlineAlert type="error" message={editError} />
                             )}
 
-                            <div>
-                                <label
-                                    htmlFor="edit-fish-name"
-                                    className="block text-xs font-semibold text-slate-700"
-                                >
-                                    Tên loại cá <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    id="edit-fish-name"
-                                    type="text"
-                                    required
-                                    value={editName}
-                                    onChange={(e) => setEditName(e.target.value)}
-                                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label
-                                    htmlFor="edit-fish-price"
-                                    className="block text-xs font-semibold text-slate-700"
-                                >
-                                    Đơn giá thu mua (VNĐ / kg){" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    id="edit-fish-price"
-                                    type="number"
-                                    required
-                                    min={1}
-                                    step={1000}
-                                    value={editPricePerKg}
-                                    onChange={(e) =>
-                                        setEditPricePerKg(e.target.value)
-                                    }
-                                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                />
-                            </div>
-
-                            <div className="mt-6 flex justify-end gap-3 pt-2">
-                                <button
+                            <div className="flex justify-end gap-2 pt-2">
+                                <Button
                                     type="button"
+                                    size="lg"
+                                    variant="outline"
                                     disabled={editLoading}
                                     onClick={closeEditModal}
-                                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                                    className="flex-1"
                                 >
                                     Hủy
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="submit"
-                                    disabled={editLoading}
-                                    className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50"
+                                    size="lg"
+                                    variant="primary"
+                                    isLoading={editLoading}
+                                    loadingText="Đang lưu…"
+                                    className="flex-[2]"
                                 >
-                                    {editLoading
-                                        ? "Đang lưu..."
-                                        : "Lưu thay đổi"}
-                                </button>
+                                    Lưu thay đổi
+                                </Button>
                             </div>
                         </form>
                     </div>

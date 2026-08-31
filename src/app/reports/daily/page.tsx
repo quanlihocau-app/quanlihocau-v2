@@ -218,7 +218,6 @@ export default async function DailyReportPage() {
             shiftClose={
                 shiftClose
                     ? {
-                          id: shiftClose.id,
                           closedBy: shiftClose.closedBy,
                           closedAt: shiftClose.createdAt.toISOString(),
                           note: shiftClose.note,

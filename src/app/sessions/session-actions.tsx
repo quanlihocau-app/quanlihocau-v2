@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+
 export interface ActionPackage {
     id: string;
     name: string;
@@ -166,8 +168,8 @@ export function SessionActions({
     return (
         <div className="space-y-2">
             {error ? (
-                <div className="rounded-xl bg-red-50 border border-red-200 px-3 py-2">
-                    <p className="text-xs text-red-700 font-medium">
+                <div className="rounded-xl bg-red-50 border border-red-200 px-3.5 py-2.5">
+                    <p className="text-xs text-red-700 font-bold">
                         {error}
                     </p>
                 </div>
@@ -175,10 +177,10 @@ export function SessionActions({
 
             {/* Notice when session has no linked DRAFT invoice */}
             {showNoInvoiceNotice && (
-                <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 space-y-2">
-                    <div className="flex items-start gap-2">
+                <div className="rounded-2xl bg-orange-50 border border-orange-200 p-3.5 space-y-2">
+                    <div className="flex items-start gap-2.5">
                         <svg
-                            className="h-4 w-4 text-[#9E6B05] mt-0.5 shrink-0"
+                            className="h-4 w-4 text-orange-600 mt-0.5 shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             strokeWidth={2}
@@ -191,10 +193,10 @@ export function SessionActions({
                             />
                         </svg>
                         <div>
-                            <p className="text-xs font-bold text-amber-900">
+                            <p className="text-xs font-bold text-orange-950">
                                 Phiên câu chưa có hóa đơn nháp liên kết
                             </p>
-                            <p className="text-[11px] text-amber-800 mt-0.5">
+                            <p className="text-[11px] text-orange-800 mt-0.5 leading-relaxed">
                                 Hóa đơn phiên câu sẽ tự động lập sau khi bấm
                                 &quot;Kết thúc&quot;, hoặc bạn có thể lập hóa đơn
                                 bán lẻ trực tiếp tại mục Bán hàng.
@@ -202,126 +204,142 @@ export function SessionActions({
                         </div>
                     </div>
                     <div className="flex items-center gap-2 pt-1">
-                        <button
+                        <Button
                             type="button"
+                            size="sm"
+                            variant="primary"
                             onClick={() => router.push("/invoices")}
-                            className="h-9 rounded-lg bg-[#9E6B05] px-3 text-xs font-bold text-white shadow-sm transition-all duration-150 ease-out active:scale-95"
                         >
                             Đến mục Bán hàng
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type="button"
+                            size="sm"
+                            variant="outline"
                             onClick={() => setShowNoInvoiceNotice(false)}
-                            className="h-9 rounded-lg border border-[#EAE4D7] bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-150 ease-out active:scale-95"
                         >
                             Đóng
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}
 
             {/* Confirmation overlay */}
             {confirmAction ? (
-                <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 space-y-2">
-                    <p className="text-xs font-semibold text-amber-900">
-                        {confirmAction === "COMPLETE"
-                            ? "Xác nhận kết thúc phiên câu này?"
-                            : "Xác nhận hủy phiên câu này?"}
-                    </p>
+                <div className="rounded-2xl bg-red-50/70 border border-red-200 p-4 space-y-3">
+                    <div>
+                        <p className="text-xs font-bold text-red-950">
+                            {confirmAction === "COMPLETE"
+                                ? "Xác nhận kết thúc phiên câu này?"
+                                : "Xác nhận hủy phiên câu này?"}
+                        </p>
+                        <p className="text-[11px] text-red-700 mt-0.5">
+                            {confirmAction === "COMPLETE"
+                                ? "Chòi sẽ được giải phóng và chuyển sang thanh toán hóa đơn."
+                                : "Thao tác hủy không thể hoàn tác."}
+                        </p>
+                    </div>
                     <div className="flex items-center gap-2">
-                        <button
+                        <Button
                             type="button"
-                            disabled={isLoading}
+                            size="lg"
+                            variant={confirmAction === "COMPLETE" ? "danger" : "danger"}
+                            isLoading={isLoading}
+                            loadingText="Đang xử lý…"
                             onClick={() => handleAction(confirmAction)}
-                            className={`h-10 rounded-xl px-4 text-xs font-bold text-white shadow-sm transition-all duration-150 ease-out active:scale-95 disabled:opacity-60 ${
-                                confirmAction === "COMPLETE"
-                                    ? "bg-[#9E6B05]"
-                                    : "bg-red-600"
-                            }`}
+                            className="flex-1"
                         >
-                            {isLoading
-                                ? "Đang xử lý…"
-                                : confirmAction === "COMPLETE"
-                                  ? "Kết thúc"
-                                  : "Hủy phiên"}
-                        </button>
-                        <button
+                            {confirmAction === "COMPLETE" ? "Kết thúc ngay" : "Hủy phiên"}
+                        </Button>
+                        <Button
                             type="button"
+                            size="lg"
+                            variant="outline"
                             disabled={isLoading}
                             onClick={() => setConfirmAction(null)}
-                            className="h-10 rounded-xl border border-[#EAE4D7] bg-white px-4 text-xs font-semibold text-slate-700 shadow-sm transition-all duration-150 ease-out active:scale-95 disabled:opacity-60"
+                            className="flex-1"
                         >
                             Không
-                        </button>
+                        </Button>
                     </div>
                 </div>
             ) : (
                 <div className="space-y-2">
                     {/* Primary Button Row: Thêm hàng — Gia hạn — Kết thúc */}
                     <div className="grid grid-cols-3 gap-2">
-                        {/* 1. Thêm hàng */}
-                        <button
+                        {/* 1. Thêm hàng (Navy) */}
+                        <Button
                             type="button"
+                            size="lg"
+                            variant="outline"
                             onClick={handleAddProduct}
-                            className="h-11 min-w-11 rounded-xl border border-[#EAE4D7] bg-white px-2 text-xs font-bold text-[#9E6B05] shadow-sm transition-all duration-150 ease-out active:scale-95 flex items-center justify-center gap-1"
+                            className="px-2 text-xs text-[#102A43] border-[#E2DDD2] hover:bg-[#102A43]/5"
+                            icon={
+                                <svg
+                                    className="h-4 w-4 shrink-0 text-[#102A43]"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+                                    />
+                                </svg>
+                            }
                         >
-                            <svg
-                                className="h-4 w-4 shrink-0"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
-                                />
-                            </svg>
                             <span>Thêm hàng</span>
-                        </button>
+                        </Button>
 
-                        {/* 2. Gia hạn */}
-                        <button
+                        {/* 2. Gia hạn (Teal) */}
+                        <Button
                             type="button"
+                            size="lg"
+                            variant="success"
                             onClick={openExtensionModal}
-                            className="h-11 min-w-11 rounded-xl border border-[#EAE4D7] bg-[#F7F4EE] px-2 text-xs font-bold text-[#8A5B00] shadow-sm transition-all duration-150 ease-out active:scale-95 flex items-center justify-center gap-1 hover:border-[#9E6B05]"
+                            className="px-2 text-xs"
+                            icon={
+                                <svg
+                                    className="h-4 w-4 shrink-0"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={2}
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                    />
+                                </svg>
+                            }
                         >
-                            <svg
-                                className="h-4 w-4 shrink-0"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                />
-                            </svg>
                             <span>Gia hạn</span>
-                        </button>
+                        </Button>
 
-                        {/* 3. Kết thúc */}
+                        {/* 3. Kết thúc (Red outline / Destructive action) */}
                         {canComplete ? (
-                            <button
+                            <Button
                                 type="button"
+                                size="lg"
+                                variant="danger"
                                 onClick={() => setConfirmAction("COMPLETE")}
-                                className="h-11 min-w-11 rounded-xl bg-[#9E6B05] px-2 text-xs font-bold text-white shadow-sm transition-all duration-150 ease-out active:scale-95 flex items-center justify-center"
+                                className="px-2 text-xs"
                             >
                                 Kết thúc
-                            </button>
+                            </Button>
                         ) : null}
                     </div>
 
                     {/* Secondary Action: Hủy phiên */}
                     {canCancel ? (
-                        <div className="flex justify-end pt-1">
+                        <div className="flex justify-end pt-0.5">
                             <button
                                 type="button"
                                 onClick={() => setConfirmAction("CANCEL")}
-                                className="text-[11px] font-semibold text-red-500 hover:text-red-700 transition-colors"
+                                className="text-[11px] font-bold text-red-600 hover:text-red-800 transition-colors p-1"
                             >
                                 Hủy phiên câu
                             </button>
@@ -335,11 +353,11 @@ export function SessionActions({
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
                         {/* Header */}
-                        <div className="flex items-center justify-between border-b border-[#EAE4D7] pb-3">
+                        <div className="flex items-center justify-between border-b border-[#E2DDD2] pb-3">
                             <div className="flex items-center gap-2">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EAE2CE]">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-50 text-teal-700">
                                     <svg
-                                        className="h-4 w-4 text-[#9E6B05]"
+                                        className="h-4 w-4"
                                         fill="none"
                                         viewBox="0 0 24 24"
                                         strokeWidth={2}
@@ -352,7 +370,7 @@ export function SessionActions({
                                         />
                                     </svg>
                                 </div>
-                                <h3 className="text-base font-bold text-slate-900">
+                                <h3 className="text-base font-bold text-[#102A43]">
                                     Gia hạn phiên câu
                                 </h3>
                             </div>
@@ -360,7 +378,7 @@ export function SessionActions({
                                 type="button"
                                 disabled={isExtending}
                                 onClick={() => setIsExtensionModalOpen(false)}
-                                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-[#F7F4EE]"
+                                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-[#F8F6F0]"
                             >
                                 <svg
                                     className="h-5 w-5"
@@ -380,12 +398,12 @@ export function SessionActions({
 
                         {/* Error or Success notification */}
                         {extensionError && (
-                            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 font-medium">
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 font-bold">
                                 {extensionError}
                             </div>
                         )}
                         {extensionSuccess && (
-                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 font-medium">
+                            <div className="rounded-xl border border-teal-200 bg-teal-50 p-3 text-xs text-teal-800 font-bold">
                                 {extensionSuccess}
                             </div>
                         )}
@@ -396,7 +414,7 @@ export function SessionActions({
                                 Chọn gói câu gia hạn:
                             </label>
                             {packages.length === 0 ? (
-                                <div className="rounded-xl bg-[#F7F4EE] border border-[#EAE4D7] p-3 text-center text-xs text-slate-500">
+                                <div className="rounded-xl bg-[#F8F6F0] border border-[#E2DDD2] p-3 text-center text-xs text-slate-500 font-medium">
                                     Không có gói câu nào đang hoạt động.
                                 </div>
                             ) : (
@@ -414,15 +432,15 @@ export function SessionActions({
                                                 }
                                                 className={`cursor-pointer rounded-xl border p-3 flex items-center justify-between transition-all duration-150 ease-out active:scale-98 ${
                                                     isSelected
-                                                        ? "border-[#9E6B05] bg-[#F7F4EE] ring-1 ring-[#9E6B05]"
-                                                        : "border-[#EAE4D7] bg-white hover:border-slate-300"
+                                                        ? "border-[#0D9488] bg-teal-50/50 ring-1 ring-[#0D9488]"
+                                                        : "border-[#E2DDD2] bg-white hover:border-slate-300"
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-2.5">
                                                     <div
                                                         className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
                                                             isSelected
-                                                                ? "border-[#9E6B05] bg-[#9E6B05]"
+                                                                ? "border-[#0D9488] bg-[#0D9488]"
                                                                 : "border-slate-300 bg-white"
                                                         }`}
                                                     >
@@ -434,7 +452,7 @@ export function SessionActions({
                                                         <p className="text-xs font-bold text-slate-900">
                                                             {pkg.name}
                                                         </p>
-                                                        <p className="text-[10px] text-slate-500">
+                                                        <p className="text-[10px] text-slate-500 font-medium">
                                                             +
                                                             {
                                                                 pkg.durationMinutes
@@ -443,7 +461,7 @@ export function SessionActions({
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <span className="text-xs font-bold text-[#9E6B05]">
+                                                <span className="text-xs font-bold text-[#0D9488] tabular-nums">
                                                     {formatPrice(
                                                         pkg.priceVnd,
                                                     )}
@@ -457,14 +475,14 @@ export function SessionActions({
 
                         {/* Summary */}
                         {selectedPkg && (
-                            <div className="rounded-xl bg-[#F7F4EE] border border-[#EAE4D7] p-3 text-xs flex items-center justify-between">
+                            <div className="rounded-xl bg-[#F8F6F0] border border-[#E2DDD2] p-3 text-xs flex items-center justify-between">
                                 <span className="text-slate-600 font-medium">
                                     Thêm:{" "}
                                     <span className="font-bold text-slate-900">
                                         +{selectedPkg.durationMinutes} phút
                                     </span>
                                 </span>
-                                <span className="font-bold text-[#9E6B05]">
+                                <span className="font-bold text-[#0D9488] tabular-nums">
                                     +{formatPrice(selectedPkg.priceVnd)}
                                 </span>
                             </div>
@@ -472,30 +490,33 @@ export function SessionActions({
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 pt-2">
-                            <button
+                            <Button
                                 type="button"
+                                size="lg"
+                                variant="outline"
                                 disabled={isExtending}
                                 onClick={() =>
                                     setIsExtensionModalOpen(false)
                                 }
-                                className="h-11 flex-1 rounded-xl border border-[#EAE4D7] bg-white text-xs font-semibold text-slate-700 shadow-sm transition-all duration-150 ease-out active:scale-95 disabled:opacity-60"
+                                className="flex-1"
                             >
                                 Hủy
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="button"
+                                size="lg"
+                                variant="success"
+                                isLoading={isExtending}
+                                loadingText="Đang gia hạn…"
                                 disabled={
-                                    isExtending ||
                                     !selectedPackageId ||
                                     packages.length === 0
                                 }
                                 onClick={handleConfirmExtension}
-                                className="h-11 flex-[2] rounded-xl bg-[#9E6B05] text-xs font-bold text-white shadow-md transition-transform duration-150 ease-out active:scale-95 disabled:opacity-60"
+                                className="flex-[2]"
                             >
-                                {isExtending
-                                    ? "Đang gia hạn…"
-                                    : "Xác nhận gia hạn"}
-                            </button>
+                                Xác nhận gia hạn
+                            </Button>
                         </div>
                     </div>
                 </div>

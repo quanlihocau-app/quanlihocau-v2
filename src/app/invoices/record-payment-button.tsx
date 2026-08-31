@@ -4,15 +4,24 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { PaymentMethod } from "@/generated/prisma/enums";
+import { Button } from "@/components/ui/button";
+import { Input, Select } from "@/components/ui/input";
+import { InlineAlert } from "@/components/ui/inline-alert";
 
 interface RecordPaymentButtonProps {
     invoiceId: string;
     remainingAmountVnd: number;
+    className?: string;
+    variant?: "primary" | "success" | "outline";
+    size?: "sm" | "md" | "lg";
 }
 
 export function RecordPaymentButton({
     invoiceId,
     remainingAmountVnd,
+    className = "",
+    variant = "success",
+    size = "md",
 }: RecordPaymentButtonProps) {
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
@@ -113,7 +122,7 @@ export function RecordPaymentButton({
             router.refresh();
             setTimeout(() => {
                 setIsOpen(false);
-            }, 1200);
+            }, 1000);
         } catch {
             setMessage({
                 text: "Lỗi kết nối mạng. Bạn có thể bấm Thử lại (Idempotency Key được giữ nguyên).",
@@ -127,119 +136,112 @@ export function RecordPaymentButton({
     return (
         <div>
             {!isOpen ? (
-                <button
+                <Button
                     type="button"
                     onClick={handleOpen}
-                    className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                    size={size}
+                    variant={variant}
+                    className={className}
+                    icon={
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    }
                 >
-                    Ghi nhận thanh toán
-                </button>
+                    Thu tiền
+                </Button>
             ) : (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-                    <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-                        <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="text-base font-semibold text-slate-900">
-                                Ghi nhận thanh toán
-                            </h3>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between border-b border-[#E2DDD2] pb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-50 text-[#0D9488]">
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-base font-bold text-[#102A43]">
+                                    Ghi nhận thanh toán
+                                </h3>
+                            </div>
                             <button
                                 type="button"
                                 onClick={handleClose}
                                 disabled={loading}
-                                className="text-slate-400 hover:text-slate-600"
+                                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-[#F8F6F0]"
                             >
-                                ✕
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                             </button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-medium text-slate-700">
-                                    Số tiền còn lại cần thu
-                                </label>
-                                <p className="mt-1 text-sm font-semibold text-emerald-600">
-                                    {new Intl.NumberFormat("vi-VN").format(
-                                        remainingAmountVnd,
-                                    )}{" "}
-                                    đ
-                                </p>
+                            <div className="rounded-xl border border-[#E2DDD2] bg-[#F8F6F0] p-3 flex items-center justify-between">
+                                <span className="text-xs font-semibold text-slate-700">
+                                    Số tiền còn lại cần thu:
+                                </span>
+                                <span className="text-base font-extrabold text-[#0D9488] tabular-nums">
+                                    {new Intl.NumberFormat("vi-VN").format(remainingAmountVnd)} đ
+                                </span>
                             </div>
 
-                            <div>
-                                <label
-                                    htmlFor="amountVnd"
-                                    className="block text-xs font-medium text-slate-700"
-                                >
-                                    Số tiền thanh toán (VNĐ)
-                                </label>
-                                <input
-                                    id="amountVnd"
-                                    type="number"
-                                    min={1000}
-                                    max={remainingAmountVnd}
-                                    step={1000}
-                                    value={amountVnd}
-                                    onChange={(e) => setAmountVnd(e.target.value)}
-                                    disabled={loading}
-                                    required
-                                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                />
-                            </div>
+                            <Input
+                                id="amountVnd"
+                                label="Số tiền thanh toán (VNĐ)"
+                                type="number"
+                                min={1000}
+                                max={remainingAmountVnd}
+                                step={1000}
+                                value={amountVnd}
+                                onChange={(e) => setAmountVnd(e.target.value)}
+                                disabled={loading}
+                                required
+                            />
 
-                            <div>
-                                <label
-                                    htmlFor="paymentMethod"
-                                    className="block text-xs font-medium text-slate-700"
-                                >
-                                    Phương thức thanh toán
-                                </label>
-                                <select
-                                    id="paymentMethod"
-                                    value={method}
-                                    onChange={(e) =>
-                                        setMethod(e.target.value as PaymentMethod)
-                                    }
-                                    disabled={loading}
-                                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                >
-                                    <option value={PaymentMethod.CASH}>
-                                        Tiền mặt (CASH)
-                                    </option>
-                                    <option value={PaymentMethod.BANK_TRANSFER}>
-                                        Chuyển khoản (BANK_TRANSFER)
-                                    </option>
-                                </select>
-                            </div>
+                            <Select
+                                id="paymentMethod"
+                                label="Phương thức thanh toán"
+                                value={method}
+                                onChange={(e) => setMethod(e.target.value as PaymentMethod)}
+                                disabled={loading}
+                            >
+                                <option value={PaymentMethod.CASH}>
+                                    💵 Tiền mặt (CASH)
+                                </option>
+                                <option value={PaymentMethod.BANK_TRANSFER}>
+                                    🏦 Chuyển khoản (BANK_TRANSFER)
+                                </option>
+                            </Select>
 
                             {message && (
-                                <div
-                                    className={`rounded-lg p-2.5 text-xs ${
-                                        message.type === "success"
-                                            ? "bg-emerald-50 text-emerald-700"
-                                            : message.type === "info"
-                                              ? "bg-blue-50 text-blue-700"
-                                              : "bg-red-50 text-red-700"
-                                    }`}
-                                >
-                                    {message.text}
-                                </div>
+                                <InlineAlert
+                                    type={message.type === "error" ? "error" : message.type === "success" ? "success" : "info"}
+                                    message={message.text}
+                                />
                             )}
 
                             <div className="flex justify-end gap-2 pt-2">
-                                <button
+                                <Button
                                     type="button"
+                                    size="lg"
+                                    variant="outline"
                                     onClick={handleClose}
                                     disabled={loading}
-                                    className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                    className="flex-1"
                                 >
                                     Hủy
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="submit"
-                                    disabled={loading}
-                                    className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                                    size="lg"
+                                    variant="success"
+                                    isLoading={loading}
+                                    loadingText="Đang xử lý…"
+                                    className="flex-[2]"
                                 >
-                                    {loading ? "Đang xử lý..." : "Xác nhận thu tiền"}
-                                </button>
+                                    Xác nhận thu tiền
+                                </Button>
                             </div>
                         </form>
                     </div>

@@ -9,6 +9,9 @@ import { getTenantContext } from "@/lib/tenant";
 
 import { NegativeInventoryToggle } from "./negative-inventory-toggle";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default async function SettingsPage() {
     const session = await getServerSession(authOptions);
@@ -22,11 +25,11 @@ export default async function SettingsPage() {
     if (!tenantContext) {
         return (
             <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12">
-                <div className="w-full rounded-xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
-                    <h1 className="text-xl font-semibold text-amber-900">
+                <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+                    <h1 className="text-xl font-bold text-red-900">
                         Chưa có quyền truy cập
                     </h1>
-                    <p className="mt-2 text-sm text-amber-700">
+                    <p className="mt-2 text-xs text-red-700">
                         Tài khoản ({session.user.email}) hiện chưa được gán quyền
                         hoặc hồ câu đã bị xóa. Vui lòng liên hệ quản trị viên.
                     </p>
@@ -47,27 +50,15 @@ export default async function SettingsPage() {
     const isOwner = tenantContext.role === Role.OWNER;
 
     return (
-        <main className="mx-auto min-h-screen max-w-5xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
-            {/* Header */}
-            <div className="mb-8 flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center">
-                <div>
-                    <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                            Cài đặt hồ câu
-                        </h1>
-                        <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                            {tenantContext.lakeName}
-                        </span>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-600">
-                        Quản lý các thiết lập vận hành, kho hàng và phân quyền hệ thống.
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-3">
+        <main className="mx-auto min-h-screen max-w-4xl bg-[#F8F6F0] px-4 pb-24 pt-6 sm:px-6">
+            <PageHeader
+                title="Cài đặt hồ câu"
+                subtitle="Quản lý các thiết lập vận hành, kho hàng và phân quyền hệ thống."
+                badge={<Badge variant="default">{tenantContext.lakeName}</Badge>}
+                action={
                     <Link
                         href="/dashboard"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+                        className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[#E2DDD2] bg-white px-3.5 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-[#F8F6F0]"
                     >
                         <svg
                             className="h-4 w-4"
@@ -84,17 +75,17 @@ export default async function SettingsPage() {
                         </svg>
                         <span>Bảng điều khiển</span>
                     </Link>
-                </div>
-            </div>
+                }
+            />
 
-            <div className="space-y-8">
+            <div className="space-y-6">
                 {/* Section: Sản phẩm và kho */}
-                <section>
-                    <div className="mb-4">
-                        <h2 className="text-lg font-bold text-slate-900">
+                <section className="space-y-3">
+                    <div>
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
                             Sản phẩm và kho
                         </h2>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-500 font-medium">
                             Cấu hình quy tắc kiểm tra số lượng tồn kho khi nhân viên bán hàng trên hóa đơn.
                         </p>
                     </div>
@@ -109,23 +100,23 @@ export default async function SettingsPage() {
 
                 {/* Section: Quản lý Nhân sự */}
                 {isOwner && (
-                    <section className="border-t border-slate-200 pt-8">
-                        <div className="flex flex-col justify-between gap-4 rounded-xl border border-purple-200 bg-purple-50/40 p-5 sm:flex-row sm:items-center">
+                    <section className="space-y-3 pt-2">
+                        <Card className="flex flex-col justify-between gap-4 border-[#102A43]/20 bg-[#102A43]/5 p-5 sm:flex-row sm:items-center">
                             <div>
-                                <h2 className="text-base font-semibold text-purple-950">
-                                    Quản lý thành viên & Nhân sự
+                                <h2 className="text-sm font-bold text-[#102A43]">
+                                    Quản lý thành viên & Phân quyền
                                 </h2>
-                                <p className="text-xs text-purple-700">
-                                    Thêm, gán quyền và vô hiệu hóa thành viên trong hồ câu.
+                                <p className="text-xs text-slate-600 font-medium mt-0.5">
+                                    Thêm, gán quyền OWNER/MANAGER/STAFF và vô hiệu hóa tài khoản nhân viên.
                                 </p>
                             </div>
                             <Link
                                 href="/settings/members"
-                                className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-purple-700"
+                                className="inline-flex h-11 items-center justify-center rounded-xl bg-[#102A43] px-4 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#1E3A5F] active:scale-95"
                             >
-                                Đi đến Quản lý nhân sự →
+                                Quản lý nhân sự →
                             </Link>
-                        </div>
+                        </Card>
                     </section>
                 )}
             </div>
