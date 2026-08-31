@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Role } from "@/generated/prisma/enums";
+import { Button } from "@/components/ui/button";
+import { Input, Select } from "@/components/ui/input";
+import { InlineAlert } from "@/components/ui/inline-alert";
 
 type MemberRole = typeof Role.STAFF | typeof Role.MANAGER;
 
@@ -65,7 +68,6 @@ export function CreateMemberForm() {
                 `Đã thêm tài khoản nhân sự "${data.member?.name}" (${data.member?.email}) thành công.`,
             );
 
-            // Clear inputs for security, especially password
             setName("");
             setEmail("");
             setPassword("");
@@ -82,106 +84,69 @@ export function CreateMemberForm() {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                    {error}
-                </div>
+                <InlineAlert type="error" message={error} />
             )}
 
             {successMessage && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
-                    {successMessage}
-                </div>
+                <InlineAlert type="success" message={successMessage} />
             )}
 
-            <div>
-                <label
-                    htmlFor="member-name"
-                    className="block text-xs font-semibold text-slate-700"
-                >
-                    Họ và tên <span className="text-red-500">*</span>
-                </label>
-                <input
-                    id="member-name"
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ví dụ: Nguyễn Văn A"
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-            </div>
+            <Input
+                id="member-name"
+                label="Họ và tên *"
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ví dụ: Nguyễn Văn A"
+            />
 
-            <div>
-                <label
-                    htmlFor="member-email"
-                    className="block text-xs font-semibold text-slate-700"
-                >
-                    Địa chỉ Email <span className="text-red-500">*</span>
-                </label>
-                <input
-                    id="member-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="nhanvien@hocau.vn"
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-            </div>
+            <Input
+                id="member-email"
+                label="Địa chỉ Email *"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nhanvien@hocau.vn"
+            />
 
-            <div>
-                <label
-                    htmlFor="member-password"
-                    className="block text-xs font-semibold text-slate-700"
-                >
-                    Mật khẩu ban đầu <span className="text-red-500">*</span>
-                </label>
-                <input
-                    id="member-password"
-                    type="password"
-                    required
-                    minLength={8}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Tối thiểu 8 ký tự"
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-                <p className="mt-1 text-[11px] text-slate-400">
-                    Cung cấp mật khẩu này cho nhân sự để họ đăng nhập lần đầu.
-                </p>
-            </div>
+            <Input
+                id="member-password"
+                label="Mật khẩu ban đầu *"
+                type="password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Tối thiểu 8 ký tự"
+                helperText="Cung cấp mật khẩu này cho nhân sự để họ đăng nhập lần đầu."
+            />
 
-            <div>
-                <label
-                    htmlFor="member-role"
-                    className="block text-xs font-semibold text-slate-700"
-                >
-                    Vai trò (Quyền hạn) <span className="text-red-500">*</span>
-                </label>
-                <select
-                    id="member-role"
-                    value={role}
-                    onChange={(e) =>
-                        setRole(e.target.value as MemberRole)
-                    }
-                    className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                >
-                    <option value={Role.STAFF}>
-                        NHÂN VIÊN (STAFF) - Mở/kết thúc phiên, lập hóa đơn, thu tiền
-                    </option>
-                    <option value={Role.MANAGER}>
-                        QUẢN LÝ (MANAGER) - Toàn quyền vận hành, hoàn tác thanh toán
-                    </option>
-                </select>
-            </div>
-
-            <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+            <Select
+                id="member-role"
+                label="Vai trò (Quyền hạn) *"
+                value={role}
+                onChange={(e) => setRole(e.target.value as MemberRole)}
             >
-                {loading ? "Đang tạo tài khoản..." : "Tạo tài khoản nhân sự"}
-            </button>
+                <option value={Role.STAFF}>
+                    NHÂN VIÊN (STAFF) - Mở/kết thúc phiên, thu tiền
+                </option>
+                <option value={Role.MANAGER}>
+                    QUẢN LÝ (MANAGER) - Toàn quyền vận hành
+                </option>
+            </Select>
+
+            <Button
+                type="submit"
+                size="lg"
+                variant="primary"
+                isLoading={loading}
+                loadingText="Đang tạo tài khoản…"
+                className="w-full"
+            >
+                Tạo tài khoản nhân sự
+            </Button>
         </form>
     );
 }

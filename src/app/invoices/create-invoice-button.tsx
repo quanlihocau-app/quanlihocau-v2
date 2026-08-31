@@ -3,6 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { InlineAlert } from "@/components/ui/inline-alert";
+
 interface CreateInvoiceButtonProps {
     fishingSessionId: string;
 }
@@ -65,26 +68,23 @@ export function CreateInvoiceButton({
 
     return (
         <div className="flex flex-col items-end gap-1.5">
-            <button
+            <Button
                 type="button"
                 onClick={handleCreateInvoice}
-                disabled={loading}
-                className="inline-flex items-center rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                isLoading={loading}
+                loadingText="Đang tạo…"
+                size="md"
+                variant="primary"
             >
-                {loading ? "Đang tạo..." : "Tạo hóa đơn"}
-            </button>
+                Tạo hóa đơn
+            </Button>
             {message && (
-                <p
-                    className={`text-xs ${
-                        message.type === "success"
-                            ? "text-emerald-600"
-                            : message.type === "info"
-                              ? "text-blue-600"
-                              : "text-red-600"
-                    }`}
-                >
-                    {message.text}
-                </p>
+                <div className="mt-1">
+                    <InlineAlert
+                        type={message.type === "error" ? "error" : "success"}
+                        message={message.text}
+                    />
+                </div>
             )}
         </div>
     );

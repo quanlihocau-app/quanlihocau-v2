@@ -3,6 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
+import { InlineAlert } from "@/components/ui/inline-alert";
+
 export interface ExpenseItem {
     id: string;
     description: string;
@@ -139,127 +145,140 @@ export function ExpenseManager({
                 return;
             }
 
-            setSuccessMessage("Đã ghi nhận chi phí thành công!");
+            setSuccessMessage("Đã tạo chi phí thành công!");
             setIsSubmitting(false);
-
-            // Refresh list
-            fetchPage(1);
-            router.refresh();
 
             setTimeout(() => {
                 setIsModalOpen(false);
-            }, 600);
+                router.refresh();
+                fetchPage(1);
+            }, 800);
         } catch {
-            setError("Lỗi kết nối mạng khi tạo chi phí. Vui lòng thử lại.");
+            setError("Lỗi kết nối mạng khi tạo chi phí.");
             setIsSubmitting(false);
         }
     }
 
     return (
-        <main className="mx-auto min-h-screen max-w-md bg-[#F5F2EB] px-4 pb-24 pt-6">
-            {/* Header info */}
-            <div className="mb-2 flex items-center justify-between">
-                <div>
-                    <p className="text-xs font-semibold text-slate-600">
-                        {lakeName}
-                    </p>
-                    <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                        Chi phí khác
-                    </h1>
-                </div>
-
-                {canCreateExpense && (
-                    <button
-                        type="button"
-                        onClick={openAddModal}
-                        className="h-10 rounded-xl bg-[#9E6B05] px-3.5 text-xs font-bold text-white shadow-sm transition-transform duration-150 ease-out active:scale-95 flex items-center gap-1.5 hover:bg-[#8A5B00]"
-                    >
-                        <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2.5}
-                            stroke="currentColor"
+        <main className="mx-auto min-h-screen max-w-4xl bg-[#F8F6F0] px-4 pb-24 pt-6 sm:px-6">
+            {/* Header */}
+            <PageHeader
+                title="Quản lý chi phí khác"
+                subtitle={`Hồ: ${lakeName}`}
+                backHref="/dashboard"
+                backLabel="Bảng điều khiển"
+                action={
+                    canCreateExpense ? (
+                        <Button
+                            type="button"
+                            size="lg"
+                            variant="primary"
+                            onClick={openAddModal}
+                            icon={
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                            }
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 4.5v15m7.5-7.5h-15"
-                            />
-                        </svg>
-                        <span>Thêm chi phí</span>
-                    </button>
-                )}
-            </div>
+                            Thêm chi phí
+                        </Button>
+                    ) : undefined
+                }
+            />
 
-            {/* Small Success Notice */}
+            {/* Success message */}
             {successMessage && (
-                <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-medium text-emerald-800 animate-in fade-in duration-150">
-                    {successMessage}
+                <div className="mb-4">
+                    <InlineAlert type="success" message={successMessage} />
                 </div>
             )}
 
-            {/* Expenses List */}
-            <div className="space-y-2.5 mt-4">
-                <div className="flex items-center justify-between text-xs text-slate-500 font-semibold px-1">
-                    <span>Danh sách chi gần đây</span>
-                    <span>Tổng: {pagination.total} khoản chi</span>
-                </div>
-
+            {/* Expenses Content */}
+            <div className="space-y-4">
                 {expenses.length === 0 ? (
-                    <div className="rounded-2xl border border-[#EAE4D7] bg-white p-8 text-center text-xs text-slate-400">
+                    <Card className="p-8 text-center text-xs text-slate-500 font-medium">
                         Chưa có khoản chi phí nào được ghi nhận.
-                    </div>
+                    </Card>
                 ) : (
-                    <div className="space-y-2">
-                        {expenses.map((expense) => (
-                            <div
-                                key={expense.id}
-                                className="rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm flex items-center justify-between gap-3"
-                            >
-                                <div className="space-y-0.5">
-                                    <p className="text-xs font-bold text-slate-900 line-clamp-2">
-                                        {expense.description}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400">
-                                        {formatDateTime(expense.createdAt)}
-                                    </p>
-                                </div>
-                                <div className="text-right shrink-0">
-                                    <p className="text-sm font-bold text-red-600">
-                                        -{formatVnd(expense.amountVnd)}
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <>
+                        {/* Mobile View: Cards */}
+                        <div className="grid grid-cols-1 gap-2.5 md:hidden">
+                            {expenses.map((item) => (
+                                <Card key={item.id} className="p-4 space-y-2">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <p className="text-xs font-bold text-slate-900 leading-snug">
+                                            {item.description}
+                                        </p>
+                                        <span className="text-sm font-extrabold text-red-600 tabular-nums shrink-0">
+                                            -{formatVnd(item.amountVnd)}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium border-t border-[#E2DDD2] pt-2">
+                                        <span>{formatDateTime(item.createdAt)}</span>
+                                        <span className="font-mono text-[10px]">#{item.id.slice(0, 8)}</span>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {/* Desktop View: Table */}
+                        <div className="hidden overflow-hidden rounded-2xl border border-[#E2DDD2] bg-white shadow-2xs md:block">
+                            <table className="w-full text-left text-xs text-slate-600">
+                                <thead className="border-b border-[#E2DDD2] bg-[#F8F6F0] text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                    <tr>
+                                        <th className="px-4 py-3.5">Mã</th>
+                                        <th className="px-4 py-3.5">Nội dung chi</th>
+                                        <th className="px-4 py-3.5 text-right">Số tiền</th>
+                                        <th className="px-4 py-3.5">Thời gian</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#E2DDD2]">
+                                    {expenses.map((item) => (
+                                        <tr key={item.id} className="hover:bg-[#F8F6F0]/60 transition-colors">
+                                            <td className="px-4 py-3.5 font-mono text-slate-400">
+                                                #{item.id.slice(0, 8)}
+                                            </td>
+                                            <td className="px-4 py-3.5 font-bold text-slate-900">
+                                                {item.description}
+                                            </td>
+                                            <td className="px-4 py-3.5 text-right font-extrabold text-red-600 tabular-nums text-sm">
+                                                -{formatVnd(item.amountVnd)}
+                                            </td>
+                                            <td className="px-4 py-3.5 text-slate-500 font-medium">
+                                                {formatDateTime(item.createdAt)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
                 )}
 
                 {/* Pagination */}
                 {pagination.totalPages > 1 && (
-                    <div className="flex items-center justify-between pt-3 text-xs">
-                        <button
+                    <div className="flex items-center justify-between pt-2">
+                        <Button
                             type="button"
+                            size="sm"
+                            variant="outline"
                             disabled={pagination.page <= 1 || isLoadingPage}
                             onClick={() => fetchPage(pagination.page - 1)}
-                            className="h-9 px-3 rounded-lg border border-[#EAE4D7] bg-white font-semibold text-slate-700 disabled:opacity-50 active:scale-95 transition-transform"
                         >
                             Trang trước
-                        </button>
-                        <span className="text-slate-500 font-medium">
+                        </Button>
+                        <span className="text-xs font-bold text-slate-600">
                             Trang {pagination.page} / {pagination.totalPages}
                         </span>
-                        <button
+                        <Button
                             type="button"
-                            disabled={
-                                pagination.page >= pagination.totalPages ||
-                                isLoadingPage
-                            }
+                            size="sm"
+                            variant="outline"
+                            disabled={pagination.page >= pagination.totalPages || isLoadingPage}
                             onClick={() => fetchPage(pagination.page + 1)}
-                            className="h-9 px-3 rounded-lg border border-[#EAE4D7] bg-white font-semibold text-slate-700 disabled:opacity-50 active:scale-95 transition-transform"
                         >
                             Trang sau
-                        </button>
+                        </Button>
                     </div>
                 )}
             </div>
@@ -269,60 +288,38 @@ export function ExpenseManager({
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between border-b border-[#EAE4D7] pb-3">
+                        <div className="flex items-center justify-between border-b border-[#E2DDD2] pb-3">
                             <div className="flex items-center gap-2">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EAE2CE]">
-                                    <svg
-                                        className="h-4 w-4 text-[#9E6B05]"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        strokeWidth={2}
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                        />
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#102A43]/10 text-[#102A43]">
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                     </svg>
                                 </div>
-                                <h3 className="text-base font-bold text-slate-900">
-                                    Thêm chi phí
+                                <h3 className="text-base font-bold text-[#102A43]">
+                                    Thêm chi phí khác
                                 </h3>
                             </div>
                             <button
                                 type="button"
                                 disabled={isSubmitting}
                                 onClick={() => setIsModalOpen(false)}
-                                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-[#F7F4EE]"
+                                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-[#F8F6F0]"
                             >
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={2}
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
 
                         {/* Error notice */}
                         {error && (
-                            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-800">
-                                {error}
-                            </div>
+                            <InlineAlert type="error" message={error} />
                         )}
 
                         <form onSubmit={handleSubmit} className="space-y-3.5">
                             {/* Category Selector */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-700">
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                                     Hạng mục chi:
                                 </label>
                                 <div className="flex flex-wrap gap-1.5">
@@ -333,10 +330,10 @@ export function ExpenseManager({
                                                 key={cat}
                                                 type="button"
                                                 onClick={() => setSelectedCategory(cat)}
-                                                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                                                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all ${
                                                     isSelected
-                                                        ? "bg-[#9E6B05] text-white shadow-sm"
-                                                        : "bg-[#F7F4EE] text-slate-700 border border-[#EAE4D7] hover:border-[#9E6B05]"
+                                                        ? "bg-[#102A43] text-white shadow-2xs"
+                                                        : "bg-[#F8F6F0] text-slate-700 border border-[#E2DDD2] hover:border-[#102A43]"
                                                 }`}
                                             >
                                                 {cat}
@@ -348,61 +345,52 @@ export function ExpenseManager({
 
                             {/* Payment Method */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-700">
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                                     Phương thức chi:
                                 </label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setPaymentMethod("CASH")}
-                                        className={`h-9 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                                        className={`h-10 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                                             paymentMethod === "CASH"
-                                                ? "border-[#9E6B05] bg-[#F7F4EE] text-[#9E6B05] ring-1 ring-[#9E6B05]"
-                                                : "border-[#EAE4D7] bg-white text-slate-700 hover:border-slate-300"
+                                                ? "border-[#102A43] bg-[#102A43] text-white shadow-2xs"
+                                                : "border-[#E2DDD2] bg-white text-slate-700 hover:border-slate-300"
                                         }`}
                                     >
-                                        <span>Tiền mặt</span>
+                                        <span>💵 Tiền mặt</span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setPaymentMethod("BANK_TRANSFER")}
-                                        className={`h-9 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                                        className={`h-10 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                                             paymentMethod === "BANK_TRANSFER"
-                                                ? "border-[#9E6B05] bg-[#F7F4EE] text-[#9E6B05] ring-1 ring-[#9E6B05]"
-                                                : "border-[#EAE4D7] bg-white text-slate-700 hover:border-slate-300"
+                                                ? "border-[#102A43] bg-[#102A43] text-white shadow-2xs"
+                                                : "border-[#E2DDD2] bg-white text-slate-700 hover:border-slate-300"
                                         }`}
                                     >
-                                        <span>Chuyển khoản</span>
+                                        <span>🏦 Chuyển khoản</span>
                                     </button>
                                 </div>
                             </div>
 
                             {/* Amount Input */}
-                            <div className="space-y-1">
-                                <label className="text-xs font-semibold text-slate-700">
-                                    Số tiền (VNĐ): <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    step={1}
-                                    required
-                                    placeholder="Ví dụ: 150000"
-                                    value={amountStr}
-                                    onChange={(e) => setAmountStr(e.target.value)}
-                                    className="h-11 w-full rounded-xl border border-[#EAE4D7] px-3 text-sm font-bold text-slate-900 focus:border-[#9E6B05] focus:outline-none"
-                                />
-                                {numericAmount > 0 && (
-                                    <p className="text-right text-xs font-bold text-[#9E6B05]">
-                                        {formatVnd(numericAmount)}
-                                    </p>
-                                )}
-                            </div>
+                            <Input
+                                label="Số tiền (VNĐ) *"
+                                type="number"
+                                min={1}
+                                step={1}
+                                required
+                                placeholder="Ví dụ: 150000"
+                                value={amountStr}
+                                onChange={(e) => setAmountStr(e.target.value)}
+                                helperText={numericAmount > 0 ? `Định dạng: ${formatVnd(numericAmount)}` : undefined}
+                            />
 
                             {/* Description Input */}
-                            <div className="space-y-1">
-                                <label className="text-xs font-semibold text-slate-700">
-                                    Nội dung chi tiết: <span className="text-red-500">*</span>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                    Nội dung chi tiết *
                                 </label>
                                 <textarea
                                     rows={2}
@@ -411,27 +399,33 @@ export function ExpenseManager({
                                     placeholder="Ghi rõ lý do chi tiền..."
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="w-full rounded-xl border border-[#EAE4D7] p-2.5 text-xs text-slate-900 focus:border-[#9E6B05] focus:outline-none"
+                                    className="w-full rounded-xl border border-[#E2DDD2] p-2.5 text-xs text-slate-900 focus:border-[#102A43] focus:ring-2 focus:ring-[#102A43] focus:outline-none"
                                 />
                             </div>
 
                             {/* Actions */}
                             <div className="flex items-center gap-2 pt-2">
-                                <button
+                                <Button
                                     type="button"
+                                    size="lg"
+                                    variant="outline"
                                     disabled={isSubmitting}
                                     onClick={() => setIsModalOpen(false)}
-                                    className="h-11 flex-1 rounded-xl border border-[#EAE4D7] bg-white text-xs font-semibold text-slate-700 shadow-sm transition-all duration-150 ease-out active:scale-95 disabled:opacity-60"
+                                    className="flex-1"
                                 >
                                     Hủy
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="submit"
-                                    disabled={isSubmitting || numericAmount <= 0}
-                                    className="h-11 flex-[2] rounded-xl bg-[#9E6B05] text-xs font-bold text-white shadow-md transition-transform duration-150 ease-out active:scale-95 disabled:opacity-60"
+                                    size="lg"
+                                    variant="primary"
+                                    isLoading={isSubmitting}
+                                    loadingText="Đang lưu…"
+                                    disabled={numericAmount <= 0}
+                                    className="flex-2"
                                 >
-                                    {isSubmitting ? "Đang lưu…" : "Xác nhận thêm"}
-                                </button>
+                                    Xác nhận thêm
+                                </Button>
                             </div>
                         </form>
                     </div>

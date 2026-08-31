@@ -19,10 +19,10 @@ const NAV_ITEMS: NavItem[] = [
             (pathname.startsWith("/sessions/") && pathname !== "/sessions/new"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 ${isActive ? "text-[#9E6B05]" : "text-slate-400"}`}
+                className={`h-5 w-5 transition-colors ${isActive ? "text-[#102A43]" : "text-slate-400"}`}
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={isActive ? 2.2 : 1.8}
+                strokeWidth={isActive ? 2.3 : 1.8}
                 stroke="currentColor"
             >
                 <path
@@ -39,10 +39,10 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname === "/sessions/new",
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 ${isActive ? "text-[#9E6B05]" : "text-slate-400"}`}
+                className={`h-5 w-5 transition-colors ${isActive ? "text-[#102A43]" : "text-slate-400"}`}
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={isActive ? 2.2 : 1.8}
+                strokeWidth={isActive ? 2.3 : 1.8}
                 stroke="currentColor"
             >
                 <path
@@ -59,10 +59,10 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname.startsWith("/invoices"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 ${isActive ? "text-[#9E6B05]" : "text-slate-400"}`}
+                className={`h-5 w-5 transition-colors ${isActive ? "text-[#102A43]" : "text-slate-400"}`}
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={isActive ? 2.2 : 1.8}
+                strokeWidth={isActive ? 2.3 : 1.8}
                 stroke="currentColor"
             >
                 <path
@@ -79,10 +79,10 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname.startsWith("/reports"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 ${isActive ? "text-[#9E6B05]" : "text-slate-400"}`}
+                className={`h-5 w-5 transition-colors ${isActive ? "text-[#102A43]" : "text-slate-400"}`}
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={isActive ? 2.2 : 1.8}
+                strokeWidth={isActive ? 2.3 : 1.8}
                 stroke="currentColor"
             >
                 <path
@@ -99,10 +99,10 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname.startsWith("/settings"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 ${isActive ? "text-[#9E6B05]" : "text-slate-400"}`}
+                className={`h-5 w-5 transition-colors ${isActive ? "text-[#102A43]" : "text-slate-400"}`}
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={isActive ? 2.2 : 1.8}
+                strokeWidth={isActive ? 2.3 : 1.8}
                 stroke="currentColor"
             >
                 <path
@@ -126,7 +126,7 @@ export function MobileBottomNav() {
     return (
         <nav
             aria-label="Mobile Navigation"
-            className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#EAE4D7] bg-white/95 backdrop-blur-md shadow-lg print:hidden"
+            className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#E2DDD2] bg-white/95 backdrop-blur-md shadow-lg print:hidden"
         >
             <div className="mx-auto flex h-14 max-w-md items-center justify-around px-2">
                 {NAV_ITEMS.map((item) => {
@@ -135,16 +135,20 @@ export function MobileBottomNav() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center py-1 text-center transition-colors duration-150 ease-out active:scale-95 ${
+                            className={`flex min-h-12 min-w-12 flex-1 flex-col items-center justify-center py-1 text-center transition-all duration-150 ease-out active:scale-95 ${
                                 active
-                                    ? "font-bold text-[#9E6B05]"
+                                    ? "font-bold text-[#102A43]"
                                     : "font-medium text-slate-400 hover:text-slate-600"
                             }`}
                         >
                             <div className="flex h-5 w-5 items-center justify-center">
                                 {item.icon(active)}
                             </div>
-                            <span className="mt-0.5 text-[10px] tracking-tight">
+                            <span
+                                className={`mt-0.5 text-[10px] tracking-tight ${
+                                    active ? "font-extrabold text-[#102A43]" : "font-medium text-slate-500"
+                                }`}
+                            >
                                 {item.label}
                             </span>
                         </Link>

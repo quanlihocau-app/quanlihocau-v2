@@ -3,6 +3,11 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input, Select } from "@/components/ui/input";
+import { InlineAlert } from "@/components/ui/inline-alert";
+
 interface AreaOption {
     id: string;
     name: string;
@@ -49,48 +54,45 @@ export function CreateAreaForm() {
     }
 
     return (
-        <form
-            onSubmit={handleSubmit}
-            className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-        >
-            <h3 className="text-lg font-semibold text-slate-900">
-                Thêm khu vực mới
-            </h3>
-            <p className="mt-1 text-xs text-slate-500">
-                Ví dụ: Khu VIP, Khu A, Bờ Tây...
-            </p>
+        <Card className="p-5 sm:p-6 space-y-4">
+            <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
+                    Thêm khu vực mới
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 font-medium">
+                    Ví dụ: Khu VIP, Khu A, Bờ Tây...
+                </p>
+            </div>
 
-            <div className="mt-4 space-y-4">
-                <label className="block text-sm font-medium text-slate-700">
-                    Tên khu vực
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                        minLength={2}
-                        maxLength={100}
-                        placeholder="Nhập tên khu vực"
-                        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-                    />
-                </label>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                    label="Tên khu vực *"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    minLength={2}
+                    maxLength={100}
+                    placeholder="Nhập tên khu vực"
+                />
 
-                {error ? <p className="text-xs text-red-600">{error}</p> : null}
+                {error ? <InlineAlert type="error" message={error} /> : null}
                 {success ? (
-                    <p className="text-xs text-green-600">
-                        Đã thêm khu vực thành công!
-                    </p>
+                    <InlineAlert type="success" message="Đã thêm khu vực thành công!" />
                 ) : null}
 
-                <button
+                <Button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
+                    size="lg"
+                    variant="primary"
+                    isLoading={isSubmitting}
+                    loadingText="Đang thêm…"
+                    className="w-full"
                 >
-                    {isSubmitting ? "Đang thêm..." : "Tạo khu vực"}
-                </button>
-            </div>
-        </form>
+                    Tạo khu vực
+                </Button>
+            </form>
+        </Card>
     );
 }
 
@@ -137,76 +139,70 @@ export function CreateHutForm({ areas }: { areas: AreaOption[] }) {
 
     if (areas.length === 0) {
         return (
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">
+            <Card className="p-5 sm:p-6 space-y-2">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
                     Thêm chòi câu mới
                 </h3>
-                <p className="mt-2 text-sm text-slate-500">
+                <p className="text-xs text-slate-500 font-medium">
                     Bạn cần tạo ít nhất một khu vực trước khi thêm chòi.
                 </p>
-            </div>
+            </Card>
         );
     }
 
     return (
-        <form
-            onSubmit={handleSubmit}
-            className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-        >
-            <h3 className="text-lg font-semibold text-slate-900">
-                Thêm chòi câu mới
-            </h3>
-            <p className="mt-1 text-xs text-slate-500">
-                Ví dụ: Chòi 01, Chòi VIP 1...
-            </p>
+        <Card className="p-5 sm:p-6 space-y-4">
+            <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
+                    Thêm chòi câu mới
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500 font-medium">
+                    Ví dụ: Chòi 01, Chòi VIP 1...
+                </p>
+            </div>
 
-            <div className="mt-4 space-y-4">
-                <label className="block text-sm font-medium text-slate-700">
-                    Khu vực
-                    <select
-                        value={areaId}
-                        onChange={(e) => setAreaId(e.target.value)}
-                        required
-                        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-                    >
-                        <option value="">-- Chọn khu vực --</option>
-                        {areas.map((area) => (
-                            <option key={area.id} value={area.id}>
-                                {area.name}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <Select
+                    label="Khu vực *"
+                    value={areaId}
+                    onChange={(e) => setAreaId(e.target.value)}
+                    required
+                >
+                    <option value="">-- Chọn khu vực --</option>
+                    {areas.map((area) => (
+                        <option key={area.id} value={area.id}>
+                            {area.name}
+                        </option>
+                    ))}
+                </Select>
 
-                <label className="block text-sm font-medium text-slate-700">
-                    Tên chòi
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                        minLength={2}
-                        maxLength={100}
-                        placeholder="Nhập tên chòi câu"
-                        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-                    />
-                </label>
+                <Input
+                    label="Tên chòi *"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    minLength={2}
+                    maxLength={100}
+                    placeholder="Nhập tên chòi câu"
+                />
 
-                {error ? <p className="text-xs text-red-600">{error}</p> : null}
+                {error ? <InlineAlert type="error" message={error} /> : null}
                 {success ? (
-                    <p className="text-xs text-green-600">
-                        Đã thêm chòi thành công!
-                    </p>
+                    <InlineAlert type="success" message="Đã thêm chòi thành công!" />
                 ) : null}
 
-                <button
+                <Button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:opacity-60"
+                    size="lg"
+                    variant="primary"
+                    isLoading={isSubmitting}
+                    loadingText="Đang thêm…"
+                    className="w-full"
                 >
-                    {isSubmitting ? "Đang thêm..." : "Tạo chòi"}
-                </button>
-            </div>
-        </form>
+                    Tạo chòi
+                </Button>
+            </form>
+        </Card>
     );
 }

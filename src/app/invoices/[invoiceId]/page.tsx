@@ -14,6 +14,9 @@ import { getTenantContext } from "@/lib/tenant";
 
 import { InvoiceLinesSection } from "./invoice-lines-section";
 import { PrintReceiptButton } from "./print-receipt-button";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card } from "@/components/ui/card";
+import { InvoiceStatusBadge } from "@/components/ui/badge";
 
 const uuidSchema = z.string().uuid();
 
@@ -29,42 +32,8 @@ function formatDateTime(date: Date | null): string {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
+        timeZone: "Asia/Ho_Chi_Minh",
     }).format(new Date(date));
-}
-
-function getStatusBadge(status: InvoiceStatus) {
-    switch (status) {
-        case InvoiceStatus.DRAFT:
-            return (
-                <span className="inline-flex items-center rounded-md bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
-                    Bản nháp (DRAFT)
-                </span>
-            );
-        case InvoiceStatus.PAID:
-            return (
-                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                    Đã thanh toán (PAID)
-                </span>
-            );
-        case InvoiceStatus.PARTIALLY_PAID:
-            return (
-                <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
-                    Thanh toán 1 phần
-                </span>
-            );
-        case InvoiceStatus.VOIDED:
-            return (
-                <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">
-                    Đã hủy (VOIDED)
-                </span>
-            );
-        default:
-            return (
-                <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                    {status}
-                </span>
-            );
-    }
 }
 
 function getInvoiceTitle(status: InvoiceStatus): string {
@@ -113,11 +82,11 @@ export default async function InvoiceDetailPage({
     if (!tenantContext) {
         return (
             <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12">
-                <div className="w-full rounded-xl border border-amber-200 bg-amber-50 p-8 text-center shadow-sm">
-                    <h1 className="text-xl font-semibold text-amber-900">
+                <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+                    <h1 className="text-xl font-bold text-red-900">
                         Chưa có quyền truy cập
                     </h1>
-                    <p className="mt-2 text-sm text-amber-700">
+                    <p className="mt-2 text-xs text-red-700">
                         Tài khoản ({session.user.email}) hiện chưa được gán quyền
                         hoặc hồ câu đã bị xóa. Vui lòng liên hệ quản trị viên.
                     </p>
@@ -207,8 +176,8 @@ export default async function InvoiceDetailPage({
     if (!invoice) {
         return (
             <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12">
-                <div className="w-full rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                <Card className="w-full p-8 text-center space-y-4">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                         <svg
                             className="h-6 w-6"
                             fill="none"
@@ -223,21 +192,23 @@ export default async function InvoiceDetailPage({
                             />
                         </svg>
                     </div>
-                    <h1 className="text-xl font-semibold text-slate-900">
-                        Không tìm thấy hóa đơn
-                    </h1>
-                    <p className="mt-2 text-sm text-slate-500">
-                        Hóa đơn không tồn tại hoặc bạn không có quyền truy cập hóa đơn thuộc hồ câu này.
-                    </p>
-                    <div className="mt-6">
+                    <div>
+                        <h1 className="text-lg font-bold text-slate-900">
+                            Không tìm thấy hóa đơn
+                        </h1>
+                        <p className="mt-1 text-xs text-slate-500 font-medium">
+                            Hóa đơn không tồn tại hoặc bạn không có quyền truy cập hóa đơn thuộc hồ câu này.
+                        </p>
+                    </div>
+                    <div className="pt-2">
                         <Link
                             href="/invoices"
-                            className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700"
+                            className="inline-flex h-11 items-center justify-center rounded-xl bg-[#102A43] px-5 text-xs font-bold text-white shadow-sm transition hover:bg-[#1E3A5F]"
                         >
                             Quay lại danh sách hóa đơn
                         </Link>
                     </div>
-                </div>
+                </Card>
             </main>
         );
     }
@@ -320,124 +291,90 @@ export default async function InvoiceDetailPage({
     }));
 
     return (
-        <div className="min-h-screen bg-slate-50 py-8 print:bg-white print:py-0">
+        <div className="min-h-screen bg-[#F8F6F0] py-6 pb-24 print:bg-white print:py-0">
             <main className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 print:max-w-none print:px-0">
                 {/* Navigation and Actions - Hidden when printing */}
-                <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center print:hidden">
-                    <div className="flex items-center gap-3">
-                        <Link
-                            href="/invoices"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-                        >
-                            <svg
-                                className="h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-                                />
-                            </svg>
-                            <span>Danh sách hóa đơn</span>
-                        </Link>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <PrintReceiptButton />
-                    </div>
+                <div className="print:hidden">
+                    <PageHeader
+                        title={getInvoiceTitle(invoice.status)}
+                        subtitle={`Hồ câu: ${tenantContext.lakeName}`}
+                        backHref="/invoices"
+                        backLabel="Danh sách hóa đơn"
+                        badge={<InvoiceStatusBadge status={invoice.status} />}
+                        action={<PrintReceiptButton />}
+                    />
                 </div>
 
-                {/* Printable Invoice / Receipt Card */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10 print:rounded-none print:border-none print:p-0 print:shadow-none">
-                    {/* Header */}
-                    <div className="border-b border-slate-200 pb-6">
-                        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                            <div>
-                                <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900 sm:text-3xl">
-                                    {getInvoiceTitle(invoice.status)}
-                                </h1>
-                                <p className="mt-1 text-base font-semibold text-emerald-700">
-                                    {tenantContext.lakeName}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                    Đơn vị: {tenantContext.organizationName}
-                                </p>
+                {/* Printable Invoice Card Body */}
+                <Card className="p-6 sm:p-8 print:border-none print:shadow-none print:p-0 space-y-6">
+                    {/* Hồ & Thông tin cơ bản */}
+                    <div className="flex flex-col justify-between gap-4 border-b border-[#E2DDD2] pb-6 sm:flex-row sm:items-start">
+                        <div>
+                            <span className="text-xs font-bold uppercase tracking-wider text-[#102A43]">
+                                {tenantContext.organizationName}
+                            </span>
+                            <h1 className="text-xl font-black text-[#102A43] sm:text-2xl mt-0.5">
+                                {tenantContext.lakeName}
+                            </h1>
+                            <p className="text-xs text-slate-500 font-medium mt-1">
+                                Mã hóa đơn: <span className="font-mono font-bold text-slate-700">{invoice.id}</span>
+                            </p>
+                        </div>
+                        <div className="flex flex-col items-start sm:items-end">
+                            <div className="text-xs text-slate-500 font-medium">
+                                Ngày tạo: <span className="font-bold text-slate-800">{formatDateTime(invoice.createdAt)}</span>
                             </div>
-                            <div className="text-left sm:text-right">
-                                <div className="inline-block">{getStatusBadge(invoice.status)}</div>
-                                <p className="mt-2 font-mono text-xs text-slate-500">
-                                    Mã HĐ: <span className="font-semibold text-slate-800">{invoice.id}</span>
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                    Ngày tạo: {formatDateTime(invoice.createdAt)}
-                                </p>
+                            <div className="mt-2">
+                                <InvoiceStatusBadge status={invoice.status} />
                             </div>
                         </div>
                     </div>
 
-                    {/* Customer and Session Information */}
-                    <div className="mt-6 grid grid-cols-1 gap-6 border-b border-slate-200 pb-6 sm:grid-cols-2">
-                        <div>
-                            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                                Thông tin khách hàng
-                            </h2>
-                            <div className="mt-2 space-y-1 text-sm">
-                                <p className="font-medium text-slate-900">
-                                    {invoice.customer?.name ?? "Khách vãng lai"}
-                                </p>
-                                {invoice.customer?.phoneNormalized ? (
-                                    <p className="text-slate-600">
-                                        Số điện thoại: {invoice.customer.phoneNormalized}
-                                    </p>
-                                ) : (
-                                    <p className="text-slate-400 italic">Không có số điện thoại</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div>
-                            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                                Thông tin phiên câu
-                            </h2>
-                            {invoice.fishingSession ? (
-                                <div className="mt-2 space-y-1 text-sm text-slate-600">
-                                    <p>
-                                        Gói câu:{" "}
-                                        <span className="font-medium text-slate-900">
-                                            {invoice.fishingSession.packageNameSnapshot}
-                                        </span>{" "}
-                                        ({formatVnd(invoice.fishingSession.packagePriceVndSnapshot)})
-                                    </p>
-                                    <p>
-                                        Chòi câu:{" "}
-                                        <span className="font-medium text-slate-900">
-                                            {invoice.fishingSession.hutLinks
-                                                .map(
-                                                    (hl) =>
-                                                        `${hl.hut.name} (${hl.hut.area.name})`,
-                                                )
-                                                .join(", ") || "—"}
-                                        </span>
-                                    </p>
-                                    <p className="text-xs text-slate-500">
-                                        Thời gian:{" "}
-                                        {formatDateTime(invoice.fishingSession.startAt)} →{" "}
-                                        {formatDateTime(invoice.fishingSession.endedAt)}
-                                    </p>
-                                </div>
-                            ) : (
-                                <p className="mt-2 text-sm text-slate-400 italic">
-                                    Không gắn với phiên câu cụ thể
+                    {/* Customer & Fishing Session Info Grid */}
+                    <div className="grid grid-cols-1 gap-6 rounded-2xl bg-[#F8F6F0]/60 p-4 border border-[#E2DDD2] sm:grid-cols-2 text-xs">
+                        <div className="space-y-1">
+                            <span className="font-bold uppercase tracking-wider text-slate-400 text-[10px]">
+                                Khách hàng
+                            </span>
+                            <p className="text-sm font-bold text-slate-900">
+                                {invoice.customer?.name ?? "Khách vãng lai"}
+                            </p>
+                            {invoice.customer?.phoneNormalized && (
+                                <p className="font-mono text-slate-600">
+                                    {invoice.customer.phoneNormalized}
                                 </p>
                             )}
                         </div>
+
+                        {invoice.fishingSession && (
+                            <div className="space-y-1">
+                                <span className="font-bold uppercase tracking-wider text-slate-400 text-[10px]">
+                                    Phiên câu liên kết
+                                </span>
+                                <p className="text-sm font-bold text-slate-900">
+                                    {invoice.fishingSession.packageNameSnapshot}
+                                </p>
+                                <p className="text-slate-600 font-medium">
+                                    Chòi:{" "}
+                                    <span className="font-bold text-slate-800">
+                                        {invoice.fishingSession.hutLinks
+                                            .map(
+                                                (hl) =>
+                                                    `${hl.hut.name} (${hl.hut.area.name})`,
+                                            )
+                                            .join(", ") || "—"}
+                                    </span>
+                                </p>
+                                <p className="text-slate-500 font-mono text-[11px]">
+                                    {formatDateTime(invoice.fishingSession.startAt)} →{" "}
+                                    {formatDateTime(invoice.fishingSession.endedAt)}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Invoice Lines Section */}
-                    <div className="mt-6">
+                    {/* Line Items Section */}
+                    <div>
                         <InvoiceLinesSection
                             invoiceId={invoice.id}
                             isDraft={isDraft}
@@ -447,24 +384,24 @@ export default async function InvoiceDetailPage({
                     </div>
 
                     {/* Financial Summary */}
-                    <div className="mt-6 border-t border-slate-200 pt-4">
+                    <div className="border-t border-[#E2DDD2] pt-4">
                         <div className="flex flex-col items-end">
-                            <div className="w-full space-y-2 text-sm sm:w-72">
-                                <div className="flex justify-between text-slate-600">
+                            <div className="w-full space-y-2 text-xs sm:w-72">
+                                <div className="flex justify-between text-slate-600 font-medium">
                                     <span>Tổng hóa đơn:</span>
-                                    <span className="font-semibold text-slate-900">
+                                    <span className="font-bold text-slate-900 tabular-nums text-sm">
                                         {formatVnd(invoice.totalAmountVnd)}
                                     </span>
                                 </div>
-                                <div className="flex justify-between text-emerald-700">
+                                <div className="flex justify-between text-[#0D9488] font-medium">
                                     <span>Đã thu (số ròng):</span>
-                                    <span className="font-semibold">
+                                    <span className="font-bold tabular-nums">
                                         {formatVnd(paidAmount)}
                                     </span>
                                 </div>
-                                <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900">
+                                <div className="flex justify-between border-t border-[#E2DDD2] pt-2 text-sm font-black text-slate-900">
                                     <span>Còn lại:</span>
-                                    <span className={remaining > 0 ? "text-amber-600" : "text-emerald-600"}>
+                                    <span className={`tabular-nums ${remaining > 0 ? "text-orange-700" : "text-[#0D9488]"}`}>
                                         {formatVnd(remaining)}
                                     </span>
                                 </div>
@@ -473,27 +410,27 @@ export default async function InvoiceDetailPage({
                     </div>
 
                     {/* Payment Transactions History */}
-                    <div className="mt-8 border-t border-slate-200 pt-6">
-                        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    <div className="border-t border-[#E2DDD2] pt-6 space-y-3">
+                        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                             Lịch sử giao dịch thanh toán ({invoice.payments.length})
                         </h2>
                         {invoice.payments.length === 0 ? (
-                            <p className="mt-2 text-sm text-slate-400 italic">
+                            <p className="text-xs text-slate-400 italic font-medium">
                                 Chưa có giao dịch thanh toán nào được ghi nhận.
                             </p>
                         ) : (
-                            <div className="mt-3 overflow-x-auto">
+                            <div className="overflow-x-auto rounded-xl border border-[#E2DDD2] bg-white">
                                 <table className="w-full text-left text-xs text-slate-600">
-                                    <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase text-slate-500 print:bg-slate-100">
+                                    <thead className="border-b border-[#E2DDD2] bg-[#F8F6F0] text-[11px] font-bold uppercase tracking-wider text-slate-500">
                                         <tr>
-                                            <th className="px-3 py-2">Loại giao dịch</th>
-                                            <th className="px-3 py-2">Phương thức</th>
-                                            <th className="px-3 py-2 text-right">Số tiền</th>
-                                            <th className="px-3 py-2">Thời gian</th>
-                                            <th className="px-3 py-2">Ghi chú</th>
+                                            <th className="px-3.5 py-2.5">Loại giao dịch</th>
+                                            <th className="px-3.5 py-2.5">Phương thức</th>
+                                            <th className="px-3.5 py-2.5 text-right">Số tiền</th>
+                                            <th className="px-3.5 py-2.5">Thời gian</th>
+                                            <th className="px-3.5 py-2.5">Ghi chú</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody className="divide-y divide-[#E2DDD2]">
                                         {invoice.payments.map((payment) => {
                                             const isReversal =
                                                 payment.direction ===
@@ -501,36 +438,36 @@ export default async function InvoiceDetailPage({
                                                 Boolean(payment.reversalOfId);
 
                                             return (
-                                                <tr key={payment.id}>
-                                                    <td className="px-3 py-2.5">
+                                                <tr key={payment.id} className="hover:bg-[#F8F6F0]/60 transition-colors">
+                                                    <td className="px-3.5 py-2.5 font-bold">
                                                         {isReversal ? (
-                                                            <span className="inline-flex items-center rounded bg-red-50 px-2 py-0.5 font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                                                            <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-red-700 border border-red-200">
                                                                 Chi ra (Hoàn tác)
                                                             </span>
                                                         ) : (
-                                                            <span className="inline-flex items-center rounded bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                                            <span className="inline-flex items-center rounded-md bg-teal-50 px-2 py-0.5 text-[#0D9488] border border-teal-200">
                                                                 Thu vào (IN)
                                                             </span>
                                                         )}
                                                     </td>
-                                                    <td className="px-3 py-2.5">
+                                                    <td className="px-3.5 py-2.5 font-medium">
                                                         {getPaymentMethodLabel(payment.method)}
                                                     </td>
-                                                    <td className="px-3 py-2.5 text-right font-medium">
+                                                    <td className="px-3.5 py-2.5 text-right font-extrabold tabular-nums">
                                                         {isReversal ? (
                                                             <span className="text-red-600">
                                                                 -{formatVnd(payment.amountVnd)}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-emerald-600">
+                                                            <span className="text-[#0D9488]">
                                                                 +{formatVnd(payment.amountVnd)}
                                                             </span>
                                                         )}
                                                     </td>
-                                                    <td className="px-3 py-2.5 text-slate-500">
+                                                    <td className="px-3.5 py-2.5 text-slate-500">
                                                         {formatDateTime(payment.createdAt)}
                                                     </td>
-                                                    <td className="px-3 py-2.5 text-slate-400 font-mono">
+                                                    <td className="px-3.5 py-2.5 text-slate-400 font-mono text-[11px]">
                                                         {payment.reversalOfId ? (
                                                             <span>Hoàn tiền GD #{payment.reversalOfId.slice(0, 8)}</span>
                                                         ) : (
@@ -549,19 +486,19 @@ export default async function InvoiceDetailPage({
                     {/* Receipt Signatures Area for Printing */}
                     <div className="mt-12 hidden grid-cols-2 gap-8 pt-8 text-center text-xs text-slate-600 print:grid">
                         <div>
-                            <p className="font-semibold uppercase text-slate-700">Người in phiếu</p>
-                            <p className="mt-1 text-[11px] text-slate-400">(Ký và ghi rõ họ tên)</p>
-                            <div className="mt-16 text-slate-800 font-medium">{tenantContext.userName}</div>
+                            <p className="font-bold uppercase text-slate-700">Người in phiếu</p>
+                            <p className="mt-1 text-[11px] text-slate-400 font-medium">(Ký và ghi rõ họ tên)</p>
+                            <div className="mt-16 text-slate-800 font-bold">{tenantContext.userName}</div>
                         </div>
                         <div>
-                            <p className="font-semibold uppercase text-slate-700">Khách hàng</p>
-                            <p className="mt-1 text-[11px] text-slate-400">(Ký và ghi rõ họ tên)</p>
-                            <div className="mt-16 text-slate-800 font-medium">
+                            <p className="font-bold uppercase text-slate-700">Khách hàng</p>
+                            <p className="mt-1 text-[11px] text-slate-400 font-medium">(Ký và ghi rõ họ tên)</p>
+                            <div className="mt-16 text-slate-800 font-bold">
                                 {invoice.customer?.name ?? "Khách hàng"}
                             </div>
                         </div>
                     </div>
-                </div>
+                </Card>
             </main>
         </div>
     );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 export interface StockItem {
     id: string;
@@ -40,6 +41,7 @@ function formatDateTime(date: Date | string | null): string {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
+        timeZone: "Asia/Ho_Chi_Minh",
     }).format(new Date(date));
 }
 
@@ -76,17 +78,17 @@ export function InventoryMovementList({
     });
 
     return (
-        <div>
+        <div className="space-y-4">
             {/* Tabs Header */}
-            <div className="mb-4 flex flex-col justify-between gap-4 border-b border-slate-200 pb-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col justify-between gap-3 border-b border-[#E2DDD2] pb-3 sm:flex-row sm:items-center">
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
                         onClick={() => setActiveTab("stock")}
-                        className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+                        className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                             activeTab === "stock"
-                                ? "bg-slate-900 text-white shadow-sm"
-                                : "bg-white text-slate-600 hover:bg-slate-100"
+                                ? "bg-[#102A43] text-white shadow-2xs"
+                                : "bg-white text-slate-600 border border-[#E2DDD2] hover:bg-[#F8F6F0]"
                         }`}
                     >
                         Tồn kho mặt hàng ({stockItems.length})
@@ -94,255 +96,283 @@ export function InventoryMovementList({
                     <button
                         type="button"
                         onClick={() => setActiveTab("history")}
-                        className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+                        className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
                             activeTab === "history"
-                                ? "bg-slate-900 text-white shadow-sm"
-                                : "bg-white text-slate-600 hover:bg-slate-100"
+                                ? "bg-[#102A43] text-white shadow-2xs"
+                                : "bg-white text-slate-600 border border-[#E2DDD2] hover:bg-[#F8F6F0]"
                         }`}
                     >
-                        Lịch sử nhập / xuất ({movements.length})
+                        Nhật ký biến động ({movements.length})
                     </button>
                 </div>
 
-                {/* Filter and Search */}
-                <div className="flex flex-wrap items-center gap-2">
-                    {activeTab === "history" && (
-                        <div className="flex items-center rounded-lg border border-slate-200 bg-white p-1 text-xs">
-                            <button
-                                type="button"
-                                onClick={() => setHistoryFilter("ALL")}
-                                className={`rounded px-2.5 py-1 font-medium transition ${
-                                    historyFilter === "ALL"
-                                        ? "bg-slate-100 text-slate-900 font-semibold"
-                                        : "text-slate-500 hover:text-slate-800"
-                                }`}
-                            >
-                                Tất cả
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setHistoryFilter("IN")}
-                                className={`rounded px-2.5 py-1 font-medium transition ${
-                                    historyFilter === "IN"
-                                        ? "bg-emerald-50 text-emerald-700 font-semibold"
-                                        : "text-slate-500 hover:text-slate-800"
-                                }`}
-                            >
-                                Nhập kho
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setHistoryFilter("OUT")}
-                                className={`rounded px-2.5 py-1 font-medium transition ${
-                                    historyFilter === "OUT"
-                                        ? "bg-amber-50 text-amber-700 font-semibold"
-                                        : "text-slate-500 hover:text-slate-800"
-                                }`}
-                            >
-                                Xuất kho
-                            </button>
-                        </div>
-                    )}
-
-                    <div className="relative">
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Tìm kiếm..."
-                            className="block w-48 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        />
-                    </div>
+                <div className="w-full sm:w-64">
+                    <Input
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Tìm theo tên, SKU, lý do..."
+                    />
                 </div>
             </div>
 
-            {/* Tab 1: Current Stock Overview */}
+            {/* TAB 1: CURRENT STOCK */}
             {activeTab === "stock" && (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-slate-600">
-                        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
-                            <tr>
-                                <th className="px-4 py-3">Mã SKU</th>
-                                <th className="px-4 py-3">Tên sản phẩm</th>
-                                <th className="px-4 py-3 text-right">Đơn giá bán</th>
-                                <th className="px-4 py-3 text-right">Số lượng tồn</th>
-                                <th className="px-4 py-3 text-right">Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {filteredStock.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan={5}
-                                        className="px-4 py-8 text-center text-sm text-slate-400"
-                                    >
-                                        {searchTerm
-                                            ? "Không tìm thấy sản phẩm nào khớp với tìm kiếm."
-                                            : "Chưa có mặt hàng nào trong kho."}
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredStock.map((item) => (
-                                    <tr
-                                        key={item.id}
-                                        className="transition hover:bg-slate-50/50"
-                                    >
-                                        <td className="px-4 py-3.5 font-mono text-xs font-semibold text-slate-700">
-                                            {item.sku ? (
-                                                <span className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-slate-800">
-                                                    {item.sku}
-                                                </span>
-                                            ) : (
-                                                <span className="text-slate-400 italic">
-                                                    —
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3.5 font-medium text-slate-900">
+                <div>
+                    {/* Mobile Cards */}
+                    <div className="grid grid-cols-1 gap-2.5 md:hidden">
+                        {filteredStock.length === 0 ? (
+                            <p className="py-8 text-center text-xs text-slate-500 font-medium">
+                                Không tìm thấy mặt hàng nào khớp với tìm kiếm.
+                            </p>
+                        ) : (
+                            filteredStock.map((item) => (
+                                <div
+                                    key={item.id}
+                                    className="flex items-center justify-between rounded-xl border border-[#E2DDD2] bg-[#F8F6F0]/40 p-3.5"
+                                >
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-900">
                                             {item.name}
-                                        </td>
-                                        <td className="px-4 py-3.5 text-right font-medium text-slate-600">
-                                            {formatVnd(item.priceVnd)}
-                                        </td>
-                                        <td className="px-4 py-3.5 text-right font-semibold">
-                                            <span
-                                                className={`font-mono text-sm ${
-                                                    item.currentStock === 0
-                                                        ? "text-rose-600"
-                                                        : item.currentStock <= 5
-                                                        ? "text-amber-600"
-                                                        : "text-emerald-700"
-                                                }`}
-                                            >
-                                                {item.currentStock}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3.5 text-right text-xs">
-                                            {item.currentStock === 0 ? (
-                                                <span className="inline-flex items-center rounded-md bg-rose-50 px-2 py-1 font-medium text-rose-700 ring-1 ring-inset ring-rose-600/10">
-                                                    Hết hàng
-                                                </span>
-                                            ) : item.currentStock <= 5 ? (
-                                                <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 font-medium text-amber-700 ring-1 ring-inset ring-amber-600/10">
-                                                    Sắp hết
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/10">
-                                                    Sẵn sàng
-                                                </span>
-                                            )}
+                                        </p>
+                                        <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                            {item.sku ? `SKU: ${item.sku}` : "Không có SKU"} • {formatVnd(item.priceVnd)}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <span
+                                            className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-extrabold tabular-nums ${
+                                                item.currentStock > 10
+                                                    ? "bg-teal-50 text-[#0D9488] border border-teal-200"
+                                                    : item.currentStock > 0
+                                                    ? "bg-orange-50 text-orange-700 border border-orange-200"
+                                                    : "bg-red-50 text-red-700 border border-red-200"
+                                            }`}
+                                        >
+                                            {item.currentStock}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Desktop Table */}
+                    <div className="hidden overflow-hidden rounded-xl border border-[#E2DDD2] bg-white md:block">
+                        <table className="w-full text-left text-xs text-slate-600">
+                            <thead className="border-b border-[#E2DDD2] bg-[#F8F6F0] text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                                <tr>
+                                    <th className="px-4 py-3.5">Mã SKU</th>
+                                    <th className="px-4 py-3.5">Tên sản phẩm</th>
+                                    <th className="px-4 py-3.5 text-right">Đơn giá bán</th>
+                                    <th className="px-4 py-3.5 text-right">Số lượng tồn kho</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#E2DDD2]">
+                                {filteredStock.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={4}
+                                            className="px-4 py-8 text-center text-xs text-slate-400"
+                                        >
+                                            Không tìm thấy mặt hàng nào khớp với tìm kiếm.
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    filteredStock.map((item) => (
+                                        <tr
+                                            key={item.id}
+                                            className="hover:bg-[#F8F6F0]/60 transition-colors"
+                                        >
+                                            <td className="px-4 py-3.5 font-mono text-xs font-bold text-slate-700">
+                                                {item.sku ? (
+                                                    <span className="inline-flex items-center rounded-md bg-[#F8F6F0] px-2 py-0.5 text-slate-800 border border-[#E2DDD2]">
+                                                        {item.sku}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-slate-400 italic">
+                                                        —
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3.5 font-bold text-slate-900">
+                                                {item.name}
+                                            </td>
+                                            <td className="px-4 py-3.5 text-right font-medium text-slate-700 tabular-nums">
+                                                {formatVnd(item.priceVnd)}
+                                            </td>
+                                            <td className="px-4 py-3.5 text-right">
+                                                <span
+                                                    className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-extrabold tabular-nums ${
+                                                        item.currentStock > 10
+                                                            ? "bg-teal-50 text-[#0D9488] border border-teal-200"
+                                                            : item.currentStock > 0
+                                                            ? "bg-orange-50 text-orange-700 border border-orange-200"
+                                                            : "bg-red-50 text-red-700 border border-red-200"
+                                                    }`}
+                                                >
+                                                    {item.currentStock}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 
-            {/* Tab 2: Movements History */}
+            {/* TAB 2: MOVEMENT HISTORY */}
             {activeTab === "history" && (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-slate-600">
-                        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
-                            <tr>
-                                <th className="px-4 py-3">Thời gian</th>
-                                <th className="px-4 py-3">Mặt hàng</th>
-                                <th className="px-4 py-3">Loại phiếu</th>
-                                <th className="px-4 py-3 text-right">Số lượng</th>
-                                <th className="px-4 py-3">Lý do</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {filteredMovements.length === 0 ? (
+                <div className="space-y-3">
+                    {/* Filter buttons */}
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() => setHistoryFilter("ALL")}
+                            className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                                historyFilter === "ALL"
+                                    ? "bg-[#102A43] text-white shadow-2xs"
+                                    : "bg-white text-slate-600 border border-[#E2DDD2]"
+                            }`}
+                        >
+                            Tất cả
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setHistoryFilter("IN")}
+                            className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                                historyFilter === "IN"
+                                    ? "bg-[#0D9488] text-white shadow-2xs"
+                                    : "bg-white text-slate-600 border border-[#E2DDD2]"
+                            }`}
+                        >
+                            + Nhập kho
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setHistoryFilter("OUT")}
+                            className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+                                historyFilter === "OUT"
+                                    ? "bg-orange-600 text-white shadow-2xs"
+                                    : "bg-white text-slate-600 border border-[#E2DDD2]"
+                            }`}
+                        >
+                            - Xuất kho
+                        </button>
+                    </div>
+
+                    {/* Mobile Cards */}
+                    <div className="grid grid-cols-1 gap-2.5 md:hidden">
+                        {filteredMovements.length === 0 ? (
+                            <p className="py-8 text-center text-xs text-slate-500 font-medium">
+                                Chưa có nhật ký biến động kho nào.
+                            </p>
+                        ) : (
+                            filteredMovements.map((m) => (
+                                <div
+                                    key={m.id}
+                                    className="flex flex-col gap-1.5 rounded-xl border border-[#E2DDD2] bg-[#F8F6F0]/40 p-3.5"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-900">
+                                            {m.productName}
+                                        </span>
+                                        <span
+                                            className={`font-mono text-xs font-extrabold tabular-nums ${
+                                                m.type === "IN"
+                                                    ? "text-[#0D9488]"
+                                                    : "text-orange-600"
+                                            }`}
+                                        >
+                                            {m.quantity > 0
+                                                ? `+${m.quantity}`
+                                                : m.quantity}
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-600 font-medium">
+                                        Lý do: {m.reason}
+                                    </p>
+                                    <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-[#E2DDD2] pt-1.5">
+                                        <span>Bởi: {m.createdBy}</span>
+                                        <span>{formatDateTime(m.createdAt)}</span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Desktop Table */}
+                    <div className="hidden overflow-hidden rounded-xl border border-[#E2DDD2] bg-white md:block">
+                        <table className="w-full text-left text-xs text-slate-600">
+                            <thead className="border-b border-[#E2DDD2] bg-[#F8F6F0] text-[11px] font-bold uppercase tracking-wider text-slate-500">
                                 <tr>
-                                    <td
-                                        colSpan={5}
-                                        className="px-4 py-8 text-center text-sm text-slate-400"
-                                    >
-                                        Chưa có giao dịch nhập / xuất kho nào.
-                                    </td>
+                                    <th className="px-4 py-3.5">Thời gian</th>
+                                    <th className="px-4 py-3.5">Mặt hàng</th>
+                                    <th className="px-4 py-3.5">Loại</th>
+                                    <th className="px-4 py-3.5 text-right">Số lượng</th>
+                                    <th className="px-4 py-3.5">Lý do</th>
+                                    <th className="px-4 py-3.5">Thực hiện bởi</th>
                                 </tr>
-                            ) : (
-                                filteredMovements.map((m) => (
-                                    <tr
-                                        key={m.id}
-                                        className="transition hover:bg-slate-50/50"
-                                    >
-                                        <td className="px-4 py-3.5 text-xs text-slate-500">
-                                            {formatDateTime(m.createdAt)}
-                                        </td>
-                                        <td className="px-4 py-3.5">
-                                            <div className="flex flex-wrap items-center gap-1.5 font-medium text-slate-900">
-                                                <span>{m.productName}</span>
-                                                {m.isProductDeleted && (
-                                                    <span className="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 ring-1 ring-inset ring-slate-400/20">
-                                                        Đã ngừng dùng
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {m.productSku && (
-                                                <div className="font-mono text-xs text-slate-400">
-                                                    {m.productSku}
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3.5 text-xs">
-                                            {m.type === "IN" ? (
-                                                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/10">
-                                                    <svg
-                                                        className="h-3 w-3"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        strokeWidth={2.5}
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            d="M12 4.5v15m7.5-7.5h-15"
-                                                        />
-                                                    </svg>
-                                                    Nhập kho
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/10">
-                                                    <svg
-                                                        className="h-3 w-3"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        strokeWidth={2.5}
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            d="M5 12h14"
-                                                        />
-                                                    </svg>
-                                                    Xuất kho
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3.5 text-right font-mono font-semibold">
-                                            <span
-                                                className={
-                                                    m.type === "IN"
-                                                        ? "text-emerald-700"
-                                                        : "text-amber-700"
-                                                }
-                                            >
-                                                {m.type === "IN" ? `+${m.quantity}` : `${m.quantity}`}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3.5 text-xs text-slate-600">
-                                            {m.reason}
+                            </thead>
+                            <tbody className="divide-y divide-[#E2DDD2]">
+                                {filteredMovements.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={6}
+                                            className="px-4 py-8 text-center text-xs text-slate-400"
+                                        >
+                                            Chưa có nhật ký biến động kho nào.
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    filteredMovements.map((m) => (
+                                        <tr
+                                            key={m.id}
+                                            className="hover:bg-[#F8F6F0]/60 transition-colors"
+                                        >
+                                            <td className="px-4 py-3.5 text-slate-500">
+                                                {formatDateTime(m.createdAt)}
+                                            </td>
+                                            <td className="px-4 py-3.5 font-bold text-slate-900">
+                                                {m.productName}
+                                            </td>
+                                            <td className="px-4 py-3.5">
+                                                {m.type === "IN" ? (
+                                                    <span className="inline-flex items-center rounded-md bg-teal-50 px-2 py-0.5 text-[11px] font-bold text-teal-800 border border-teal-200">
+                                                        Nhập kho
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center rounded-md bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-800 border border-orange-200">
+                                                        Xuất kho
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3.5 text-right font-mono text-sm font-extrabold tabular-nums">
+                                                <span
+                                                    className={
+                                                        m.type === "IN"
+                                                            ? "text-[#0D9488]"
+                                                            : "text-orange-600"
+                                                    }
+                                                >
+                                                    {m.quantity > 0
+                                                        ? `+${m.quantity}`
+                                                        : m.quantity}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3.5 text-slate-700">
+                                                {m.reason}
+                                            </td>
+                                            <td className="px-4 py-3.5 text-slate-500 font-mono text-[11px]">
+                                                {m.createdBy}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>

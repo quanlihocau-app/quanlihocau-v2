@@ -3,6 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Input, Select } from "@/components/ui/input";
+import { InlineAlert } from "@/components/ui/inline-alert";
+
 interface ProductOption {
     id: string;
     name: string;
@@ -100,7 +104,7 @@ export function InventoryMovementForm({ products }: InventoryMovementFormProps) 
 
     if (products.length === 0) {
         return (
-            <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+            <div className="rounded-xl border border-dashed border-[#E2DDD2] p-6 text-center text-xs text-slate-500 font-medium">
                 Chưa có sản phẩm nào trong danh mục. Vui lòng tạo sản phẩm trước khi nhập/xuất kho.
             </div>
         );
@@ -109,166 +113,98 @@ export function InventoryMovementForm({ products }: InventoryMovementFormProps) 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                    {error}
-                </div>
+                <InlineAlert type="error" message={error} />
             )}
 
             {successMessage && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
-                    {successMessage}
-                </div>
+                <InlineAlert type="success" message={successMessage} />
             )}
 
             {/* Type selector */}
-            <div>
-                <label className="block text-xs font-semibold text-slate-700">
-                    Loại giao dịch <span className="text-red-500">*</span>
+            <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Loại giao dịch *
                 </label>
-                <div className="mt-1 grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                     <button
                         type="button"
                         onClick={() => setType("IN")}
-                        className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                        className={`h-11 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                             type === "IN"
-                                ? "border-emerald-600 bg-emerald-50 text-emerald-700"
-                                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                                ? "border-[#0D9488] bg-[#0D9488] text-white shadow-2xs"
+                                : "border-[#E2DDD2] bg-white text-slate-700 hover:border-slate-300"
                         }`}
                     >
-                        <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 4.5v15m7.5-7.5h-15"
-                            />
-                        </svg>
-                        Nhập kho (IN)
+                        <span>+ Nhập kho (IN)</span>
                     </button>
 
                     <button
                         type="button"
                         onClick={() => setType("OUT")}
-                        className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                        className={`h-11 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                             type === "OUT"
-                                ? "border-amber-600 bg-amber-50 text-amber-700"
-                                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                                ? "border-orange-600 bg-orange-600 text-white shadow-2xs"
+                                : "border-[#E2DDD2] bg-white text-slate-700 hover:border-slate-300"
                         }`}
                     >
-                        <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M5 12h14"
-                            />
-                        </svg>
-                        Xuất kho (OUT)
+                        <span>- Xuất kho (OUT)</span>
                     </button>
                 </div>
             </div>
 
             {/* Product select */}
-            <div>
-                <label
-                    htmlFor="inventory-product"
-                    className="block text-xs font-semibold text-slate-700"
-                >
-                    Chọn mặt hàng <span className="text-red-500">*</span>
-                </label>
-                <select
-                    id="inventory-product"
-                    value={productId}
-                    onChange={(e) => setProductId(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                >
-                    {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                            {p.name} {p.sku ? `[${p.sku}]` : ""} (Tồn: {p.currentStock})
-                        </option>
-                    ))}
-                </select>
-                {selectedProduct && (
-                    <p className="mt-1 text-xs text-slate-500">
-                        Tồn kho hiện tại:{" "}
-                        <span className="font-semibold text-slate-800">
-                            {selectedProduct.currentStock}
-                        </span>
-                    </p>
-                )}
-            </div>
+            <Select
+                id="inventory-product"
+                label="Chọn mặt hàng *"
+                value={productId}
+                onChange={(e) => setProductId(e.target.value)}
+                helperText={selectedProduct ? `Tồn kho hiện tại: ${selectedProduct.currentStock}` : undefined}
+            >
+                {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                        {p.name} {p.sku ? `[${p.sku}]` : ""} (Tồn: {p.currentStock})
+                    </option>
+                ))}
+            </Select>
 
             {/* Quantity */}
-            <div>
-                <label
-                    htmlFor="inventory-quantity"
-                    className="block text-xs font-semibold text-slate-700"
-                >
-                    Số lượng {type === "IN" ? "nhập" : "xuất"}{" "}
-                    <span className="text-red-500">*</span>
-                </label>
-                <input
-                    id="inventory-quantity"
-                    type="number"
-                    required
-                    min="0.0001"
-                    step="any"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="Ví dụ: 10, 2.5, 50..."
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-            </div>
+            <Input
+                id="inventory-quantity"
+                label={`Số lượng ${type === "IN" ? "nhập" : "xuất"} *`}
+                type="number"
+                required
+                min="0.0001"
+                step="any"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                placeholder="Ví dụ: 10, 2.5, 50..."
+            />
 
             {/* Reason */}
-            <div>
-                <label
-                    htmlFor="inventory-reason"
-                    className="block text-xs font-semibold text-slate-700"
-                >
-                    Lý do {type === "IN" ? "nhập" : "xuất"}{" "}
-                    <span className="text-red-500">*</span>
-                </label>
-                <input
-                    id="inventory-reason"
-                    type="text"
-                    required
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder={
-                        type === "IN"
-                            ? "Ví dụ: Nhập hàng đợt 1, mua từ đại lý..."
-                            : "Ví dụ: Xuất bán lẻ, xuất hủy hỏng..."
-                    }
-                    className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-            </div>
-
-            <button
-                type="submit"
-                disabled={loading}
-                className={`inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            <Input
+                id="inventory-reason"
+                label={`Lý do ${type === "IN" ? "nhập" : "xuất"} *`}
+                type="text"
+                required
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder={
                     type === "IN"
-                        ? "bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800"
-                        : "bg-amber-600 hover:bg-amber-700 active:bg-amber-800"
-                }`}
+                        ? "Ví dụ: Nhập hàng đợt 1, mua từ đại lý..."
+                        : "Ví dụ: Xuất bán lẻ, xuất hủy hỏng..."
+                }
+            />
+
+            <Button
+                type="submit"
+                size="lg"
+                variant={type === "IN" ? "success" : "warning"}
+                isLoading={loading}
+                loadingText="Đang ghi sổ kho…"
+                className="w-full"
             >
-                {loading
-                    ? "Đang ghi sổ kho..."
-                    : type === "IN"
-                    ? "Xác nhận Nhập kho (+)"
-                    : "Xác nhận Xuất kho (-)"}
-            </button>
+                {type === "IN" ? "Xác nhận Nhập kho (+)" : "Xác nhận Xuất kho (-)"}
+            </Button>
         </form>
     );
 }

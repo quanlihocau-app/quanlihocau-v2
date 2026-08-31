@@ -4,6 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { InlineAlert } from "@/components/ui/inline-alert";
 
 export interface DailyReportSummary {
     revenueVnd: number;
@@ -23,9 +27,8 @@ export interface ShiftInfo {
 }
 
 export interface ShiftCloseInfo {
-    id: string;
-    closedBy: string | null;
     closedAt: string;
+    closedBy: string | null;
     note: string | null;
 }
 
@@ -42,8 +45,7 @@ function formatVnd(amount: number): string {
     return new Intl.NumberFormat("vi-VN").format(amount) + "đ";
 }
 
-function formatDateTime(dateStr: string | null): string {
-    if (!dateStr) return "—";
+function formatDateTime(dateStr: string): string {
     const d = new Date(dateStr);
     return d.toLocaleString("vi-VN", {
         hour: "2-digit",
@@ -133,79 +135,75 @@ export function DailyReportView({
     }
 
     return (
-        <main className="mx-auto min-h-screen max-w-md bg-[#F5F2EB] px-4 pb-24 pt-6">
+        <main className="mx-auto min-h-screen max-w-md bg-[#F8F6F0] px-4 pb-24 pt-6">
             {/* Header info */}
             <div className="mb-2 flex items-center justify-between">
                 <div>
-                    <p className="text-xs font-semibold text-slate-600">
-                        {lakeName} • <span className="text-slate-400 font-normal">{organizationName}</span>
+                    <p className="text-xs font-bold text-slate-700">
+                        {lakeName} • <span className="text-slate-500 font-normal">{organizationName}</span>
                     </p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-slate-500 font-medium">
                         {formatDateHeader(shift.startTime)}
                     </p>
                 </div>
-                <div className="flex items-center gap-1.5 rounded-full bg-[#EAE2CE] px-2.5 py-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[11px] font-semibold text-[#8A5B00]">
+                <div className="flex items-center gap-1.5 rounded-full bg-teal-50 border border-teal-200 px-2.5 py-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#0D9488] animate-pulse" />
+                    <span className="text-[11px] font-bold text-[#0F766E]">
                         Đang online
                     </span>
                 </div>
             </div>
 
             {/* Title & Badge */}
-            <div className="mb-5 flex items-center justify-between border-b border-[#EAE4D7] pb-3">
-                <h1 className="text-xl font-bold tracking-tight text-slate-900">
+            <div className="mb-5 flex items-center justify-between border-b border-[#E2DDD2] pb-3">
+                <h1 className="text-2xl font-extrabold tracking-tight text-[#102A43]">
                     Báo cáo ngày
                 </h1>
                 {shift.isClosed ? (
-                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
-                        Đã chốt ca
-                    </span>
+                    <Badge variant="success">Đã chốt ca</Badge>
                 ) : (
-                    <span className="rounded-full bg-[#EAE2CE] px-3 py-1 text-xs font-bold text-[#8A5B00]">
-                        Chưa chốt ca
-                    </span>
+                    <Badge variant="warning">Chưa chốt ca</Badge>
                 )}
             </div>
 
             {/* Small Success Notice */}
             {successMessage && (
-                <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-medium text-emerald-800 animate-in fade-in duration-150">
-                    {successMessage}
+                <div className="mb-4">
+                    <InlineAlert type="success" message={successMessage} />
                 </div>
             )}
 
             {/* Two Main Cards: Doanh thu & Chi phí */}
             <div className="mb-3 grid grid-cols-2 gap-3">
                 {/* Doanh thu Card */}
-                <div className="rounded-2xl border border-[#EAE4D7] bg-white p-4 shadow-sm">
-                    <p className="text-xs font-semibold text-slate-500">
+                <Card className="border-teal-200 bg-teal-50/40 p-4">
+                    <p className="text-xs font-bold text-teal-800 uppercase tracking-wider">
                         Doanh thu
                     </p>
-                    <p className="mt-1 text-lg font-bold tracking-tight text-slate-900">
+                    <p className="mt-1 text-xl font-black tracking-tight text-teal-950 tabular-nums">
                         {formatVnd(summary.revenueVnd)}
                     </p>
-                </div>
+                </Card>
 
                 {/* Chi phí Card */}
-                <div className="rounded-2xl border border-[#EAE4D7] bg-white p-4 shadow-sm">
-                    <p className="text-xs font-semibold text-slate-500">
+                <Card className="border-red-200 bg-red-50/40 p-4">
+                    <p className="text-xs font-bold text-red-800 uppercase tracking-wider">
                         Chi phí
                     </p>
-                    <p className="mt-1 text-lg font-bold tracking-tight text-slate-900">
+                    <p className="mt-1 text-xl font-black tracking-tight text-red-950 tabular-nums">
                         {formatVnd(summary.expenseVnd)}
                     </p>
-                </div>
+                </Card>
             </div>
 
             {/* Financial Breakdown List */}
-            <div className="mb-5 rounded-2xl border border-[#EAE4D7] bg-white shadow-sm divide-y divide-[#EAE4D7]">
+            <Card className="mb-5 p-0 divide-y divide-[#E2DDD2] overflow-hidden">
                 {/* Tiền mặt */}
                 <div className="flex items-center justify-between p-3.5">
                     <span className="text-xs font-semibold text-slate-700">
                         Tiền mặt
                     </span>
-                    <span className="text-xs font-bold text-slate-900">
+                    <span className="text-xs font-bold text-slate-900 tabular-nums">
                         {formatVnd(summary.cashVnd)}
                     </span>
                 </div>
@@ -215,7 +213,7 @@ export function DailyReportView({
                     <span className="text-xs font-semibold text-slate-700">
                         Chuyển khoản
                     </span>
-                    <span className="text-xs font-bold text-slate-900">
+                    <span className="text-xs font-bold text-slate-900 tabular-nums">
                         {formatVnd(summary.transferVnd)}
                     </span>
                 </div>
@@ -225,7 +223,7 @@ export function DailyReportView({
                     <span className="text-xs font-semibold text-slate-700">
                         Thu mua cá
                     </span>
-                    <span className="text-xs font-bold text-red-600">
+                    <span className="text-xs font-bold text-red-600 tabular-nums">
                         {summary.fishBuybackVnd > 0 ? "-" : ""}
                         {formatVnd(summary.fishBuybackVnd)}
                     </span>
@@ -236,52 +234,54 @@ export function DailyReportView({
                     <span className="text-xs font-semibold text-slate-700">
                         Chi khác
                     </span>
-                    <span className="text-xs font-bold text-red-600">
+                    <span className="text-xs font-bold text-red-600 tabular-nums">
                         {summary.otherExpenseVnd > 0 ? "-" : ""}
                         {formatVnd(summary.otherExpenseVnd)}
                     </span>
                 </div>
-            </div>
+            </Card>
 
             {/* Shift Closed Details (if already closed) */}
             {shift.isClosed && shiftClose && (
-                <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-1.5 text-xs text-emerald-950">
-                    <div className="flex items-center justify-between font-semibold">
+                <Card className="mb-5 border-teal-200 bg-teal-50/50 p-4 space-y-1.5 text-xs text-teal-950">
+                    <div className="flex items-center justify-between font-bold">
                         <span>Thời gian chốt ca:</span>
-                        <span>{formatDateTime(shiftClose.closedAt)}</span>
+                        <span className="tabular-nums">{formatDateTime(shiftClose.closedAt)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-slate-600">Người thực hiện:</span>
-                        <span className="font-medium text-slate-900">
+                        <span className="text-slate-600 font-medium">Người thực hiện:</span>
+                        <span className="font-bold text-slate-900">
                             {shiftClose.closedBy || "Quản trị viên"}
                         </span>
                     </div>
                     {shiftClose.note && (
-                        <div className="pt-1 text-[11px] text-slate-600 border-t border-emerald-200/60 mt-1">
+                        <div className="pt-1 text-[11px] text-slate-600 border-t border-teal-200/60 mt-1">
                             Ghi chú: {shiftClose.note}
                         </div>
                     )}
-                </div>
+                </Card>
             )}
 
             {/* Main Action Button */}
             {!shift.isClosed && (
                 <div>
                     {canCloseShift ? (
-                        <button
+                        <Button
                             type="button"
+                            size="lg"
+                            variant="primary"
                             onClick={() => {
                                 setError(null);
                                 setIsModalOpen(true);
                             }}
-                            className="h-12 w-full rounded-xl bg-[#9E6B05] text-sm font-bold text-white shadow-md transition-transform duration-150 ease-out active:scale-98 flex items-center justify-center hover:bg-[#8A5B00]"
+                            className="w-full h-12 text-sm shadow-md"
                         >
                             Xem và chốt ca
-                        </button>
+                        </Button>
                     ) : (
-                        <div className="rounded-xl border border-[#EAE4D7] bg-white p-3 text-center text-xs text-slate-500 font-medium">
+                        <Card className="text-center p-3 text-xs text-slate-500 font-medium">
                             Chỉ Chủ hồ hoặc Quản lý mới có quyền chốt ca.
-                        </div>
+                        </Card>
                     )}
                 </div>
             )}
@@ -291,11 +291,11 @@ export function DailyReportView({
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
                         {/* Header */}
-                        <div className="flex items-center justify-between border-b border-[#EAE4D7] pb-3">
+                        <div className="flex items-center justify-between border-b border-[#E2DDD2] pb-3">
                             <div className="flex items-center gap-2">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EAE2CE]">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#102A43]/10 text-[#102A43]">
                                     <svg
-                                        className="h-4 w-4 text-[#9E6B05]"
+                                        className="h-4 w-4"
                                         fill="none"
                                         viewBox="0 0 24 24"
                                         strokeWidth={2}
@@ -308,7 +308,7 @@ export function DailyReportView({
                                         />
                                     </svg>
                                 </div>
-                                <h3 className="text-base font-bold text-slate-900">
+                                <h3 className="text-base font-bold text-[#102A43]">
                                     Xác nhận chốt ca
                                 </h3>
                             </div>
@@ -316,7 +316,7 @@ export function DailyReportView({
                                 type="button"
                                 disabled={isSubmitting}
                                 onClick={() => setIsModalOpen(false)}
-                                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-[#F7F4EE]"
+                                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-[#F8F6F0]"
                             >
                                 <svg
                                     className="h-5 w-5"
@@ -336,36 +336,34 @@ export function DailyReportView({
 
                         {/* Error notice */}
                         {error && (
-                            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-800">
-                                {error}
-                            </div>
+                            <InlineAlert type="error" message={error} />
                         )}
 
                         {/* Summary Snapshot */}
-                        <div className="rounded-xl border border-[#EAE4D7] bg-[#F7F4EE] p-3 space-y-2 text-xs">
+                        <div className="rounded-xl border border-[#E2DDD2] bg-[#F8F6F0] p-3.5 space-y-2 text-xs">
                             <div className="flex justify-between">
-                                <span className="text-slate-600">Doanh thu:</span>
-                                <span className="font-bold text-slate-900">
+                                <span className="text-slate-600 font-medium">Doanh thu:</span>
+                                <span className="font-bold text-teal-800 tabular-nums">
                                     {formatVnd(summary.revenueVnd)}
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-600">Chi phí:</span>
-                                <span className="font-bold text-slate-900">
+                                <span className="text-slate-600 font-medium">Chi phí:</span>
+                                <span className="font-bold text-red-700 tabular-nums">
                                     {formatVnd(summary.expenseVnd)}
                                 </span>
                             </div>
-                            <div className="flex justify-between border-t border-[#EAE4D7] pt-1.5 font-bold text-slate-900">
+                            <div className="flex justify-between border-t border-[#E2DDD2] pt-1.5 font-bold text-slate-900">
                                 <span>Thực thu ròng:</span>
-                                <span className="text-[#9E6B05]">
+                                <span className="text-[#102A43] font-extrabold tabular-nums">
                                     {formatVnd(summary.netProfitVnd)}
                                 </span>
                             </div>
                         </div>
 
                         {/* Note Input */}
-                        <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-700">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-slate-700">
                                 Ghi chú (tùy chọn):
                             </label>
                             <textarea
@@ -374,34 +372,39 @@ export function DailyReportView({
                                 placeholder="Nhập ghi chú chốt ca nếu có..."
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
-                                className="w-full rounded-xl border border-[#EAE4D7] p-2.5 text-xs text-slate-900 focus:border-[#9E6B05] focus:outline-none"
+                                className="w-full rounded-xl border border-[#E2DDD2] p-2.5 text-xs text-slate-900 focus:border-[#102A43] focus:ring-2 focus:ring-[#102A43] focus:outline-none"
                             />
                         </div>
 
-                        {/* Warning */}
-                        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2">
-                            ⚠️ Số liệu tài chính sẽ được khóa vĩnh viễn sau khi
-                            chốt ca.
-                        </p>
+                        {/* Warning Alert */}
+                        <InlineAlert
+                            type="warning"
+                            message="Số liệu tài chính sẽ được khóa vĩnh viễn sau khi chốt ca."
+                        />
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 pt-1">
-                            <button
+                            <Button
                                 type="button"
+                                size="lg"
+                                variant="outline"
                                 disabled={isSubmitting}
                                 onClick={() => setIsModalOpen(false)}
-                                className="h-11 flex-1 rounded-xl border border-[#EAE4D7] bg-white text-xs font-semibold text-slate-700 shadow-sm transition-all duration-150 ease-out active:scale-95 disabled:opacity-60"
+                                className="flex-1"
                             >
                                 Hủy
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="button"
-                                disabled={isSubmitting}
+                                size="lg"
+                                variant="primary"
+                                isLoading={isSubmitting}
+                                loadingText="Đang chốt ca…"
                                 onClick={handleConfirmClose}
-                                className="h-11 flex-[2] rounded-xl bg-[#9E6B05] text-xs font-bold text-white shadow-md transition-transform duration-150 ease-out active:scale-95 disabled:opacity-60"
+                                className="flex-[2]"
                             >
-                                {isSubmitting ? "Đang chốt ca…" : "Xác nhận chốt ca"}
-                            </button>
+                                Xác nhận chốt ca
+                            </Button>
                         </div>
                     </div>
                 </div>
