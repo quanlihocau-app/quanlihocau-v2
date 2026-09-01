@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { InlineAlert } from "@/components/ui/inline-alert";
 
 export interface DailyReportSummary {
@@ -38,7 +38,6 @@ interface DailyReportViewProps {
     shiftClose: ShiftCloseInfo | null;
     canCloseShift: boolean;
     lakeName: string;
-    organizationName: string;
 }
 
 function formatVnd(amount: number): string {
@@ -57,34 +56,12 @@ function formatDateTime(dateStr: string): string {
     });
 }
 
-function formatDateHeader(dateStr: string): string {
-    const d = new Date(dateStr);
-    const dayNames = [
-        "Chủ Nhật",
-        "Thứ Hai",
-        "Thứ Ba",
-        "Thứ Tư",
-        "Thứ Năm",
-        "Thứ Sáu",
-        "Thứ Bảy",
-    ];
-    const dayName = dayNames[d.getDay()];
-    const dateFormatted = d.toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        timeZone: "Asia/Ho_Chi_Minh",
-    });
-    return `${dayName}, ${dateFormatted}`;
-}
-
 export function DailyReportView({
     shift,
     summary,
     shiftClose,
     canCloseShift,
     lakeName,
-    organizationName,
 }: DailyReportViewProps) {
     const router = useRouter();
 
@@ -135,167 +112,191 @@ export function DailyReportView({
     }
 
     return (
-        <main className="mx-auto min-h-screen max-w-md bg-[#F8F6F0] px-4 pb-24 pt-6">
-            {/* Header info */}
-            <div className="mb-2 flex items-center justify-between">
-                <div>
-                    <p className="text-xs font-bold text-slate-700">
-                        {lakeName} • <span className="text-slate-500 font-normal">{organizationName}</span>
-                    </p>
-                    <p className="text-[11px] text-slate-500 font-medium">
-                        {formatDateHeader(shift.startTime)}
-                    </p>
-                </div>
-                <div className="flex items-center gap-1.5 rounded-full bg-teal-50 border border-teal-200 px-2.5 py-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#0D9488] animate-pulse" />
-                    <span className="text-[11px] font-bold text-[#0F766E]">
-                        Đang online
-                    </span>
-                </div>
-            </div>
+        <div className="mobile-pos-shell">
+            <div className="mobile-pos-frame">
+                {/* ── App Header ─────────────────────────────────────────── */}
+                <MobileAppHeader lakeName={lakeName} isOnline={true} />
 
-            {/* Title & Badge */}
-            <div className="mb-5 flex items-center justify-between border-b border-[#E2DDD2] pb-3">
-                <h1 className="text-2xl font-extrabold tracking-tight text-[#102A43]">
-                    Báo cáo ngày
-                </h1>
-                {shift.isClosed ? (
-                    <Badge variant="success">Đã chốt ca</Badge>
-                ) : (
-                    <Badge variant="warning">Chưa chốt ca</Badge>
-                )}
-            </div>
-
-            {/* Small Success Notice */}
-            {successMessage && (
-                <div className="mb-4">
-                    <InlineAlert type="success" message={successMessage} />
-                </div>
-            )}
-
-            {/* Two Main Cards: Doanh thu & Chi phí */}
-            <div className="mb-3 grid grid-cols-2 gap-3">
-                {/* Doanh thu Card */}
-                <Card className="border-teal-200 bg-teal-50/40 p-4">
-                    <p className="text-xs font-bold text-teal-800 uppercase tracking-wider">
-                        Doanh thu
-                    </p>
-                    <p className="mt-1 text-xl font-black tracking-tight text-teal-950 tabular-nums">
-                        {formatVnd(summary.revenueVnd)}
-                    </p>
-                </Card>
-
-                {/* Chi phí Card */}
-                <Card className="border-red-200 bg-red-50/40 p-4">
-                    <p className="text-xs font-bold text-red-800 uppercase tracking-wider">
-                        Chi phí
-                    </p>
-                    <p className="mt-1 text-xl font-black tracking-tight text-red-950 tabular-nums">
-                        {formatVnd(summary.expenseVnd)}
-                    </p>
-                </Card>
-            </div>
-
-            {/* Financial Breakdown List */}
-            <Card className="mb-5 p-0 divide-y divide-[#E2DDD2] overflow-hidden">
-                {/* Tiền mặt */}
-                <div className="flex items-center justify-between p-3.5">
-                    <span className="text-xs font-semibold text-slate-700">
-                        Tiền mặt
-                    </span>
-                    <span className="text-xs font-bold text-slate-900 tabular-nums">
-                        {formatVnd(summary.cashVnd)}
-                    </span>
-                </div>
-
-                {/* Chuyển khoản */}
-                <div className="flex items-center justify-between p-3.5">
-                    <span className="text-xs font-semibold text-slate-700">
-                        Chuyển khoản
-                    </span>
-                    <span className="text-xs font-bold text-slate-900 tabular-nums">
-                        {formatVnd(summary.transferVnd)}
-                    </span>
-                </div>
-
-                {/* Thu mua cá */}
-                <div className="flex items-center justify-between p-3.5">
-                    <span className="text-xs font-semibold text-slate-700">
-                        Thu mua cá
-                    </span>
-                    <span className="text-xs font-bold text-red-600 tabular-nums">
-                        {summary.fishBuybackVnd > 0 ? "-" : ""}
-                        {formatVnd(summary.fishBuybackVnd)}
-                    </span>
-                </div>
-
-                {/* Chi khác */}
-                <div className="flex items-center justify-between p-3.5">
-                    <span className="text-xs font-semibold text-slate-700">
-                        Chi khác
-                    </span>
-                    <span className="text-xs font-bold text-red-600 tabular-nums">
-                        {summary.otherExpenseVnd > 0 ? "-" : ""}
-                        {formatVnd(summary.otherExpenseVnd)}
-                    </span>
-                </div>
-            </Card>
-
-            {/* Shift Closed Details (if already closed) */}
-            {shift.isClosed && shiftClose && (
-                <Card className="mb-5 border-teal-200 bg-teal-50/50 p-4 space-y-1.5 text-xs text-teal-950">
-                    <div className="flex items-center justify-between font-bold">
-                        <span>Thời gian chốt ca:</span>
-                        <span className="tabular-nums">{formatDateTime(shiftClose.closedAt)}</span>
-                    </div>
+                <div className="p-4 space-y-4 pb-28">
+                    {/* ── Page title + shift badge ───────────────────────────── */}
                     <div className="flex items-center justify-between">
-                        <span className="text-slate-600 font-medium">Người thực hiện:</span>
-                        <span className="font-bold text-slate-900">
-                            {shiftClose.closedBy || "Quản trị viên"}
-                        </span>
+                        <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                            Báo cáo ngày
+                        </h1>
+                        {shift.isClosed ? (
+                            <span className="rounded-full bg-[#E8F3ED] px-3 py-1 text-xs font-bold text-[#2D6A4F] border border-[#2D6A4F]/20">
+                                Đã chốt ca
+                            </span>
+                        ) : (
+                            <span className="rounded-full bg-[#EAE2CE] px-3 py-1 text-xs font-bold text-[#8A5B00] border border-[#DCD3C0]">
+                                Đang mở ca
+                            </span>
+                        )}
                     </div>
-                    {shiftClose.note && (
-                        <div className="pt-1 text-[11px] text-slate-600 border-t border-teal-200/60 mt-1">
-                            Ghi chú: {shiftClose.note}
-                        </div>
-                    )}
-                </Card>
-            )}
 
-            {/* Main Action Button */}
-            {!shift.isClosed && (
-                <div>
-                    {canCloseShift ? (
-                        <Button
-                            type="button"
-                            size="lg"
-                            variant="primary"
-                            onClick={() => {
-                                setError(null);
-                                setIsModalOpen(true);
-                            }}
-                            className="w-full h-12 text-sm shadow-md"
-                        >
-                            Xem và chốt ca
-                        </Button>
-                    ) : (
-                        <Card className="text-center p-3 text-xs text-slate-500 font-medium">
-                            Chỉ Chủ hồ hoặc Quản lý mới có quyền chốt ca.
+                    {/* Success Notice */}
+                    {successMessage && (
+                        <InlineAlert type="success" message={successMessage} />
+                    )}
+
+                    {/* Net Profit Card */}
+                    <div className="rounded-2xl bg-gradient-to-br from-[#2D190F] to-[#170D09] p-4 text-[#F5F2EB] shadow-md border border-[#9E6B05]/30">
+                        <p className="text-xs text-[#BDA989] font-medium">
+                            Lợi nhuận thuần (Thực thu ròng)
+                        </p>
+                        <p className="mt-1 text-2xl font-extrabold font-mono text-[#F4DFB7] tabular-nums tracking-tight">
+                            {formatVnd(summary.netProfitVnd)}
+                        </p>
+                    </div>
+
+                    {/* Two Main Cards: Doanh thu & Chi phí */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* Doanh thu Card */}
+                        <div className="rounded-2xl border border-[#EAE4D7] bg-[#FFFDF9] p-3.5 shadow-xs">
+                            <p className="text-xs font-semibold text-slate-500">
+                                Tổng Doanh Thu
+                            </p>
+                            <p className="mt-1 text-lg font-bold font-mono text-[#2D6A4F] tabular-nums">
+                                {formatVnd(summary.revenueVnd)}
+                            </p>
+                        </div>
+
+                        {/* Chi phí Card */}
+                        <div className="rounded-2xl border border-[#EAE4D7] bg-[#FFFDF9] p-3.5 shadow-xs">
+                            <p className="text-xs font-semibold text-slate-500">
+                                Tổng Chi Phí
+                            </p>
+                            <p className="mt-1 text-lg font-bold font-mono text-[#8B1E1E] tabular-nums">
+                                {formatVnd(summary.expenseVnd)}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Financial Breakdown List */}
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">
+                            Chi tiết dòng tiền
+                        </p>
+
+                        {/* Tiền mặt */}
+                        <div className="flex items-center justify-between rounded-xl border border-[#EAE4D7] bg-white px-3.5 py-3 shadow-xs">
+                            <span className="text-xs font-medium text-slate-700">
+                                Tiền mặt
+                            </span>
+                            <span className="text-xs font-bold font-mono text-slate-900 tabular-nums">
+                                {formatVnd(summary.cashVnd)}
+                            </span>
+                        </div>
+
+                        {/* Chuyển khoản */}
+                        <div className="flex items-center justify-between rounded-xl border border-[#EAE4D7] bg-white px-3.5 py-3 shadow-xs">
+                            <span className="text-xs font-medium text-slate-700">
+                                Chuyển khoản (Ngân hàng)
+                            </span>
+                            <span className="text-xs font-bold font-mono text-slate-900 tabular-nums">
+                                {formatVnd(summary.transferVnd)}
+                            </span>
+                        </div>
+
+                        {/* Thu mua cá */}
+                        <div className="flex items-center justify-between rounded-xl border border-[#EAE4D7] bg-white px-3.5 py-3 shadow-xs">
+                            <span className="text-xs font-medium text-slate-700">
+                                Chi trả thu mua cá
+                            </span>
+                            <span className="text-xs font-bold font-mono text-[#8B1E1E] tabular-nums">
+                                {summary.fishBuybackVnd > 0 ? `−${formatVnd(summary.fishBuybackVnd)}` : formatVnd(summary.fishBuybackVnd)}
+                            </span>
+                        </div>
+
+                        {/* Chi khác */}
+                        <div className="flex items-center justify-between rounded-xl border border-[#EAE4D7] bg-white px-3.5 py-3 shadow-xs">
+                            <span className="text-xs font-medium text-slate-700">
+                                Chi phí vận hành khác
+                            </span>
+                            <span className="text-xs font-bold font-mono text-[#8B1E1E] tabular-nums">
+                                {summary.otherExpenseVnd > 0 ? `−${formatVnd(summary.otherExpenseVnd)}` : formatVnd(summary.otherExpenseVnd)}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Shift Closed Details (if already closed) */}
+                    {shift.isClosed && shiftClose && (
+                        <Card className="border-[#2D6A4F]/30 bg-[#E8F3ED]/70 p-4 space-y-1.5 text-xs text-[#2D6A4F]">
+                            <div className="flex items-center justify-between font-bold">
+                                <span>Thời gian chốt ca:</span>
+                                <span className="tabular-nums font-mono">{formatDateTime(shiftClose.closedAt)}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-slate-600">Người thực hiện:</span>
+                                <span className="font-semibold text-slate-900">
+                                    {shiftClose.closedBy || "Quản trị viên"}
+                                </span>
+                            </div>
+                            {shiftClose.note && (
+                                <div className="pt-1 text-xs text-slate-600 border-t border-[#2D6A4F]/20 mt-1">
+                                    Ghi chú: {shiftClose.note}
+                                </div>
+                            )}
                         </Card>
                     )}
-                </div>
-            )}
 
-            {/* Shift Close Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-                        {/* Header */}
-                        <div className="flex items-center justify-between border-b border-[#E2DDD2] pb-3">
-                            <div className="flex items-center gap-2">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#102A43]/10 text-[#102A43]">
+                    {/* Main Action Button */}
+                    {!shift.isClosed && (
+                        <div>
+                            {canCloseShift ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setError(null);
+                                        setIsModalOpen(true);
+                                    }}
+                                    className="mobile-pos-btn mobile-pos-btn-primary w-full text-sm font-bold shadow-md cursor-pointer"
+                                >
+                                    Xem và chốt ca
+                                </button>
+                            ) : (
+                                <div className="rounded-xl border border-[#EAE4D7] bg-white px-4 py-3 text-center text-xs text-slate-500">
+                                    Chỉ Chủ hồ hoặc Quản lý mới có quyền chốt ca.
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Shift Close Modal */}
+                {isModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                        <div className="w-full max-w-sm rounded-2xl bg-[#F5F2EB] border border-[#EAE4D7] shadow-2xl overflow-hidden flex flex-col space-y-4 p-5 animate-in fade-in zoom-in-95 duration-150">
+                            {/* Header */}
+                            <div className="flex items-center justify-between border-b border-[#EAE4D7] pb-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EAE2CE] text-[#8A5B00]">
+                                        <svg
+                                            className="h-4 w-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            strokeWidth={2}
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-base font-bold text-slate-900">
+                                        Xác nhận chốt ca
+                                    </h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    disabled={isSubmitting}
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                >
                                     <svg
-                                        className="h-4 w-4"
+                                        className="h-5 w-5"
                                         fill="none"
                                         viewBox="0 0 24 24"
                                         strokeWidth={2}
@@ -304,113 +305,90 @@ export function DailyReportView({
                                         <path
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
-                                            d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                            d="M6 18L18 6M6 6l12 12"
                                         />
                                     </svg>
+                                </button>
+                            </div>
+
+                            {/* Error notice */}
+                            {error && (
+                                <InlineAlert type="error" message={error} />
+                            )}
+
+                            {/* Summary Snapshot */}
+                            <div className="rounded-xl border border-[#EAE4D7] bg-white p-3.5 space-y-2 text-xs">
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Doanh thu:</span>
+                                    <span className="font-bold font-mono text-[#2D6A4F] tabular-nums">
+                                        {formatVnd(summary.revenueVnd)}
+                                    </span>
                                 </div>
-                                <h3 className="text-base font-bold text-[#102A43]">
-                                    Xác nhận chốt ca
-                                </h3>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-500">Chi phí:</span>
+                                    <span className="font-bold font-mono text-[#8B1E1E] tabular-nums">
+                                        {formatVnd(summary.expenseVnd)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between border-t border-[#F0ECE1] pt-1.5 font-bold text-slate-900">
+                                    <span>Thực thu ròng:</span>
+                                    <span className="text-[#8A5B00] font-bold font-mono tabular-nums">
+                                        {formatVnd(summary.netProfitVnd)}
+                                    </span>
+                                </div>
                             </div>
-                            <button
-                                type="button"
-                                disabled={isSubmitting}
-                                onClick={() => setIsModalOpen(false)}
-                                className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-[#F8F6F0]"
-                            >
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={2}
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
 
-                        {/* Error notice */}
-                        {error && (
-                            <InlineAlert type="error" message={error} />
-                        )}
+                            {/* Note Input */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-slate-700">
+                                    Ghi chú (tùy chọn):
+                                </label>
+                                <textarea
+                                    rows={2}
+                                    maxLength={500}
+                                    placeholder="Nhập ghi chú chốt ca nếu có..."
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    className="w-full rounded-xl border border-[#EAE4D7] bg-white p-2.5 text-xs text-slate-900 focus:border-[#8A5B00] focus:ring-1 focus:ring-[#8A5B00] focus:outline-none"
+                                />
+                            </div>
 
-                        {/* Summary Snapshot */}
-                        <div className="rounded-xl border border-[#E2DDD2] bg-[#F8F6F0] p-3.5 space-y-2 text-xs">
-                            <div className="flex justify-between">
-                                <span className="text-slate-600 font-medium">Doanh thu:</span>
-                                <span className="font-bold text-teal-800 tabular-nums">
-                                    {formatVnd(summary.revenueVnd)}
-                                </span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-600 font-medium">Chi phí:</span>
-                                <span className="font-bold text-red-700 tabular-nums">
-                                    {formatVnd(summary.expenseVnd)}
-                                </span>
-                            </div>
-                            <div className="flex justify-between border-t border-[#E2DDD2] pt-1.5 font-bold text-slate-900">
-                                <span>Thực thu ròng:</span>
-                                <span className="text-[#102A43] font-extrabold tabular-nums">
-                                    {formatVnd(summary.netProfitVnd)}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Note Input */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-700">
-                                Ghi chú (tùy chọn):
-                            </label>
-                            <textarea
-                                rows={2}
-                                maxLength={500}
-                                placeholder="Nhập ghi chú chốt ca nếu có..."
-                                value={note}
-                                onChange={(e) => setNote(e.target.value)}
-                                className="w-full rounded-xl border border-[#E2DDD2] p-2.5 text-xs text-slate-900 focus:border-[#102A43] focus:ring-2 focus:ring-[#102A43] focus:outline-none"
+                            {/* Warning Alert */}
+                            <InlineAlert
+                                type="warning"
+                                message="Số liệu tài chính sẽ được khóa vĩnh viễn sau khi chốt ca."
                             />
-                        </div>
 
-                        {/* Warning Alert */}
-                        <InlineAlert
-                            type="warning"
-                            message="Số liệu tài chính sẽ được khóa vĩnh viễn sau khi chốt ca."
-                        />
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 pt-1">
-                            <Button
-                                type="button"
-                                size="lg"
-                                variant="outline"
-                                disabled={isSubmitting}
-                                onClick={() => setIsModalOpen(false)}
-                                className="flex-1"
-                            >
-                                Hủy
-                            </Button>
-                            <Button
-                                type="button"
-                                size="lg"
-                                variant="primary"
-                                isLoading={isSubmitting}
-                                loadingText="Đang chốt ca…"
-                                onClick={handleConfirmClose}
-                                className="flex-[2]"
-                            >
-                                Xác nhận chốt ca
-                            </Button>
+                            {/* Actions */}
+                            <div className="flex items-center gap-2 pt-1">
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    variant="outline"
+                                    disabled={isSubmitting}
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="flex-1"
+                                >
+                                    Hủy
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    variant="primary"
+                                    isLoading={isSubmitting}
+                                    loadingText="Đang chốt ca…"
+                                    onClick={handleConfirmClose}
+                                    className="flex-2"
+                                >
+                                    Xác nhận chốt ca
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            <MobileBottomNav />
-        </main>
+                <MobileBottomNav />
+            </div>
+        </div>
     );
 }

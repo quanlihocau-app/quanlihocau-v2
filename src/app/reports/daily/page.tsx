@@ -226,7 +226,6 @@ export default async function DailyReportPage() {
             }
             canCloseShift={canCloseShift}
             lakeName={tenantContext.lakeName}
-            organizationName={tenantContext.organizationName}
         />
     );
 }
