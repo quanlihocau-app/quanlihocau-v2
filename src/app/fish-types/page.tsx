@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Role } from "@/generated/prisma/client";
@@ -8,9 +9,7 @@ import { getTenantContext } from "@/lib/tenant";
 
 import { CreateFishTypeForm } from "./create-fish-type-form";
 import { FishTypeList } from "./fish-type-list";
-import { PageHeader } from "@/components/ui/page-header";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 export default async function FishTypesPage() {
     const session = await getServerSession(authOptions);
@@ -23,12 +22,12 @@ export default async function FishTypesPage() {
 
     if (!tenantContext) {
         return (
-            <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12">
-                <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
-                    <h1 className="text-xl font-bold text-red-900">
+            <main className="mx-auto flex min-h-screen max-w-lg items-center px-4 py-12">
+                <div className="w-full rounded-lg border border-rose-200 bg-rose-50 p-6 text-center">
+                    <h1 className="text-lg font-bold text-rose-900">
                         Chưa có quyền truy cập
                     </h1>
-                    <p className="mt-2 text-xs text-red-700">
+                    <p className="mt-2 text-xs text-rose-700 leading-relaxed">
                         Tài khoản ({session.user.email}) hiện chưa được gán quyền
                         hoặc hồ câu đã bị xóa. Vui lòng liên hệ quản trị viên.
                     </p>
@@ -52,31 +51,62 @@ export default async function FishTypesPage() {
     });
 
     return (
-        <main className="mx-auto min-h-screen max-w-7xl bg-[#F8F6F0] px-4 pb-24 pt-6 sm:px-6 lg:px-8">
-            {/* Header */}
-            <PageHeader
-                title="Danh mục loại cá & Giá thu mua"
-                subtitle="Cấu hình bảng giá thu mua cá từ cần thủ tính theo kg tại hồ câu."
-                backHref="/dashboard"
-                backLabel="Bảng điều khiển"
-                badge={<Badge variant="default">{tenantContext.lakeName}</Badge>}
-            />
+        <main className="min-h-screen bg-[#F8FAFC] pb-24 pt-4 sm:pt-6">
+            <div className="mx-auto max-w-5xl px-4 sm:px-6">
+                {/* Header Flat Navy/Blue */}
+                <div className="mb-6 space-y-3 border-b border-slate-200 pb-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <Link
+                            href="/settings"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors"
+                        >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                            </svg>
+                            <span>Quay lại Cài đặt</span>
+                        </Link>
 
-            {/* Content Grid */}
-            <div
-                className={`grid grid-cols-1 gap-6 ${
-                    canManageFishTypes ? "lg:grid-cols-3" : ""
-                }`}
-            >
-                {/* Left 2 Cols: List */}
-                <div className={canManageFishTypes ? "lg:col-span-2" : ""}>
-                    <Card className="p-5 sm:p-6 space-y-4">
-                        <div className="border-b border-[#E2DDD2] pb-3">
-                            <h2 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
-                                Bảng giá thu mua ({fishTypes.length})
+                        <div className="inline-flex items-center gap-1.5 rounded-sm border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
+                            <span className="h-2 w-2 rounded-full bg-blue-600" />
+                            <span>{tenantContext.lakeName}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0f172a]">
+                            Quản lý loại cá
+                        </h1>
+                        <p className="mt-1 text-xs sm:text-sm text-slate-500 font-normal">
+                            Cấu hình danh mục loại cá và bảng giá thu mua tính theo từng kg từ cần thủ.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    {/* Section 1: Thêm loại cá mới (Flat Panel, Compact) */}
+                    {canManageFishTypes && (
+                        <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-6 space-y-4">
+                            <div className="border-b border-slate-100 pb-3">
+                                <h2 className="text-sm font-bold uppercase tracking-wider text-[#0f172a]">
+                                    Thêm loại cá mới
+                                </h2>
+                                <p className="text-xs text-slate-500 font-normal mt-0.5">
+                                    Nhập tên loại cá và đơn giá thu mua cố định theo kg.
+                                </p>
+                            </div>
+
+                            <CreateFishTypeForm />
+                        </section>
+                    )}
+
+                    {/* Section 2: Danh sách loại cá hiện có (Flat Panel) */}
+                    <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-6 space-y-4">
+                        <div className="border-b border-slate-100 pb-3">
+                            <h2 className="text-sm font-bold uppercase tracking-wider text-[#0f172a]">
+                                Danh mục loại cá hiện có
                             </h2>
-                            <p className="text-xs text-slate-500 font-medium">
-                                Các loại cá đang được thu mua và tính bù trừ vào hóa đơn kết ca.
+                            <p className="text-xs text-slate-500 font-normal mt-0.5">
+                                Các loại cá đang được kích hoạt và áp dụng tính tiền bù trừ tự động khi kết ca.
                             </p>
                         </div>
 
@@ -84,27 +114,11 @@ export default async function FishTypesPage() {
                             fishTypes={fishTypes}
                             canManage={canManageFishTypes}
                         />
-                    </Card>
+                    </section>
                 </div>
-
-                {/* Right 1 Col: Create Form */}
-                {canManageFishTypes && (
-                    <div className="lg:col-span-1">
-                        <Card className="p-5 sm:p-6 space-y-4">
-                            <div className="border-b border-[#E2DDD2] pb-3">
-                                <h2 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
-                                    Thêm loại cá mới
-                                </h2>
-                                <p className="text-xs text-slate-500 font-medium">
-                                    Cấu hình đơn giá thu mua tính theo từng kg.
-                                </p>
-                            </div>
-
-                            <CreateFishTypeForm />
-                        </Card>
-                    </div>
-                )}
             </div>
+
+            <MobileBottomNav />
         </main>
     );
 }
