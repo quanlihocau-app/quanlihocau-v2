@@ -15,8 +15,12 @@ function computeTimeInfo(plannedEndAtIso: string) {
         const overMs = Math.abs(diffMs);
         const overH = Math.floor(overMs / 3_600_000);
         const overM = Math.floor((overMs % 3_600_000) / 60_000);
+        const overS = Math.floor((overMs % 60_000) / 1_000);
+        const label = overH > 0
+            ? `+${String(overH).padStart(2, "0")}:${String(overM).padStart(2, "0")}:${String(overS).padStart(2, "0")}`
+            : `+${String(overM).padStart(2, "0")}:${String(overS).padStart(2, "0")}`;
         return {
-            label: `+${overH > 0 ? `${overH}h ` : ""}${String(overM).padStart(2, "0")}p`,
+            label,
             isEndingSoon: true,
             isOvertime: true,
         };
@@ -43,37 +47,15 @@ export function SessionCountdown({ plannedEndAt }: SessionCountdownProps) {
         return () => clearInterval(interval);
     }, [plannedEndAt]);
 
-    const styleConfig = timeInfo.isOvertime
-        ? {
-              container: "bg-red-50 border-red-200 text-red-950",
-              number: "text-red-700",
-              caption: "text-red-600 font-bold",
-              text: "Quá giờ",
-          }
-        : timeInfo.isEndingSoon
-          ? {
-                container: "bg-orange-50 border-orange-200 text-orange-950",
-                number: "text-orange-700",
-                caption: "text-orange-600 font-bold",
-                text: "Sắp hết giờ",
-            }
-          : {
-                container: "bg-teal-50 border-teal-200 text-teal-950",
-                number: "text-teal-800",
-                caption: "text-teal-600 font-semibold",
-                text: "Thời gian còn",
-            };
-
     return (
-        <div
-            className={`rounded-xl border px-3 py-1.5 text-right shadow-2xs ${styleConfig.container}`}
+        <span
+            className={`font-mono text-base font-bold tracking-tight tabular-nums ${
+                timeInfo.isEndingSoon || timeInfo.isOvertime
+                    ? "text-rose-600 animate-pulse"
+                    : "text-emerald-700"
+            }`}
         >
-            <div className={`text-base font-extrabold tabular-nums tracking-tight ${styleConfig.number}`}>
-                {timeInfo.label}
-            </div>
-            <p className={`text-[10px] uppercase tracking-wider ${styleConfig.caption}`}>
-                {styleConfig.text}
-            </p>
-        </div>
+            {timeInfo.label}
+        </span>
     );
 }

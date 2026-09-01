@@ -1,5 +1,4 @@
 import { getServerSession } from "next-auth";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { InvoiceStatus, Role, SessionStatus } from "@/generated/prisma/client";
@@ -7,11 +6,10 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 
-import { SessionActions } from "./session-actions";
-import { SessionCountdown } from "./session-countdown";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { MobileAppHeader } from "@/components/layout/mobile-app-header";
+// Import main client controller for session POS grid
+import { SessionsClient, type SerializableSession, type SerializablePackage } from "./sessions-client";
 
 export default async function SessionsPage() {
     const session = await getServerSession(authOptions);
@@ -25,11 +23,11 @@ export default async function SessionsPage() {
     if (!tenantContext) {
         return (
             <main className="mx-auto flex min-h-screen max-w-md items-center px-4 py-8">
-                <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
-                    <h1 className="text-lg font-bold text-red-900">
+                <div className="w-full rounded-2xl border border-[#8B1E1E]/30 bg-[#FAECEC] p-6 text-center">
+                    <h1 className="text-lg font-bold text-[#8B1E1E]">
                         Chưa có quyền truy cập
                     </h1>
-                    <p className="mt-2 text-xs text-red-700">
+                    <p className="mt-2 text-xs text-[#8B1E1E]">
                         Tài khoản ({session.user.email}) hiện chưa được
                         gán quyền hoặc hồ câu đã bị xóa. Vui lòng liên
                         hệ quản trị viên.
@@ -59,6 +57,7 @@ export default async function SessionsPage() {
                     name: true,
                     durationMinutes: true,
                     priceVnd: true,
+                    overtimeHourlyVnd: true,
                 },
             },
             hutLinks: {
@@ -81,36 +80,46 @@ export default async function SessionsPage() {
                 where: {
                     status: InvoiceStatus.DRAFT,
                 },
-                select: {
-                    id: true,
+                include: {
+                    lines: {
+                        include: {
+                            product: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    priceVnd: true,
+                                },
+                            },
+                            fishBuyback: {
+                                include: {
+                                    fishType: {
+                                        select: {
+                                            id: true,
+                                            name: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        orderBy: {
+                            createdAt: "asc",
+                        },
+                    },
+                    payments: {
+                        select: {
+                            id: true,
+                            amountVnd: true,
+                            method: true,
+                            direction: true,
+                            createdAt: true,
+                        },
+                    },
                 },
                 take: 1,
             },
         },
         orderBy: {
             startAt: "desc",
-        },
-    });
-
-    // ── Fetch all huts for this lake to determine available spots ────────
-    const allHuts = await prisma.hut.findMany({
-        where: {
-            lakeId: tenantContext.lakeId,
-            deletedAt: null,
-        },
-        select: {
-            id: true,
-            name: true,
-            currentSessionId: true,
-            area: {
-                select: {
-                    id: true,
-                    name: true,
-                },
-            },
-        },
-        orderBy: {
-            createdAt: "asc",
         },
     });
 
@@ -131,10 +140,21 @@ export default async function SessionsPage() {
         },
     });
 
-    const totalHuts = allHuts.length;
-    const availableHuts = allHuts.filter(
-        (h) => h.currentSessionId === null,
-    );
+    // ── Fetch active fish types for buybacks ─────────────────────────────
+    const fishTypes = await prisma.fishType.findMany({
+        where: {
+            lakeId: tenantContext.lakeId,
+            deletedAt: null,
+        },
+        select: {
+            id: true,
+            name: true,
+            pricePerKg: true,
+        },
+        orderBy: {
+            name: "asc",
+        },
+    });
 
     const canOpenSession =
         tenantContext.role === Role.OWNER ||
@@ -146,178 +166,117 @@ export default async function SessionsPage() {
         tenantContext.role === Role.OWNER ||
         tenantContext.role === Role.MANAGER;
 
-    function formatPrice(vnd: number) {
-        return new Intl.NumberFormat("vi-VN").format(vnd) + "đ";
-    }
+    // ── Serialize: convert Date → ISO string and Decimal/BigInt for client ────────
+    const serializedSessions: SerializableSession[] = activeSessions.map((s) => ({
+        id: s.id,
+        startAt: s.startAt.toISOString(),
+        plannedEndAt: s.plannedEndAt.toISOString(),
+        customer: s.customer
+            ? {
+                  id: s.customer.id,
+                  name: s.customer.name,
+                  phoneNormalized: s.customer.phoneNormalized,
+              }
+            : null,
+        package: {
+            id: s.package.id,
+            name: s.package.name,
+            durationMinutes: s.package.durationMinutes,
+            priceVnd: Number(s.package.priceVnd),
+        },
+        packageNameSnapshot: s.packageNameSnapshot,
+        packageDurationMinutesSnapshot: s.packageDurationMinutesSnapshot,
+        packagePriceVndSnapshot: s.packagePriceVndSnapshot,
+        hutLinks: s.hutLinks.map((hl) => ({
+            hut: {
+                id: hl.hut.id,
+                name: hl.hut.name,
+                area: hl.hut.area
+                    ? { id: hl.hut.area.id, name: hl.hut.area.name }
+                    : null,
+            },
+        })),
+        invoices: s.invoices.map((inv) => ({
+            id: inv.id,
+            totalAmountVnd: Number(inv.totalAmountVnd),
+            lines: inv.lines.map((l) => ({
+                id: l.id,
+                productId: l.productId,
+                fishBuybackId: l.fishBuybackId,
+                name: l.name,
+                unitPrice: l.unitPrice,
+                quantity: Number(l.quantity),
+                totalVnd: l.totalVnd,
+                createdAt: l.createdAt.toISOString(),
+                product: l.product ? {
+                    id: l.product.id,
+                    name: l.product.name,
+                    priceVnd: l.product.priceVnd,
+                } : null,
+                fishBuyback: l.fishBuyback ? {
+                    id: l.fishBuyback.id,
+                    weight: Number(l.fishBuyback.weight),
+                    pricePerKg: l.fishBuyback.pricePerKg,
+                    totalVnd: l.fishBuyback.totalVnd,
+                    fishType: {
+                        id: l.fishBuyback.fishType.id,
+                        name: l.fishBuyback.fishType.name,
+                    },
+                } : null,
+            })),
+            payments: inv.payments.map((p) => ({
+                id: p.id,
+                amountVnd: p.amountVnd,
+                method: p.method,
+                direction: p.direction,
+                createdAt: p.createdAt.toISOString(),
+            })),
+        })),
+    }));
 
-    function formatTime(dateStr: Date | string) {
-        const d = new Date(dateStr);
-        return d.toLocaleString("vi-VN", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "Asia/Ho_Chi_Minh",
-        });
-    }
+    const serializedPackages: SerializablePackage[] = packages.map((p) => ({
+        id: p.id,
+        name: p.name,
+        durationMinutes: p.durationMinutes,
+        priceVnd: Number(p.priceVnd),
+    }));
+
+    const activeHutCount = serializedSessions.reduce(
+        (total, s) => total + s.hutLinks.length,
+        0,
+    );
 
     return (
-        <main className="mx-auto min-h-screen max-w-md bg-[#F8F6F0] px-4 pb-24 pt-6">
-            {/* ── Header ─────────────────────────────────────────────── */}
-            <header className="mb-5 flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-extrabold tracking-tight text-[#102A43]">
-                        Đang câu
-                    </h1>
-                    <p className="mt-0.5 text-xs text-slate-500 font-medium">
-                        {tenantContext.lakeName}
-                    </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Badge variant="default" className="text-[11px] font-bold">
-                        {activeSessions.length} / {totalHuts} ô
-                    </Badge>
-                    {canOpenSession ? (
-                        <Link
-                            href="/sessions/new"
-                            className="inline-flex h-11 min-w-[48px] items-center justify-center rounded-xl bg-[#102A43] px-4 text-xs font-bold text-white shadow-sm transition-transform duration-150 ease-out active:scale-95 hover:bg-[#1E3A5F]"
-                        >
-                            + Tạo vé
-                        </Link>
-                    ) : null}
-                </div>
-            </header>
+        <div className="mobile-pos-shell">
+            <div className="mobile-pos-frame pb-24">
+                {/* ── App Header ───────────────────────────────────────────── */}
+                <MobileAppHeader lakeName={tenantContext.lakeName} isOnline={true} />
 
-            {/* ── Active Sessions Grid ───────────────────────────────── */}
-            {activeSessions.length === 0 && availableHuts.length === 0 ? (
-                <Card className="text-center p-8">
-                    <p className="text-sm text-slate-500">
-                        Chưa có ô câu nào. Vui lòng thêm chòi trong phần
-                        Cài đặt.
-                    </p>
-                </Card>
-            ) : (
-                <div className="space-y-3">
-                    {/* Active session cards */}
-                    {activeSessions.map((s) => {
-                        const hutNames = s.hutLinks
-                            .map((hl) => hl.hut.name)
-                            .join(" + ");
-                        const areaName =
-                            s.hutLinks[0]?.hut.area.name ?? "";
-                        const draftInvoiceId =
-                            s.invoices[0]?.id ?? null;
+                {/* ── Main Content Area ───────────────────────────────────── */}
+                <main className="flex-1 px-4 sm:px-5 py-4 overflow-y-auto">
+                    {/* ── Section header ──────────────────────────────────────── */}
+                    <div className="mb-4 flex items-center justify-between">
+                        <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                            Đang câu
+                        </h1>
+                        <span className="inline-flex items-center rounded-full bg-[#EAE2CE] px-3 py-1 text-xs font-semibold text-[#8A5B00]">
+                            {serializedSessions.length} vé · {activeHutCount} ô
+                        </span>
+                    </div>
 
-                        return (
-                            <Card
-                                key={s.id}
-                                className="p-4 transition-all duration-150 ease-out hover:border-slate-300"
-                            >
-                                {/* Top row: hut code + timer */}
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-lg font-extrabold text-[#102A43]">
-                                                {hutNames || "—"}
-                                            </span>
-                                            {areaName ? (
-                                                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
-                                                    {areaName}
-                                                </span>
-                                            ) : null}
-                                        </div>
-                                        <p className="mt-0.5 text-xs font-semibold text-slate-600">
-                                            {s.package.name} ·{" "}
-                                            <span className="tabular-nums font-bold text-[#0D9488]">
-                                                {formatPrice(s.package.priceVnd)}
-                                            </span>
-                                        </p>
-                                    </div>
+                    {/* ── Client Component: handles selection, modals, actions ── */}
+                    <SessionsClient
+                        activeSessions={serializedSessions}
+                        packages={serializedPackages}
+                        fishTypes={fishTypes}
+                        canComplete={canComplete}
+                        canCancel={canCancel}
+                        canOpenSession={canOpenSession}
+                    />
+                </main>
 
-                                    {/* Live countdown */}
-                                    <SessionCountdown
-                                        plannedEndAt={s.plannedEndAt.toISOString()}
-                                    />
-                                </div>
-
-                                {/* Customer + start time */}
-                                <div className="mt-3 flex items-center justify-between border-t border-[#E2DDD2] pt-3">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#102A43]/10 text-[#102A43]">
-                                            <svg
-                                                className="h-4 w-4"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                strokeWidth={2}
-                                                stroke="currentColor"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
-                                                />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-slate-900">
-                                                {s.customer?.name ?? (
-                                                    <span className="font-normal italic text-slate-400">
-                                                        Khách vãng lai
-                                                    </span>
-                                                )}
-                                            </p>
-                                            <p className="text-[10px] text-slate-400 font-medium">
-                                                Vào lúc{" "}
-                                                <span className="tabular-nums font-semibold text-slate-600">
-                                                    {formatTime(s.startAt)}
-                                                </span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <span className="text-xs font-extrabold text-[#0D9488] tabular-nums">
-                                        {formatPrice(s.package.priceVnd)}
-                                    </span>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="mt-3 border-t border-[#E2DDD2] pt-3">
-                                    <SessionActions
-                                        sessionId={s.id}
-                                        canComplete={canComplete}
-                                        canCancel={canCancel}
-                                        invoiceId={draftInvoiceId}
-                                        packages={packages}
-                                    />
-                                </div>
-                            </Card>
-                        );
-                    })}
-
-                    {/* Available huts section */}
-                    {availableHuts.length > 0 ? (
-                        <div className="mt-5">
-                            <p className="mb-2.5 text-xs font-bold text-slate-600 uppercase tracking-wider">
-                                Ô trống sẵn sàng ({availableHuts.length})
-                            </p>
-                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                                {availableHuts.map((h) => (
-                                    <div
-                                        key={h.id}
-                                        className="rounded-2xl border border-dashed border-[#E2DDD2] bg-white/70 p-3 text-center transition-all duration-150 ease-out"
-                                    >
-                                        <p className="text-sm font-bold text-slate-500">
-                                            {h.name}
-                                        </p>
-                                        <p className="mt-0.5 text-[10px] font-semibold text-teal-700">
-                                            {h.area.name} · Sẵn sàng
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : null}
-                </div>
-            )}
-
-            <MobileBottomNav />
-        </main>
+                <MobileBottomNav />
+            </div>
+        </div>
     );
 }
