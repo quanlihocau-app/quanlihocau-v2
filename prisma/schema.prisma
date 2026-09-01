@@ -89,12 +89,13 @@ model Lake {
 }
 
 model User {
-  id           String       @id @default(uuid())
-  email        String       @unique
+  id           String   @id @default(uuid())
+  email        String   @unique
   name         String
+  phone        String?  @unique
   passwordHash String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   memberships Membership[]
 }
@@ -209,8 +210,8 @@ model FishingSession {
   packagePriceVndSnapshot        Int
   overtimeHourlyVndSnapshot      Int
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   lake     Lake      @relation(fields: [lakeId], references: [id])
   customer Customer? @relation(fields: [customerId], references: [id])
@@ -452,4 +453,14 @@ model IdempotencyKey {
   lake Lake @relation(fields: [lakeId], references: [id])
 
   @@unique([lakeId, key])
+}
+
+model RateLimitBucket {
+  key         String   @id
+  windowStart DateTime
+  count       Int
+  expiresAt   DateTime
+  updatedAt   DateTime @updatedAt
+
+  @@index([expiresAt])
 }
