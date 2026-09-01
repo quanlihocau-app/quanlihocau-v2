@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
+import { usePrinter } from "@/lib/printing/use-printer";
 
 export interface SelectCustomer {
     id: string;
@@ -44,6 +45,7 @@ export function OpenSessionForm({
     huts,
 }: OpenSessionFormProps) {
     const router = useRouter();
+    const { isConnected, printSessionTicket } = usePrinter();
 
     // Customer state
     const [customerList, setCustomerList] =
@@ -150,16 +152,17 @@ export function OpenSessionForm({
         }
     }
 
-    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
+    async function handleSubmit(e: FormEvent) {
+        e.preventDefault();
         setFormError("");
 
         if (!selectedPackageId) {
-            setFormError("Vui lòng chọn gói câu.");
+            setFormError("Vui lòng chọn một gói câu.");
             return;
         }
+
         if (selectedHutIds.length === 0) {
-            setFormError("Vui lòng chọn ít nhất 1 ô câu.");
+            setFormError("Vui lòng chọn ít nhất một ô câu.");
             return;
         }
 
@@ -176,9 +179,18 @@ export function OpenSessionForm({
                 }),
             });
 
-            const result = (await response.json()) as { error?: string };
+            const result = (await response.json()) as {
+                id?: string;
+                startAt?: string;
+                plannedEndAt?: string;
+                packageNameSnapshot?: string;
+                packagePriceVndSnapshot?: number;
+                packageDurationMinutesSnapshot?: number;
+                customer?: { name?: string; phoneNormalized?: string | null } | null;
+                error?: string;
+            };
 
-            if (!response.ok) {
+            if (!response.ok || !result.id) {
                 if (response.status === 409) {
                     setFormError(
                         result.error ??
@@ -189,6 +201,28 @@ export function OpenSessionForm({
                 }
                 setIsSubmitting(false);
                 return;
+            }
+
+            // Auto-print session ticket if printer is connected
+            if (isConnected && result.id) {
+                const selectedHutsInfo = huts
+                    .filter((h) => selectedHutIds.includes(h.id))
+                    .map((h) => ({ name: h.name, areaName: h.area.name }));
+
+                printSessionTicket({
+                    sessionId: result.id,
+                    lakeName: "HỒ CÂU",
+                    huts: selectedHutsInfo,
+                    packageName: selectedPackage?.name || result.packageNameSnapshot || "Gói câu",
+                    packagePriceVnd: selectedPackage?.priceVnd || result.packagePriceVndSnapshot || 0,
+                    durationMinutes: selectedPackage?.durationMinutes || result.packageDurationMinutesSnapshot || 0,
+                    customerName: selectedCustomer?.name || result.customer?.name || null,
+                    customerPhone: selectedCustomer?.phoneNormalized || result.customer?.phoneNormalized || null,
+                    startAt: result.startAt || new Date().toISOString(),
+                    plannedEndAt: result.plannedEndAt || null,
+                }).catch(() => {
+                    // Non-blocking
+                });
             }
 
             router.push("/sessions");
@@ -222,10 +256,10 @@ export function OpenSessionForm({
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {/* 1. KHÁCH HÀNG */}
-            <Card className="space-y-3">
+            <Card className="space-y-3 bg-[#FFFDF9] border-[#EAE4D7]">
                 <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                        Khách hàng
+                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        1. Khách hàng
                     </label>
                     <div className="flex items-center gap-1.5">
                         <button
@@ -234,10 +268,10 @@ export function OpenSessionForm({
                                 setSelectedCustomerId(null);
                                 setCustomerSearch("");
                             }}
-                            className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all ${
+                            className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
                                 selectedCustomerId === null
-                                    ? "bg-[#102A43] text-white"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                    ? "bg-[#382016] text-[#F6DFB2]"
+                                    : "bg-white text-slate-700 border border-[#EAE4D7] hover:bg-slate-50"
                             }`}
                         >
                             Khách lẻ
@@ -247,7 +281,7 @@ export function OpenSessionForm({
                             onClick={() =>
                                 setShowQuickAddCustomer((prev) => !prev)
                             }
-                            className="rounded-lg bg-[#102A43]/10 px-2.5 py-1 text-[11px] font-bold text-[#102A43] hover:bg-[#102A43]/20 transition-all"
+                            className="rounded-lg bg-[#EAE2CE] border border-[#DCD3C0] px-2.5 py-1 text-xs font-semibold text-[#8A5B00] hover:bg-[#E2D6C0] transition-colors"
                         >
                             + Thêm khách
                         </button>
@@ -256,8 +290,8 @@ export function OpenSessionForm({
 
                 {/* Quick Add Form */}
                 {showQuickAddCustomer && (
-                    <div className="rounded-xl border border-[#E2DDD2] bg-[#F8F6F0] p-3.5 space-y-3">
-                        <p className="text-xs font-bold text-[#102A43]">
+                    <div className="rounded-xl border border-[#EAE4D7] bg-[#F8F6F0] p-3.5 space-y-3">
+                        <p className="text-xs font-bold text-slate-900">
                             Thêm nhanh khách hàng mới
                         </p>
                         {customerError && (
@@ -300,13 +334,13 @@ export function OpenSessionForm({
 
                 {/* Customer Search & Selection */}
                 {selectedCustomerId ? (
-                    <div className="flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50/60 p-3">
+                    <div className="flex items-center justify-between rounded-xl border border-[#9E6B05] bg-[#EAE2CE] p-3 shadow-xs">
                         <div>
-                            <p className="text-xs font-bold text-teal-950">
+                            <p className="text-xs font-bold text-slate-900">
                                 {selectedCustomer?.name}
                             </p>
                             {selectedCustomer?.phoneNormalized && (
-                                <p className="text-[11px] text-teal-700 font-medium">
+                                <p className="text-xs text-slate-500 font-mono">
                                     {selectedCustomer.phoneNormalized}
                                 </p>
                             )}
@@ -314,7 +348,7 @@ export function OpenSessionForm({
                         <button
                             type="button"
                             onClick={() => setSelectedCustomerId(null)}
-                            className="text-xs font-bold text-slate-400 hover:text-red-600"
+                            className="text-xs font-semibold text-rose-700 hover:underline cursor-pointer"
                         >
                             Đổi khách
                         </button>
@@ -327,7 +361,7 @@ export function OpenSessionForm({
                             onChange={(e) => setCustomerSearch(e.target.value)}
                         />
                         {filteredCustomers.length > 0 && (
-                            <div className="divide-y divide-[#E2DDD2] rounded-xl border border-[#E2DDD2] bg-white overflow-hidden shadow-xs">
+                            <div className="divide-y divide-[#EAE4D7] rounded-xl border border-[#EAE4D7] bg-white overflow-hidden shadow-xs">
                                 {filteredCustomers.map((c) => (
                                     <div
                                         key={c.id}
@@ -335,9 +369,9 @@ export function OpenSessionForm({
                                             setSelectedCustomerId(c.id);
                                             setCustomerSearch("");
                                         }}
-                                        className="cursor-pointer p-3 text-xs hover:bg-[#F8F6F0] flex items-center justify-between transition-colors"
+                                        className="cursor-pointer p-3 text-xs hover:bg-slate-50 flex items-center justify-between transition-colors"
                                     >
-                                        <span className="font-bold text-slate-900">
+                                        <span className="font-semibold text-slate-900">
                                             {c.name}
                                         </span>
                                         <span className="text-slate-500 font-mono">
@@ -352,12 +386,12 @@ export function OpenSessionForm({
             </Card>
 
             {/* 2. CHỌN Ô CÂU */}
-            <Card className="space-y-3">
+            <Card className="space-y-3 bg-[#FFFDF9] border-[#EAE4D7]">
                 <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                        Chọn ô câu <span className="text-red-500">*</span>
+                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        2. Chọn ô câu <span className="text-rose-600">*</span>
                     </label>
-                    <span className="text-xs font-bold text-teal-700">
+                    <span className="text-xs font-semibold text-emerald-700">
                         {selectedHutIds.length > 0
                             ? `Đã chọn ${selectedHutIds.length} ô`
                             : `Còn ${availableHuts.length} ô trống`}
@@ -365,13 +399,13 @@ export function OpenSessionForm({
                 </div>
 
                 {huts.length === 0 ? (
-                    <p className="text-xs text-slate-500">Chưa có ô câu nào.</p>
+                    <p className="text-xs text-[#766F67]">Chưa có ô câu nào.</p>
                 ) : (
                     <div className="space-y-3">
                         {Array.from(hutsByArea.entries()).map(
                             ([areaId, { areaName, huts: areaHuts }]) => (
                                 <div key={areaId} className="space-y-1.5">
-                                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                    <p className="text-[11px] font-semibold text-[#766F67] uppercase tracking-wide">
                                         {areaName}
                                     </p>
                                     <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
@@ -389,17 +423,17 @@ export function OpenSessionForm({
                                                     onClick={() =>
                                                         toggleHut(h.id)
                                                     }
-                                                    className={`h-12 min-w-12 rounded-xl text-xs font-bold transition-all duration-150 ease-out active:scale-95 flex flex-col items-center justify-center ${
+                                                    className={`h-12 min-w-12 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer ${
                                                         isSelected
-                                                            ? "bg-[#102A43] text-white shadow-sm ring-2 ring-[#102A43]/40"
+                                                            ? "bg-[#382016] text-[#F6DFB2] border-2 border-[#9E6B05] shadow-xs"
                                                             : isOccupied
-                                                              ? "bg-slate-100 text-slate-400 border border-slate-200 opacity-60 cursor-not-allowed"
-                                                              : "bg-white border border-[#E2DDD2] text-slate-800 hover:border-[#102A43]"
+                                                              ? "bg-slate-100 text-slate-400 border border-[#EAE4D7] opacity-60 cursor-not-allowed"
+                                                              : "bg-white border border-[#EAE4D7] text-slate-800 hover:bg-[#FAF8F5]"
                                                     }`}
                                                 >
                                                     <span>{h.name}</span>
                                                     {isOccupied && (
-                                                        <span className="text-[9px] font-normal">
+                                                        <span className="text-[9px] font-normal text-slate-400">
                                                             Đang câu
                                                         </span>
                                                     )}
@@ -415,13 +449,13 @@ export function OpenSessionForm({
             </Card>
 
             {/* 3. GÓI / CA CÂU */}
-            <Card className="space-y-3">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                    Gói câu / Ca câu <span className="text-red-500">*</span>
+            <Card className="space-y-3 bg-[#FFFDF9] border-[#EAE4D7]">
+                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    3. Gói câu / Ca câu <span className="text-rose-600">*</span>
                 </label>
 
                 {packages.length === 0 ? (
-                    <p className="text-xs text-orange-600">
+                    <p className="text-xs text-amber-700">
                         Chưa có gói câu nào. Vui lòng tạo gói câu trước.
                     </p>
                 ) : (
@@ -432,18 +466,18 @@ export function OpenSessionForm({
                                 <div
                                     key={p.id}
                                     onClick={() => setSelectedPackageId(p.id)}
-                                    className={`cursor-pointer rounded-xl border p-3.5 flex items-center justify-between transition-all duration-150 ease-out active:scale-98 ${
+                                    className={`cursor-pointer rounded-xl border p-3.5 flex items-center justify-between transition-colors ${
                                         isSelected
-                                            ? "border-[#0D9488] bg-teal-50/50 ring-1 ring-[#0D9488]"
-                                            : "border-[#E2DDD2] bg-white hover:border-slate-300"
+                                            ? "border-[#9E6B05] bg-[#EAE2CE] shadow-xs"
+                                            : "border-[#EAE4D7] bg-white hover:bg-slate-50"
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div
                                             className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
                                                 isSelected
-                                                    ? "border-[#0D9488] bg-[#0D9488]"
-                                                    : "border-slate-300 bg-white"
+                                                    ? "border-[#9E6B05] bg-[#9E6B05]"
+                                                    : "border-[#EAE4D7] bg-white"
                                             }`}
                                         >
                                             {isSelected && (
@@ -451,15 +485,15 @@ export function OpenSessionForm({
                                             )}
                                         </div>
                                         <div>
-                                            <p className="text-xs font-bold text-slate-900">
+                                            <p className="text-xs font-semibold text-slate-900">
                                                 {p.name}
                                             </p>
-                                            <p className="text-[11px] text-slate-500 font-medium">
+                                            <p className="text-xs text-slate-500 font-mono">
                                                 Thời lượng: {p.durationMinutes} phút
                                             </p>
                                         </div>
                                     </div>
-                                    <span className="text-xs font-extrabold text-[#0D9488] tabular-nums">
+                                    <span className="text-xs font-bold font-mono text-[#8A5B00] tabular-nums">
                                         {formatPrice(p.priceVnd)}
                                     </span>
                                 </div>
@@ -470,9 +504,9 @@ export function OpenSessionForm({
             </Card>
 
             {/* 4. TỔNG DỰ KIẾN */}
-            <Card className="space-y-2 bg-[#F8F6F0]/60">
+            <Card className="space-y-2 bg-[#FFFDF9] border-[#EAE4D7]">
                 <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-600 font-medium flex items-center gap-1.5">
+                    <span className="text-slate-500 flex items-center gap-1.5">
                         <svg
                             className="h-4 w-4 text-slate-400"
                             fill="none"
@@ -488,17 +522,17 @@ export function OpenSessionForm({
                         </svg>
                         Thời gian:
                     </span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-slate-800">
                         Tự động bắt đầu ngay khi tạo vé
                     </span>
                 </div>
 
                 {selectedPackage && selectedHutIds.length > 0 && (
-                    <div className="border-t border-[#E2DDD2] pt-2 flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-800">
+                    <div className="border-t border-[#EAE4D7] pt-2 flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-900">
                             Tiền gói ({selectedHutIds.length} ô):
                         </span>
-                        <span className="text-base font-extrabold text-[#0D9488] tabular-nums">
+                        <span className="text-base font-bold font-mono text-[#8A5B00] tabular-nums">
                             {formatPrice(
                                 selectedPackage.priceVnd *
                                     selectedHutIds.length,
@@ -521,7 +555,7 @@ export function OpenSessionForm({
                 isLoading={isSubmitting}
                 loadingText="Đang tạo vé…"
                 disabled={availableHuts.length === 0}
-                className="w-full h-12 text-sm shadow-md"
+                className="w-full"
             >
                 Tạo vé và mở ô
             </Button>

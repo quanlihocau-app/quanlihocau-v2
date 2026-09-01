@@ -8,8 +8,7 @@ import { getTenantContext } from "@/lib/tenant";
 
 import { OpenSessionForm } from "./open-session-form";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
-import { PageHeader } from "@/components/ui/page-header";
-import { Badge } from "@/components/ui/badge";
+import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 
 export default async function NewSessionPage() {
     const session = await getServerSession(authOptions);
@@ -76,21 +75,29 @@ export default async function NewSessionPage() {
     ]);
 
     return (
-        <main className="mx-auto min-h-screen max-w-md bg-[#F8F6F0] px-4 pb-24 pt-6">
-            <PageHeader
-                title="Tạo vé"
-                subtitle={tenantContext.lakeName}
-                backHref="/sessions"
-                badge={<Badge variant="default">Mở phiên</Badge>}
-            />
+        <div className="mobile-pos-shell">
+            <div className="mobile-pos-frame">
+                <MobileAppHeader lakeName={tenantContext.lakeName} isOnline={true} />
 
-            <OpenSessionForm
-                customers={customers}
-                packages={packages}
-                huts={huts}
-            />
+                <div className="p-4 space-y-4 pb-28">
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                            Tạo vé mới
+                        </h1>
+                        <span className="rounded-full bg-[#EAE2CE] px-2.5 py-0.5 text-xs font-bold text-[#8A5B00]">
+                            Thu trước / Thu sau
+                        </span>
+                    </div>
 
-            <MobileBottomNav />
-        </main>
+                    <OpenSessionForm
+                        customers={customers}
+                        packages={packages}
+                        huts={huts}
+                    />
+                </div>
+
+                <MobileBottomNav />
+            </div>
+        </div>
     );
 }
