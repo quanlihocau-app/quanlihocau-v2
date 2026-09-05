@@ -165,8 +165,8 @@ export function ExpenseManager({
             <PageHeader
                 title="Quản lý chi phí khác"
                 subtitle={`Hồ: ${lakeName}`}
-                backHref="/dashboard"
-                backLabel="Bảng điều khiển"
+                backHref="/settings"
+                backLabel="Quay lại Cài đặt"
                 action={
                     canCreateExpense ? (
                         <Button

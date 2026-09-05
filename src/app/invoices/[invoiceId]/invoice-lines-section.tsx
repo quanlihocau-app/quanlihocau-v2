@@ -98,28 +98,20 @@ export function InvoiceLinesSection({
     );
     const [quantity, setQuantity] = useState<number | string>("1");
 
-    // Idempotency & submission states
-    const [addIdempotencyKey, setAddIdempotencyKey] = useState<string>(() =>
-        typeof crypto !== "undefined" && crypto.randomUUID
-            ? crypto.randomUUID()
-            : "00000000-0000-0000-0000-000000000000",
-    );
+    // Loading & feedback states
     const [addLoading, setAddLoading] = useState(false);
-    const [addError, setAddError] = useState<string | null>(null);
-    const [addSuccess, setAddSuccess] = useState<string | null>(null);
+    const [addError, setAddError] = useState("");
+    const [addSuccess, setAddSuccess] = useState("");
     const [negativeWarning, setNegativeWarning] = useState<string | null>(null);
-
-    // Delete Line State & Per-Line Idempotency Keys
     const [deletingLineId, setDeletingLineId] = useState<string | null>(null);
-    const [deleteKeys, setDeleteKeys] = useState<Record<string, string>>({});
 
     const filteredProducts = useMemo(() => {
         if (!productSearch.trim()) return availableProducts;
-        const q = productSearch.toLowerCase().trim();
+        const query = productSearch.toLowerCase().trim();
         return availableProducts.filter(
             (p) =>
-                p.name.toLowerCase().includes(q) ||
-                (p.sku && p.sku.toLowerCase().includes(q)),
+                p.name.toLowerCase().includes(query) ||
+                (p.sku && p.sku.toLowerCase().includes(query)),
         );
     }, [availableProducts, productSearch]);
 
@@ -130,7 +122,7 @@ export function InvoiceLinesSection({
     const estimatedLineTotal = useMemo(() => {
         if (!selectedProduct) return null;
         return calculateEstimatedTotalVnd(quantity, selectedProduct.priceVnd);
-    }, [selectedProduct, quantity]);
+    }, [quantity, selectedProduct]);
 
     function handleQuantityChange(delta: number) {
         const current = typeof quantity === "string" ? parseInt(quantity, 10) || 0 : quantity;
@@ -140,18 +132,18 @@ export function InvoiceLinesSection({
 
     async function handleAddProduct(e: React.FormEvent) {
         e.preventDefault();
-        setAddError(null);
-        setAddSuccess(null);
+        setAddError("");
+        setAddSuccess("");
         setNegativeWarning(null);
 
         if (!selectedProductId) {
-            setAddError("Vui lòng chọn sản phẩm cần thêm.");
+            setAddError("Vui lòng chọn một sản phẩm.");
             return;
         }
 
-        const qtyNum = typeof quantity === "string" ? parseInt(quantity, 10) : quantity;
-        if (isNaN(qtyNum) || qtyNum <= 0) {
-            setAddError("Số lượng phải là số nguyên dương hợp lệ.");
+        const numericQty = typeof quantity === "string" ? parseInt(quantity, 10) : quantity;
+        if (isNaN(numericQty) || numericQty <= 0) {
+            setAddError("Số lượng phải là số nguyên dương lớn hơn 0.");
             return;
         }
 
@@ -160,13 +152,10 @@ export function InvoiceLinesSection({
         try {
             const res = await fetch(`/api/invoices/${invoiceId}/lines`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Idempotency-Key": addIdempotencyKey,
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     productId: selectedProductId,
-                    quantity: qtyNum,
+                    quantity: numericQty,
                 }),
             });
 
@@ -174,55 +163,45 @@ export function InvoiceLinesSection({
 
             if (!res.ok) {
                 setAddError(data.error || "Không thể thêm sản phẩm vào hóa đơn.");
-                setAddLoading(false);
                 return;
             }
 
-            if (data.warning) {
-                setNegativeWarning(data.warning);
+            if (data.negativeStockWarning) {
+                setNegativeWarning(
+                    `Sản phẩm "${data.line?.name || selectedProduct?.name}" đã bị xuất âm kho. Số lượng tồn kho sau bán là: ${data.remainingStock}.`,
+                );
             } else {
-                setAddSuccess("Đã thêm sản phẩm thành công!");
+                setAddSuccess(`Đã thêm thành công vào hóa đơn!`);
             }
 
-            setAddIdempotencyKey(crypto.randomUUID());
             setQuantity("1");
             router.refresh();
         } catch {
-            setAddError("Lỗi kết nối mạng khi thêm sản phẩm. Vui lòng thử lại.");
+            setAddError("Lỗi kết nối khi thêm sản phẩm.");
         } finally {
             setAddLoading(false);
         }
     }
 
     async function handleDeleteLine(lineId: string) {
-        setAddError(null);
-        setAddSuccess(null);
+        setAddError("");
+        setAddSuccess("");
         setNegativeWarning(null);
-
-        let key = deleteKeys[lineId];
-        if (!key) {
-            key = crypto.randomUUID();
-            setDeleteKeys((prev) => ({ ...prev, [lineId]: key }));
-        }
-
         setDeletingLineId(lineId);
 
         try {
             const res = await fetch(`/api/invoices/${invoiceId}/lines/${lineId}`, {
                 method: "DELETE",
-                headers: {
-                    "Idempotency-Key": key,
-                },
             });
 
             const data = await res.json();
 
             if (!res.ok) {
-                setAddError(data.error || "Không thể xóa dòng hóa đơn.");
-                setDeletingLineId(null);
+                setAddError(data.error || "Không thể xóa mục khỏi hóa đơn.");
                 return;
             }
 
+            setAddSuccess("Đã xóa mục khỏi hóa đơn.");
             router.refresh();
         } catch {
             setAddError("Lỗi kết nối khi xóa mục.");
@@ -232,36 +211,36 @@ export function InvoiceLinesSection({
     }
 
     return (
-        <div className="space-y-6">
-            {/* 1. Itemized Lines List */}
-            <div className="overflow-hidden rounded-2xl border border-[#E2DDD2] bg-white shadow-2xs">
-                <div className="border-b border-[#E2DDD2] bg-[#F8F6F0] px-4 py-3 sm:px-6">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                        Chi tiết các mục hóa đơn ({lines.length})
+        <div className="space-y-5">
+            {/* 1. Chi tiết các dòng hàng trong hóa đơn */}
+            <div className="rounded-2xl border border-[#D9D2C8] bg-white overflow-hidden">
+                <div className="flex items-center justify-between border-b border-[#D9D2C8] bg-[#F4F2EE] px-4 py-3 sm:px-6">
+                    <h3 className="text-xs font-semibold text-[#766F67] uppercase tracking-wide">
+                        Các mục tính tiền ({lines.length})
                     </h3>
                 </div>
 
                 {lines.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-slate-500 font-medium">
-                        Hóa đơn hiện chưa có mục nào.
+                    <div className="p-8 text-center text-xs text-[#766F67]">
+                        Hóa đơn hiện chưa có mục hàng nào.
                     </div>
                 ) : (
-                    <div className="divide-y divide-[#E2DDD2]">
+                    <div className="divide-y divide-[#D9D2C8]">
                         {lines.map((line) => (
                             <div
                                 key={line.id}
-                                className="flex items-center justify-between p-3.5 sm:px-6 hover:bg-[#F8F6F0]/50 transition-colors"
+                                className="flex items-center justify-between p-3.5 sm:px-6 hover:bg-[#F4F2EE]/40 transition-colors"
                             >
                                 <div className="space-y-0.5">
-                                    <p className="text-xs font-bold text-slate-900">
+                                    <p className="text-xs font-semibold text-[#27231F]">
                                         {line.name}
                                     </p>
-                                    <p className="text-[11px] text-slate-500 font-medium">
+                                    <p className="text-xs text-[#766F67]">
                                         {formatVnd(line.unitPrice)} × {line.quantity.toString()}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xs font-extrabold text-[#102A43] tabular-nums">
+                                    <span className="text-xs font-bold text-[#8A5A20] tabular-nums">
                                         {formatVnd(line.totalVnd)}
                                     </span>
                                     {isDraft && line.productId && (
@@ -269,7 +248,7 @@ export function InvoiceLinesSection({
                                             type="button"
                                             disabled={deletingLineId === line.id}
                                             onClick={() => handleDeleteLine(line.id)}
-                                            className="text-slate-400 hover:text-red-600 transition-colors p-1"
+                                            className="text-[#766F67] hover:text-[#8B1E1E] transition-colors p-1 cursor-pointer"
                                             title="Xóa mục này"
                                         >
                                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -286,23 +265,23 @@ export function InvoiceLinesSection({
 
             {/* 2. Interactive Product Selection Grid (DRAFT only) */}
             {isDraft && (
-                <Card className="bg-[#F8F6F0]/60 p-4 sm:p-5 space-y-4 print:hidden">
+                <Card className="bg-[#F4F2EE] p-4 sm:p-5 space-y-4 print:hidden">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h3 className="text-xs font-bold text-[#102A43] uppercase tracking-wider">
+                            <h3 className="text-xs font-semibold text-[#27231F] uppercase tracking-wide">
                                 Chọn sản phẩm / Đồ dùng bán thêm
                             </h3>
-                            <p className="text-[11px] text-slate-500 font-medium">
+                            <p className="text-xs text-[#766F67] mt-0.5">
                                 Nhấp chọn sản phẩm để xuất bán và cộng trực tiếp vào hóa đơn.
                             </p>
                         </div>
-                        <span className="inline-flex items-center rounded-lg bg-[#102A43]/10 px-2.5 py-0.5 text-xs font-bold text-[#102A43]">
+                        <span className="inline-flex items-center rounded-lg bg-[#EFE4CF] border border-[#D9D2C8] px-2.5 py-0.5 text-xs font-semibold text-[#8A5A20]">
                             {availableProducts.length} sản phẩm
                         </span>
                     </div>
 
                     {availableProducts.length === 0 ? (
-                        <p className="text-xs text-slate-500 italic">
+                        <p className="text-xs text-[#766F67] italic">
                             Chưa có sản phẩm nào trong danh mục hoặc tất cả sản phẩm đã ngừng bán.
                         </p>
                     ) : (
@@ -314,10 +293,10 @@ export function InvoiceLinesSection({
                                     placeholder="Tìm theo tên hoặc mã SKU..."
                                     value={productSearch}
                                     onChange={(e) => setProductSearch(e.target.value)}
-                                    className="w-full h-11 rounded-xl border border-[#E2DDD2] bg-white pl-9 pr-3 text-xs font-medium text-slate-900 shadow-2xs focus:border-[#102A43] focus:ring-2 focus:ring-[#102A43] focus:outline-none"
+                                    className="w-full h-11 rounded-xl border border-[#D9D2C8] bg-white pl-9 pr-3 text-xs font-medium text-[#27231F] focus:border-[#8A5A20] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none"
                                 />
                                 <svg
-                                    className="absolute left-3 top-3.5 h-4 w-4 text-slate-400 pointer-events-none"
+                                    className="absolute left-3 top-3.5 h-4 w-4 text-[#766F67] pointer-events-none"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     strokeWidth={2}
@@ -331,8 +310,8 @@ export function InvoiceLinesSection({
                                 </svg>
                             </div>
 
-                            {/* Product Card Grid */}
-                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 max-h-60 overflow-y-auto pr-1">
+                            {/* Product Card Grid (2 cols on mobile) */}
+                            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 max-h-64 overflow-y-auto pr-1">
                                 {filteredProducts.map((p) => {
                                     const isSelected = selectedProductId === p.id;
                                     const stock = p.currentStock;
@@ -342,30 +321,30 @@ export function InvoiceLinesSection({
                                         <div
                                             key={p.id}
                                             onClick={() => setSelectedProductId(p.id)}
-                                            className={`cursor-pointer rounded-xl border p-3 flex flex-col justify-between transition-all duration-150 ease-out active:scale-95 ${
+                                            className={`cursor-pointer rounded-xl border p-3 flex flex-col justify-between transition-colors ${
                                                 isSelected
-                                                    ? "border-[#102A43] bg-white ring-2 ring-[#102A43] shadow-xs"
-                                                    : "border-[#E2DDD2] bg-white hover:border-[#102A43]"
+                                                    ? "border-[#8A5A20] bg-[#EFE4CF]"
+                                                    : "border-[#D9D2C8] bg-white hover:bg-[#F4F2EE]"
                                             }`}
                                         >
                                             <div>
-                                                <p className="font-bold text-xs text-slate-900 line-clamp-1">
+                                                <p className="font-semibold text-xs text-[#27231F] line-clamp-1">
                                                     {p.name}
                                                 </p>
-                                                <p className="text-xs font-extrabold text-[#0D9488] tabular-nums mt-0.5">
+                                                <p className="text-xs font-bold text-[#8A5A20] tabular-nums mt-0.5">
                                                     {formatVnd(p.priceVnd)}
                                                 </p>
                                             </div>
 
-                                            <div className="mt-2 flex items-center justify-between pt-1 border-t border-[#E2DDD2] text-[10px]">
-                                                <span className="text-slate-400 font-mono">
+                                            <div className="mt-2 flex items-center justify-between pt-1 border-t border-[#D9D2C8] text-[11px]">
+                                                <span className="text-[#766F67] font-mono">
                                                     {p.sku || "—"}
                                                 </span>
                                                 <span
-                                                    className={`font-bold rounded px-1 py-0.5 ${
+                                                    className={`font-semibold rounded px-1 py-0.5 ${
                                                         isOutOfStock
-                                                            ? "bg-red-50 text-red-700 border border-red-200"
-                                                            : "bg-teal-50 text-teal-800"
+                                                            ? "bg-[#FAECEC] text-[#8B1E1E] border border-[#8B1E1E]/30"
+                                                            : "bg-[#E8F3ED] text-[#2D6A4F]"
                                                     }`}
                                                 >
                                                     Tồn: {stock}
@@ -378,13 +357,13 @@ export function InvoiceLinesSection({
 
                             {/* Selected Product Action Bar */}
                             {selectedProduct && (
-                                <div className="rounded-xl border border-[#E2DDD2] bg-white p-3.5 space-y-3 shadow-2xs">
+                                <div className="rounded-xl border border-[#D9D2C8] bg-white p-3.5 space-y-3">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-xs font-bold text-slate-900">
+                                            <p className="text-xs font-bold text-[#27231F]">
                                                 {selectedProduct.name}
                                             </p>
-                                            <p className="text-[11px] text-[#0D9488] font-bold tabular-nums">
+                                            <p className="text-xs text-[#8A5A20] font-bold tabular-nums">
                                                 Đơn giá: {formatVnd(selectedProduct.priceVnd)}
                                             </p>
                                         </div>
@@ -394,7 +373,7 @@ export function InvoiceLinesSection({
                                             <button
                                                 type="button"
                                                 onClick={() => handleQuantityChange(-1)}
-                                                className="h-10 w-10 rounded-xl border border-[#E2DDD2] bg-[#F8F6F0] text-base font-bold text-slate-700 hover:bg-[#E2DDD2] transition-colors flex items-center justify-center active:scale-95"
+                                                className="h-10 w-10 rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] text-base font-bold text-[#27231F] hover:bg-[#EFE4CF] transition-colors flex items-center justify-center cursor-pointer"
                                             >
                                                 -
                                             </button>
@@ -405,12 +384,12 @@ export function InvoiceLinesSection({
                                                 required
                                                 value={quantity}
                                                 onChange={(e) => setQuantity(e.target.value)}
-                                                className="h-10 w-14 rounded-xl border border-[#E2DDD2] text-center text-xs font-bold text-slate-900 focus:border-[#102A43] focus:ring-2 focus:ring-[#102A43] focus:outline-none"
+                                                className="h-10 w-14 rounded-xl border border-[#D9D2C8] text-center text-xs font-bold text-[#27231F] focus:border-[#8A5A20] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => handleQuantityChange(1)}
-                                                className="h-10 w-10 rounded-xl border border-[#E2DDD2] bg-[#F8F6F0] text-base font-bold text-slate-700 hover:bg-[#E2DDD2] transition-colors flex items-center justify-center active:scale-95"
+                                                className="h-10 w-10 rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] text-base font-bold text-[#27231F] hover:bg-[#EFE4CF] transition-colors flex items-center justify-center cursor-pointer"
                                             >
                                                 +
                                             </button>
@@ -418,10 +397,10 @@ export function InvoiceLinesSection({
                                     </div>
 
                                     {/* Estimated summary & Submit button */}
-                                    <div className="flex items-center justify-between border-t border-[#E2DDD2] pt-2">
-                                        <span className="text-xs text-slate-600 font-medium">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-[#D9D2C8] pt-2.5">
+                                        <span className="text-xs text-[#766F67]">
                                             Tạm tính:{" "}
-                                            <strong className="text-sm font-extrabold text-[#0D9488] tabular-nums">
+                                            <strong className="text-sm font-bold text-[#8A5A20] tabular-nums">
                                                 {estimatedLineTotal !== null
                                                     ? formatVnd(estimatedLineTotal)
                                                     : "—"}
@@ -434,6 +413,7 @@ export function InvoiceLinesSection({
                                             variant="primary"
                                             isLoading={addLoading}
                                             loadingText="Đang lưu…"
+                                            className="w-full sm:w-auto"
                                         >
                                             Xác nhận thêm hàng
                                         </Button>
@@ -453,7 +433,7 @@ export function InvoiceLinesSection({
                                     message={
                                         <div>
                                             <p>{negativeWarning}</p>
-                                            <p className="mt-0.5 text-[11px] text-orange-800">
+                                            <p className="mt-0.5 text-xs text-[#9A4C16]">
                                                 Vui lòng nhập kho hoặc đối soát tồn kho thực tế của sản phẩm này.
                                             </p>
                                         </div>

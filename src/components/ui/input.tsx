@@ -16,7 +16,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 {label && (
                     <label
                         htmlFor={inputId}
-                        className="block text-xs font-bold text-slate-700 uppercase tracking-wider"
+                        className="block text-xs font-semibold text-[#27231F] uppercase tracking-wide"
                     >
                         {label}
                     </label>
@@ -24,16 +24,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 <input
                     id={inputId}
                     ref={ref}
-                    className={`h-12 w-full rounded-xl border bg-white px-3.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#102A43] focus:border-transparent transition-all duration-150 ${
+                    className={`h-12 w-full rounded-xl border bg-white px-3.5 text-sm font-normal text-[#27231F] placeholder:text-[#766F67]/60 focus:outline-none focus:ring-2 focus:ring-[#8A5A20] focus:border-transparent transition-colors ${
                         error
-                            ? "border-red-400 focus:ring-red-500 bg-red-50/20"
-                            : "border-[#E2DDD2]"
+                            ? "border-[#8B1E1E] focus:ring-[#8B1E1E] bg-[#FAECEC]/30"
+                            : "border-[#D9D2C8]"
                     } ${className}`}
                     {...props}
                 />
-                {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+                {error && <p className="text-xs font-semibold text-[#8B1E1E]">{error}</p>}
                 {helperText && !error && (
-                    <p className="text-[11px] text-slate-500">{helperText}</p>
+                    <p className="text-xs text-[#766F67]">{helperText}</p>
                 )}
             </div>
         );
@@ -58,7 +58,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 {label && (
                     <label
                         htmlFor={selectId}
-                        className="block text-xs font-bold text-slate-700 uppercase tracking-wider"
+                        className="block text-xs font-semibold text-[#27231F] uppercase tracking-wide"
                     >
                         {label}
                     </label>
@@ -66,18 +66,18 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 <select
                     id={selectId}
                     ref={ref}
-                    className={`h-12 w-full rounded-xl border bg-white px-3.5 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#102A43] focus:border-transparent transition-all duration-150 cursor-pointer ${
+                    className={`h-12 w-full rounded-xl border bg-white px-3.5 text-sm font-normal text-[#27231F] focus:outline-none focus:ring-2 focus:ring-[#8A5A20] focus:border-transparent transition-colors cursor-pointer ${
                         error
-                            ? "border-red-400 focus:ring-red-500 bg-red-50/20"
-                            : "border-[#E2DDD2]"
+                            ? "border-[#8B1E1E] focus:ring-[#8B1E1E] bg-[#FAECEC]/30"
+                            : "border-[#D9D2C8]"
                     } ${className}`}
                     {...props}
                 >
                     {children}
                 </select>
-                {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+                {error && <p className="text-xs font-semibold text-[#8B1E1E]">{error}</p>}
                 {helperText && !error && (
-                    <p className="text-[11px] text-slate-500">{helperText}</p>
+                    <p className="text-xs text-[#766F67]">{helperText}</p>
                 )}
             </div>
         );

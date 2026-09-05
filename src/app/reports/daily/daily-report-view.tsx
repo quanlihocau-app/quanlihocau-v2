@@ -19,6 +19,45 @@ export interface DailyReportSummary {
     netProfitVnd: number;
 }
 
+export interface DailyReportBreakdown {
+    sessions: {
+        total: number;
+        completed: number;
+        active: number;
+        cancelled: number;
+        packages: Array<{
+            packageName: string;
+            count: number;
+            totalVnd: number;
+        }>;
+    };
+    products: {
+        totalQuantity: number;
+        totalVnd: number;
+        items: Array<{
+            name: string;
+            quantity: number;
+            totalVnd: number;
+        }>;
+    };
+    services: {
+        extensionsCount: number;
+        extensionsTotalVnd: number;
+    };
+    payments: {
+        cashInVnd: number;
+        cashOutVnd: number;
+        transferInVnd: number;
+        transferOutVnd: number;
+        totalPaidInVnd: number;
+        totalRefundVnd: number;
+    };
+    inventory: {
+        inCount: number;
+        outCount: number;
+    };
+}
+
 export interface ShiftInfo {
     id: string;
     startTime: string;
@@ -35,6 +74,7 @@ export interface ShiftCloseInfo {
 interface DailyReportViewProps {
     shift: ShiftInfo;
     summary: DailyReportSummary;
+    breakdown?: DailyReportBreakdown | null;
     shiftClose: ShiftCloseInfo | null;
     canCloseShift: boolean;
     lakeName: string;
@@ -59,6 +99,7 @@ function formatDateTime(dateStr: string): string {
 export function DailyReportView({
     shift,
     summary,
+    breakdown,
     shiftClose,
     canCloseShift,
     lakeName,
@@ -115,7 +156,7 @@ export function DailyReportView({
         <div className="mobile-pos-shell">
             <div className="mobile-pos-frame">
                 {/* ── App Header ─────────────────────────────────────────── */}
-                <MobileAppHeader lakeName={lakeName} isOnline={true} />
+                <MobileAppHeader lakeName={lakeName} />
 
                 <div className="p-4 space-y-4 pb-28">
                     {/* ── Page title + shift badge ───────────────────────────── */}
@@ -140,7 +181,7 @@ export function DailyReportView({
                     )}
 
                     {/* Net Profit Card */}
-                    <div className="rounded-2xl bg-gradient-to-br from-[#2D190F] to-[#170D09] p-4 text-[#F5F2EB] shadow-md border border-[#9E6B05]/30">
+                    <div className="rounded-2xl bg-linear-to-br from-[#2D190F] to-[#170D09] p-4 text-[#F5F2EB] shadow-md border border-[#9E6B05]/30">
                         <p className="text-xs text-[#BDA989] font-medium">
                             Lợi nhuận thuần (Thực thu ròng)
                         </p>
@@ -218,6 +259,107 @@ export function DailyReportView({
                             </span>
                         </div>
                     </div>
+
+                    {/* Detailed Breakdown Sections if available */}
+                    {breakdown && (
+                        <div className="space-y-4">
+                            {/* 1. Vé câu & Doanh thu theo gói */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between px-1">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                        Vé câu & Gói dịch vụ
+                                    </p>
+                                    <span className="text-xs font-semibold text-slate-700">
+                                        Tổng: {breakdown.sessions.total} vé ({breakdown.sessions.completed} xong, {breakdown.sessions.active} đang câu{breakdown.sessions.cancelled > 0 ? `, ${breakdown.sessions.cancelled} hủy` : ""})
+                                    </span>
+                                </div>
+                                <div className="rounded-xl border border-[#EAE4D7] bg-white divide-y divide-[#EAE4D7] shadow-xs">
+                                    {breakdown.sessions.packages.length > 0 ? (
+                                        breakdown.sessions.packages.map((pkg) => (
+                                            <div key={pkg.packageName} className="flex items-center justify-between px-3.5 py-2.5 text-xs">
+                                                <div>
+                                                    <span className="font-semibold text-slate-800">{pkg.packageName}</span>
+                                                    <span className="ml-2 text-slate-500">({pkg.count} vé)</span>
+                                                </div>
+                                                <span className="font-bold font-mono text-slate-900 tabular-nums">
+                                                    {formatVnd(pkg.totalVnd)}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="p-3 text-center text-xs text-slate-400">
+                                            Chưa có vé câu nào trong ca này
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 2. Sản phẩm & Gia hạn */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between px-1">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                        Hàng hóa & Gia hạn
+                                    </p>
+                                    <span className="text-xs font-semibold text-slate-700">
+                                        {formatVnd(breakdown.products.totalVnd + breakdown.services.extensionsTotalVnd)}
+                                    </span>
+                                </div>
+                                <div className="rounded-xl border border-[#EAE4D7] bg-white divide-y divide-[#EAE4D7] shadow-xs">
+                                    {breakdown.services.extensionsCount > 0 && (
+                                        <div className="flex items-center justify-between px-3.5 py-2.5 text-xs bg-amber-50/50">
+                                            <div>
+                                                <span className="font-semibold text-amber-900">Gia hạn thêm giờ</span>
+                                                <span className="ml-2 text-amber-700">({breakdown.services.extensionsCount} lần)</span>
+                                            </div>
+                                            <span className="font-bold font-mono text-amber-900 tabular-nums">
+                                                {formatVnd(breakdown.services.extensionsTotalVnd)}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {breakdown.products.items.length > 0 ? (
+                                        breakdown.products.items.map((prod) => (
+                                            <div key={prod.name} className="flex items-center justify-between px-3.5 py-2.5 text-xs">
+                                                <div>
+                                                    <span className="font-semibold text-slate-800">{prod.name}</span>
+                                                    <span className="ml-2 text-slate-500">(SL: {prod.quantity})</span>
+                                                </div>
+                                                <span className="font-bold font-mono text-slate-900 tabular-nums">
+                                                    {formatVnd(prod.totalVnd)}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        breakdown.services.extensionsCount === 0 && (
+                                            <div className="p-3 text-center text-xs text-slate-400">
+                                                Chưa có bán hàng kèm trong ca này
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 3. Xuất nhập kho trong ca */}
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">
+                                    Biến động kho hàng
+                                </p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="rounded-xl border border-[#EAE4D7] bg-white p-3 shadow-xs">
+                                        <span className="text-xs font-medium text-slate-500">Đã nhập kho</span>
+                                        <p className="mt-0.5 text-sm font-bold font-mono text-emerald-700 tabular-nums">
+                                            +{breakdown.inventory.inCount} đơn vị
+                                        </p>
+                                    </div>
+                                    <div className="rounded-xl border border-[#EAE4D7] bg-white p-3 shadow-xs">
+                                        <span className="text-xs font-medium text-slate-500">Đã xuất bán</span>
+                                        <p className="mt-0.5 text-sm font-bold font-mono text-slate-800 tabular-nums">
+                                            -{breakdown.inventory.outCount} đơn vị
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Shift Closed Details (if already closed) */}
                     {shift.isClosed && shiftClose && (

@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useNetworkStatus } from "@/lib/network/use-network-status";
 
 interface SessionCountdownProps {
     plannedEndAt: string; // ISO string
 }
 
-function computeTimeInfo(plannedEndAtIso: string) {
-    const now = Date.now();
+function computeTimeInfo(plannedEndAtIso: string, serverOffsetMs: number = 0) {
+    // Điều chỉnh thời gian hiện tại theo độ lệch đồng hồ máy chủ
+    const now = Date.now() + serverOffsetMs;
     const endMs = new Date(plannedEndAtIso).getTime();
     const diffMs = endMs - now;
 
@@ -16,9 +18,10 @@ function computeTimeInfo(plannedEndAtIso: string) {
         const overH = Math.floor(overMs / 3_600_000);
         const overM = Math.floor((overMs % 3_600_000) / 60_000);
         const overS = Math.floor((overMs % 60_000) / 1_000);
-        const label = overH > 0
-            ? `+${String(overH).padStart(2, "0")}:${String(overM).padStart(2, "0")}:${String(overS).padStart(2, "0")}`
-            : `+${String(overM).padStart(2, "0")}:${String(overS).padStart(2, "0")}`;
+        const label =
+            overH > 0
+                ? `+${String(overH).padStart(2, "0")}:${String(overM).padStart(2, "0")}:${String(overS).padStart(2, "0")}`
+                : `+${String(overM).padStart(2, "0")}:${String(overS).padStart(2, "0")}`;
         return {
             label,
             isEndingSoon: true,
@@ -36,16 +39,39 @@ function computeTimeInfo(plannedEndAtIso: string) {
 }
 
 export function SessionCountdown({ plannedEndAt }: SessionCountdownProps) {
+    const { serverOffsetMs } = useNetworkStatus();
     const [timeInfo, setTimeInfo] = useState(() =>
-        computeTimeInfo(plannedEndAt),
+        computeTimeInfo(plannedEndAt, serverOffsetMs),
     );
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setTimeInfo(computeTimeInfo(plannedEndAt));
-        }, 1_000);
-        return () => clearInterval(interval);
-    }, [plannedEndAt]);
+        const updateNow = () => {
+            setTimeInfo(computeTimeInfo(plannedEndAt, serverOffsetMs));
+        };
+
+        // Chạy ngay 1 lần khi plannedEndAt hoặc serverOffsetMs thay đổi
+        updateNow();
+
+        const interval = setInterval(updateNow, 1_000);
+
+        // Chống timer drift khi màn hình tắt / sleep / chuyển tab quay lại
+        const handleWake = () => {
+            if (document.visibilityState === "visible") {
+                updateNow();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleWake);
+        window.addEventListener("focus", handleWake);
+        window.addEventListener("online", handleWake);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener("visibilitychange", handleWake);
+            window.removeEventListener("focus", handleWake);
+            window.removeEventListener("online", handleWake);
+        };
+    }, [plannedEndAt, serverOffsetMs]);
 
     return (
         <span
@@ -59,3 +85,4 @@ export function SessionCountdown({ plannedEndAt }: SessionCountdownProps) {
         </span>
     );
 }
+

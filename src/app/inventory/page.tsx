@@ -121,8 +121,8 @@ export default async function InventoryPage() {
             <PageHeader
                 title="Quản lý kho hàng & Tồn kho"
                 subtitle="Theo dõi biến động nhập/xuất và số lượng tồn kho của các mặt hàng dịch vụ tại hồ."
-                backHref="/dashboard"
-                backLabel="Bảng điều khiển"
+                backHref="/settings"
+                backLabel="Quay lại Cài đặt"
                 badge={<Badge variant="default">{tenantContext.lakeName}</Badge>}
             />
 

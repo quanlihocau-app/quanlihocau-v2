@@ -12,6 +12,7 @@ interface ProductItem {
     sku: string | null;
     name: string;
     priceVnd: number;
+    stock?: number;
     createdAt: Date | string;
     updatedAt: Date | string;
 }
@@ -45,7 +46,6 @@ export function ProductList({ products, canManage }: ProductListProps) {
     const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
     const [editName, setEditName] = useState("");
     const [editPriceVnd, setEditPriceVnd] = useState<number | string>("");
-    const [editSku, setEditSku] = useState("");
     const [editLoading, setEditLoading] = useState(false);
     const [editError, setEditError] = useState<string | null>(null);
 
@@ -64,7 +64,6 @@ export function ProductList({ products, canManage }: ProductListProps) {
         setEditingProduct(prod);
         setEditName(prod.name);
         setEditPriceVnd(prod.priceVnd);
-        setEditSku(prod.sku || "");
         setEditError(null);
     }
 
@@ -109,7 +108,6 @@ export function ProductList({ products, canManage }: ProductListProps) {
                 body: JSON.stringify({
                     name: editName.trim(),
                     priceVnd: numPrice,
-                    sku: editSku.trim() ? editSku.trim() : null,
                 }),
             });
 
@@ -204,7 +202,18 @@ export function ProductList({ products, canManage }: ProductListProps) {
                             </div>
                             <div className="flex items-center justify-between text-[11px] text-slate-500">
                                 <span className="font-mono">{p.sku ? `SKU: ${p.sku}` : "Không có SKU"}</span>
-                                <span>{formatDateTime(p.updatedAt || p.createdAt)}</span>
+                                <span
+                                    className={`font-semibold px-2 py-0.5 rounded-md ${
+                                        (p.stock ?? 0) > 0
+                                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                            : "bg-amber-50 text-amber-700 border border-amber-200"
+                                    }`}
+                                >
+                                    Tồn: {p.stock ?? 0}
+                                </span>
+                            </div>
+                            <div className="text-[11px] text-slate-400 text-right">
+                                {formatDateTime(p.updatedAt || p.createdAt)}
                             </div>
                             {canManage && (
                                 <div className="flex items-center justify-end gap-2 border-t border-[#E2DDD2] pt-2">
@@ -239,6 +248,7 @@ export function ProductList({ products, canManage }: ProductListProps) {
                         <tr>
                             <th className="px-4 py-3.5">Mã SKU</th>
                             <th className="px-4 py-3.5">Tên sản phẩm</th>
+                            <th className="px-4 py-3.5 text-center">Tồn kho</th>
                             <th className="px-4 py-3.5 text-right">Đơn giá bán</th>
                             <th className="px-4 py-3.5">Ngày cập nhật</th>
                             {canManage && (
@@ -250,7 +260,7 @@ export function ProductList({ products, canManage }: ProductListProps) {
                         {filteredProducts.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={canManage ? 5 : 4}
+                                    colSpan={canManage ? 6 : 5}
                                     className="px-4 py-8 text-center text-xs text-slate-400"
                                 >
                                     {search
@@ -266,9 +276,9 @@ export function ProductList({ products, canManage }: ProductListProps) {
                                 >
                                     <td className="px-4 py-3.5 font-mono text-xs font-bold text-slate-700">
                                         {p.sku ? (
-                                            <span className="inline-flex items-center rounded-md bg-[#F8F6F0] px-2 py-0.5 text-slate-800 border border-[#E2DDD2]">
-                                                {p.sku}
-                                            </span>
+                                             <span className="inline-flex items-center rounded-md bg-[#F8F6F0] px-2 py-0.5 text-slate-800 border border-[#E2DDD2]">
+                                                 {p.sku}
+                                             </span>
                                         ) : (
                                             <span className="text-slate-400 italic">
                                                 —
@@ -277,6 +287,17 @@ export function ProductList({ products, canManage }: ProductListProps) {
                                     </td>
                                     <td className="px-4 py-3.5 font-bold text-slate-900">
                                         {p.name}
+                                    </td>
+                                    <td className="px-4 py-3.5 text-center">
+                                        <span
+                                            className={`inline-flex items-center font-bold px-2.5 py-0.5 rounded-full text-[11px] ${
+                                                (p.stock ?? 0) > 0
+                                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                                    : "bg-amber-50 text-amber-700 border border-amber-200"
+                                            }`}
+                                        >
+                                            {p.stock ?? 0}
+                                        </span>
                                     </td>
                                     <td className="px-4 py-3.5 text-right font-extrabold text-[#0D9488] tabular-nums text-sm">
                                         {formatVnd(p.priceVnd)}
@@ -333,19 +354,26 @@ export function ProductList({ products, canManage }: ProductListProps) {
                         </div>
 
                         <form onSubmit={handleUpdate} className="space-y-3.5">
+                            <div>
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                    Mã SKU
+                                </label>
+                                <div className="mt-1">
+                                    <span className="inline-block px-3 py-1.5 rounded-lg bg-slate-100 font-mono text-xs font-bold text-slate-800 border border-slate-200">
+                                        {editingProduct.sku || "Chưa có"}
+                                    </span>
+                                    <p className="mt-1 text-[11px] text-slate-500">
+                                        Mã SKU do hệ thống quản lý tự động.
+                                    </p>
+                                </div>
+                            </div>
+
                             <Input
                                 label="Tên sản phẩm *"
                                 type="text"
                                 required
                                 value={editName}
                                 onChange={(e) => setEditName(e.target.value)}
-                            />
-
-                            <Input
-                                label="Mã SKU (Tùy chọn)"
-                                type="text"
-                                value={editSku}
-                                onChange={(e) => setEditSku(e.target.value)}
                             />
 
                             <Input
@@ -379,7 +407,7 @@ export function ProductList({ products, canManage }: ProductListProps) {
                                     variant="primary"
                                     isLoading={editLoading}
                                     loadingText="Đang lưu…"
-                                    className="flex-[2]"
+                                    className="flex-2"
                                 >
                                     Lưu thay đổi
                                 </Button>

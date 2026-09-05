@@ -53,8 +53,8 @@ export default async function CustomersPage() {
             <PageHeader
                 title="Quản lý Khách hàng"
                 subtitle={`Hồ câu: ${tenantContext.lakeName} (${tenantContext.organizationName})`}
-                backHref="/dashboard"
-                backLabel="Bảng điều khiển"
+                backHref="/settings"
+                backLabel="Quay lại Cài đặt"
                 badge={<Badge variant="default">Vai trò: {tenantContext.role}</Badge>}
             />
 

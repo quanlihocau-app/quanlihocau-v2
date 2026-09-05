@@ -152,9 +152,13 @@ export async function POST(request: Request) {
 
     try {
         const result = await prisma.$transaction(async (tx) => {
+            const trialExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
             const organization = await tx.organization.create({
                 data: {
                     name: `Doanh nghiệp của ${data.fullName}`,
+                    subscriptionPlan: "TRIAL",
+                    validUntil: trialExpiresAt,
                 },
             });
 
@@ -162,6 +166,9 @@ export async function POST(request: Request) {
                 data: {
                     organizationId: organization.id,
                     name: data.lakeName,
+                    subscriptionStatus: "TRIAL",
+                    subscriptionPlan: "TRIAL",
+                    subscriptionExpiresAt: trialExpiresAt,
                 },
             });
 

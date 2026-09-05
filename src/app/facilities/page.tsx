@@ -78,8 +78,8 @@ export default async function FacilitiesPage() {
             <PageHeader
                 title="Quản lý Khu vực & Chòi câu"
                 subtitle={`Hồ câu: ${tenantContext.lakeName} (${tenantContext.organizationName})`}
-                backHref="/dashboard"
-                backLabel="Bảng điều khiển"
+                backHref="/settings"
+                backLabel="Cài đặt"
                 badge={<Badge variant="default">Vai trò: {tenantContext.role}</Badge>}
             />
 

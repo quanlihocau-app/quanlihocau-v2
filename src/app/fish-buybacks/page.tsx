@@ -94,8 +94,8 @@ export default async function FishBuybacksPage() {
             <PageHeader
                 title="Sổ thu mua cá cần thủ"
                 subtitle="Ghi nhận khối lượng cá câu được và tính tiền thu mua bù trừ theo bảng giá hiện hành của hồ."
-                backHref="/dashboard"
-                backLabel="Bảng điều khiển"
+                backHref="/settings"
+                backLabel="Quay lại Cài đặt"
                 badge={<Badge variant="default">{tenantContext.lakeName}</Badge>}
             />
 

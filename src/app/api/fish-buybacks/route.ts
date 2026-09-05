@@ -19,6 +19,8 @@ const createBuybackSchema = z
                 message: "Trọng lượng cá phải là số.",
             })
             .positive("Trọng lượng cá phải lớn hơn 0."),
+        sessionId: z.string().uuid().optional(),
+        invoiceId: z.string().uuid().optional(),
     })
     .strict();
 
@@ -126,6 +128,22 @@ export async function POST(request: Request) {
             .toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP);
         const totalVnd = totalDecimal.toNumber();
 
+        // Resolve target invoice if sessionId or invoiceId is provided
+        let targetInvoiceId: string | null = null;
+        if (data.invoiceId) {
+            const inv = await prisma.invoice.findFirst({
+                where: { id: data.invoiceId, lakeId: tenantContext.lakeId },
+                select: { id: true },
+            });
+            if (inv) targetInvoiceId = inv.id;
+        } else if (data.sessionId) {
+            const inv = await prisma.invoice.findFirst({
+                where: { fishingSessionId: data.sessionId, lakeId: tenantContext.lakeId },
+                select: { id: true },
+            });
+            if (inv) targetInvoiceId = inv.id;
+        }
+
         const result = await prisma.$transaction(async (tx) => {
             const created = await tx.fishBuyback.create({
                 data: {
@@ -136,6 +154,31 @@ export async function POST(request: Request) {
                     totalVnd,
                 },
             });
+
+            if (targetInvoiceId) {
+                // Deduct fish buyback from the customer's invoice with negative totalVnd
+                await tx.invoiceLine.create({
+                    data: {
+                        invoiceId: targetInvoiceId,
+                        fishBuybackId: created.id,
+                        name: `Thu cá: ${fishType.name} (${data.weight} kg)`,
+                        unitPrice: fishType.pricePerKg,
+                        quantity: new Prisma.Decimal(data.weight),
+                        totalVnd: -totalVnd,
+                    },
+                });
+
+                // Update invoice total amount
+                const invLines = await tx.invoiceLine.findMany({
+                    where: { invoiceId: targetInvoiceId },
+                    select: { totalVnd: true },
+                });
+                const updatedTotalAmount = invLines.reduce((s, l) => s + l.totalVnd, 0);
+                await tx.invoice.update({
+                    where: { id: targetInvoiceId },
+                    data: { totalAmountVnd: updatedTotalAmount },
+                });
+            }
 
             await tx.auditEvent.create({
                 data: {
@@ -149,6 +192,8 @@ export async function POST(request: Request) {
                         weight: data.weight,
                         pricePerKg: fishType.pricePerKg,
                         totalVnd,
+                        invoiceId: targetInvoiceId,
+                        sessionId: data.sessionId || null,
                     }),
                     createdBy: tenantContext.userId,
                 },

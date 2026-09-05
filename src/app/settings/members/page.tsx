@@ -104,10 +104,10 @@ export default async function MembersSettingsPage() {
                     </p>
                     <div className="mt-6">
                         <Link
-                            href="/dashboard"
+                            href="/settings"
                             className="inline-flex h-11 items-center justify-center rounded-xl bg-[#102A43] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#1E3A5F]"
                         >
-                            Về Bảng điều khiển
+                            Về Cài đặt
                         </Link>
                     </div>
                 </div>
@@ -141,7 +141,7 @@ export default async function MembersSettingsPage() {
                 title="Quản lý nhân sự hồ câu"
                 subtitle={`Hồ câu: ${tenantContext.lakeName} • Tổ chức: ${tenantContext.organizationName}`}
                 backHref="/settings"
-                backLabel="Cài đặt chung"
+                backLabel="Quay lại Cài đặt"
                 badge={<Badge variant="default">Chủ sở hữu</Badge>}
             />
 

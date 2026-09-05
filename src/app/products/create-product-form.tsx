@@ -11,7 +11,7 @@ export function CreateProductForm() {
     const router = useRouter();
     const [name, setName] = useState("");
     const [priceVnd, setPriceVnd] = useState<number | string>("");
-    const [sku, setSku] = useState("");
+    const [initialStock, setInitialStock] = useState<number | string>(0);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -38,6 +38,18 @@ export function CreateProductForm() {
             return;
         }
 
+        const numStock =
+            typeof initialStock === "string" ? Number(initialStock) : initialStock;
+        if (
+            typeof numStock !== "number" ||
+            isNaN(numStock) ||
+            !Number.isInteger(numStock) ||
+            numStock < 0
+        ) {
+            setError("Số lượng nhập kho ban đầu phải là số nguyên không âm (>= 0).");
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -49,7 +61,7 @@ export function CreateProductForm() {
                 body: JSON.stringify({
                     name: name.trim(),
                     priceVnd: numPrice,
-                    sku: sku.trim() ? sku.trim() : undefined,
+                    initialStock: numStock,
                 }),
             });
 
@@ -60,13 +72,15 @@ export function CreateProductForm() {
                 return;
             }
 
+            const stockText =
+                numStock > 0 ? ` kèm ${numStock} sản phẩm nhập kho ban đầu` : "";
             setSuccessMessage(
-                `Đã thêm sản phẩm "${data.product?.name}" thành công.`,
+                `Đã thêm sản phẩm "${data.product?.name}" (Mã: ${data.product?.sku})${stockText} thành công.`,
             );
 
             setName("");
             setPriceVnd("");
-            setSku("");
+            setInitialStock(0);
 
             router.refresh();
         } catch {
@@ -95,13 +109,20 @@ export function CreateProductForm() {
                 placeholder="Ví dụ: Nước ngọt C2, Mồi câu cá chép..."
             />
 
-            <Input
-                label="Mã sản phẩm (SKU - Tùy chọn)"
-                type="text"
-                value={sku}
-                onChange={(e) => setSku(e.target.value)}
-                placeholder="Ví dụ: C2-TRA, MOI-CHEP-01"
-            />
+            <div>
+                <Input
+                    label="Số lượng nhập kho ban đầu"
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={initialStock}
+                    onChange={(e) => setInitialStock(e.target.value)}
+                    placeholder="0"
+                />
+                <p className="mt-1 text-xs text-[#766F67]">
+                    Mã sản phẩm (SKU) sẽ do hệ thống tự động cấp phát duy nhất theo từng hồ câu.
+                </p>
+            </div>
 
             <Input
                 label="Đơn giá bán (VNĐ) *"

@@ -9,6 +9,7 @@ import {
     ForbiddenError,
     requireTenantContext,
 } from "@/lib/tenant";
+import { assertStaffLimit } from "@/lib/subscription-guard";
 
 const createMemberSchema = z
     .object({
@@ -105,6 +106,9 @@ export async function POST(request: Request) {
                 parsed.error.issues[0]?.message ?? "Dữ liệu gửi lên không hợp lệ.";
             return NextResponse.json({ error: firstError }, { status: 400 });
         }
+
+        // Kiểm tra giới hạn số lượng nhân viên của gói cước (SILVER max 1)
+        await assertStaffLimit(tenantContext.lakeId);
 
         const data = parsed.data;
         const normalizedEmail = data.email.toLowerCase();

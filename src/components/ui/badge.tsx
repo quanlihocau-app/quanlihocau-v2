@@ -13,17 +13,17 @@ export function Badge({
     ...props
 }: BadgeProps) {
     const variantClasses = {
-        default: "bg-[#102A43]/10 text-[#102A43] border border-[#102A43]/20",
-        success: "bg-teal-50 text-teal-800 border border-teal-200",
-        warning: "bg-orange-50 text-orange-800 border border-orange-200",
-        danger: "bg-red-50 text-red-800 border border-red-200",
-        info: "bg-blue-50 text-blue-800 border border-blue-200",
-        neutral: "bg-slate-100 text-slate-700 border border-slate-200",
+        default: "bg-[#EFE4CF] text-[#27231F] border border-[#D9D2C8]",
+        success: "bg-[#E8F3ED] text-[#2D6A4F] border border-[#2D6A4F]/25",
+        warning: "bg-[#F8ECE2] text-[#9A4C16] border border-[#9A4C16]/25",
+        danger: "bg-[#FAECEC] text-[#8B1E1E] border border-[#8B1E1E]/25",
+        info: "bg-[#EFE4CF] text-[#8A5A20] border border-[#8A5A20]/25",
+        neutral: "bg-[#F4F2EE] text-[#766F67] border border-[#D9D2C8]",
     }[variant];
 
     return (
         <span
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold tracking-tight ${variantClasses} ${className}`}
+            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-semibold tracking-tight ${variantClasses} ${className}`}
             {...props}
         >
             {icon && <span className="shrink-0">{icon}</span>}
@@ -39,7 +39,7 @@ export function SessionStatusBadge({ status }: { status: string }) {
                 <Badge
                     variant="success"
                     icon={
-                        <span className="h-1.5 w-1.5 rounded-full bg-teal-600 animate-pulse" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#2D6A4F]" />
                     }
                 >
                     Đang câu
@@ -51,7 +51,7 @@ export function SessionStatusBadge({ status }: { status: string }) {
                     variant="neutral"
                     icon={
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                     }
                 >
@@ -64,7 +64,7 @@ export function SessionStatusBadge({ status }: { status: string }) {
                     variant="danger"
                     icon={
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     }
                 >
@@ -88,7 +88,7 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    Tạm tính (DRAFT)
+                    Tạm tính
                 </Badge>
             );
         case "PAID":
@@ -97,11 +97,11 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                     variant="success"
                     icon={
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                     }
                 >
-                    Đã thanh toán (PAID)
+                    Đã thanh toán
                 </Badge>
             );
         case "PARTIALLY_PAID":
@@ -123,7 +123,7 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                     variant="danger"
                     icon={
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     }
                 >

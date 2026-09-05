@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test --test-concurrency=1 --env-file=.env tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "7.10.0",
     "bcryptjs": "^3.0.3",

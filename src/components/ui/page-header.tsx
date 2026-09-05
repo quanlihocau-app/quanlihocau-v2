@@ -27,7 +27,7 @@ export function PageHeader({
                     <Link
                         href={backHref}
                         aria-label={backLabel}
-                        className="flex h-11 w-11 min-w-11 items-center justify-center rounded-xl border border-[#E2DDD2] bg-white text-slate-700 shadow-sm transition-transform duration-150 ease-out active:scale-95 hover:bg-[#F8F6F0]"
+                        className="flex h-11 w-11 min-w-11 items-center justify-center rounded-xl border border-[#D9D2C8] bg-white text-[#27231F] transition-colors hover:bg-[#F4F2EE] active:scale-95"
                     >
                         <svg
                             className="h-5 w-5"
@@ -46,13 +46,13 @@ export function PageHeader({
                 )}
                 <div>
                     <div className="flex items-center gap-2">
-                        <h1 className="text-xl font-bold tracking-tight text-[#102A43] sm:text-2xl">
+                        <h1 className="text-xl font-bold tracking-tight text-[#27231F] sm:text-2xl">
                             {title}
                         </h1>
                         {badge && <div>{badge}</div>}
                     </div>
                     {subtitle && (
-                        <p className="mt-0.5 text-xs text-slate-500 font-medium">{subtitle}</p>
+                        <p className="mt-0.5 text-xs text-[#766F67]">{subtitle}</p>
                     )}
                 </div>
             </div>
@@ -68,7 +68,7 @@ export function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
     return (
         <div
-            className={`animate-pulse rounded-xl bg-slate-200/80 ${className}`}
+            className={`animate-pulse rounded-xl bg-[#D9D2C8]/60 ${className}`}
             {...props}
         />
     );

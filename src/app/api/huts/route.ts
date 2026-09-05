@@ -8,6 +8,7 @@ import {
     ForbiddenError,
     requireTenantContext,
 } from "@/lib/tenant";
+import { assertSpotLimit } from "@/lib/subscription-guard";
 
 const createHutSchema = z.object({
     name: z.string().trim().min(2, "Tên chòi tối thiểu 2 ký tự").max(100, "Tên chòi tối đa 100 ký tự"),
@@ -70,6 +71,9 @@ export async function POST(request: Request) {
             const firstError = parsed.error.issues[0]?.message ?? "Dữ liệu không hợp lệ.";
             return NextResponse.json({ error: firstError }, { status: 400 });
         }
+
+        // Kiểm tra giới hạn số ô câu của gói cước (SILVER max 30)
+        await assertSpotLimit(tenantContext.lakeId);
 
         const area = await prisma.area.findFirst({
             where: {

@@ -46,9 +46,29 @@ export default async function ProductsPage() {
             lakeId: tenantContext.lakeId,
             deletedAt: null,
         },
+        include: {
+            movements: {
+                select: {
+                    quantity: true,
+                },
+            },
+        },
         orderBy: {
             createdAt: "desc",
         },
+    });
+
+    const productsWithStock = products.map((p) => {
+        const stock = p.movements.reduce(
+            (sum, m) => sum + Number(m.quantity),
+            0,
+        );
+        const { movements: _m, ...rest } = p;
+        void _m;
+        return {
+            ...rest,
+            stock,
+        };
     });
 
     return (
@@ -57,8 +77,8 @@ export default async function ProductsPage() {
             <PageHeader
                 title="Danh mục sản phẩm & dịch vụ"
                 subtitle="Quản lý các mặt hàng bán kèm, nước giải khát, mồi câu và dịch vụ tại hồ câu."
-                backHref="/dashboard"
-                backLabel="Bảng điều khiển"
+                backHref="/settings"
+                backLabel="Quay lại Cài đặt"
                 badge={<Badge variant="default">{tenantContext.lakeName}</Badge>}
             />
 
@@ -73,7 +93,7 @@ export default async function ProductsPage() {
                     <Card className="p-5 sm:p-6 space-y-4">
                         <div className="border-b border-[#E2DDD2] pb-3">
                             <h2 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
-                                Danh sách mặt hàng ({products.length})
+                                Danh sách mặt hàng ({productsWithStock.length})
                             </h2>
                             <p className="text-xs text-slate-500 font-medium">
                                 Các sản phẩm đang hoạt động có thể thêm vào hóa đơn bán hàng.
@@ -81,7 +101,7 @@ export default async function ProductsPage() {
                         </div>
 
                         <ProductList
-                            products={products}
+                            products={productsWithStock}
                             canManage={canManageProducts}
                         />
                     </Card>

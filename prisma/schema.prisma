@@ -22,6 +22,31 @@ enum Role {
   STAFF
 }
 
+enum SystemRole {
+  USER
+  SUPER_ADMIN
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  GRACE_PERIOD
+  SUSPENDED
+}
+
+enum PlanTier {
+  TRIAL
+  SILVER
+  GOLD
+}
+
+enum SubscriptionOrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  EXPIRED
+}
+
 enum SessionStatus {
   ACTIVE
   COMPLETED
@@ -50,22 +75,28 @@ enum PaymentDirection {
 // -----------------------------------------------------------------------------
 
 model Organization {
-  id        String    @id @default(uuid())
-  name      String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id               String              @id @default(uuid())
+  name             String
+  subscriptionPlan PlanTier            @default(TRIAL)
+  validUntil       DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  deletedAt        DateTime?
 
-  lakes Lake[]
+  lakes              Lake[]
+  subscriptionOrders SubscriptionOrder[]
 }
 
 model Lake {
-  id                     String    @id @default(uuid())
+  id                     String              @id @default(uuid())
   organizationId         String
   name                   String
-  allowNegativeInventory Boolean   @default(false)
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  allowNegativeInventory Boolean             @default(false)
+  subscriptionStatus     SubscriptionStatus  @default(TRIAL)
+  subscriptionPlan       PlanTier            @default(TRIAL)
+  subscriptionExpiresAt  DateTime?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
   deletedAt              DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -86,16 +117,19 @@ model Lake {
   shifts             Shift[]
   auditEvents        AuditEvent[]
   idempotencyKeys    IdempotencyKey[]
+  subscriptionOrders SubscriptionOrder[]
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  name         String
-  phone        String?  @unique
-  passwordHash String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String     @id @default(uuid())
+  email         String     @unique
+  name          String
+  phone         String?    @unique
+  phoneVerified Boolean    @default(false)
+  passwordHash  String?
+  systemRole    SystemRole @default(USER)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime @updatedAt
 
   memberships Membership[]
 }
@@ -463,4 +497,63 @@ model RateLimitBucket {
   updatedAt   DateTime @updatedAt
 
   @@index([expiresAt])
+}
+
+// -----------------------------------------------------------------------------
+// SAAS SUBSCRIPTIONS & ORDERS
+// -----------------------------------------------------------------------------
+
+model SubscriptionPlan {
+  id           String   @id @default(uuid())
+  code         PlanTier @unique
+  name         String
+  priceVnd     Int
+  durationDays Int      @default(30)
+  maxSpots     Int?
+  maxStaff     Int?
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders       SubscriptionOrder[]
+}
+
+model SubscriptionOrder {
+  id                String                  @id @default(uuid())
+  orderCode         String                  @unique
+  organizationId    String
+  lakeId            String
+  planCode          PlanTier
+  amountVnd         Int
+  durationDays      Int                     @default(30)
+  status            SubscriptionOrderStatus @default(PENDING)
+  paymentMethod     String                  @default("VIETQR")
+  paidAt            DateTime?
+  bankRef           String?
+  rawWebhookPayload String?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  organization      Organization            @relation(fields: [organizationId], references: [id])
+  lake              Lake                    @relation(fields: [lakeId], references: [id])
+  plan              SubscriptionPlan        @relation(fields: [planCode], references: [code])
+
+  @@index([lakeId, status])
+  @@index([orderCode])
+}
+
+// -----------------------------------------------------------------------------
+// PHONE AUTHENTICATION (OTP)
+// -----------------------------------------------------------------------------
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  code      String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phone])
 }

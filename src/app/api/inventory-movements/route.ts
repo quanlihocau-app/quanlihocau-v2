@@ -21,12 +21,29 @@ const createMovementSchema = z
             })
             .positive("Số lượng phải lớn hơn 0."),
         reason: z
-            .string({
-                message: "Lý do nhập/xuất kho không được để trống.",
-            })
+            .string()
             .trim()
-            .min(1, "Lý do không được để trống.")
-            .max(255, "Lý do tối đa 255 ký tự."),
+            .max(255, "Lý do tối đa 255 ký tự.")
+            .optional()
+            .default("Nhập kho hàng"),
+        costPriceVnd: z
+            .number()
+            .int("Giá nhập phải là số nguyên.")
+            .nonnegative("Giá nhập không được âm.")
+            .optional()
+            .nullable(),
+        supplier: z
+            .string()
+            .trim()
+            .max(120, "Tên nhà cung cấp tối đa 120 ký tự.")
+            .optional()
+            .nullable(),
+        note: z
+            .string()
+            .trim()
+            .max(255, "Ghi chú tối đa 255 ký tự.")
+            .optional()
+            .nullable(),
     })
     .strict();
 
@@ -95,7 +112,38 @@ export async function POST(request: Request) {
         const tenantContext = await requireTenantContext([
             Role.OWNER,
             Role.MANAGER,
+            Role.STAFF,
         ]);
+
+        const idempotencyKey =
+            request.headers.get("idempotency-key") ||
+            request.headers.get("Idempotency-Key");
+
+        // Idempotency check before parsing body if key exists
+        if (idempotencyKey) {
+            const cached = await prisma.idempotencyKey.findUnique({
+                where: {
+                    lakeId_key: {
+                        lakeId: tenantContext.lakeId,
+                        key: idempotencyKey,
+                    },
+                },
+            });
+
+            if (cached) {
+                try {
+                    const parsedBody = JSON.parse(cached.responseBody);
+                    return NextResponse.json(parsedBody, {
+                        status: cached.responseStatus,
+                    });
+                } catch {
+                    return new NextResponse(cached.responseBody, {
+                        status: cached.responseStatus,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+            }
+        }
 
         let body: unknown;
         try {
@@ -135,9 +183,21 @@ export async function POST(request: Request) {
         const signedQuantity =
             data.type === "IN" ? data.quantity : -data.quantity;
 
-        const maxRetries = 3;
-        let lastError: unknown = null;
+        // Formulate structured reason string
+        let formattedReason = data.reason.trim();
+        const metaParts: string[] = [];
+        if (data.supplier) metaParts.push(`NCC: ${data.supplier}`);
+        if (data.costPriceVnd) {
+            metaParts.push(
+                `Giá nhập: ${data.costPriceVnd.toLocaleString("vi-VN")}đ`,
+            );
+        }
+        if (data.note) metaParts.push(`Ghi chú: ${data.note}`);
+        if (metaParts.length > 0) {
+            formattedReason += ` [${metaParts.join(", ")}]`;
+        }
 
+        const maxRetries = 3;
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 const result = await prisma.$transaction(
@@ -166,7 +226,7 @@ export async function POST(request: Request) {
                                 lakeId: tenantContext.lakeId,
                                 productId: product.id,
                                 quantity: signedQuantity,
-                                reason: data.reason.trim(),
+                                reason: formattedReason,
                                 createdBy: tenantContext.userId,
                             },
                         });
@@ -182,27 +242,49 @@ export async function POST(request: Request) {
                                 payload: JSON.stringify({
                                     productId: product.id,
                                     productName: product.name,
+                                    productSku: product.sku,
                                     type: data.type,
                                     quantity: data.quantity,
                                     signedQuantity,
                                     newStock,
-                                    reason: data.reason.trim(),
+                                    costPriceVnd: data.costPriceVnd ?? null,
+                                    supplier: data.supplier ?? null,
+                                    note: data.note ?? null,
+                                    reason: formattedReason,
                                 }),
                                 createdBy: tenantContext.userId,
                             },
                         });
 
-                        return {
-                            id: movement.id,
-                            productId: product.id,
-                            productName: product.name,
-                            productSku: product.sku,
-                            quantity: Number(movement.quantity),
-                            type: data.type,
-                            reason: movement.reason,
-                            newStock,
-                            createdAt: movement.createdAt,
+                        const responsePayload = {
+                            message: `${
+                                data.type === "IN" ? "Nhập kho" : "Xuất kho"
+                            } sản phẩm "${product.name}" thành công.`,
+                            movement: {
+                                id: movement.id,
+                                productId: product.id,
+                                productName: product.name,
+                                productSku: product.sku,
+                                quantity: Number(movement.quantity),
+                                type: data.type,
+                                reason: movement.reason,
+                                newStock,
+                                createdAt: movement.createdAt,
+                            },
                         };
+
+                        if (idempotencyKey) {
+                            await tx.idempotencyKey.create({
+                                data: {
+                                    lakeId: tenantContext.lakeId,
+                                    key: idempotencyKey,
+                                    responseStatus: 201,
+                                    responseBody: JSON.stringify(responsePayload),
+                                },
+                            });
+                        }
+
+                        return responsePayload;
                     },
                     {
                         isolationLevel:
@@ -210,45 +292,36 @@ export async function POST(request: Request) {
                     },
                 );
 
-                return NextResponse.json(
-                    {
-                        message: `${
-                            data.type === "IN" ? "Nhập kho" : "Xuất kho"
-                        } sản phẩm "${product.name}" thành công.`,
-                        movement: result,
-                    },
-                    { status: 201 },
-                );
-            } catch (err: unknown) {
-                lastError = err;
-                if (err instanceof Error && err.message === "INSUFFICIENT_STOCK") {
+                return NextResponse.json(result, { status: 201 });
+            } catch (txError) {
+                if (
+                    txError instanceof Error &&
+                    txError.message === "INSUFFICIENT_STOCK"
+                ) {
                     return NextResponse.json(
                         {
-                            error: "Số lượng tồn kho không đủ để thực hiện xuất kho.",
+                            error: `Số lượng tồn kho không đủ để xuất (hiện có ít hơn ${data.quantity}).`,
                         },
                         { status: 409 },
                     );
                 }
 
-                // If concurrency conflict (P2034), retry
-                if (
-                    typeof err === "object" &&
-                    err !== null &&
-                    "code" in err &&
-                    err.code === "P2034" &&
-                    attempt < maxRetries
-                ) {
-                    await new Promise((resolve) =>
-                        setTimeout(resolve, 50 * attempt),
-                    );
+                // Serialization conflict retry
+                const isSerializationConflict =
+                    typeof txError === "object" &&
+                    txError !== null &&
+                    "code" in txError &&
+                    (txError as { code: string }).code === "P2034";
+
+                if (isSerializationConflict && attempt < maxRetries) {
                     continue;
                 }
 
-                throw err;
+                throw txError;
             }
         }
 
-        throw lastError;
+        return NextResponse.json({ error: "Lỗi hệ thống." }, { status: 500 });
     } catch (error) {
         if (error instanceof AuthenticationError) {
             return NextResponse.json({ error: error.message }, { status: 401 });
@@ -257,7 +330,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 403 });
         }
         return NextResponse.json(
-            { error: "Đã xảy ra lỗi khi tạo phiếu kho hàng." },
+            { error: "Đã xảy ra lỗi khi ghi nhận kho hàng." },
             { status: 500 },
         );
     }

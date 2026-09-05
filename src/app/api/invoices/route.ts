@@ -10,7 +10,7 @@ import {
 } from "@/lib/tenant";
 
 const createInvoiceSchema = z.object({
-    fishingSessionId: z.string().uuid("fishingSessionId phải là UUID hợp lệ."),
+    fishingSessionId: z.string().uuid("fishingSessionId phải là UUID hợp lệ.").nullable().optional(),
 });
 
 const ALLOWED_ROLES = [Role.OWNER, Role.MANAGER, Role.STAFF];
@@ -98,79 +98,117 @@ export async function POST(request: Request) {
             try {
                 const result = await prisma.$transaction(
                     async (tx) => {
-                        // 1. Check if invoice already exists for this session
-                        const existingInvoice = await tx.invoice.findUnique({
-                            where: {
-                                lakeId_fishingSessionId: {
-                                    lakeId: tenantContext.lakeId,
-                                    fishingSessionId,
+                        // Case A: Create invoice for a fishing session
+                        if (fishingSessionId) {
+                            // 1. Check if invoice already exists for this session
+                            const existingInvoice = await tx.invoice.findUnique({
+                                where: {
+                                    lakeId_fishingSessionId: {
+                                        lakeId: tenantContext.lakeId,
+                                        fishingSessionId,
+                                    },
                                 },
-                            },
-                            include: invoiceInclude,
-                        });
+                                include: invoiceInclude,
+                            });
 
-                        if (existingInvoice) {
+                            if (existingInvoice) {
+                                return {
+                                    invoice: existingInvoice,
+                                    isNew: false,
+                                };
+                            }
+
+                            // 2. Find and validate FishingSession
+                            const session = await tx.fishingSession.findFirst({
+                                where: {
+                                    id: fishingSessionId,
+                                    lakeId: tenantContext.lakeId,
+                                },
+                            });
+
+                            if (!session) {
+                                throw new Error("SESSION_NOT_FOUND");
+                            }
+
+                            if (
+                                session.status !== SessionStatus.COMPLETED &&
+                                session.status !== SessionStatus.ACTIVE
+                            ) {
+                                throw new Error("SESSION_NOT_COMPLETED_OR_ACTIVE");
+                            }
+
+                            if (
+                                !session.packageNameSnapshot ||
+                                session.packagePriceVndSnapshot === null ||
+                                session.packagePriceVndSnapshot === undefined
+                            ) {
+                                throw new Error("MISSING_BILLING_SNAPSHOT");
+                            }
+
+                            // 3. Create Invoice and InvoiceLine
+                            const newInvoice = await tx.invoice.create({
+                                data: {
+                                    lakeId: tenantContext.lakeId,
+                                    customerId: session.customerId,
+                                    fishingSessionId: session.id,
+                                    status: InvoiceStatus.DRAFT,
+                                    totalAmountVnd: session.packagePriceVndSnapshot,
+                                    lines: {
+                                        create: {
+                                            name: session.packageNameSnapshot,
+                                            unitPrice: session.packagePriceVndSnapshot,
+                                            quantity: 1,
+                                            totalVnd: session.packagePriceVndSnapshot,
+                                        },
+                                    },
+                                },
+                                include: invoiceInclude,
+                            });
+
+                            // 4. Create AuditEvent
+                            await tx.auditEvent.create({
+                                data: {
+                                    lakeId: tenantContext.lakeId,
+                                    entityType: "Invoice",
+                                    entityId: newInvoice.id,
+                                    action: "INVOICE_CREATED",
+                                    payload: JSON.stringify({
+                                        fishingSessionId: session.id,
+                                        totalAmountVnd: session.packagePriceVndSnapshot,
+                                        status: InvoiceStatus.DRAFT,
+                                    }),
+                                    createdBy: tenantContext.userId,
+                                },
+                            });
+
                             return {
-                                invoice: existingInvoice,
-                                isNew: false,
+                                invoice: newInvoice,
+                                isNew: true,
                             };
                         }
 
-                        // 2. Find and validate FishingSession
-                        const session = await tx.fishingSession.findFirst({
-                            where: {
-                                id: fishingSessionId,
-                                lakeId: tenantContext.lakeId,
-                            },
-                        });
-
-                        if (!session) {
-                            throw new Error("SESSION_NOT_FOUND");
-                        }
-
-                        if (session.status !== SessionStatus.COMPLETED) {
-                            throw new Error("SESSION_NOT_COMPLETED");
-                        }
-
-                        if (
-                            !session.packageNameSnapshot ||
-                            session.packagePriceVndSnapshot === null ||
-                            session.packagePriceVndSnapshot === undefined
-                        ) {
-                            throw new Error("MISSING_BILLING_SNAPSHOT");
-                        }
-
-                        // 3. Create Invoice and InvoiceLine
+                        // Case B: Create retail invoice (no fishing session)
                         const newInvoice = await tx.invoice.create({
                             data: {
                                 lakeId: tenantContext.lakeId,
-                                customerId: session.customerId,
-                                fishingSessionId: session.id,
+                                customerId: null,
+                                fishingSessionId: null,
                                 status: InvoiceStatus.DRAFT,
-                                totalAmountVnd: session.packagePriceVndSnapshot,
-                                lines: {
-                                    create: {
-                                        name: session.packageNameSnapshot,
-                                        unitPrice: session.packagePriceVndSnapshot,
-                                        quantity: 1,
-                                        totalVnd: session.packagePriceVndSnapshot,
-                                    },
-                                },
+                                totalAmountVnd: 0,
                             },
                             include: invoiceInclude,
                         });
 
-                        // 4. Create AuditEvent
+                        // Create AuditEvent
                         await tx.auditEvent.create({
                             data: {
                                 lakeId: tenantContext.lakeId,
                                 entityType: "Invoice",
                                 entityId: newInvoice.id,
-                                action: "INVOICE_CREATED",
+                                action: "RETAIL_INVOICE_CREATED",
                                 payload: JSON.stringify({
-                                    fishingSessionId: session.id,
-                                    totalAmountVnd: session.packagePriceVndSnapshot,
                                     status: InvoiceStatus.DRAFT,
+                                    totalAmountVnd: 0,
                                 }),
                                 createdBy: tenantContext.userId,
                             },
@@ -211,11 +249,11 @@ export async function POST(request: Request) {
 
                 if (
                     txError instanceof Error &&
-                    txError.message === "SESSION_NOT_COMPLETED"
+                    txError.message === "SESSION_NOT_COMPLETED_OR_ACTIVE"
                 ) {
                     return NextResponse.json(
                         {
-                            error: "Chỉ có thể tạo hóa đơn cho phiên câu đã kết thúc (COMPLETED).",
+                            error: "Chỉ có thể tạo hóa đơn cho phiên câu đang hoạt động hoặc đã kết thúc.",
                         },
                         { status: 409 },
                     );
@@ -240,7 +278,7 @@ export async function POST(request: Request) {
                     "code" in txError &&
                     (txError as { code: string }).code === "P2002";
 
-                if (isUniqueConflict) {
+                if (isUniqueConflict && fishingSessionId) {
                     const existingInvoice = await prisma.invoice.findUnique({
                         where: {
                             lakeId_fishingSessionId: {

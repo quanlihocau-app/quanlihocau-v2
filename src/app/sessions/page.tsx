@@ -250,7 +250,10 @@ export default async function SessionsPage() {
         <div className="mobile-pos-shell">
             <div className="mobile-pos-frame pb-24">
                 {/* ── App Header ───────────────────────────────────────────── */}
-                <MobileAppHeader lakeName={tenantContext.lakeName} isOnline={true} />
+                <MobileAppHeader
+                    lakeName={tenantContext.lakeName}
+                    isSupportMode={tenantContext.isSupportMode}
+                />
 
                 {/* ── Main Content Area ───────────────────────────────────── */}
                 <main className="flex-1 px-4 sm:px-5 py-4 overflow-y-auto">

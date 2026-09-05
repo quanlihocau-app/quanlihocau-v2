@@ -5,8 +5,7 @@ import { Role } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
-
-import { OpenSessionForm } from "./open-session-form";
+import { TicketOrRetailSwitcher } from "./ticket-or-retail-switcher";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 
@@ -35,7 +34,7 @@ export default async function NewSessionPage() {
         );
     }
 
-    // Only OWNER, MANAGER, STAFF can open sessions
+    // Only OWNER, MANAGER, STAFF can open sessions / retail sale
     const canOpen =
         tenantContext.role === Role.OWNER ||
         tenantContext.role === Role.MANAGER ||
@@ -46,7 +45,7 @@ export default async function NewSessionPage() {
     }
 
     // Fetch active data for the current lake
-    const [customers, packages, huts] = await Promise.all([
+    const [customers, packages, huts, rawProducts] = await Promise.all([
         prisma.customer.findMany({
             where: { lakeId: tenantContext.lakeId, deletedAt: null },
             select: { id: true, name: true, phoneNormalized: true },
@@ -72,27 +71,59 @@ export default async function NewSessionPage() {
             },
             orderBy: { createdAt: "asc" },
         }),
+        prisma.product.findMany({
+            where: { lakeId: tenantContext.lakeId, deletedAt: null },
+            select: {
+                id: true,
+                name: true,
+                sku: true,
+                priceVnd: true,
+                movements: {
+                    select: {
+                        quantity: true,
+                    },
+                },
+            },
+            orderBy: { name: "asc" },
+        }),
     ]);
+
+    const products = rawProducts.map((p) => {
+        const stock = p.movements.reduce(
+            (sum, m) => sum + Number(m.quantity),
+            0,
+        );
+        return {
+            id: p.id,
+            name: p.name,
+            sku: p.sku,
+            priceVnd: p.priceVnd,
+            stock,
+        };
+    });
 
     return (
         <div className="mobile-pos-shell">
             <div className="mobile-pos-frame">
-                <MobileAppHeader lakeName={tenantContext.lakeName} isOnline={true} />
+                <MobileAppHeader lakeName={tenantContext.lakeName} />
 
                 <div className="p-4 space-y-4 pb-28">
                     <div className="flex items-center justify-between">
                         <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                            Tạo vé mới
+                            Tạo vé & Bán hàng
                         </h1>
                         <span className="rounded-full bg-[#EAE2CE] px-2.5 py-0.5 text-xs font-bold text-[#8A5B00]">
-                            Thu trước / Thu sau
+                            POS Hồ câu
                         </span>
                     </div>
 
-                    <OpenSessionForm
+                    <TicketOrRetailSwitcher
                         customers={customers}
                         packages={packages}
                         huts={huts}
+                        products={products}
+                        lakeName={tenantContext.lakeName}
+                        cashierName={session.user.name || session.user.email?.split("@")[0] || "Thu ngân"}
                     />
                 </div>
 
@@ -101,3 +132,4 @@ export default async function NewSessionPage() {
         </div>
     );
 }
+

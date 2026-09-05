@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import { SessionCountdown } from "./session-countdown";
 import { SessionActions } from "./session-actions";
+import { SettlementCheckoutModal } from "./settlement-checkout-modal";
+import { useNetworkStatus } from "@/lib/network/use-network-status";
 import type { ActionPackage } from "./session-actions";
 
 // ── Serializable types ────────────────────────────────────────────────────────
@@ -70,6 +73,7 @@ export interface SerializableSession {
     invoices: Array<{
         id: string;
         totalAmountVnd: number;
+        paidAmountVnd?: number;
         lines?: SerializableInvoiceLine[];
         payments?: SerializablePayment[];
     }>;
@@ -113,6 +117,97 @@ function formatDateTime(isoString: string): string {
     return `${hh}:${mm} - ${d}/${m}/${y}`;
 }
 
+// ── Hàm tính toán tài chính thống nhất cho phiên câu ─────────────────────────
+// Kết quả = (Gói câu + Sản phẩm + Gia hạn) - (Tiền tạm tính đã nộp + Tiền thu cá)
+// Nếu < 0 (Âm): Hồ thối lại tiền cho khách
+// Nếu > 0 (Dương): Hồ thu thêm của khách
+// Nếu = 0: Đã thanh toán đủ
+function computeSessionFinancials(s: SerializableSession) {
+    const invoice = s.invoices[0];
+    const lines = invoice?.lines ?? [];
+    const payments = invoice?.payments ?? [];
+
+    const productLines = lines.filter(
+        (l) =>
+            l.productId !== null ||
+            (!l.fishBuybackId &&
+                !l.name.startsWith("Gia hạn:") &&
+                !l.name.startsWith("Tiền ca:")),
+    );
+    const extensionLines = lines.filter((l) => l.name.startsWith("Gia hạn:"));
+    const fishBuybackLines = lines.filter(
+        (l) => l.fishBuybackId !== null || l.totalVnd < 0,
+    );
+
+    const productCount = productLines.reduce(
+        (sum, l) => sum + l.quantity,
+        0,
+    );
+    const productsTotal = productLines.reduce(
+        (sum, l) => sum + l.totalVnd,
+        0,
+    );
+    const extensionsTotal = extensionLines.reduce(
+        (sum, l) => sum + l.totalVnd,
+        0,
+    );
+    const fishBuybackTotal = Math.abs(
+        fishBuybackLines.reduce((sum, l) => sum + l.totalVnd, 0),
+    );
+
+    const extensionHours = extensionLines.length;
+
+    const basePackagePrice =
+        s.packagePriceVndSnapshot ?? s.package.priceVnd;
+    const hutCount = Math.max(s.hutLinks.length, 1);
+    const packageTotal = basePackagePrice * hutCount;
+
+    // Tổng chi phí (Total Cost) = Tiền gói câu + Gia hạn + Sản phẩm/Dịch vụ
+    const totalCharges = packageTotal + productsTotal + extensionsTotal;
+
+    // Tiền cọc / Đã thu trước (Prepaid) từ khách
+    const paidIn = payments
+        .filter((p) => p.direction === "IN")
+        .reduce((sum, p) => sum + p.amountVnd, 0);
+    const paidOut = payments
+        .filter((p) => p.direction === "OUT")
+        .reduce((sum, p) => sum + p.amountVnd, 0);
+    const totalPaidFromPayments = Math.max(0, paidIn - paidOut);
+    // Lấy từ invoice.paidAmountVnd nếu có, hoặc tính từ payments
+    const paidAmountVnd =
+        invoice?.paidAmountVnd !== undefined
+            ? invoice.paidAmountVnd
+            : totalPaidFromPayments;
+    const totalPaid = paidAmountVnd;
+
+    // Tổng giảm trừ (Total Deductions) = Tiền cọc/Thu trước (paidAmountVnd) + Tiền thu mua cá
+    const totalDeductions = paidAmountVnd + fishBuybackTotal;
+
+    // Số dư ròng (Net Balance) = Tổng chi phí - Tổng giảm trừ
+    const netBalance = totalCharges - totalDeductions;
+
+    return {
+        lines,
+        payments,
+        productLines,
+        extensionLines,
+        fishBuybackLines,
+        productCount,
+        productsTotal,
+        totalProductsVnd: productsTotal,
+        extensionsTotal,
+        totalExtensionsVnd: extensionsTotal,
+        fishBuybackTotal,
+        extensionHours,
+        packageTotal,
+        totalCharges,
+        paidAmountVnd,
+        totalPaid,
+        totalDeductions,
+        netBalance,
+    };
+}
+
 export function SessionsClient({
     activeSessions,
     packages,
@@ -121,9 +216,11 @@ export function SessionsClient({
     canCancel,
     canOpenSession,
 }: SessionsClientProps) {
+    const router = useRouter();
     const [selectedId, setSelectedId] = useState<string>(
         activeSessions[0]?.id ?? "",
     );
+    const [settlementSessionId, setSettlementSessionId] = useState<string | null>(null);
 
     // Modal Chi tiết phiên câu khi nhấn giữ
     const [detailSession, setDetailSession] = useState<SerializableSession | null>(null);
@@ -136,6 +233,49 @@ export function SessionsClient({
         activeSessions.find((s) => s.id === selectedId) ??
         activeSessions[0] ??
         null;
+    const selectedSessionFinancials = selectedSession
+        ? computeSessionFinancials(selectedSession)
+        : null;
+
+    // ── Auto Re-sync khi có mạng lại hoặc khi mở lại màn hình ─────────────────
+    const { isOnline } = useNetworkStatus();
+    const wasOfflineRef = useRef(false);
+    const lastSyncTimeRef = useRef(0);
+
+    useEffect(() => {
+        lastSyncTimeRef.current = Date.now();
+    }, []);
+
+    useEffect(() => {
+        if (!isOnline) {
+            wasOfflineRef.current = true;
+        } else if (wasOfflineRef.current) {
+            wasOfflineRef.current = false;
+            // Vừa khôi phục kết nối mạng -> Làm mới danh sách phiên câu
+            router.refresh();
+            lastSyncTimeRef.current = Date.now();
+        }
+    }, [isOnline, router]);
+
+    useEffect(() => {
+        const handleVisibilityOrFocus = () => {
+            if (document.visibilityState === "visible") {
+                const now = Date.now();
+                // Nếu quay lại sau hơn 30 giây thì refresh lại dữ liệu các ô câu
+                if (now - lastSyncTimeRef.current > 30_000) {
+                    lastSyncTimeRef.current = now;
+                    router.refresh();
+                }
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+        window.addEventListener("focus", handleVisibilityOrFocus);
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+            window.removeEventListener("focus", handleVisibilityOrFocus);
+        };
+    }, [router]);
 
     function startLongPress(session: SerializableSession) {
         didLongPressRef.current = false;
@@ -205,32 +345,15 @@ export function SessionsClient({
                     const isSelected = selectedSession?.id === s.id;
                     const hutLabel =
                         s.hutLinks.map((hl) => hl.hut.name).join(" + ") || "—";
-                    const invoice = s.invoices[0];
-                    const estimatedTotal =
-                        invoice?.totalAmountVnd ?? s.package.priceVnd;
-
-                    // Breakdown lines
-                    const lines = invoice?.lines ?? [];
-                    const productLines = lines.filter(
-                        (l) => l.productId !== null || (!l.fishBuybackId && !l.name.startsWith("Gia hạn:")),
-                    );
-                    const extensionLines = lines.filter((l) =>
-                        l.name.startsWith("Gia hạn:"),
-                    );
-                    const fishBuybackLines = lines.filter(
-                        (l) => l.fishBuybackId !== null || l.totalVnd < 0,
-                    );
-
-                    const productCount = productLines.reduce(
-                        (sum, l) => sum + l.quantity,
-                        0,
-                    );
-                    const fishBuybackTotal = Math.abs(
-                        fishBuybackLines.reduce((sum, l) => sum + l.totalVnd, 0),
-                    );
-
-                    // Extension hours calculation
-                    const extensionHours = extensionLines.length;
+                    const {
+                        productLines,
+                        fishBuybackTotal,
+                        productCount,
+                        extensionHours,
+                        totalCharges,
+                        totalPaid,
+                        netBalance,
+                    } = computeSessionFinancials(s);
 
                     return (
                         <div
@@ -289,17 +412,71 @@ export function SessionsClient({
                                 <SessionCountdown plannedEndAt={s.plannedEndAt} />
                             </div>
 
-                            {/* Hàng 4: Tạm tính & Badges */}
+                            {/* Hàng 4: Chi tiết bill & Kết quả */}
                             <div className="mt-2 pt-2 border-t border-[#F0ECE1]">
-                                <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
-                                    <span>Tạm tính</span>
-                                    <span className="font-bold text-slate-900 font-mono">
-                                        {formatVnd(estimatedTotal)}
+                                {/* Micro breakdown nếu có khoản giảm trừ (Thu cá hoặc Đã nộp trước) */}
+                                {fishBuybackTotal > 0 || totalPaid > 0 ? (
+                                    <div className="space-y-0.5 text-[10px] text-slate-600 mb-1.5 bg-[#F9F7F2] p-1.5 rounded-lg border border-[#EAE4D7]">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-500">Dịch vụ (gói+món):</span>
+                                            <span className="font-mono text-slate-700 font-medium">+{formatVnd(totalCharges)}</span>
+                                        </div>
+                                        {totalPaid > 0 && (
+                                            <div className="flex items-center justify-between text-emerald-700">
+                                                <span>Đã nộp trước:</span>
+                                                <span className="font-mono font-medium">-{formatVnd(totalPaid)}</span>
+                                            </div>
+                                        )}
+                                        {fishBuybackTotal > 0 && (
+                                            <div className="flex items-center justify-between text-[#8B1E1E]">
+                                                <span className="font-semibold">Tiền thu cá:</span>
+                                                <span className="font-mono font-bold">-{formatVnd(fishBuybackTotal)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-between text-xs mb-1.5">
+                                        <span className="text-slate-600 font-medium">Tạm tính:</span>
+                                        <span className="font-mono font-bold text-slate-900">+{formatVnd(totalCharges)}</span>
+                                    </div>
+                                )}
+
+                                {/* Kết quả quyết toán: Âm (Thối lại khách) / Dương (Thu thêm khách) / 0 (Đã đủ) */}
+                                <div
+                                    className={`rounded-lg px-2 py-1 border flex items-center justify-between transition-colors ${
+                                        netBalance < 0
+                                            ? "bg-[#FAECEC] border-[#8B1E1E]/40 text-[#8B1E1E]"
+                                            : netBalance === 0
+                                            ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                                            : "bg-[#FAF6EE] border-[#D9CEBA] text-slate-900"
+                                    }`}
+                                >
+                                    <span className="text-[11px] font-bold">
+                                        {netBalance < 0
+                                            ? "💸 Thối lại:"
+                                            : netBalance === 0
+                                            ? "⚖️ Đã đủ:"
+                                            : "⚖️ Cần thu:"}
+                                    </span>
+                                    <span
+                                        className={`font-mono font-extrabold text-[11px] sm:text-xs ${
+                                            netBalance < 0
+                                                ? "text-[#8B1E1E]"
+                                                : netBalance === 0
+                                                ? "text-emerald-700"
+                                                : "text-slate-900"
+                                        }`}
+                                    >
+                                        {netBalance < 0
+                                            ? `-${formatVnd(Math.abs(netBalance))}`
+                                            : netBalance === 0
+                                            ? "0 đ"
+                                            : `+${formatVnd(netBalance)}`}
                                     </span>
                                 </div>
 
-                                {/* Badges tóm tắt món / gia hạn / thu cá */}
-                                {(productCount > 0 || extensionHours > 0 || fishBuybackTotal > 0) && (
+                                {/* Badges tóm tắt món / gia hạn */}
+                                {(productCount > 0 || extensionHours > 0) && (
                                     <div className="flex flex-wrap gap-1 mt-1.5">
                                         {productCount > 0 && (
                                             <span className="inline-flex items-center rounded bg-[#EAE2CE] px-1.5 py-0.5 text-[10px] font-semibold text-[#8A5B00]">
@@ -311,11 +488,6 @@ export function SessionsClient({
                                                 +{extensionHours} lần gia hạn
                                             </span>
                                         )}
-                                        {fishBuybackTotal > 0 && (
-                                            <span className="inline-flex items-center rounded bg-[#FAECEC] px-1.5 py-0.5 text-[10px] font-semibold text-[#8B1E1E]">
-                                                Thu cá -{formatVnd(fishBuybackTotal)}
-                                            </span>
-                                        )}
                                     </div>
                                 )}
 
@@ -325,6 +497,35 @@ export function SessionsClient({
                                         {productLines[0].name}
                                         {productLines.length > 1 ? ` +${productLines.length - 1}` : ""}
                                     </p>
+                                )}
+
+                                {/* Nút Thanh toán & In bill trực tiếp trên ô */}
+                                {canComplete && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSettlementSessionId(s.id);
+                                        }}
+                                        className={`mt-2 flex w-full items-center justify-center gap-1 rounded-xl py-2 px-1.5 text-[11px] sm:text-xs font-bold text-white shadow-xs active:scale-95 transition-all cursor-pointer ${
+                                            netBalance < 0
+                                                ? "bg-rose-700 hover:bg-rose-800"
+                                                : netBalance === 0
+                                                ? "bg-emerald-700 hover:bg-emerald-800"
+                                                : "bg-[#8A5A20] hover:bg-[#704716]"
+                                        }`}
+                                    >
+                                        <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6H2.25m0 0H3m-1.5 0h1.5m0 0v10.5m0 0h1.5m-1.5 0H2.25m0 0a.75.75 0 0 0 .75.75h.75m10.5-12v.75a.75.75 0 0 1-.75.75h-.75m0 0h.75m-1.5 0h1.5m0 0v10.5m0 0h1.5m-1.5 0h-.75m0 0a.75.75 0 0 0 .75.75h.75M6 10.5h12m-12 3h12" />
+                                        </svg>
+                                        <span className="truncate">
+                                            {netBalance < 0
+                                                ? `Thối -${formatVnd(Math.abs(netBalance))} & In`
+                                                : netBalance > 0
+                                                ? `Thu +${formatVnd(netBalance)} & In`
+                                                : `Đóng & In bill`}
+                                        </span>
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -359,6 +560,7 @@ export function SessionsClient({
                         invoiceId={selectedSession.invoices[0]?.id ?? null}
                         packages={packages}
                         fishTypes={fishTypes}
+                        netBalance={selectedSessionFinancials?.netBalance}
                     />
                 </div>
             )}
@@ -426,18 +628,18 @@ export function SessionsClient({
 
                             {/* Card: Danh sách sản phẩm & dịch vụ */}
                             {(() => {
-                                const invoice = detailSession.invoices[0];
-                                const lines = invoice?.lines ?? [];
-                                const productLines = lines.filter(
-                                    (l) => l.productId !== null || (!l.fishBuybackId && !l.name.startsWith("Gia hạn:")),
-                                );
-                                const extensionLines = lines.filter((l) => l.name.startsWith("Gia hạn:"));
-                                const fishLines = lines.filter((l) => l.fishBuybackId !== null || l.totalVnd < 0);
-
-                                const totalProductsVnd = productLines.reduce((sum, l) => sum + l.totalVnd, 0);
-                                const totalExtensionsVnd = extensionLines.reduce((sum, l) => sum + l.totalVnd, 0);
-                                const totalFishBuybackVnd = Math.abs(fishLines.reduce((sum, l) => sum + l.totalVnd, 0));
-                                const currentTotalVnd = invoice?.totalAmountVnd ?? detailSession.package.priceVnd;
+                                const detailFinancials = computeSessionFinancials(detailSession);
+                                const {
+                                    productLines,
+                                    extensionLines,
+                                    fishBuybackLines,
+                                    totalProductsVnd,
+                                    totalExtensionsVnd,
+                                    fishBuybackTotal,
+                                    totalCharges,
+                                    totalPaid,
+                                    netBalance,
+                                } = detailFinancials;
 
                                 return (
                                     <>
@@ -477,14 +679,28 @@ export function SessionsClient({
                                             )}
                                         </div>
 
+                                        {/* Tiền cọc / Đã thu trước */}
+                                        {totalPaid > 0 && (
+                                            <div className="rounded-xl bg-white p-3.5 border border-[#EAE4D7] shadow-xs space-y-2">
+                                                <h4 className="font-bold text-[#8B1E1E] flex justify-between border-b border-[#F0ECE1] pb-1.5">
+                                                    <span>Tiền cọc / Đã thu trước</span>
+                                                    <span className="font-mono font-bold text-[#8B1E1E]">-{formatVnd(totalPaid)}</span>
+                                                </h4>
+                                                <div className="flex justify-between py-0.5 text-[#8B1E1E]">
+                                                    <span>Đã thanh toán lúc mở vé</span>
+                                                    <span className="font-mono font-medium">-{formatVnd(totalPaid)}</span>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Thu mua cá */}
-                                        {fishLines.length > 0 && (
+                                        {fishBuybackLines.length > 0 && (
                                             <div className="rounded-xl bg-white p-3.5 border border-[#EAE4D7] shadow-xs space-y-2">
                                                 <h4 className="font-bold text-[#8B1E1E] flex justify-between border-b border-[#F0ECE1] pb-1.5">
                                                     <span>Thu cá từ cần thủ</span>
-                                                    <span className="font-mono">-{formatVnd(totalFishBuybackVnd)}</span>
+                                                    <span className="font-mono">-{formatVnd(fishBuybackTotal)}</span>
                                                 </h4>
-                                                {fishLines.map((l) => (
+                                                {fishBuybackLines.map((l) => (
                                                     <div key={l.id} className="flex justify-between py-0.5 text-[#8B1E1E]">
                                                         <span>{l.name} {l.fishBuyback ? `(${l.fishBuyback.weight} kg)` : ""}</span>
                                                         <span className="font-mono font-medium">-{formatVnd(Math.abs(l.totalVnd))}</span>
@@ -493,15 +709,47 @@ export function SessionsClient({
                                             </div>
                                         )}
 
-                                        {/* Tổng tạm tính */}
-                                        <div className="rounded-xl bg-[#25130D] text-[#F4DFB7] p-3.5 shadow-md flex items-center justify-between">
-                                            <div>
-                                                <p className="text-xs font-semibold text-[#BDA989]">Tổng tạm tính hiện tại</p>
-                                                <p className="text-[10px] text-[#BDA989]/80">(Bao gồm tiền giờ + hàng hóa - thu cá)</p>
+                                        {/* Tổng kết toàn bộ bill */}
+                                        <div className="rounded-xl bg-[#25130D] text-[#F4DFB7] p-3.5 shadow-md space-y-2">
+                                            <div className="flex justify-between text-xs text-[#BDA989]">
+                                                <span>Tổng chi phí (Gói + SP + Gia hạn):</span>
+                                                <span className="font-mono font-medium text-white">{formatVnd(totalCharges)}</span>
                                             </div>
-                                            <span className="text-lg font-bold font-mono text-[#F4DFB7]">
-                                                {formatVnd(currentTotalVnd)}
-                                            </span>
+                                            {totalPaid > 0 && (
+                                                <div className="flex justify-between text-xs text-[#BDA989]">
+                                                    <span className="text-[#FF8A80]">Tiền cọc / Đã thu trước:</span>
+                                                    <span className="font-mono font-medium text-[#FF8A80]">-{formatVnd(totalPaid)}</span>
+                                                </div>
+                                            )}
+                                            {fishBuybackTotal > 0 && (
+                                                <div className="flex justify-between text-xs text-[#BDA989]">
+                                                    <span className="text-[#FF8A80]">Tiền thu mua cá từ khách:</span>
+                                                    <span className="font-mono font-medium text-[#FF8A80]">-{formatVnd(fishBuybackTotal)}</span>
+                                                </div>
+                                            )}
+                                            <div className="border-t border-[#6F4723] pt-2 flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs font-bold text-[#F4DFB7]">
+                                                        {netBalance < 0
+                                                            ? "💸 HỒ THỐI LẠI TIỀN CHO KHÁCH"
+                                                            : netBalance > 0
+                                                            ? "⚖️ CẦN THU THÊM CỦA KHÁCH"
+                                                            : "⚖️ ĐÃ THANH TOÁN ĐỦ"}
+                                                    </p>
+                                                    <p className="text-[10px] text-[#BDA989]/80">
+                                                        (Chi phí - Đã thu trước - Thu cá)
+                                                    </p>
+                                                </div>
+                                                <span className={`text-lg font-bold font-mono ${
+                                                    netBalance < 0 ? "text-[#FF8A80]" : netBalance > 0 ? "text-[#F4DFB7]" : "text-emerald-400"
+                                                }`}>
+                                                    {netBalance < 0
+                                                        ? `-${formatVnd(Math.abs(netBalance))}`
+                                                        : netBalance > 0
+                                                        ? `+${formatVnd(netBalance)}`
+                                                        : "0 đ"}
+                                                </span>
+                                            </div>
                                         </div>
                                     </>
                                 );
@@ -509,17 +757,61 @@ export function SessionsClient({
                         </div>
 
                         {/* Footer Modal */}
-                        <div className="p-3 border-t border-[#EAE4D7] bg-white flex justify-end">
+                        <div className="p-3 border-t border-[#EAE4D7] bg-white flex items-center gap-2">
                             <button
                                 type="button"
                                 onClick={() => setDetailSession(null)}
-                                className="mobile-pos-btn mobile-pos-btn-primary w-full py-2.5"
+                                className="mobile-pos-btn mobile-pos-btn-secondary flex-1 py-2.5"
                             >
-                                Đóng chi tiết
+                                Đóng
                             </button>
+                            {canComplete && (() => {
+                                const detailFin = computeSessionFinancials(detailSession);
+                                return (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const targetId = detailSession.id;
+                                            setDetailSession(null);
+                                            setSettlementSessionId(targetId);
+                                        }}
+                                        className={`mobile-pos-btn flex-1 py-2.5 flex items-center justify-center gap-1.5 font-bold transition-all ${
+                                            detailFin.netBalance < 0
+                                                ? "bg-[#C84B31] hover:bg-[#A33820] text-white shadow-sm"
+                                                : detailFin.netBalance === 0
+                                                ? "bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"
+                                                : "mobile-pos-btn-primary"
+                                        }`}
+                                    >
+                                        <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6H2.25m0 0H3m-1.5 0h1.5m0 0v10.5m0 0h1.5m-1.5 0H2.25m0 0a.75.75 0 0 0 .75.75h.75m10.5-12v.75a.75.75 0 0 1-.75.75h-.75m0 0h.75m-1.5 0h1.5m0 0v10.5m0 0h1.5m-1.5 0h-.75m0 0a.75.75 0 0 0 .75.75h.75M6 10.5h12m-12 3h12" />
+                                        </svg>
+                                        <span>
+                                            {detailFin.netBalance < 0
+                                                ? `Thối tiền ${formatVnd(Math.abs(detailFin.netBalance))} & In bill`
+                                                : detailFin.netBalance > 0
+                                                ? `Thu thêm ${formatVnd(detailFin.netBalance)} & In bill`
+                                                : "Hoàn tất & In bill"}
+                                        </span>
+                                    </button>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* ── Modal Thanh toán & In bill trực tiếp ──────────────────────── */}
+            {settlementSessionId && (
+                <SettlementCheckoutModal
+                    sessionId={settlementSessionId}
+                    isOpen={true}
+                    onClose={() => setSettlementSessionId(null)}
+                    onCompleted={() => {
+                        setSettlementSessionId(null);
+                        router.refresh();
+                    }}
+                />
             )}
         </>
     );

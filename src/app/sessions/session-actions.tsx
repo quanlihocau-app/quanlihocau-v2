@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { SettlementCheckoutModal } from "./settlement-checkout-modal";
+import { usePrinter } from "@/lib/printing/use-printer";
 
 export interface ActionPackage {
     id: string;
@@ -425,12 +427,16 @@ function AddProductModal({ invoiceId, onClose, onSuccess }: AddProductModalProps
 }
 
 interface FishBuybackModalProps {
+    sessionId?: string;
+    invoiceId?: string | null;
     fishTypes?: Array<{ id: string; name: string; pricePerKg: number }>;
     onClose: () => void;
     onSuccess: () => void;
 }
 
 function FishBuybackModal({
+    sessionId,
+    invoiceId,
     fishTypes = [],
     onClose,
     onSuccess,
@@ -480,6 +486,8 @@ function FishBuybackModal({
                 body: JSON.stringify({
                     fishTypeId: selectedTypeId,
                     weight,
+                    sessionId: sessionId || undefined,
+                    invoiceId: invoiceId || undefined,
                 }),
             });
 
@@ -645,6 +653,7 @@ export interface SessionActionsProps {
     invoiceId?: string | null;
     packages?: ActionPackage[];
     fishTypes?: Array<{ id: string; name: string; pricePerKg: number }>;
+    netBalance?: number;
 }
 
 export function SessionActions({
@@ -654,6 +663,7 @@ export function SessionActions({
     invoiceId,
     packages = [],
     fishTypes = [],
+    netBalance,
 }: SessionActionsProps) {
     const router = useRouter();
 
@@ -663,6 +673,7 @@ export function SessionActions({
     const [confirmAction, setConfirmAction] = useState<
         "COMPLETE" | "CANCEL" | null
     >(null);
+    const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
 
     // Add product modal states
     const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
@@ -679,6 +690,50 @@ export function SessionActions({
 
     // Fish Buyback modal states
     const [isFishBuybackOpen, setIsFishBuybackOpen] = useState(false);
+
+    // Printing state
+    const { printSessionTicket } = usePrinter();
+    const [isReprintingTicket, setIsReprintingTicket] = useState(false);
+    const [reprintNotice, setReprintNotice] = useState<string | null>(null);
+
+    async function handleReprintTicket() {
+        setIsReprintingTicket(true);
+        setReprintNotice(null);
+        try {
+            const res = await fetch(`/api/fishing-sessions/${sessionId}`);
+            if (!res.ok) {
+                setReprintNotice("Không thể tải thông tin phiên câu.");
+                return;
+            }
+            const data = await res.json();
+            const ticketResult = await printSessionTicket({
+                sessionId: sessionId,
+                ticketCode: sessionId.slice(0, 8).toUpperCase(),
+                lakeName: data.lakeName || "HỒ CÂU",
+                huts: data.session.huts,
+                packageName: data.session.packageName,
+                packagePriceVnd: data.financials.packageTotalVnd,
+                durationMinutes: data.session.packageDurationMinutes,
+                customerName: data.session.customerName,
+                customerPhone: data.session.customerPhone,
+                startAt: data.session.startTime,
+                plannedEndAt: data.session.endTime,
+                prepaidAmountVnd: data.financials.totalPaidVnd,
+                balanceDueVnd: data.financials.netDueVnd,
+                isReprint: true,
+            });
+            if (ticketResult.success) {
+                setReprintNotice("Đã gửi lệnh in vé lại!");
+            } else {
+                setReprintNotice("Không thể in (kiểm tra máy in trong Cài đặt).");
+            }
+        } catch {
+            setReprintNotice("Lỗi khi gửi lệnh in vé.");
+        } finally {
+            setIsReprintingTicket(false);
+            setTimeout(() => setReprintNotice(null), 3000);
+        }
+    }
 
     async function handleAction(action: "COMPLETE" | "CANCEL") {
         const label = action === "COMPLETE" ? "kết thúc" : "hủy";
@@ -830,12 +885,10 @@ export function SessionActions({
                         </svg>
                         <div>
                             <p className="text-xs font-bold text-[#27231F]">
-                                Phiên câu chưa có hóa đơn nháp liên kết
+                                Chưa tìm thấy hóa đơn của phiên
                             </p>
                             <p className="text-xs text-[#766F67] mt-0.5 leading-relaxed">
-                                Hóa đơn phiên câu sẽ tự động lập sau khi bấm
-                                &quot;Kết thúc&quot;, hoặc bạn có thể lập hóa đơn
-                                bán lẻ trực tiếp tại mục Bán hàng.
+                                Vui lòng tải lại trang để hệ thống đồng bộ dữ liệu phiên câu.
                             </p>
                         </div>
                     </div>
@@ -852,19 +905,15 @@ export function SessionActions({
                 </div>
             )}
 
-            {/* Confirmation overlay */}
-            {confirmAction ? (
+            {/* Confirmation overlay for cancel */}
+            {confirmAction === "CANCEL" ? (
                 <div className="rounded-2xl bg-[#FAECEC] border border-[#8B1E1E]/30 p-4 space-y-3">
                     <div>
                         <p className="text-xs font-bold text-[#8B1E1E]">
-                            {confirmAction === "COMPLETE"
-                                ? "Xác nhận kết thúc phiên câu này?"
-                                : "Xác nhận hủy phiên câu này?"}
+                            Xác nhận hủy phiên câu này?
                         </p>
                         <p className="text-xs text-[#766F67] mt-0.5">
-                            {confirmAction === "COMPLETE"
-                                ? "Chòi sẽ được giải phóng và chuyển sang thanh toán hóa đơn."
-                                : "Thao tác hủy không thể hoàn tác."}
+                            Thao tác hủy không thể hoàn tác. Chòi câu sẽ được giải phóng.
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -874,10 +923,10 @@ export function SessionActions({
                             variant="danger"
                             isLoading={isLoading}
                             loadingText="Đang xử lý…"
-                            onClick={() => handleAction(confirmAction)}
+                            onClick={() => handleAction("CANCEL")}
                             className="flex-1"
                         >
-                            {confirmAction === "COMPLETE" ? "Kết thúc ngay" : "Hủy phiên"}
+                            Hủy phiên
                         </Button>
                         <Button
                             type="button"
@@ -893,91 +942,93 @@ export function SessionActions({
                 </div>
             ) : (
                 <div className="space-y-2">
-                    {/* Primary Button Row: Thêm hàng — Gia hạn — Thu cá */}
+                    {/* Primary Grid: Thêm hàng, Gia hạn, Thu cá */}
                     <div className="grid grid-cols-3 gap-2">
-                        {/* 1. Thêm hàng */}
                         <button
                             type="button"
                             onClick={handleAddProduct}
-                            className="mobile-pos-btn flex-col py-2 px-1 text-center"
+                            className="mobile-pos-btn mobile-pos-btn-secondary"
                         >
-                            <svg
-                                className="h-4 w-4 mb-0.5 text-slate-700"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
-                                />
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                             </svg>
                             <span>Thêm hàng</span>
                         </button>
 
-                        {/* 2. Gia hạn */}
                         <button
                             type="button"
                             onClick={openExtensionModal}
-                            className="mobile-pos-btn flex-col py-2 px-1 text-center"
+                            className="mobile-pos-btn mobile-pos-btn-secondary"
                         >
-                            <svg
-                                className="h-4 w-4 mb-0.5 text-[#8A5B00]"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                />
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                             </svg>
                             <span>Gia hạn</span>
                         </button>
 
-                        {/* 3. Thu cá */}
                         <button
                             type="button"
                             onClick={() => setIsFishBuybackOpen(true)}
-                            className="mobile-pos-btn flex-col py-2 px-1 text-center"
+                            className="mobile-pos-btn mobile-pos-btn-secondary"
                         >
-                            <svg
-                                className="h-4 w-4 mb-0.5 text-[#8B1E1E]"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                />
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                             </svg>
                             <span>Thu cá</span>
                         </button>
                     </div>
 
-                    {/* Secondary Row: Kết thúc ca & Hủy phiên */}
+                    {reprintNotice && (
+                        <div className="rounded-lg bg-slate-800 text-white text-xs px-3 py-1.5 text-center font-medium shadow-sm">
+                            {reprintNotice}
+                        </div>
+                    )}
+
+                    {/* Secondary Row: Kết thúc ca, In lại vé & Hủy phiên */}
                     <div className="flex items-center justify-between pt-1 gap-2">
                         {canComplete && (
                             <button
                                 type="button"
-                                onClick={() => setConfirmAction("COMPLETE")}
-                                className="mobile-pos-btn mobile-pos-btn-primary flex-1 text-xs py-2"
+                                onClick={() => setIsSettlementModalOpen(true)}
+                                className={`mobile-pos-btn flex-1 text-xs py-2 flex items-center justify-center gap-1.5 font-bold transition-all ${
+                                    typeof netBalance === "number" && netBalance < 0
+                                        ? "bg-rose-700 hover:bg-rose-800 text-white shadow-xs"
+                                        : typeof netBalance === "number" && netBalance === 0
+                                        ? "bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
+                                        : "mobile-pos-btn-primary"
+                                }`}
                             >
-                                Kết thúc ca
+                                <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6H2.25m0 0H3m-1.5 0h1.5m0 0v10.5m0 0h1.5m-1.5 0H2.25m0 0a.75.75 0 0 0 .75.75h.75m10.5-12v.75a.75.75 0 0 1-.75.75h-.75m0 0h.75m-1.5 0h1.5m0 0v10.5m0 0h1.5m-1.5 0h-.75m0 0a.75.75 0 0 0 .75.75h.75M6 10.5h12m-12 3h12" />
+                                </svg>
+                                <span>
+                                    {typeof netBalance === "number"
+                                        ? netBalance < 0
+                                            ? `Thối tiền -${formatPrice(Math.abs(netBalance))} & In bill`
+                                            : netBalance > 0
+                                            ? `Thu thêm +${formatPrice(netBalance)} & In bill`
+                                            : "Đóng phiên & In bill"
+                                        : "Thanh toán & In bill"}
+                                </span>
                             </button>
                         )}
+                        <button
+                            type="button"
+                            onClick={handleReprintTicket}
+                            disabled={isReprintingTicket}
+                            title="In lại phiếu mở vé 58mm"
+                            className="mobile-pos-btn mobile-pos-btn-secondary text-xs py-2 px-3 flex items-center gap-1 shrink-0"
+                        >
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24-1.048-.28-1.574-.084-2.028a2.25 2.25 0 0 1 1.002-1.002c.454-.196.98-.156 2.028.084M17.28 13.829c.24-1.048.28-1.574.084-2.028a2.25 2.25 0 0 0-1.002-1.002c-.454-.196-.98-.156-2.028.084M9 19.5h6a2.25 2.25 0 0 0 2.25-2.25V9.75A2.25 2.25 0 0 0 15 7.5H9a2.25 2.25 0 0 0-2.25 2.25v7.5A2.25 2.25 0 0 0 9 19.5Z" />
+                            </svg>
+                            <span>{isReprintingTicket ? "Đang in…" : "In lại vé"}</span>
+                        </button>
                         {canCancel && (
                             <button
                                 type="button"
                                 onClick={() => setConfirmAction("CANCEL")}
-                                className="text-xs font-semibold text-[#8B1E1E] hover:underline px-3 py-2 cursor-pointer"
+                                className="text-xs font-semibold text-[#8B1E1E] hover:underline px-2.5 py-2 cursor-pointer shrink-0"
                             >
                                 Hủy phiên
                             </button>
@@ -998,6 +1049,8 @@ export function SessionActions({
             {/* ── Fish Buyback Modal ─────────────────────────────────────────────── */}
             {isFishBuybackOpen && (
                 <FishBuybackModal
+                    sessionId={sessionId}
+                    invoiceId={invoiceId}
                     fishTypes={fishTypes}
                     onClose={() => setIsFishBuybackOpen(false)}
                     onSuccess={() => {
@@ -1180,6 +1233,17 @@ export function SessionActions({
                     </div>
                 </div>
             )}
+
+            {/* ── Settlement Checkout Modal ─────────────────────────────────────── */}
+            <SettlementCheckoutModal
+                sessionId={sessionId}
+                isOpen={isSettlementModalOpen}
+                onClose={() => setIsSettlementModalOpen(false)}
+                onCompleted={() => {
+                    setIsSettlementModalOpen(false);
+                    router.refresh();
+                }}
+            />
         </div>
     );
 }

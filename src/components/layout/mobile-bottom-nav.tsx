@@ -54,9 +54,11 @@ const NAV_ITEMS: NavItem[] = [
         ),
     },
     {
-        label: "Bán hàng",
-        href: "/invoices",
-        isActive: (pathname: string) => pathname.startsWith("/invoices"),
+        label: "Nhật ký",
+        href: "/invoices/history",
+        isActive: (pathname: string) =>
+            pathname.startsWith("/invoices/history") ||
+            pathname === "/invoices",
         icon: (isActive: boolean) => (
             <svg
                 className={`h-5 w-5 transition-colors ${isActive ? "text-[#E3B76E]" : "text-[#BCA98D]"}`}
@@ -68,7 +70,7 @@ const NAV_ITEMS: NavItem[] = [
                 <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+                    d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
                 />
             </svg>
         ),
@@ -123,14 +125,14 @@ export function MobileBottomNav() {
             aria-label="Mobile Navigation"
             className="mobile-pos-nav print:hidden"
         >
-            <div className="mx-auto flex h-[58px] items-center justify-around px-1">
+            <div className="mx-auto flex h-14.5 items-center justify-around px-1">
                 {NAV_ITEMS.map((item) => {
                     const active = item.isActive(pathname);
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex min-h-[52px] min-w-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-1 text-center transition-all duration-150 active:scale-95 select-none ${
+                            className={`flex min-h-13 min-w-13 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-center transition-all duration-150 active:scale-95 select-none ${
                                 active
                                     ? "text-[#E3B76E] font-bold"
                                     : "text-[#BCA98D] hover:text-[#F0D19A]"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 
 type TabKey = "sessions" | "new-ticket" | "pos" | "reports" | "settings";
 
@@ -22,6 +22,94 @@ interface ProductItem {
     stock: number;
     allowNegative?: boolean;
 }
+
+interface SessionProductLine {
+    productId: string;
+    name: string;
+    quantity: number;
+    unitPriceVnd: number;
+}
+
+interface SessionActivity {
+    products: SessionProductLine[];
+    extensionHours: number;
+    extensionTotalVnd: number;
+    fishBuybacks?: Array<{
+        id: string;
+        fishName: string;
+        weightKg: number;
+        unitPriceVnd: number;
+        totalVnd: number;
+    }>;
+    fishBuybackTotalVnd?: number;
+}
+
+interface OtherExpenseRow {
+    id: string;
+    label: string;
+    note: string;
+    amountVnd: number;
+}
+
+type ReportDetailKey = "revenue" | "expense" | "cash" | "transfer" | "fish" | "other";
+
+const REPORT_DETAILS: Record<
+    ReportDetailKey,
+    { label: string; totalVnd: number; rows: Array<{ label: string; note: string; amountVnd: number }> }
+> = {
+    revenue: {
+        label: "Chi tiết doanh thu",
+        totalVnd: 4860000,
+        rows: [
+            { label: "Vé câu", note: "12 vé đã hoàn tất", amountVnd: 3820000 },
+            { label: "Bán sản phẩm", note: "Nước, mồi và đồ dùng", amountVnd: 740000 },
+            { label: "Gia hạn", note: "5 lượt gia hạn", amountVnd: 300000 },
+        ],
+    },
+    expense: {
+        label: "Chi tiết chi phí",
+        totalVnd: 1240000,
+        rows: [
+            { label: "Thu mua cá", note: "4 phiếu trong ngày", amountVnd: 1100000 },
+            { label: "Chi khác", note: "Đá lạnh và vật tư", amountVnd: 140000 },
+        ],
+    },
+    cash: {
+        label: "Chi tiết tiền mặt",
+        totalVnd: 2910000,
+        rows: [
+            { label: "Thu vé câu", note: "8 giao dịch", amountVnd: 2240000 },
+            { label: "Bán hàng", note: "11 giao dịch", amountVnd: 510000 },
+            { label: "Gia hạn", note: "2 giao dịch", amountVnd: 160000 },
+        ],
+    },
+    transfer: {
+        label: "Chi tiết chuyển khoản",
+        totalVnd: 1950000,
+        rows: [
+            { label: "Thu vé câu", note: "4 giao dịch", amountVnd: 1580000 },
+            { label: "Bán hàng", note: "6 giao dịch", amountVnd: 230000 },
+            { label: "Gia hạn", note: "2 giao dịch", amountVnd: 140000 },
+        ],
+    },
+    fish: {
+        label: "Chi tiết thu mua cá",
+        totalVnd: -1100000,
+        rows: [
+            { label: "Cá trắm", note: "12,5 kg", amountVnd: -625000 },
+            { label: "Cá chép", note: "9,5 kg", amountVnd: -380000 },
+            { label: "Cá rô", note: "3,8 kg", amountVnd: -95000 },
+        ],
+    },
+    other: {
+        label: "Chi tiết chi khác",
+        totalVnd: -140000,
+        rows: [
+            { label: "Đá lạnh", note: "Phiếu chi #PC-018", amountVnd: -80000 },
+            { label: "Vật tư vệ sinh", note: "Phiếu chi #PC-019", amountVnd: -60000 },
+        ],
+    },
+};
 
 const INITIAL_SPOTS: SpotItem[] = [
     {
@@ -76,16 +164,101 @@ const MOCK_PRODUCTS: ProductItem[] = [
     },
 ];
 
+const MOCK_FISH_PRICES = [
+    { id: "tram", name: "Cá trắm", priceVndPerKg: 50000 },
+    { id: "chep", name: "Cá chép", priceVndPerKg: 40000 },
+    { id: "ro", name: "Cá rô", priceVndPerKg: 25000 },
+    { id: "tra", name: "Cá tra", priceVndPerKg: 30000 },
+];
+
 function formatVnd(amount: number): string {
     return new Intl.NumberFormat("vi-VN").format(amount) + "đ";
+}
+
+function getExtensionPriceVnd(spot: SpotItem, hours: number): number {
+    const packageHours = Number.parseInt(spot.packageLabel, 10);
+    const initialSnapshot = INITIAL_SPOTS.find((item) => item.id === spot.id);
+    if (!initialSnapshot || !Number.isFinite(packageHours) || packageHours <= 0) return 0;
+    return Math.round(initialSnapshot.estimatedPriceVnd / packageHours) * hours;
+}
+
+interface FishingTicketPrintData {
+    customer: string;
+    huts: string;
+    startTime: string;
+    endTime: string;
+}
+
+function calculateTicketEndTime(start: string, packageLabel: string): string {
+    const match = start.trim().match(/^(\d{1,2}):(\d{2})\s*(SA|CH)?$/i);
+    const durationHours = Number.parseInt(packageLabel, 10);
+    if (!match || !Number.isFinite(durationHours)) return "Theo giờ thực tế";
+
+    let hour = Number(match[1]);
+    const minute = Number(match[2]);
+    const period = match[3]?.toUpperCase();
+    if (period === "CH" && hour < 12) hour += 12;
+    if (period === "SA" && hour === 12) hour = 0;
+    const endHour = (hour + durationHours) % 24;
+    const endPeriod = endHour >= 12 ? "CH" : "SA";
+    const displayHour = endHour % 12 || 12;
+    return `${String(displayHour).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${endPeriod}`;
+}
+
+function escapeTicketText(value: string): string {
+    return value.replace(/[&<>'"]/g, (character) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;",
+    })[character] ?? character);
+}
+
+function printFishingTicket(ticket: FishingTicketPrintData) {
+    const printWindow = window.open("", "_blank", "width=420,height=680");
+    if (!printWindow) return;
+    printWindow.document.write(`<!doctype html>
+        <html lang="vi"><head><meta charset="utf-8"><title>Vé câu cá</title>
+        <style>
+            @page { size: 80mm auto; margin: 5mm; }
+            * { box-sizing: border-box; }
+            body { width: 70mm; margin: 0 auto; color: #111; font-family: Arial, sans-serif; font-size: 13px; line-height: 1.45; }
+            h1 { margin: 0 0 12px; text-align: center; font-size: 20px; text-transform: uppercase; letter-spacing: .06em; }
+            .rule { border-top: 1px dashed #111; margin: 10px 0; }
+            .row { display: flex; justify-content: space-between; gap: 12px; margin: 6px 0; }
+            .row strong { text-align: right; }
+            .note { margin-top: 12px; text-align: center; font-size: 12px; }
+            .wish { margin-top: 8px; text-align: center; font-weight: 700; }
+        </style></head><body>
+            <h1>Vé câu cá</h1><div class="rule"></div>
+            <div class="row"><span>Khách hàng</span><strong>${escapeTicketText(ticket.customer)}</strong></div>
+            <div class="row"><span>Ô số</span><strong>${escapeTicketText(ticket.huts)}</strong></div>
+            <div class="row"><span>Giờ vào</span><strong>${escapeTicketText(ticket.startTime)}</strong></div>
+            <div class="row"><span>Giờ ra</span><strong>${escapeTicketText(ticket.endTime)}</strong></div>
+            <div class="rule"></div>
+            <p class="note">Lưu ý: Cá lên chỉ áp dụng trong thời gian ghi trên vé.</p>
+            <p class="wish">Chúc quý cần thủ lên nhiều cá!</p>
+            <script>window.addEventListener('load', () => { window.print(); });<\/script>
+        </body></html>`);
+    printWindow.document.close();
 }
 
 export default function MobilePosPrototypePage() {
     const [activeTab, setActiveTab] = useState<TabKey>("sessions");
 
     // Screen 1: Sessions
+    const [spots, setSpots] = useState<SpotItem[]>(INITIAL_SPOTS);
     const [selectedSpotId, setSelectedSpotId] = useState<string>("s-1");
-    const selectedSpot = INITIAL_SPOTS.find((s) => s.id === selectedSpotId);
+    const [sessionActivity, setSessionActivity] = useState<Record<string, SessionActivity>>({});
+    const selectedSpot = spots.find((s) => s.id === selectedSpotId);
+    const activeSpots = spots.filter((spot) => !spot.isEmpty);
+    const activeHutCount = activeSpots.reduce(
+        (total, spot) => total + spot.code.split("+").length,
+        0,
+    );
+    const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const didLongPressRef = useRef(false);
 
     // Screen 2: New Ticket
     const [customerPhone, setCustomerPhone] = useState("0909 123 456");
@@ -101,6 +274,12 @@ export default function MobilePosPrototypePage() {
     // Screen 3: POS
     const [posTargetTicket, setPosTargetTicket] = useState("A01 · Anh Nam");
     const [posCart, setPosCart] = useState<Record<string, number>>({});
+    const [otherExpenses, setOtherExpenses] = useState<OtherExpenseRow[]>([
+        { id: "expense-1", label: "Đá lạnh", note: "Tiền mặt · Phiếu chi #PC-018", amountVnd: 80000 },
+        { id: "expense-2", label: "Vật tư vệ sinh", note: "Tiền mặt · Phiếu chi #PC-019", amountVnd: 60000 },
+    ]);
+    const otherExpenseTotalVnd = otherExpenses.reduce((sum, item) => sum + item.amountVnd, 0);
+    const totalExpenseVnd = 1100000 + otherExpenseTotalVnd;
 
     // Modals
     const [modalConfig, setModalConfig] = useState<{
@@ -137,6 +316,366 @@ export default function MobilePosPrototypePage() {
         });
     }
 
+    function finishCreatingTicket() {
+        if (selectedHuts.length === 0) {
+            showToast("Vui lòng chọn ít nhất một ô câu.");
+            return;
+        }
+        const ticket: FishingTicketPrintData = {
+            customer: (selectedCustomer || "Khách vãng lai").split(" · ")[0],
+            huts: selectedHuts.join(", "),
+            startTime,
+            endTime: calculateTicketEndTime(startTime, selectedPackage),
+        };
+        showToast(`Đã mở ô ${ticket.huts} cho ${ticket.customer} thành công!`);
+        setModalConfig({
+            isOpen: true,
+            title: "Tạo vé thành công",
+            description: "Kiểm tra nhanh nội dung trước khi in",
+            content: (
+                <div className="space-y-4 text-xs">
+                    <div className="rounded-xl bg-white p-4 text-slate-900 shadow-sm">
+                        <h4 className="text-center text-base font-extrabold uppercase tracking-wider">Vé câu cá</h4>
+                        <div className="my-3 border-t border-dashed border-slate-400" />
+                        <div className="space-y-2">
+                            <div className="flex justify-between gap-3"><span>Khách hàng</span><strong className="text-right">{ticket.customer}</strong></div>
+                            <div className="flex justify-between gap-3"><span>Ô số</span><strong className="text-right">{ticket.huts}</strong></div>
+                            <div className="flex justify-between gap-3"><span>Giờ vào</span><strong className="text-right">{ticket.startTime}</strong></div>
+                            <div className="flex justify-between gap-3"><span>Giờ ra</span><strong className="text-right">{ticket.endTime}</strong></div>
+                        </div>
+                        <div className="my-3 border-t border-dashed border-slate-400" />
+                        <p className="text-center text-[11px]">Lưu ý: Cá lên chỉ áp dụng trong thời gian ghi trên vé.</p>
+                        <p className="mt-2 text-center font-bold">Chúc quý cần thủ lên nhiều cá!</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => printFishingTicket(ticket)}
+                        className="h-12 w-full rounded-xl bg-[#9E6B05] text-sm font-bold text-white"
+                    >
+                        In vé câu
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setModalConfig((current) => ({ ...current, isOpen: false }));
+                            setActiveTab("sessions");
+                        }}
+                        className="h-11 w-full rounded-xl bg-white font-semibold text-slate-800"
+                    >
+                        Để sau · về Đang câu
+                    </button>
+                </div>
+            ),
+        });
+    }
+
+    function addHoursToClock(clock: string, hours: number): string {
+        const [hour = "0", minute = "0", second = "0"] = clock.split(":");
+        return [String(Number(hour) + hours).padStart(2, "0"), minute, second].join(":");
+    }
+
+    function extendSession(spot: SpotItem, hours: number) {
+        const extraVnd = getExtensionPriceVnd(spot, hours);
+        setSpots((current) =>
+            current.map((item) =>
+                item.id === spot.id
+                    ? {
+                          ...item,
+                          timeRemaining: addHoursToClock(item.timeRemaining, hours),
+                          estimatedPriceVnd: item.estimatedPriceVnd + extraVnd,
+                          isEndingSoon: false,
+                      }
+                    : item,
+            ),
+        );
+        setSessionActivity((current) => {
+            const activity = current[spot.id] ?? {
+                products: [],
+                extensionHours: 0,
+                extensionTotalVnd: 0,
+            };
+            return {
+                ...current,
+                [spot.id]: {
+                    ...activity,
+                    extensionHours: activity.extensionHours + hours,
+                    extensionTotalVnd: activity.extensionTotalVnd + extraVnd,
+                },
+            };
+        });
+        setModalConfig((current) => ({ ...current, isOpen: false }));
+        showToast(`Đã gia hạn +${hours} giờ và cộng ${formatVnd(extraVnd)} vào ${spot.code}.`);
+    }
+
+    function saveProductsToSession() {
+        const totalItems = Object.values(posCart).reduce((sum, quantity) => sum + quantity, 0);
+        if (totalItems === 0) {
+            showToast("Vui lòng chạm chọn ít nhất 1 sản phẩm.");
+            return;
+        }
+
+        const targetSpot = spots.find(
+            (spot) => `${spot.code} · ${spot.anglerName}` === posTargetTicket,
+        );
+        if (!targetSpot) {
+            showToast("Bán lẻ tại quầy không gắn vào phiên câu.");
+            setPosCart({});
+            return;
+        }
+
+        const addedLines = MOCK_PRODUCTS.flatMap((product) => {
+            const quantity = posCart[product.id] || 0;
+            return quantity > 0
+                ? [{ productId: product.id, name: product.name, quantity, unitPriceVnd: product.priceVnd }]
+                : [];
+        });
+        const addedTotalVnd = addedLines.reduce(
+            (sum, line) => sum + line.quantity * line.unitPriceVnd,
+            0,
+        );
+
+        setSessionActivity((current) => {
+            const activity = current[targetSpot.id] ?? {
+                products: [],
+                extensionHours: 0,
+                extensionTotalVnd: 0,
+            };
+            let products = activity.products.map((line) => ({ ...line }));
+            for (const line of addedLines) {
+                const existing = products.find((item) => item.productId === line.productId);
+                products = existing
+                    ? products.map((item) =>
+                          item.productId === line.productId
+                              ? { ...item, quantity: item.quantity + line.quantity }
+                              : item,
+                      )
+                    : [...products, { ...line }];
+            }
+            return { ...current, [targetSpot.id]: { ...activity, products } };
+        });
+        setSpots((current) =>
+            current.map((spot) =>
+                spot.id === targetSpot.id
+                    ? { ...spot, estimatedPriceVnd: spot.estimatedPriceVnd + addedTotalVnd }
+                    : spot,
+            ),
+        );
+        setSelectedSpotId(targetSpot.id);
+        setPosCart({});
+        setActiveTab("sessions");
+        showToast(`Đã thêm ${totalItems} món và cộng ${formatVnd(addedTotalVnd)} vào ${targetSpot.code}.`);
+    }
+
+    function openSessionDetails(spot: SpotItem) {
+        const activity = sessionActivity[spot.id] ?? {
+            products: [],
+            extensionHours: 0,
+            extensionTotalVnd: 0,
+        };
+        const productTotalVnd = activity.products.reduce(
+            (sum, line) => sum + line.quantity * line.unitPriceVnd,
+            0,
+        );
+        setModalConfig({
+            isOpen: true,
+            title: `Chi tiết phiên — ${spot.code}`,
+            description: `${spot.anglerName} · ${spot.packageLabel}`,
+            content: (
+                <div className="space-y-4 text-xs">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-xl bg-white p-3">
+                            <p className="text-slate-500">Thời gian còn</p>
+                            <p className="mt-1 font-bold text-emerald-700">{spot.timeRemaining}</p>
+                        </div>
+                        <div className="rounded-xl bg-white p-3 text-right">
+                            <p className="text-slate-500">Tạm tính hiện tại</p>
+                            <p className="mt-1 font-bold text-[#8A5B00]">{formatVnd(spot.estimatedPriceVnd)}</p>
+                        </div>
+                    </div>
+                    <div className="rounded-xl bg-white p-3 space-y-2">
+                        <div className="flex justify-between">
+                            <span>Gia hạn đã thêm</span>
+                            <strong>+{activity.extensionHours} giờ · {formatVnd(activity.extensionTotalVnd)}</strong>
+                        </div>
+                        <div className="border-t border-[#EAE4D7] pt-2">
+                            <p className="font-bold">Sản phẩm trong phiên</p>
+                            {activity.products.length === 0 ? (
+                                <p className="mt-2 text-slate-500">Chưa thêm sản phẩm.</p>
+                            ) : (
+                                <div className="mt-2 space-y-2">
+                                    {activity.products.map((line) => (
+                                        <div key={line.productId} className="flex justify-between">
+                                            <span>{line.name} × {line.quantity}</span>
+                                            <strong>{formatVnd(line.quantity * line.unitPriceVnd)}</strong>
+                                        </div>
+                                    ))}
+                                    <div className="flex justify-between border-t border-[#EAE4D7] pt-2 text-[#8A5B00]">
+                                        <strong>Tổng hàng</strong>
+                                        <strong>{formatVnd(productTotalVnd)}</strong>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="border-t border-[#EAE4D7] pt-2">
+                            <p className="font-bold">Cá đã thu</p>
+                            {(activity.fishBuybacks?.length ?? 0) === 0 ? (
+                                <p className="mt-2 text-slate-500">Chưa ghi nhận thu cá.</p>
+                            ) : (
+                                <div className="mt-2 space-y-2">
+                                    {activity.fishBuybacks?.map((item) => (
+                                        <div key={item.id} className="flex justify-between gap-3">
+                                            <span>{item.fishName} · {item.weightKg} kg × {formatVnd(item.unitPriceVnd)}</span>
+                                            <strong className="text-rose-700">-{formatVnd(item.totalVnd)}</strong>
+                                        </div>
+                                    ))}
+                                    <div className="flex justify-between border-t border-[#EAE4D7] pt-2 text-rose-700">
+                                        <strong>Tổng thu cá</strong>
+                                        <strong>-{formatVnd(activity.fishBuybackTotalVnd ?? 0)}</strong>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <p className="text-center text-[11px] text-slate-500">Nhấn giữ thẻ phiên để mở lại thông tin này.</p>
+                </div>
+            ),
+        });
+    }
+
+    function openReportDetails(key: ReportDetailKey) {
+        const detail = key === "other"
+            ? {
+                  label: "Chi tiết chi khác",
+                  totalVnd: -otherExpenseTotalVnd,
+                  rows: otherExpenses.map((item) => ({
+                      label: item.label,
+                      note: item.note,
+                      amountVnd: -item.amountVnd,
+                  })),
+              }
+            : key === "expense"
+              ? {
+                    label: "Chi tiết chi phí",
+                    totalVnd: totalExpenseVnd,
+                    rows: [
+                        { label: "Thu mua cá", note: "4 phiếu trong ngày", amountVnd: 1100000 },
+                        { label: "Chi khác", note: `${otherExpenses.length} phiếu chi`, amountVnd: otherExpenseTotalVnd },
+                    ],
+                }
+              : REPORT_DETAILS[key];
+        setModalConfig({
+            isOpen: true,
+            title: detail.label,
+            description: "Số liệu ca hiện tại · chạm từng dòng để đối chiếu chứng từ",
+            content: (
+                <div className="space-y-3 text-xs">
+                    <div className="overflow-hidden rounded-xl bg-white">
+                        {detail.rows.map((row, index) => (
+                            <div
+                                key={`${row.label}-${row.note}`}
+                                className={`flex items-center justify-between gap-3 p-3 ${
+                                    index > 0 ? "border-t border-[#EAE4D7]" : ""
+                                }`}
+                            >
+                                <div className="min-w-0">
+                                    <p className="font-bold text-slate-900">{row.label}</p>
+                                    <p className="mt-0.5 truncate text-[11px] text-slate-500">{row.note}</p>
+                                </div>
+                                <strong className={row.amountVnd < 0 ? "text-rose-700" : "text-slate-900"}>
+                                    {formatVnd(row.amountVnd)}
+                                </strong>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl bg-[#EAE2CE] p-3 text-sm text-[#664200]">
+                        <strong>Tổng cộng</strong>
+                        <strong>{formatVnd(detail.totalVnd)}</strong>
+                    </div>
+                </div>
+            ),
+        });
+    }
+
+    function openCreateExpenseModal() {
+        setModalConfig({
+            isOpen: true,
+            title: "Ghi chi phí phát sinh",
+            description: "Khoản chi sẽ được cộng vào báo cáo ca hiện tại",
+            content: (
+                <form
+                    className="space-y-3 text-xs"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        const form = new FormData(event.currentTarget);
+                        const category = String(form.get("category") || "Chi khác");
+                        const paymentMethod = String(form.get("paymentMethod") || "Tiền mặt");
+                        const note = String(form.get("note") || "Không có ghi chú").trim();
+                        const amountVnd = Number(String(form.get("amount") || "0").replace(/\D/g, ""));
+                        if (!Number.isFinite(amountVnd) || amountVnd <= 0) {
+                            showToast("Vui lòng nhập số tiền chi hợp lệ.");
+                            return;
+                        }
+                        setOtherExpenses((current) => [
+                            ...current,
+                            {
+                                id: `expense-${Date.now()}`,
+                                label: category,
+                                note: `${paymentMethod} · ${note}`,
+                                amountVnd,
+                            },
+                        ]);
+                        setModalConfig((current) => ({ ...current, isOpen: false }));
+                        showToast(`Đã ghi chi ${formatVnd(amountVnd)} cho ${category}.`);
+                    }}
+                >
+                    <label className="block">
+                        <span className="mb-1 block font-semibold text-slate-700">Loại chi</span>
+                        <select name="category" className="h-11 w-full rounded-xl bg-white px-3" defaultValue="Điện nước">
+                            <option>Điện nước</option>
+                            <option>Đá lạnh</option>
+                            <option>Vật tư</option>
+                            <option>Sửa chữa</option>
+                            <option>Chi khác</option>
+                        </select>
+                    </label>
+                    <label className="block">
+                        <span className="mb-1 block font-semibold text-slate-700">Số tiền</span>
+                        <input name="amount" inputMode="numeric" required placeholder="Ví dụ: 250.000đ" className="h-11 w-full rounded-xl bg-white px-3" />
+                    </label>
+                    <label className="block">
+                        <span className="mb-1 block font-semibold text-slate-700">Phương thức chi</span>
+                        <select name="paymentMethod" className="h-11 w-full rounded-xl bg-white px-3" defaultValue="Tiền mặt">
+                            <option>Tiền mặt</option>
+                            <option>Chuyển khoản</option>
+                        </select>
+                    </label>
+                    <label className="block">
+                        <span className="mb-1 block font-semibold text-slate-700">Nội dung / ghi chú</span>
+                        <input name="note" placeholder="Nêu rõ lý do chi" className="h-11 w-full rounded-xl bg-white px-3" />
+                    </label>
+                    <button type="submit" className="h-12 w-full rounded-xl bg-[#9E6B05] font-bold text-white">
+                        Lưu khoản chi
+                    </button>
+                </form>
+            ),
+        });
+    }
+
+    function startLongPress(spot: SpotItem) {
+        didLongPressRef.current = false;
+        if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+        holdTimerRef.current = setTimeout(() => {
+            didLongPressRef.current = true;
+            setSelectedSpotId(spot.id);
+            openSessionDetails(spot);
+        }, 550);
+    }
+
+    function cancelLongPress() {
+        if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+        holdTimerRef.current = null;
+    }
+
     function openQuickActionModal(actionType: string) {
         if (!selectedSpot) return;
 
@@ -161,8 +700,7 @@ export default function MobilePosPrototypePage() {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        setModalConfig((m) => ({ ...m, isOpen: false }));
-                                        showToast(`Đã gia hạn +1 giờ cho ${selectedSpot.code}`);
+                                        extendSession(selectedSpot, 1);
                                     }}
                                     className="h-11 rounded-xl border border-[#EAE4D7] bg-white font-semibold text-slate-800 active:bg-[#F5F2EB]"
                                 >
@@ -171,8 +709,7 @@ export default function MobilePosPrototypePage() {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        setModalConfig((m) => ({ ...m, isOpen: false }));
-                                        showToast(`Đã gia hạn +2 giờ cho ${selectedSpot.code}`);
+                                        extendSession(selectedSpot, 2);
                                     }}
                                     className="h-11 rounded-xl border border-[#EAE4D7] bg-white font-semibold text-slate-800 active:bg-[#F5F2EB]"
                                 >
@@ -181,8 +718,7 @@ export default function MobilePosPrototypePage() {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        setModalConfig((m) => ({ ...m, isOpen: false }));
-                                        showToast(`Đã gia hạn +5 giờ cho ${selectedSpot.code}`);
+                                        extendSession(selectedSpot, 5);
                                     }}
                                     className="h-11 rounded-xl border border-[#EAE4D7] bg-white font-semibold text-slate-800 active:bg-[#F5F2EB]"
                                 >
@@ -201,6 +737,95 @@ export default function MobilePosPrototypePage() {
                             Xác nhận gia hạn
                         </button>
                     </div>
+                ),
+            });
+        }
+
+        if (actionType === "fish-buyback") {
+            const targetSpot = selectedSpot;
+            setModalConfig({
+                isOpen: true,
+                title: `Thu cá — ${targetSpot.code}`,
+                description: `${targetSpot.anglerName} · tiền thu cá sẽ trừ trực tiếp vào phiên`,
+                content: (
+                    <form
+                        className="space-y-4 text-xs"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            const form = new FormData(event.currentTarget);
+                            const fishType = MOCK_FISH_PRICES.find(
+                                (fish) => fish.id === String(form.get("fishType")),
+                            );
+                            const weightKg = Number(String(form.get("weightKg") || "0").replace(",", "."));
+                            if (!fishType || !Number.isFinite(weightKg) || weightKg <= 0) {
+                                showToast("Vui lòng chọn loại cá và nhập trọng lượng hợp lệ.");
+                                return;
+                            }
+                            const totalVnd = Math.round(weightKg * fishType.priceVndPerKg);
+                            setSpots((current) =>
+                                current.map((spot) =>
+                                    spot.id === targetSpot.id
+                                        ? { ...spot, estimatedPriceVnd: spot.estimatedPriceVnd - totalVnd }
+                                        : spot,
+                                ),
+                            );
+                            setSessionActivity((current) => {
+                                const activity = current[targetSpot.id] ?? {
+                                    products: [],
+                                    extensionHours: 0,
+                                    extensionTotalVnd: 0,
+                                };
+                                const buyback = {
+                                    id: `fish-${Date.now()}`,
+                                    fishName: fishType.name,
+                                    weightKg,
+                                    unitPriceVnd: fishType.priceVndPerKg,
+                                    totalVnd,
+                                };
+                                return {
+                                    ...current,
+                                    [targetSpot.id]: {
+                                        ...activity,
+                                        fishBuybacks: [...(activity.fishBuybacks ?? []), buyback],
+                                        fishBuybackTotalVnd: (activity.fishBuybackTotalVnd ?? 0) + totalVnd,
+                                    },
+                                };
+                            });
+                            setModalConfig((current) => ({ ...current, isOpen: false }));
+                            showToast(`Đã thu ${weightKg} kg ${fishType.name}, trừ ${formatVnd(totalVnd)} khỏi ${targetSpot.code}.`);
+                        }}
+                    >
+                        <div className="overflow-hidden rounded-xl bg-white">
+                            {MOCK_FISH_PRICES.map((fish) => (
+                                <label key={fish.id} className="flex min-h-11 items-center justify-between border-b border-[#EAE4D7] px-3 last:border-0">
+                                    <span className="flex items-center gap-2 font-semibold text-slate-800">
+                                        <input type="radio" name="fishType" value={fish.id} required className="h-4 w-4" />
+                                        {fish.name}
+                                    </span>
+                                    <strong className="text-[#8A5B00]">{formatVnd(fish.priceVndPerKg)}/kg</strong>
+                                </label>
+                            ))}
+                        </div>
+                        <label className="block">
+                            <span className="mb-1 block font-semibold text-slate-700">Trọng lượng cá (kg)</span>
+                            <input
+                                name="weightKg"
+                                type="number"
+                                inputMode="decimal"
+                                min="0.1"
+                                step="0.1"
+                                required
+                                placeholder="Ví dụ: 3.5"
+                                className="h-11 w-full rounded-xl bg-white px-3"
+                            />
+                        </label>
+                        <p className="rounded-xl bg-[#EAE2CE] p-3 text-[#664200]">
+                            Tổng tiền thu cá được tính theo trọng lượng × đơn giá và trừ khỏi tạm tính của phiên.
+                        </p>
+                        <button type="submit" className="h-12 w-full rounded-xl bg-[#9E6B05] font-bold text-white">
+                            Xác nhận thu cá
+                        </button>
+                    </form>
                 ),
             });
         }
@@ -257,7 +882,7 @@ export default function MobilePosPrototypePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#EBE7DF] text-slate-900 flex justify-center selection:bg-[#9E6B05] selection:text-white">
+        <div className="luxury-pos min-h-screen bg-[#EBE7DF] text-slate-900 flex justify-center selection:bg-[#9E6B05] selection:text-white">
             {/* Mobile App Container (360px - 430px on mobile, centered max-w-md on desktop) */}
             <div className="w-full max-w-md min-h-screen bg-[#F5F2EB] shadow-2xl flex flex-col relative pb-20">
                 {/* Prototype Banner Header */}
@@ -299,51 +924,35 @@ export default function MobilePosPrototypePage() {
                                     Đang câu
                                 </h1>
                                 <span className="inline-flex items-center rounded-full bg-[#EAE2CE] px-3 py-1 text-xs font-semibold text-[#8A5B00]">
-                                    3 vé · 4 ô
+                                    {activeSpots.length} vé · {activeHutCount} ô
                                 </span>
                             </div>
 
                             {/* Spot Grid 2x2 */}
                             <div className="grid grid-cols-2 gap-3">
-                                {INITIAL_SPOTS.map((spot) => {
+                                {activeSpots.map((spot) => {
                                     const isSelected = selectedSpotId === spot.id;
-
-                                    if (spot.isEmpty) {
-                                        return (
-                                            <div
-                                                key={spot.id}
-                                                onClick={() => {
-                                                    setSelectedSpotId(spot.id);
-                                                    setActiveTab("new-ticket");
-                                                }}
-                                                className={`cursor-pointer rounded-2xl border bg-white p-3.5 shadow-sm transition-all duration-150 ease-out active:scale-98 ${
-                                                    isSelected
-                                                        ? "border-2 border-[#9E6B05] ring-2 ring-[#9E6B05]/20"
-                                                        : "border-[#EAE4D7]"
-                                                }`}
-                                            >
-                                                <div className="flex justify-between items-center text-xs">
-                                                    <span className="font-bold text-slate-900">
-                                                        {spot.code}
-                                                    </span>
-                                                    <span className="text-slate-400">
-                                                        {spot.packageLabel}
-                                                    </span>
-                                                </div>
-                                                <p className="mt-2 text-sm font-semibold text-slate-800">
-                                                    {spot.anglerName}
-                                                </p>
-                                                <p className="mt-1 text-[11px] text-slate-400">
-                                                    Bấm Tạo vé để mở ô
-                                                </p>
-                                            </div>
-                                        );
-                                    }
+                                    const activity = sessionActivity[spot.id];
+                                    const productCount = activity?.products.reduce(
+                                        (sum, line) => sum + line.quantity,
+                                        0,
+                                    ) ?? 0;
 
                                     return (
                                         <div
                                             key={spot.id}
-                                            onClick={() => setSelectedSpotId(spot.id)}
+                                            onPointerDown={() => startLongPress(spot)}
+                                            onPointerUp={cancelLongPress}
+                                            onPointerLeave={cancelLongPress}
+                                            onPointerCancel={cancelLongPress}
+                                            onContextMenu={(event) => event.preventDefault()}
+                                            onClick={() => {
+                                                if (didLongPressRef.current) {
+                                                    didLongPressRef.current = false;
+                                                    return;
+                                                }
+                                                setSelectedSpotId(spot.id);
+                                            }}
                                             className={`cursor-pointer rounded-2xl border bg-white p-3.5 shadow-sm transition-all duration-150 ease-out active:scale-98 ${
                                                 isSelected
                                                     ? "border-2 border-[#9E6B05] ring-2 ring-[#9E6B05]/20"
@@ -376,6 +985,32 @@ export default function MobilePosPrototypePage() {
                                             <p className="mt-1 text-[11px] text-slate-500">
                                                 Tạm tính {formatVnd(spot.estimatedPriceVnd)}
                                             </p>
+                                            {(productCount > 0 || (activity?.extensionHours ?? 0) > 0 || (activity?.fishBuybackTotalVnd ?? 0) > 0) && (
+                                                <div className="mt-2 space-y-1 text-[10px] font-semibold text-[#8A5B00]">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {productCount > 0 && (
+                                                            <span className="rounded bg-[#EAE2CE] px-1.5 py-0.5">
+                                                                +{productCount} món
+                                                            </span>
+                                                        )}
+                                                        {(activity?.extensionHours ?? 0) > 0 && (
+                                                            <span className="rounded bg-[#EAE2CE] px-1.5 py-0.5">
+                                                                +{activity.extensionHours} giờ
+                                                            </span>
+                                                        )}
+                                                        {(activity?.fishBuybackTotalVnd ?? 0) > 0 && (
+                                                            <span className="rounded bg-rose-100 px-1.5 py-0.5 text-rose-700">
+                                                                Thu cá -{formatVnd(activity?.fishBuybackTotalVnd ?? 0)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {activity?.products.slice(0, 2).map((line) => (
+                                                        <p key={line.productId} className="truncate text-slate-500">
+                                                            {line.name} × {line.quantity}
+                                                        </p>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}
@@ -411,11 +1046,11 @@ export default function MobilePosPrototypePage() {
                                         <button
                                             type="button"
                                             onClick={() =>
-                                                openQuickActionModal("checkout")
+                                                openQuickActionModal("fish-buyback")
                                             }
                                             className="h-12 rounded-xl border border-[#EAE4D7] bg-white text-xs font-semibold text-slate-900 shadow-sm transition-transform duration-150 ease-out active:scale-95 hover:border-rose-400"
                                         >
-                                            Kết thúc
+                                            Thu cá
                                         </button>
                                     </div>
                                 </div>
@@ -610,12 +1245,7 @@ export default function MobilePosPrototypePage() {
                             {/* Submit Button */}
                             <button
                                 type="button"
-                                onClick={() => {
-                                    showToast(
-                                        `Đã mở ô ${selectedHuts.join(", ")} cho ${selectedCustomer || "Khách"} thành công!`,
-                                    );
-                                    setActiveTab("sessions");
-                                }}
+                                onClick={finishCreatingTicket}
                                 className="mt-2 w-full h-12 rounded-xl bg-[#9E6B05] text-sm font-bold text-white shadow-md transition-transform duration-150 ease-out active:scale-98"
                             >
                                 Tạo vé và mở ô
@@ -712,20 +1342,7 @@ export default function MobilePosPrototypePage() {
                             {/* Submit Button */}
                             <button
                                 type="button"
-                                onClick={() => {
-                                    const totalItems = Object.values(posCart).reduce(
-                                        (a, b) => a + b,
-                                        0,
-                                    );
-                                    if (totalItems === 0) {
-                                        showToast("Vui lòng chạm chọn ít nhất 1 sản phẩm.");
-                                        return;
-                                    }
-                                    showToast(
-                                        `Đã ghi nhận ${totalItems} món vào vé ${posTargetTicket} thành công!`,
-                                    );
-                                    setPosCart({});
-                                }}
+                                onClick={saveProductsToSession}
                                 className="w-full h-12 rounded-xl bg-[#9E6B05] text-sm font-bold text-white shadow-md transition-transform duration-150 ease-out active:scale-98"
                             >
                                 Xác nhận thêm hàng
@@ -749,62 +1366,72 @@ export default function MobilePosPrototypePage() {
 
                             {/* Top 2 KPI Cards */}
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm">
+                                <button
+                                    type="button"
+                                    onClick={() => openReportDetails("revenue")}
+                                    className="rounded-2xl border border-[#EAE4D7] bg-white p-3.5 text-left shadow-sm"
+                                >
                                     <span className="text-xs text-slate-500 font-medium">
                                         Doanh thu
                                     </span>
-                                    <p className="text-base font-bold text-slate-900 mt-1">
-                                        4.860.000đ
-                                    </p>
-                                </div>
-                                <div className="rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm">
+                                    <div className="mt-1 flex items-center justify-between gap-2">
+                                        <p className="text-base font-bold text-slate-900">4.860.000đ</p>
+                                        <span aria-hidden="true" className="text-lg text-[#8A5B00]">›</span>
+                                    </div>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => openReportDetails("expense")}
+                                    className="rounded-2xl border border-[#EAE4D7] bg-white p-3.5 text-left shadow-sm"
+                                >
                                     <span className="text-xs text-slate-500 font-medium">
                                         Chi phí
                                     </span>
-                                    <p className="text-base font-bold text-slate-900 mt-1">
-                                        1.240.000đ
-                                    </p>
-                                </div>
+                                    <div className="mt-1 flex items-center justify-between gap-2">
+                                        <p className="text-base font-bold text-slate-900">{formatVnd(totalExpenseVnd)}</p>
+                                        <span aria-hidden="true" className="text-lg text-[#8A5B00]">›</span>
+                                    </div>
+                                </button>
                             </div>
 
                             {/* Financial Breakdown List */}
                             <div className="space-y-2">
-                                <div className="rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm flex items-center justify-between">
+                                <button type="button" onClick={() => openReportDetails("cash")} className="w-full rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm flex items-center justify-between">
                                     <span className="text-xs font-medium text-slate-700">
                                         Tiền mặt
                                     </span>
-                                    <span className="text-xs font-bold text-slate-900">
-                                        2.910.000đ
-                                    </span>
-                                </div>
+                                    <span className="flex items-center gap-3 text-xs font-bold text-slate-900">2.910.000đ <span aria-hidden="true" className="text-lg text-[#8A5B00]">›</span></span>
+                                </button>
 
-                                <div className="rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm flex items-center justify-between">
+                                <button type="button" onClick={() => openReportDetails("transfer")} className="w-full rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm flex items-center justify-between">
                                     <span className="text-xs font-medium text-slate-700">
                                         Chuyển khoản
                                     </span>
-                                    <span className="text-xs font-bold text-slate-900">
-                                        1.950.000đ
-                                    </span>
-                                </div>
+                                    <span className="flex items-center gap-3 text-xs font-bold text-slate-900">1.950.000đ <span aria-hidden="true" className="text-lg text-[#8A5B00]">›</span></span>
+                                </button>
 
-                                <div className="rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm flex items-center justify-between">
+                                <button type="button" onClick={() => openReportDetails("fish")} className="w-full rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm flex items-center justify-between">
                                     <span className="text-xs font-medium text-slate-700">
                                         Thu mua cá
                                     </span>
-                                    <span className="text-xs font-bold text-slate-900">
-                                        -1.100.000đ
-                                    </span>
-                                </div>
+                                    <span className="flex items-center gap-3 text-xs font-bold text-slate-900">-1.100.000đ <span aria-hidden="true" className="text-lg text-[#8A5B00]">›</span></span>
+                                </button>
 
-                                <div className="rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm flex items-center justify-between">
+                                <button type="button" onClick={() => openReportDetails("other")} className="w-full rounded-2xl border border-[#EAE4D7] bg-white p-3.5 shadow-sm flex items-center justify-between">
                                     <span className="text-xs font-medium text-slate-700">
                                         Chi khác
                                     </span>
-                                    <span className="text-xs font-bold text-slate-900">
-                                        -140.000đ
-                                    </span>
-                                </div>
+                                    <span className="flex items-center gap-3 text-xs font-bold text-slate-900">-{formatVnd(otherExpenseTotalVnd)} <span aria-hidden="true" className="text-lg text-[#8A5B00]">›</span></span>
+                                </button>
                             </div>
+
+                            <button
+                                type="button"
+                                onClick={openCreateExpenseModal}
+                                className="h-12 w-full rounded-xl bg-white text-sm font-bold text-[#704716] shadow-sm"
+                            >
+                                + Ghi chi phí
+                            </button>
 
                             {/* Action Button */}
                             <button

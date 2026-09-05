@@ -24,6 +24,9 @@ export function InventoryMovementForm({ products }: InventoryMovementFormProps) 
     const [type, setType] = useState<"IN" | "OUT">("IN");
     const [quantity, setQuantity] = useState<number | string>("");
     const [reason, setReason] = useState("");
+    const [costPriceVnd, setCostPriceVnd] = useState<number | string>("");
+    const [supplier, setSupplier] = useState("");
+    const [note, setNote] = useState("");
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -33,6 +36,7 @@ export function InventoryMovementForm({ products }: InventoryMovementFormProps) 
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+        if (loading) return;
         setError(null);
         setSuccessMessage(null);
 
@@ -67,19 +71,34 @@ export function InventoryMovementForm({ products }: InventoryMovementFormProps) 
             return;
         }
 
+        const numCost =
+            costPriceVnd !== "" ? Number(costPriceVnd) : undefined;
+        if (
+            numCost !== undefined &&
+            (isNaN(numCost) || !Number.isInteger(numCost) || numCost < 0)
+        ) {
+            setError("Giá nhập phải là số nguyên không âm (>= 0).");
+            return;
+        }
+
         setLoading(true);
 
         try {
+            const idempotencyKey = crypto.randomUUID();
             const res = await fetch("/api/inventory-movements", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Idempotency-Key": idempotencyKey,
                 },
                 body: JSON.stringify({
                     productId,
                     type,
                     quantity: numQty,
                     reason: reason.trim(),
+                    costPriceVnd: numCost,
+                    supplier: supplier.trim() || undefined,
+                    note: note.trim() || undefined,
                 }),
             });
 
@@ -93,6 +112,9 @@ export function InventoryMovementForm({ products }: InventoryMovementFormProps) 
             setSuccessMessage(data.message || "Tạo phiếu kho thành công.");
             setQuantity("");
             setReason("");
+            setCostPriceVnd("");
+            setSupplier("");
+            setNote("");
 
             router.refresh();
         } catch {
@@ -195,12 +217,47 @@ export function InventoryMovementForm({ products }: InventoryMovementFormProps) 
                 }
             />
 
+            {/* Optional Fields for Inward Movements */}
+            {type === "IN" && (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Input
+                        id="inventory-cost-price"
+                        label="Giá nhập / đơn giá gốc (VNĐ - Tùy chọn)"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={costPriceVnd}
+                        onChange={(e) => setCostPriceVnd(e.target.value)}
+                        placeholder="Ví dụ: 8000"
+                    />
+
+                    <Input
+                        id="inventory-supplier"
+                        label="Nhà cung cấp / Nguồn hàng (Tùy chọn)"
+                        type="text"
+                        value={supplier}
+                        onChange={(e) => setSupplier(e.target.value)}
+                        placeholder="Ví dụ: Đại lý Tân Phát, Siêu thị..."
+                    />
+                </div>
+            )}
+
+            <Input
+                id="inventory-note"
+                label="Ghi chú thêm (Tùy chọn)"
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Ghi chú chi tiết thêm nếu có..."
+            />
+
             <Button
                 type="submit"
                 size="lg"
                 variant={type === "IN" ? "success" : "warning"}
                 isLoading={loading}
                 loadingText="Đang ghi sổ kho…"
+                disabled={loading}
                 className="w-full"
             >
                 {type === "IN" ? "Xác nhận Nhập kho (+)" : "Xác nhận Xuất kho (-)"}

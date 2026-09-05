@@ -53,8 +53,8 @@ export default async function PricingPage() {
             <PageHeader
                 title="Bảng giá & Gói câu"
                 subtitle={`Hồ câu: ${tenantContext.lakeName} (${tenantContext.organizationName})`}
-                backHref="/dashboard"
-                backLabel="Bảng điều khiển"
+                backHref="/settings"
+                backLabel="Quay lại Cài đặt"
                 badge={<Badge variant="default">Vai trò: {tenantContext.role}</Badge>}
             />
 
