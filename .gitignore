@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+*.log
+scratch/
+.windsurf/
 
 # debug
 npm-debug.log*
@@ -30,8 +33,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
+.env
+.env*.local
+.env.development
+.env.test
+.env.production
 .env*
+!.env.example
+!.env.production.example
 
 # vercel
 .vercel

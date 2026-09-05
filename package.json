@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "test": "node --test --test-concurrency=1 --env-file=.env tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs"
   },
   "dependencies": {
