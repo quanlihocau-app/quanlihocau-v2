@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -234,7 +233,7 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: "Be Vietnam Pro", Arial, Helvetica, sans-serif;
+  font-family: var(--font-be-vietnam-pro), "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -269,14 +268,22 @@ body {
   background: #FFFFFF;
   border-radius: 0.875rem;
   border: 1px solid #D9D2C8;
-  transition: background-color 0.12s;
+  transition: all 0.1s ease-out;
   cursor: pointer;
   text-decoration: none;
   color: inherit;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .menu-row:hover {
   background-color: #F4F2EE;
+}
+
+.menu-row:active {
+  background-color: #EFE4CF;
+  transform: scale(0.97);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 /* Badge pill (small label in header) */
@@ -320,6 +327,8 @@ body {
   flex-direction: column;
   position: relative;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: page-enter 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
 @media (max-width: 520px) {
@@ -376,7 +385,7 @@ body {
   font-weight: 600;
   color: #170D09;
   box-shadow: 0 2px 6px rgba(43, 24, 14, 0.06);
-  transition: all 130ms ease;
+  transition: all 100ms ease-out;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -394,7 +403,8 @@ body {
 .mobile-pos-btn:active {
   background-color: #382016 !important;
   color: #F6DFB2 !important;
-  transform: translateY(1px) scale(0.985);
+  transform: translateY(1.5px) scale(0.94) !important;
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.25) !important;
 }
 
 .mobile-pos-btn-primary {
@@ -411,6 +421,8 @@ body {
 .mobile-pos-btn-primary:active {
   background-color: #382016 !important;
   color: #F6DFB2 !important;
+  transform: translateY(1.5px) scale(0.94) !important;
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35) !important;
 }
 
 .mobile-pos-nav {
@@ -431,3 +443,49 @@ body {
     max-width: 100%;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Page Transitions & Performance Animations                                  */
+/* -------------------------------------------------------------------------- */
+
+@keyframes skeleton-shimmer {
+  0% {
+    opacity: 0.55;
+    background-position: -200% 0;
+  }
+  50% {
+    opacity: 0.95;
+    background-position: 200% 0;
+  }
+  100% {
+    opacity: 0.55;
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  background-size: 200% 100%;
+}
+
+@keyframes page-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: page-enter 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Instant active tactile feel for all interactive links and buttons */
+a, button, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+

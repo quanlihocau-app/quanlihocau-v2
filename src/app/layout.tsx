@@ -1,5 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import { Be_Vietnam_Pro } from "next/font/google";
+import { Suspense } from "react";
+
+import { PageProgressBar } from "@/components/ui/page-progress-bar";
 import "./globals.css";
+
+const beVietnamPro = Be_Vietnam_Pro({
+    subsets: ["vietnamese", "latin"],
+    weight: ["400", "500", "600", "700", "800"],
+    variable: "--font-be-vietnam-pro",
+    display: "swap",
+});
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://quanlihocau.com"),
@@ -57,10 +68,14 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="vi" className="h-full antialiased">
+        <html lang="vi" className={`h-full antialiased ${beVietnamPro.variable}`}>
             <body className="min-h-full flex flex-col bg-[#F4F2EE] text-[#27231F] selection:bg-[#EFE4CF] selection:text-[#27231F]">
+                <Suspense fallback={null}>
+                    <PageProgressBar />
+                </Suspense>
                 {children}
             </body>
         </html>
     );
 }
+

@@ -35,7 +35,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ) => {
         // Base classes: minimum 48px on mobile for size 'lg', rounded-xl (12px), 2D flat, font-semibold (600)
         const baseClasses =
-            "inline-flex items-center justify-center font-semibold text-center transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.99] select-none cursor-pointer border border-transparent";
+            "inline-flex items-center justify-center font-semibold text-center transition-all duration-100 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.94] active:brightness-95 select-none cursor-pointer border border-transparent shadow-xs active:shadow-inner";
 
         const sizeClasses = {
             sm: "h-9 px-3 text-xs rounded-lg min-w-9",

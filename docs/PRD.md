@@ -191,6 +191,7 @@ Hệ thống cung cấp 3 hạng gói cước dịch vụ cho các hồ câu:
   - `SUSPENDED`/`EXPIRED`: Hết hạn hoặc bị khóa; chặn các thao tác ghi dữ liệu từ phía backend (`SUBSCRIPTION_EXPIRED`).
 
 #### 4.3.1 Tích hợp VietQR Techcombank Động
+
 - **Thông tin tài khoản nhận thanh toán**:
   - Ngân hàng: **Techcombank** (Mã: `TCB`, BIN: `970407`).
   - Số tài khoản: **`8799999990`**.
@@ -208,6 +209,7 @@ Hệ thống cung cấp 3 hạng gói cước dịch vụ cho các hồ câu:
   - Cơ chế tự động lắng nghe: Client tự động polling mỗi 3 giây qua `GET /api/subscription/orders/[orderId]`, ngay khi tiền về sẽ tự động chuyển sang màn hình thông báo kích hoạt thành công mà không cần người dùng thao tác thêm.
 
 #### 4.3.2 Webhook Ngân Hàng & Core Transaction (`POST /api/webhooks/bank`)
+
 - **Bảo mật**: Xác thực chữ ký hoặc API key qua header `Authorization: Bearer <BANK_WEBHOOK_SECRET>`, `x-api-key`, hoặc chữ ký HMAC `x-signature`.
 - **Chống cộng dồn trùng lặp (Idempotency)**: Nếu đơn hàng đã có trạng thái `PAID`, hệ thống lập tức trả về HTTP 200 `{ idempotent: true }`, ngăn chặn triệt để rủi ro ngân hàng retry nhiều lần gây cộng dồn thời gian sai.
 - **Prisma Transaction cốt lõi**:
@@ -220,6 +222,7 @@ Hệ thống cung cấp 3 hạng gói cước dịch vụ cho các hồ câu:
   5. Ghi nhận `AuditEvent`: `entityType: "SUBSCRIPTION"`, `action: "PLAN_ACTIVATED"`, `createdBy: "WEBHOOK_BANK"`.
 
 #### 4.3.3 Chặn giới hạn gói cước (Guard Enforcement)
+
 - **Kiểm tra ô câu** (`assertSpotLimit` tại `POST /api/huts` và `POST /api/spots`):
   - Nếu hồ thuộc gói `SILVER` và số ô câu (`deletedAt: null`) >= 30, chặn với HTTP 403:
     *"Gói Bạc (SILVER) chỉ hỗ trợ tối đa 30 ô câu. Vui lòng nâng cấp lên Gói Vàng (GOLD) để tạo thêm ô câu không giới hạn."*
@@ -1058,6 +1061,7 @@ Hệ thống đã hoàn thành 100% các cột mốc nền tảng và tính năn
   - Trang `/settings` hiển thị SĐT chủ hồ với huy hiệu `[✓ Đã xác thực SĐT]`.
 
 ### 18.2 Tình trạng Kiểm thử Tự động (Automated Test Suite)
+
 - Tổng số bài test tự động: **36/36 tests passed (100%)**.
 - Độ trễ chạy test: **~10 giây**.
 - TypeScript strict typecheck: **0 errors**.

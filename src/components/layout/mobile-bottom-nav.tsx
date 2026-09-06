@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 interface NavItem {
     label: string;
@@ -19,7 +20,7 @@ const NAV_ITEMS: NavItem[] = [
             (pathname.startsWith("/sessions/") && pathname !== "/sessions/new"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-colors ${isActive ? "text-[#E3B76E]" : "text-[#BCA98D]"}`}
+                className={`h-5 w-5 transition-transform duration-150 ${isActive ? "text-[#E3B76E] scale-110" : "text-[#BCA98D]"}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -39,7 +40,7 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname === "/sessions/new",
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-colors ${isActive ? "text-[#E3B76E]" : "text-[#BCA98D]"}`}
+                className={`h-5 w-5 transition-transform duration-150 ${isActive ? "text-[#E3B76E] scale-110" : "text-[#BCA98D]"}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -61,7 +62,7 @@ const NAV_ITEMS: NavItem[] = [
             pathname === "/invoices",
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-colors ${isActive ? "text-[#E3B76E]" : "text-[#BCA98D]"}`}
+                className={`h-5 w-5 transition-transform duration-150 ${isActive ? "text-[#E3B76E] scale-110" : "text-[#BCA98D]"}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -81,7 +82,7 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname.startsWith("/reports"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-colors ${isActive ? "text-[#E3B76E]" : "text-[#BCA98D]"}`}
+                className={`h-5 w-5 transition-transform duration-150 ${isActive ? "text-[#E3B76E] scale-110" : "text-[#BCA98D]"}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -101,7 +102,7 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname.startsWith("/settings"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-colors ${isActive ? "text-[#E3B76E]" : "text-[#BCA98D]"}`}
+                className={`h-5 w-5 transition-transform duration-150 ${isActive ? "text-[#E3B76E] scale-110" : "text-[#BCA98D]"}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -119,30 +120,80 @@ const NAV_ITEMS: NavItem[] = [
 
 export function MobileBottomNav() {
     const pathname = usePathname();
+    const [pendingHref, setPendingHref] = useState<string | null>(null);
+    const [prevPathname, setPrevPathname] = useState(pathname);
+
+    // Adjust state during render when pathname changes (avoids cascading render warning)
+    if (prevPathname !== pathname) {
+        setPrevPathname(pathname);
+        setPendingHref(null);
+    }
 
     return (
         <nav
             aria-label="Mobile Navigation"
             className="mobile-pos-nav print:hidden"
         >
-            <div className="mx-auto flex h-14.5 items-center justify-around px-1">
+            <div className="mx-auto flex h-14.5 items-center justify-around px-1 relative">
                 {NAV_ITEMS.map((item) => {
                     const active = item.isActive(pathname);
+                    const isPending = pendingHref === item.href && !active;
+
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex min-h-13 min-w-13 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-center transition-all duration-150 active:scale-95 select-none ${
+                            prefetch={true}
+                            onClick={() => {
+                                if (!active) {
+                                    setPendingHref(item.href);
+                                }
+                            }}
+                            className={`relative flex min-h-13 min-w-13 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-center transition-all duration-100 ease-out select-none cursor-pointer rounded-xl active:scale-[0.88] active:bg-white/10 ${
                                 active
                                     ? "text-[#E3B76E] font-bold"
-                                    : "text-[#BCA98D] hover:text-[#F0D19A]"
+                                    : isPending
+                                      ? "text-[#F5D79D] font-semibold"
+                                      : "text-[#BCA98D] hover:text-[#F0D19A]"
                             }`}
                         >
-                            <div className="flex h-5 w-5 items-center justify-center">
-                                {item.icon(active)}
+                            {/* Active Top Glow Line */}
+                            {active && (
+                                <span className="absolute top-0 w-8 h-[2.5px] rounded-full bg-linear-to-r from-[#8A5A20] via-[#E3B76E] to-[#8A5A20] shadow-[0_0_8px_rgba(227,183,110,0.8)]" />
+                            )}
+
+                            {/* Icon container with loading spinner if pending */}
+                            <div className="relative flex h-5 w-5 items-center justify-center">
+                                {isPending ? (
+                                    <div className="relative flex items-center justify-center">
+                                        <svg
+                                            className="h-5 w-5 animate-spin text-[#E3B76E]"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="3.5"
+                                            />
+                                            <path
+                                                className="opacity-90"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            />
+                                        </svg>
+                                        <span className="absolute h-2 w-2 rounded-full bg-[#E3B76E] animate-ping" />
+                                    </div>
+                                ) : (
+                                    item.icon(active)
+                                )}
                             </div>
+
                             <span className="text-[10px] tracking-tight">
-                                {item.label}
+                                {isPending ? "Đang mở..." : item.label}
                             </span>
                         </Link>
                     );
