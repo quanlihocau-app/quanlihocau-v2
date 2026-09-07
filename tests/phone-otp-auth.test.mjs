@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test, { after } from "node:test";
+import test, { after, before } from "node:test";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -9,6 +9,17 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const createdUserIds = [];
 const createdLakeIds = [];
 const createdOrgIds = [];
+
+before(async () => {
+    const client = await pool.connect();
+    try {
+        await client.query(`DELETE FROM "OtpCode" WHERE "phone" LIKE '+8499%'`);
+        await client.query(`DELETE FROM "OtpDeliveryLog" WHERE "phone" LIKE '+8499%'`);
+        await client.query(`DELETE FROM "RateLimitBucket" WHERE "key" LIKE 'rl:otp%'`);
+    } finally {
+        client.release();
+    }
+});
 
 after(async () => {
     const client = await pool.connect();
@@ -61,22 +72,22 @@ test("Test 1: POST /api/auth/send-otp chuẩn hóa SĐT Việt Nam, sinh OTP 6 s
     assert.equal(res.status, 200);
     const data = await res.json();
     assert.equal(data.phone, expectedNormalized);
-    assert.equal(data.expiresInSeconds, 300);
+    assert.equal(data.expiresInSeconds, 180);
     if (data.devOtp) {
         assert.equal(data.devOtp.length, 6);
     }
 
-    // Verify in database
+    // Verify in database: must store hash, not plain text
     const client = await pool.connect();
     try {
         const dbRes = await client.query(
             `SELECT "phone", "code", "attempts", "expiresAt" FROM "OtpCode" WHERE "phone" = $1`,
             [expectedNormalized],
         );
+        // Code in database must be 64-character HMAC-SHA256 hash
+        assert.equal(dbRes.rows[0].code.length, 64);
         if (data.devOtp) {
-            assert.equal(dbRes.rows[0].code, data.devOtp);
-        } else {
-            assert.equal(dbRes.rows[0].code.length, 6);
+            assert.notEqual(dbRes.rows[0].code, data.devOtp);
         }
         assert.equal(dbRes.rows[0].attempts, 0);
         assert.ok(dbRes.rows[0].expiresAt, "expiresAt must be recorded");
@@ -190,7 +201,7 @@ test("Test 3: POST /api/auth/verify-otp với tài khoản đã có -> Cập nh�
     }
 });
 
-test("Test 4: POST /api/auth/verify-otp với số mới -> Tự động đăng ký chủ hồ + hồ mới kèm gói TRIAL 30 ngày", async () => {
+test("Test 4: POST /api/auth/verify-otp với số mới -> Tự động đăng ký chủ hồ + hồ mới kèm gói TRIAL 7 ngày", async () => {
     const newPhone = `0994${Math.floor(100000 + Math.random() * 900000)}`;
 
     // 1. Send OTP
@@ -244,7 +255,7 @@ test("Test 4: POST /api/auth/verify-otp với số mới -> Tự động đăng 
         assert.equal(lake.subscriptionPlan, "TRIAL");
 
         const days = (new Date(lake.subscriptionExpiresAt) - new Date()) / (1000 * 60 * 60 * 24);
-        assert.ok(days >= 29 && days <= 31, "New lake should have ~30 days trial");
+        assert.ok(days >= 6 && days <= 8, "New lake should have ~7 days trial");
 
         const orgRes = await client.query(`SELECT "subscriptionPlan", "validUntil" FROM "Organization" WHERE "id" = $1`, [lake.organizationId]);
         assert.equal(orgRes.rows[0].subscriptionPlan, "TRIAL");
@@ -309,3 +320,110 @@ test("Test 5: Đăng nhập NextAuth bằng phone-otp cấp session cookie thàn
     if (meData.lakeId) createdLakeIds.push(meData.lakeId);
     if (meData.organizationId) createdOrgIds.push(meData.organizationId);
 });
+
+test("Test 6: Chặn vào app khi chưa xác thực SĐT và mở khóa gói Dùng thử 7 ngày sau khi xác thực OTP", async () => {
+    const rawPhone = `0996${Math.floor(100000 + Math.random() * 900000)}`;
+    const email = `test_unverified_${Date.now()}@example.com`;
+    const password = "Password123!";
+
+    // 1. Register new user without OTP -> phoneVerified is false
+    const regRes = await fetch(`${BASE_URL}/api/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            fullName: "Chủ Hồ Chưa Xác Thực",
+            phone: rawPhone,
+            email,
+            password,
+            lakeName: "Hồ Câu Thử Nghiệm",
+        }),
+    });
+    assert.equal(regRes.status, 201);
+    const regData = await regRes.json();
+    createdUserIds.push(regData.userId);
+    createdLakeIds.push(regData.lakeId);
+    createdOrgIds.push(regData.organizationId);
+
+    // 2. Sign in with email & password via NextAuth
+    const csrfRes = await fetch(`${BASE_URL}/api/auth/csrf`);
+    const { csrfToken } = await csrfRes.json();
+    const csrfCookie = (csrfRes.headers.get("set-cookie") || "").split(";")[0];
+
+    const loginRes = await fetch(`${BASE_URL}/api/auth/callback/credentials`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Cookie: csrfCookie,
+        },
+        body: new URLSearchParams({
+            csrfToken,
+            email,
+            password,
+            redirect: "false",
+            json: "true",
+        }),
+        redirect: "manual",
+    });
+
+    const setCookies = loginRes.headers.get("set-cookie") || "";
+    const sessionCookie = setCookies
+        .split(",")
+        .map((c) => c.split(";")[0].trim())
+        .filter((c) => c.startsWith("next-auth.session-token") || c.startsWith("__Secure-next-auth.session-token"))
+        .join("; ");
+
+    assert.ok(sessionCookie, "Must obtain session cookie");
+
+    // 3. Trying to access /api/me before phone verification must return HTTP 403
+    const blockedRes = await fetch(`${BASE_URL}/api/me`, {
+        headers: { Cookie: sessionCookie },
+    });
+    assert.equal(blockedRes.status, 403);
+    const blockedData = await blockedRes.json();
+    assert.ok(blockedData.error.includes("Số điện thoại chưa được xác thực"));
+
+    // 4. Send OTP and verify phone
+    const sendRes = await fetch(`${BASE_URL}/api/auth/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: rawPhone }),
+    });
+    assert.equal(sendRes.status, 200);
+    const sendData = await sendRes.json();
+
+    const otpCode = sendData.devOtp || (await getOtpCode(rawPhone));
+    const verifyRes = await fetch(`${BASE_URL}/api/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            phone: rawPhone,
+            code: otpCode,
+        }),
+    });
+    assert.equal(verifyRes.status, 200);
+    const verifyData = await verifyRes.json();
+    assert.equal(verifyData.user.phoneVerified, true);
+
+    // 5. Now accessing /api/me must succeed with 200 OK
+    const unblockedRes = await fetch(`${BASE_URL}/api/me`, {
+        headers: { Cookie: sessionCookie },
+    });
+    assert.equal(unblockedRes.status, 200);
+    const unblockedData = await unblockedRes.json();
+    assert.equal(unblockedData.phoneVerified, true);
+
+    // 6. Verify in DB that lake has ~7 days trial
+    const client = await pool.connect();
+    try {
+        const lakeRes = await client.query(
+            `SELECT "subscriptionPlan", "subscriptionExpiresAt" FROM "Lake" WHERE "id" = $1`,
+            [regData.lakeId],
+        );
+        assert.equal(lakeRes.rows[0].subscriptionPlan, "TRIAL");
+        const days = (new Date(lakeRes.rows[0].subscriptionExpiresAt) - new Date()) / (1000 * 60 * 60 * 24);
+        assert.ok(days >= 6 && days <= 8, "Must be activated for ~7 days trial");
+    } finally {
+        client.release();
+    }
+});
+

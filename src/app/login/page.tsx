@@ -18,12 +18,13 @@ function LoginForm() {
     const searchParams = useSearchParams();
     const isJustRegistered = searchParams.get("registered") === "1";
     const initialEmail = searchParams.get("email") || "";
+    const initialPhone = searchParams.get("phone") || "";
 
     const [mode, setMode] = useState<LoginMode>("PHONE_OTP");
     const [otpStep, setOtpStep] = useState<OtpStep>("PHONE");
 
     // Phone OTP states
-    const [phone, setPhone] = useState("");
+    const [phone, setPhone] = useState(initialPhone);
     const [otpCode, setOtpCode] = useState("");
     const [countdown, setCountdown] = useState(0);
     const [devOtpHint, setDevOtpHint] = useState<string | null>(null);
@@ -143,18 +144,18 @@ function LoginForm() {
     }
 
     return (
-        <Card className="p-5 sm:p-7 space-y-4 shadow-xl border border-[#D9D2C8] rounded-2xl bg-white">
+        <Card className="p-5 sm:p-7 space-y-4 shadow-xl border border-[#E3E8E3] rounded-2xl bg-white">
             <div>
-                <h1 className="text-xl font-bold text-[#27231F] sm:text-2xl tracking-tight">
+                <h1 className="text-xl font-bold text-[#17201A] sm:text-2xl tracking-tight">
                     Đăng nhập hệ thống
                 </h1>
-                <p className="mt-1 text-xs text-[#766F67]">
+                <p className="mt-1 text-xs text-[#66716A]">
                     Quản lý hồ câu nhanh chóng, tiện lợi trên mọi thiết bị.
                 </p>
             </div>
 
             {/* Mode Switcher Tabs */}
-            <div className="grid grid-cols-2 rounded-xl bg-[#F4F2EE] p-1 text-xs font-bold text-[#766F67]">
+            <div className="grid grid-cols-2 rounded-xl bg-[#EEF3EB] p-1 text-xs font-bold text-[#66716A]">
                 <button
                     type="button"
                     onClick={() => {
@@ -163,8 +164,8 @@ function LoginForm() {
                     }}
                     className={`rounded-lg py-2 transition-all cursor-pointer ${
                         mode === "PHONE_OTP"
-                            ? "bg-white text-[#8A5A20] shadow-xs"
-                            : "hover:text-[#27231F]"
+                            ? "bg-white text-[#246B38] shadow-xs"
+                            : "hover:text-[#17201A]"
                     }`}
                 >
                     📱 Số điện thoại (OTP)
@@ -177,8 +178,8 @@ function LoginForm() {
                     }}
                     className={`rounded-lg py-2 transition-all cursor-pointer ${
                         mode === "EMAIL_PASSWORD"
-                            ? "bg-white text-[#8A5A20] shadow-xs"
-                            : "hover:text-[#27231F]"
+                            ? "bg-white text-[#246B38] shadow-xs"
+                            : "hover:text-[#17201A]"
                     }`}
                 >
                     ✉️ Email &amp; Mật khẩu
@@ -189,7 +190,7 @@ function LoginForm() {
                 <InlineAlert
                     type="success"
                     title="Đăng ký hồ câu thành công!"
-                    message="Tài khoản của bạn đã được khởi tạo. Vui lòng nhập mật khẩu hoặc số điện thoại để đăng nhập."
+                    message="Tài khoản của bạn đã được khởi tạo. Vui lòng xác thực số điện thoại bằng mã SMS OTP để kích hoạt gói Dùng thử 7 ngày và vào ứng dụng."
                 />
             )}
 
@@ -202,17 +203,17 @@ function LoginForm() {
                         <form onSubmit={handleSendOtp} className="space-y-4">
                             <div>
                                 <label
-                                    htmlFor="phoneInput"
-                                    className="block text-xs font-semibold text-[#27231F] mb-1.5"
+                                    htmlFor="phone"
+                                    className="block text-xs font-semibold text-[#17201A] mb-1.5"
                                 >
-                                    Số điện thoại di động *
+                                    Số điện thoại đăng nhập *
                                 </label>
                                 <div className="relative">
-                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-[#766F67] font-bold">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[#8A938D]">
                                         🇻🇳
-                                    </div>
+                                    </span>
                                     <input
-                                        id="phoneInput"
+                                        id="phone"
                                         type="tel"
                                         inputMode="numeric"
                                         autoComplete="tel"
@@ -221,10 +222,10 @@ function LoginForm() {
                                         placeholder="0912 345 678"
                                         required
                                         disabled={isSubmitting}
-                                        className="w-full rounded-xl border border-[#D9D2C8] bg-white py-3 pl-10 pr-4 text-base font-semibold text-[#27231F] placeholder-[#A8A29E] focus:border-[#8A5A20] focus:ring-2 focus:ring-[#8A5A20]/20 focus:outline-none"
+                                        className="w-full rounded-xl border border-[#E3E8E3] bg-white py-3 pl-10 pr-4 text-base font-semibold text-[#17201A] placeholder-[#8A938D] focus:border-[#4F9D5A] focus:ring-2 focus:ring-[#4F9D5A]/20 focus:outline-none transition-colors"
                                     />
                                 </div>
-                                <p className="mt-1 text-[11px] text-[#766F67]">
+                                <p className="mt-1 text-[11px] text-[#66716A]">
                                     Nhập số điện thoại chủ hồ để nhận mã xác thực qua SMS.
                                 </p>
                             </div>
@@ -235,17 +236,17 @@ function LoginForm() {
                                 variant="primary"
                                 isLoading={isSubmitting}
                                 loadingText="Đang gửi mã…"
-                                className="w-full font-bold shadow-md"
+                                className="w-full font-bold shadow-md bg-[#4F9D5A] hover:bg-[#408249]"
                             >
                                 Nhận mã xác thực OTP
                             </Button>
                         </form>
                     ) : (
                         <div className="space-y-4">
-                            <div className="rounded-xl bg-[#FAF8F5] border border-[#EBE6DF] p-3 text-center">
-                                <p className="text-xs text-[#766F67]">Mã OTP 6 số đã được gửi tới</p>
+                            <div className="rounded-xl bg-[#F7F9F5] border border-[#E3E8E3] p-3 text-center">
+                                <p className="text-xs text-[#66716A]">Mã OTP 6 số đã được gửi tới</p>
                                 <div className="flex items-center justify-center gap-2 mt-0.5">
-                                    <span className="font-mono text-sm font-bold text-[#102A43]">{phone}</span>
+                                    <span className="font-mono text-sm font-bold text-[#17201A]">{phone}</span>
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -253,7 +254,7 @@ function LoginForm() {
                                             setOtpCode("");
                                             setError("");
                                         }}
-                                        className="text-[11px] font-bold text-[#8A5A20] hover:underline"
+                                        className="text-[11px] font-bold text-[#4F9D5A] hover:underline"
                                     >
                                         (Đổi số)
                                     </button>
@@ -269,7 +270,7 @@ function LoginForm() {
                             <div>
                                 <label
                                     htmlFor="otpInput"
-                                    className="block text-xs font-semibold text-[#27231F] mb-1.5 text-center"
+                                    className="block text-xs font-semibold text-[#17201A] mb-1.5 text-center"
                                 >
                                     Nhập mã 6 chữ số
                                 </label>
@@ -283,7 +284,7 @@ function LoginForm() {
                                     value={otpCode}
                                     onChange={(e) => handleOtpChange(e.target.value)}
                                     placeholder="••••••"
-                                    className="w-full text-center tracking-[0.4em] font-mono text-2xl font-black rounded-xl border border-[#D9D2C8] py-3 text-[#27231F] focus:border-[#8A5A20] focus:ring-2 focus:ring-[#8A5A20]/20 focus:outline-none"
+                                    className="w-full text-center tracking-[0.4em] font-mono text-2xl font-black rounded-xl border border-[#E3E8E3] py-3 text-[#17201A] focus:border-[#4F9D5A] focus:ring-2 focus:ring-[#4F9D5A]/20 focus:outline-none transition-colors"
                                 />
                             </div>
 
@@ -295,21 +296,21 @@ function LoginForm() {
                                 isLoading={isSubmitting}
                                 loadingText="Đang xác thực…"
                                 disabled={otpCode.length !== 6 || isSubmitting}
-                                className="w-full font-bold shadow-md"
+                                className="w-full font-bold shadow-md bg-[#4F9D5A] hover:bg-[#408249]"
                             >
                                 Xác nhận &amp; Vào Dashboard
                             </Button>
 
                             <div className="text-center pt-1">
                                 {countdown > 0 ? (
-                                    <p className="text-xs text-[#766F67]">
-                                        Gửi lại mã sau <strong className="text-[#27231F]">{countdown}s</strong>
+                                    <p className="text-xs text-[#66716A]">
+                                        Gửi lại mã sau <strong className="text-[#17201A]">{countdown}s</strong>
                                     </p>
                                 ) : (
                                     <button
                                         type="button"
                                         onClick={() => handleSendOtp()}
-                                        className="text-xs font-bold text-[#8A5A20] hover:underline cursor-pointer"
+                                        className="text-xs font-bold text-[#4F9D5A] hover:underline cursor-pointer"
                                     >
                                         Gửi lại mã OTP qua SMS
                                     </button>
@@ -352,22 +353,22 @@ function LoginForm() {
                         variant="primary"
                         isLoading={isSubmitting}
                         loadingText="Đang đăng nhập…"
-                        className="w-full font-bold shadow-md"
+                        className="w-full font-bold shadow-md bg-[#4F9D5A] hover:bg-[#408249]"
                     >
                         Đăng nhập vào quầy
                     </Button>
                 </form>
             )}
 
-            <div className="border-t border-[#D9D2C8] pt-4 text-center">
-                <p className="text-xs text-[#766F67]">
+            <div className="border-t border-[#E3E8E3] pt-4 text-center">
+                <p className="text-xs text-[#66716A]">
                     Chưa có tài khoản hồ câu?
                 </p>
                 <Link
                     href="/register"
-                    className="mt-2 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-[#D9D2C8] bg-[#FAF8F5] px-4 text-xs font-bold text-[#8A5A20] hover:bg-[#F4F2EE] transition-colors"
+                    className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-[#4F9D5A]/30 bg-[#E8F3E5] px-4 text-xs font-bold text-[#246B38] hover:bg-[#D5E8D1] transition-colors"
                 >
-                    Đăng ký tạo hồ câu mới (Dùng thử miễn phí 30 ngày)
+                    Đăng ký tạo hồ câu mới (Dùng thử miễn phí 7 ngày)
                 </Link>
             </div>
         </Card>
@@ -376,7 +377,7 @@ function LoginForm() {
 
 export default function LoginPage() {
     return (
-        <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-8 sm:px-6">
+        <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-8 sm:px-6 bg-[#F7F9F5]">
             {/* Header Brand */}
             <div className="mb-6 text-center">
                 <Link
@@ -384,7 +385,7 @@ export default function LoginPage() {
                     className="inline-flex items-center gap-2.5 group focus:outline-none"
                     aria-label="Quản Lí Hồ Câu"
                 >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8A5A20] text-white shadow-md">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4F9D5A] text-white shadow-md">
                         <svg
                             className="h-5 w-5 text-white"
                             fill="none"
@@ -400,10 +401,10 @@ export default function LoginPage() {
                         </svg>
                     </div>
                     <div className="flex flex-col text-left leading-tight">
-                        <span className="text-sm font-bold tracking-wider text-[#27231F] uppercase">
+                        <span className="text-sm font-bold tracking-wider text-[#17201A] uppercase">
                             QUẢN LÍ HỒ CÂU
                         </span>
-                        <span className="text-[11px] font-semibold text-[#8A5A20]">
+                        <span className="text-[11px] font-semibold text-[#246B38]">
                             Phần mềm vận hành hồ câu dịch vụ
                         </span>
                     </div>

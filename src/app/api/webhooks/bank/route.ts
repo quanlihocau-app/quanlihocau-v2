@@ -90,22 +90,34 @@ export async function POST(request: Request) {
         `REF_${Date.now()}`,
     );
 
-    // Extract orderCode (e.g. HC123456 or HOCAU HC123456)
-    const codeMatch = content.match(/\b(HC[A-Z0-9]{4,10})\b/i);
-    if (!codeMatch) {
+    // Extract orderCode: supports HC123456, HOCAU HC123456, HOCAUHC123456, etc.
+    let orderCode: string | null = null;
+    const directMatch =
+        content.match(/\b(HC[0-9]{6})\b/i) ||
+        content.match(/(?:HOCAU|HC)\s*(HC[0-9]{6}|[0-9]{6})/i);
+
+    if (directMatch) {
+        const rawCode = directMatch[1].toUpperCase();
+        orderCode = rawCode.startsWith("HC") ? rawCode : `HC${rawCode}`;
+    } else {
+        const generalMatch = content.match(/(HC[A-Z0-9]{5,10})/i);
+        if (generalMatch) {
+            orderCode = generalMatch[1].toUpperCase();
+        }
+    }
+
+    if (!orderCode) {
         return NextResponse.json(
             { error: "Không tìm thấy mã đơn hàng HC... trong nội dung giao dịch." },
             { status: 400 },
         );
     }
 
-    const orderCode = codeMatch[1].toUpperCase();
-
     try {
         // 2. Core Transaction with Idempotency
         const result = await prisma.$transaction(async (tx) => {
             const order = await tx.subscriptionOrder.findUnique({
-                where: { orderCode },
+                where: { orderCode: orderCode! },
                 include: {
                     lake: true,
                     organization: true,
@@ -128,6 +140,19 @@ export async function POST(request: Request) {
 
             // Verify amount
             if (transferAmount && transferAmount < order.amountVnd) {
+                await tx.subscriptionOrder.update({
+                    where: { id: order.id },
+                    data: {
+                        rawWebhookPayload: JSON.stringify({
+                            warning: "INSUFFICIENT_AMOUNT",
+                            receivedAmount: transferAmount,
+                            expectedAmount: order.amountVnd,
+                            transactionRef,
+                            content,
+                            receivedAt: new Date().toISOString(),
+                        }),
+                    },
+                });
                 throw new Error("INSUFFICIENT_AMOUNT");
             }
 

@@ -301,14 +301,14 @@ export function SessionsClient({
         return (
             <div className="flex min-h-[calc(100vh-220px)] items-center justify-center">
                 <div
-                    className="w-full rounded-2xl border border-[#EAE4D7] bg-white p-8 text-center shadow-sm"
+                    className="w-full rounded-3xl border border-[#E3E8E3] bg-[#F7F9F5] p-8 text-center shadow-xs"
                 >
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#F5F2EB]">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8F3E5] text-[#246B38]">
                         <svg
-                            className="h-7 w-7 text-[#8A5B00]"
+                            className="h-7 w-7"
                             fill="none"
                             viewBox="0 0 24 24"
-                            strokeWidth={1.5}
+                            strokeWidth={1.75}
                             stroke="currentColor"
                         >
                             <path
@@ -318,10 +318,10 @@ export function SessionsClient({
                             />
                         </svg>
                     </div>
-                    <p className="text-base font-bold text-slate-900">
+                    <p className="text-base font-bold text-[#17201A]">
                         Hiện không có phiên đang câu
                     </p>
-                    <p className="mt-1.5 text-xs text-slate-500">
+                    <p className="mt-1.5 text-xs text-[#66716A]">
                         Bấm &quot;Tạo vé mới&quot; để bắt đầu một phiên câu cho khách.
                     </p>
                     {canOpenSession && (
@@ -380,27 +380,27 @@ export function SessionsClient({
                                     setSelectedId(s.id);
                                 }
                             }}
-                            className={`flex flex-col justify-between rounded-xl bg-white p-3.5 sm:p-4 text-left transition-all duration-150 select-none cursor-pointer border ${
+                            className={`flex flex-col justify-between rounded-2xl bg-white p-3.5 sm:p-4 text-left transition-all duration-120 select-none cursor-pointer border shadow-2xs ${
                                 isSelected
-                                    ? "border-2 border-[#9E6B05] ring-2 ring-[#9E6B05]/20 shadow-md bg-[#FFFDF9]"
-                                    : "border-[#EAE4D7] hover:border-[#9E6B05]/50 shadow-sm"
+                                    ? "border-2 border-[#4F9D5A] ring-2 ring-[#4F9D5A]/20 bg-[#F7FAF6]"
+                                    : "border-[#E3E8E3] hover:border-[#4F9D5A]/50"
                             }`}
                         >
                             {/* Hàng 1: Mã ô & Thời lượng */}
                             <div>
                                 <div className="flex items-start justify-between gap-1 mb-1">
-                                    <span className="text-sm font-bold text-slate-900 leading-tight truncate">
+                                    <span className="text-sm font-bold text-[#17201A] leading-tight truncate">
                                         {hutLabel}
                                     </span>
-                                    <span className="shrink-0 text-[11px] font-medium text-slate-500">
+                                    <span className="shrink-0 text-[11px] font-medium text-[#66716A]">
                                         {formatDuration(s.package.durationMinutes)}
                                     </span>
                                 </div>
 
                                 {/* Hàng 2: Tên khách hàng */}
-                                <p className="text-xs font-semibold text-slate-800 truncate mb-2">
+                                <p className="text-xs font-semibold text-[#17201A] truncate mb-2">
                                     {s.customer?.name ?? (
-                                        <span className="font-normal text-slate-500">
+                                        <span className="font-normal text-[#66716A]">
                                             Khách lẻ
                                         </span>
                                     )}
@@ -413,22 +413,22 @@ export function SessionsClient({
                             </div>
 
                             {/* Hàng 4: Chi tiết bill & Kết quả */}
-                            <div className="mt-2 pt-2 border-t border-[#F0ECE1]">
+                            <div className="mt-2 pt-2 border-t border-[#E3E8E3]">
                                 {/* Micro breakdown nếu có khoản giảm trừ (Thu cá hoặc Đã nộp trước) */}
                                 {fishBuybackTotal > 0 || totalPaid > 0 ? (
-                                    <div className="space-y-0.5 text-[10px] text-slate-600 mb-1.5 bg-[#F9F7F2] p-1.5 rounded-lg border border-[#EAE4D7]">
+                                    <div className="space-y-0.5 text-[10px] text-[#66716A] mb-1.5 bg-[#F7F9F5] p-1.5 rounded-xl border border-[#E3E8E3]">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-slate-500">Dịch vụ (gói+món):</span>
-                                            <span className="font-mono text-slate-700 font-medium">+{formatVnd(totalCharges)}</span>
+                                            <span className="text-[#66716A]">Dịch vụ (gói+món):</span>
+                                            <span className="font-mono text-[#17201A] font-medium">+{formatVnd(totalCharges)}</span>
                                         </div>
                                         {totalPaid > 0 && (
-                                            <div className="flex items-center justify-between text-emerald-700">
+                                            <div className="flex items-center justify-between text-[#246B38]">
                                                 <span>Đã nộp trước:</span>
                                                 <span className="font-mono font-medium">-{formatVnd(totalPaid)}</span>
                                             </div>
                                         )}
                                         {fishBuybackTotal > 0 && (
-                                            <div className="flex items-center justify-between text-[#8B1E1E]">
+                                            <div className="flex items-center justify-between text-[#D9534F]">
                                                 <span className="font-semibold">Tiền thu cá:</span>
                                                 <span className="font-mono font-bold">-{formatVnd(fishBuybackTotal)}</span>
                                             </div>
@@ -436,19 +436,19 @@ export function SessionsClient({
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-between text-xs mb-1.5">
-                                        <span className="text-slate-600 font-medium">Tạm tính:</span>
-                                        <span className="font-mono font-bold text-slate-900">+{formatVnd(totalCharges)}</span>
+                                        <span className="text-[#66716A] font-medium">Tạm tính:</span>
+                                        <span className="font-mono font-bold text-[#17201A]">+{formatVnd(totalCharges)}</span>
                                     </div>
                                 )}
 
                                 {/* Kết quả quyết toán: Âm (Thối lại khách) / Dương (Thu thêm khách) / 0 (Đã đủ) */}
                                 <div
-                                    className={`rounded-lg px-2 py-1 border flex items-center justify-between transition-colors ${
+                                    className={`rounded-xl px-2 py-1 border flex items-center justify-between transition-colors ${
                                         netBalance < 0
-                                            ? "bg-[#FAECEC] border-[#8B1E1E]/40 text-[#8B1E1E]"
+                                            ? "bg-[#FCEEED] border-[#D9534F]/30 text-[#AC3430]"
                                             : netBalance === 0
-                                            ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                                            : "bg-[#FAF6EE] border-[#D9CEBA] text-slate-900"
+                                            ? "bg-[#EBF6ED] border-[#CDE8C7] text-[#246B38]"
+                                            : "bg-[#FDF6E9] border-[#F6E1B6] text-[#9A600B]"
                                     }`}
                                 >
                                     <span className="text-[11px] font-bold">
@@ -479,13 +479,13 @@ export function SessionsClient({
                                 {(productCount > 0 || extensionHours > 0) && (
                                     <div className="flex flex-wrap gap-1 mt-1.5">
                                         {productCount > 0 && (
-                                            <span className="inline-flex items-center rounded bg-[#EAE2CE] px-1.5 py-0.5 text-[10px] font-semibold text-[#8A5B00]">
+                                            <span className="inline-flex items-center rounded-full bg-[#EEF3EB] px-2 py-0.5 text-[10px] font-semibold text-[#17201A]">
                                                 +{productCount} món
                                             </span>
                                         )}
                                         {extensionHours > 0 && (
-                                            <span className="inline-flex items-center rounded bg-[#E8F3ED] px-1.5 py-0.5 text-[10px] font-semibold text-[#2D6A4F]">
-                                                +{extensionHours} lần gia hạn
+                                            <span className="inline-flex items-center rounded-full bg-[#EBF6ED] px-2 py-0.5 text-[10px] font-semibold text-[#246B38]">
+                                                +{extensionHours} gia hạn
                                             </span>
                                         )}
                                     </div>
@@ -493,7 +493,7 @@ export function SessionsClient({
 
                                 {/* Tên món mới nhất */}
                                 {productLines.length > 0 && (
-                                    <p className="text-[11px] text-slate-500 truncate mt-1">
+                                    <p className="text-[11px] text-[#66716A] truncate mt-1">
                                         {productLines[0].name}
                                         {productLines.length > 1 ? ` +${productLines.length - 1}` : ""}
                                     </p>
@@ -504,15 +504,15 @@ export function SessionsClient({
                                     <button
                                         type="button"
                                         onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSettlementSessionId(s.id);
+                                             e.stopPropagation();
+                                             setSettlementSessionId(s.id);
                                         }}
-                                        className={`mt-2 flex w-full items-center justify-center gap-1 rounded-xl py-2 px-1.5 text-[11px] sm:text-xs font-bold text-white shadow-xs active:scale-95 transition-all cursor-pointer ${
-                                            netBalance < 0
-                                                ? "bg-rose-700 hover:bg-rose-800"
-                                                : netBalance === 0
-                                                ? "bg-emerald-700 hover:bg-emerald-800"
-                                                : "bg-[#8A5A20] hover:bg-[#704716]"
+                                        className={`mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-[11px] sm:text-xs font-bold text-white shadow-2xs active:scale-95 transition-all cursor-pointer ${
+                                             netBalance < 0
+                                                 ? "bg-[#D9534F] hover:bg-[#C3433F]"
+                                                 : netBalance === 0
+                                                 ? "bg-[#3E9B4F] hover:bg-[#348643]"
+                                                 : "bg-[#4F9D5A] hover:bg-[#3D8547]"
                                         }`}
                                     >
                                         <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -534,15 +534,15 @@ export function SessionsClient({
             </div>
 
             {/* Gợi ý nhấn giữ */}
-            <p className="text-center text-[11px] text-slate-500 mt-3">
+            <p className="text-center text-[11px] text-[#66716A] mt-3">
                 💡 Nhấn giữ 1 ô câu để xem chi tiết đầy đủ của phiên
             </p>
 
             {/* Thanh thao tác nhanh (Quick Action Toolbar) */}
             {selectedSession && (
-                <div className="mt-4 pt-3 border-t border-[#EAE4D7]">
+                <div className="mt-4 pt-3 border-t border-[#E3E8E3]">
                     <div className="mb-3 text-center">
-                        <span className="inline-block text-xs font-semibold text-[#8A5B00] bg-[#EAE2CE]/60 rounded-full px-3 py-1">
+                        <span className="inline-block text-xs font-semibold text-[#246B38] bg-[#E8F3E5] rounded-full px-3 py-1">
                             Đang chọn:{" "}
                             {selectedSession.hutLinks
                                 .map((hl) => hl.hut.name)
@@ -568,19 +568,19 @@ export function SessionsClient({
             {/* ── Modal Chi Tiết Phiên Câu Khi Nhấn Giữ (Long-Press Modal) ──────── */}
             {detailSession && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
                     role="dialog"
                     aria-modal="true"
                     aria-label="Chi tiết phiên câu"
                 >
-                    <div className="w-full max-w-md rounded-2xl bg-[#F5F2EB] border border-[#EAE4D7] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                         {/* Header Modal */}
-                        <div className="mobile-pos-header-bar shrink-0">
+                        <div className="flex items-center justify-between border-b border-[#E3E8E3] bg-white px-4 py-3 shrink-0">
                             <div>
-                                <h3 className="mobile-pos-header-title">
+                                <h3 className="text-base font-bold text-[#17201A]">
                                     Chi tiết phiên: {detailSession.hutLinks.map((hl) => hl.hut.name).join(" + ")}
                                 </h3>
-                                <p className="mobile-pos-header-date">
+                                <p className="text-xs text-[#66716A] mt-0.5">
                                     Khách: {detailSession.customer?.name ?? "Khách lẻ"}
                                     {detailSession.customer?.phoneNormalized ? ` (${detailSession.customer.phoneNormalized})` : ""}
                                 </p>
@@ -588,7 +588,7 @@ export function SessionsClient({
                             <button
                                 type="button"
                                 onClick={() => setDetailSession(null)}
-                                className="h-8 w-8 rounded-full flex items-center justify-center text-[#BDA989] hover:text-[#F4DFB7] hover:bg-[#6F4723]"
+                                className="h-8 w-8 rounded-full flex items-center justify-center text-[#66716A] hover:text-[#17201A] hover:bg-[#F7F9F5] transition-colors"
                             >
                                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -597,12 +597,12 @@ export function SessionsClient({
                         </div>
 
                         {/* Nội dung chi tiết */}
-                        <div className="p-4 overflow-y-auto space-y-3.5 text-xs text-slate-800">
+                        <div className="p-4 overflow-y-auto space-y-3.5 text-xs text-[#17201A]">
                             {/* Card: Thông tin cơ bản */}
-                            <div className="rounded-xl bg-white p-3.5 border border-[#EAE4D7] shadow-xs space-y-2">
+                            <div className="rounded-2xl bg-[#F7F9F5] p-3.5 border border-[#E3E8E3] space-y-2">
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Gói câu áp dụng:</span>
-                                    <span className="font-semibold text-slate-900">
+                                    <span className="text-[#66716A]">Gói câu áp dụng:</span>
+                                    <span className="font-semibold text-[#17201A]">
                                         {detailSession.package.name} ({formatDuration(detailSession.package.durationMinutes)})
                                     </span>
                                 </div>

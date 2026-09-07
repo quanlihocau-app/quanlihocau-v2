@@ -40,3 +40,33 @@ export function normalizeVietnamesePhone(
 
     return `+${standardDigits}`;
 }
+
+/**
+ * Formats a normalized or raw Vietnamese phone number for SpeedSMS API ("84xxxxxxxxx").
+ */
+export function toSpeedSmsPhone(phone: string): string {
+    const normalized = normalizeVietnamesePhone(phone);
+    if (!normalized) return "";
+    return normalized.replace(/^\+/, "");
+}
+
+/**
+ * Masks a phone number for secure display in logs, audit trails, and UI.
+ * e.g. "+84901234567" -> "+84 90*** **67"
+ * e.g. "0901234567" -> "090***4567"
+ */
+export function maskPhoneNumber(phone?: string | null): string {
+    if (!phone || typeof phone !== "string") return "—";
+    const trimmed = phone.trim();
+    if (trimmed.length <= 4) return "****";
+
+    if (trimmed.startsWith("+84") && trimmed.length >= 11) {
+        const prefix = trimmed.slice(0, 5); // "+8490"
+        const suffix = trimmed.slice(-2);   // "67"
+        return `${prefix.slice(0, 3)} ${prefix.slice(3)}*** **${suffix}`;
+    }
+
+    const prefix = trimmed.slice(0, 3);
+    const suffix = trimmed.slice(-3);
+    return `${prefix}***${suffix}`;
+}

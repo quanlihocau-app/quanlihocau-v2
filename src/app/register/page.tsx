@@ -77,7 +77,7 @@ export default function RegisterPage() {
 
             // Chuyển hướng ngay sang trang đăng nhập
             setTimeout(() => {
-                router.push(`/login?registered=1&email=${encodeURIComponent(email)}`);
+                router.push(`/login?registered=1&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`);
             }, 600);
         } catch {
             setError("Lỗi kết nối mạng khi đăng ký. Vui lòng thử lại.");
@@ -86,7 +86,7 @@ export default function RegisterPage() {
     }
 
     return (
-        <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10 sm:px-6">
+        <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10 sm:px-6 bg-[#F7F9F5]">
             {/* Header Brand */}
             <div className="mb-6 text-center">
                 <Link
@@ -94,7 +94,7 @@ export default function RegisterPage() {
                     className="inline-flex items-center gap-2.5 group focus:outline-none"
                     aria-label="Quản Lí Hồ Câu"
                 >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8A5A20] text-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4F9D5A] text-white shadow-md">
                         <svg
                             className="h-5 w-5 text-white"
                             fill="none"
@@ -110,10 +110,10 @@ export default function RegisterPage() {
                         </svg>
                     </div>
                     <div className="flex flex-col text-left leading-tight">
-                        <span className="text-sm font-bold tracking-wider text-[#27231F] uppercase">
+                        <span className="text-sm font-bold tracking-wider text-[#17201A] uppercase">
                             QUẢN LÍ HỒ CÂU
                         </span>
-                        <span className="text-[11px] font-semibold text-[#8A5A20]">
+                        <span className="text-[11px] font-semibold text-[#246B38]">
                             Phần mềm vận hành hồ câu dịch vụ
                         </span>
                     </div>
@@ -121,18 +121,18 @@ export default function RegisterPage() {
             </div>
 
             {/* Registration Form Card */}
-            <Card className="p-6 sm:p-7 space-y-5">
+            <Card className="p-6 sm:p-7 space-y-5 border border-[#E3E8E3] shadow-xl rounded-2xl bg-white">
                 <div>
-                    <span className="text-[11px] font-bold tracking-wider text-[#8A5A20] uppercase block mb-1">
+                    <span className="text-[11px] font-bold tracking-wider text-[#246B38] uppercase block mb-1">
                         QUẢN LÝ HỒ CÂU
                     </span>
-                    <h1 className="text-xl font-bold text-[#27231F] sm:text-2xl">
+                    <h1 className="text-xl font-bold text-[#17201A] sm:text-2xl">
                         Tạo hồ câu mới
                     </h1>
-                    <p className="mt-1 text-xs text-[#766F67]">
+                    <p className="mt-1 text-xs text-[#66716A]">
                         Tài khoản đăng ký sẽ là Chủ hồ (OWNER) có toàn quyền quản trị.
                     </p>
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-[#766F67]">
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-[#66716A]">
                         Vui lòng nhập đúng họ tên và số điện thoại đang sử dụng để được hỗ trợ khi cần. Không đăng ký thông tin giả hoặc tạo nhiều tài khoản.
                     </p>
                 </div>
@@ -235,13 +235,13 @@ export default function RegisterPage() {
                 </form>
 
                 {/* Link sang trang Đăng nhập cho ai đã có tài khoản */}
-                <div className="border-t border-[#D9D2C8] pt-4 text-center">
-                    <p className="text-xs text-[#766F67]">
+                <div className="border-t border-[#E3E8E3] pt-4 text-center">
+                    <p className="text-xs text-[#66716A]">
                         Đã có tài khoản hồ câu từ trước?
                     </p>
                     <Link
                         href="/login"
-                        className="mt-2 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl border border-[#D9D2C8] bg-white px-4 text-xs font-semibold text-[#27231F] hover:bg-[#F4F2EE] transition-colors"
+                        className="mt-2 inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#E3E8E3] bg-[#EEF3EB] px-4 text-xs font-bold text-[#17201A] hover:bg-[#E3E8E3] transition-colors"
                     >
                         Đăng nhập ngay
                     </Link>

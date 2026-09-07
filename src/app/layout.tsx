@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro } from "next/font/google";
 import { Suspense } from "react";
 
 import { PageProgressBar } from "@/components/ui/page-progress-bar";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -56,7 +57,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-    themeColor: "#8A5A20",
+    themeColor: "#4F9D5A",
     width: "device-width",
     initialScale: 1,
     maximumScale: 5,
@@ -69,11 +70,13 @@ export default function RootLayout({
 }) {
     return (
         <html lang="vi" className={`h-full antialiased ${beVietnamPro.variable}`}>
-            <body className="min-h-full flex flex-col bg-[#F4F2EE] text-[#27231F] selection:bg-[#EFE4CF] selection:text-[#27231F]">
-                <Suspense fallback={null}>
-                    <PageProgressBar />
-                </Suspense>
-                {children}
+            <body className="min-h-full flex flex-col bg-[#FFFFFF] text-[#17201A] selection:bg-[#E8F3E5] selection:text-[#246B38]">
+                <Providers>
+                    <Suspense fallback={null}>
+                        <PageProgressBar />
+                    </Suspense>
+                    {children}
+                </Providers>
             </body>
         </html>
     );

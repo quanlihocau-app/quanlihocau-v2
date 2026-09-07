@@ -23,7 +23,7 @@ export function SubscriptionBanner({
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const planNames = {
-        TRIAL: "Dùng thử 30 ngày",
+        TRIAL: "Dùng thử 7 ngày",
         SILVER: "Gói Bạc (Silver)",
         GOLD: "Gói Vàng (Gold)",
     };
@@ -44,30 +44,30 @@ export function SubscriptionBanner({
 
     return (
         <>
-            <div className="rounded-[0.875rem] border border-[#D9D2C8] bg-white p-4 shadow-2xs">
+            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 shadow-xs">
                 <div className="flex items-start justify-between">
                     <div>
                         <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-base">👑</span>
-                            <h2 className="text-sm font-bold text-[#27231F]">Gói cước dịch vụ</h2>
+                            <h2 className="text-sm font-bold text-[#17201A]">Gói cước dịch vụ</h2>
                             <span
-                                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${planBadges[plan] || "bg-gray-100 text-gray-800"}`}
+                                className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${planBadges[plan] || "bg-gray-100 text-gray-800"}`}
                             >
                                 {planNames[plan] || plan}
                             </span>
                             {status === "SUSPENDED" && (
-                                <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
+                                <span className="rounded-full border border-rose-200 bg-[#FCEEED] px-2.5 py-0.5 text-[11px] font-semibold text-[#D9534F]">
                                     Đã tạm ngưng
                                 </span>
                             )}
                             {status === "GRACE_PERIOD" && (
-                                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                                <span className="rounded-full border border-amber-200 bg-[#FDF6E9] px-2.5 py-0.5 text-[11px] font-semibold text-[#D99A32]">
                                     Ân hạn
                                 </span>
                             )}
                         </div>
-                        <p className="mt-1 text-xs text-[#766F67]">
-                            Hạn dùng: <strong className="text-[#27231F]">{formattedExpires}</strong>
+                        <p className="mt-1 text-xs text-[#66716A]">
+                            Hạn dùng: <strong className="text-[#17201A]">{formattedExpires}</strong>
                         </p>
                     </div>
 
@@ -75,7 +75,7 @@ export function SubscriptionBanner({
                         <button
                             type="button"
                             onClick={() => setIsModalOpen(true)}
-                            className="rounded-xl bg-[#8A5A20] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#704716] active:scale-95 transition-all shadow-xs cursor-pointer"
+                            className="rounded-full bg-[#4F9D5A] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#246B38] active:scale-95 transition-all shadow-xs cursor-pointer"
                         >
                             Gia hạn / Nâng cấp
                         </button>
@@ -83,17 +83,17 @@ export function SubscriptionBanner({
                 </div>
 
                 {/* Quota breakdown */}
-                <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#F0EBE4] pt-3 text-xs">
-                    <div className="rounded-lg bg-[#FAF8F5] p-2 border border-[#EBE6DF]">
-                        <span className="text-[#766F67] block text-[11px]">Số ô câu (Chòi)</span>
-                        <span className="font-bold text-[#27231F]">
+                <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#E3E8E3] pt-3 text-xs">
+                    <div className="rounded-xl bg-[#F7F9F5] p-2.5 border border-[#E3E8E3]">
+                        <span className="text-[#66716A] block text-[11px]">Số ô câu (Chòi)</span>
+                        <span className="font-bold text-[#17201A]">
                             {spotsCount} {plan === "SILVER" ? "/ 30 ô" : "ô (Không giới hạn)"}
                         </span>
                     </div>
 
-                    <div className="rounded-lg bg-[#FAF8F5] p-2 border border-[#EBE6DF]">
-                        <span className="text-[#766F67] block text-[11px]">Tài khoản nhân sự</span>
-                        <span className="font-bold text-[#27231F]">
+                    <div className="rounded-xl bg-[#F7F9F5] p-2.5 border border-[#E3E8E3]">
+                        <span className="text-[#66716A] block text-[11px]">Tài khoản nhân sự</span>
+                        <span className="font-bold text-[#17201A]">
                             {staffCount} {plan === "SILVER" ? "/ 1 nhân viên" : "nhân viên (Không giới hạn)"}
                         </span>
                     </div>

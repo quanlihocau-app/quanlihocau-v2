@@ -160,10 +160,10 @@ export default async function InvoiceHistoryPage() {
 
                 <div className="p-4 space-y-4 pb-28">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                        <h1 className="text-[22px] font-bold tracking-tight text-[#17201A]">
                             Nhật ký
                         </h1>
-                        <span className="rounded-full bg-[#EAE2CE] px-2.5 py-0.5 text-xs font-bold text-[#8A5B00]">
+                        <span className="rounded-full bg-[#E8F3E5] px-3 py-1 text-xs font-semibold text-[#246B38]">
                             Giao dịch & Hoạt động
                         </span>
                     </div>

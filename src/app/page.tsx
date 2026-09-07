@@ -1,14 +1,99 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import { getTenantContext } from "@/lib/tenant";
+import { prisma } from "@/lib/prisma";
+import { InvoiceStatus, SessionStatus } from "@/generated/prisma/client";
 import { ONBOARDING_STEPS } from "@/lib/guides/onboarding-data";
+import { HomeMobileView } from "./home-mobile-view";
 
 export default async function HomePage() {
     const session = await getServerSession(authOptions);
 
     if (session?.user) {
-        redirect("/sessions");
+        const tenantContext = await getTenantContext();
+        if (tenantContext) {
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+
+            const [activeSessionsCount, totalHutsCount, todayInvoices, recentSessions] = await Promise.all([
+                prisma.fishingSession.count({
+                    where: {
+                        lakeId: tenantContext.lakeId,
+                        status: SessionStatus.ACTIVE,
+                    },
+                }),
+                prisma.hut.count({
+                    where: {
+                        lakeId: tenantContext.lakeId,
+                        deletedAt: null,
+                    },
+                }),
+                prisma.invoice.findMany({
+                    where: {
+                        lakeId: tenantContext.lakeId,
+                        createdAt: { gte: todayStart },
+                        status: InvoiceStatus.PAID,
+                    },
+                    select: {
+                        id: true,
+                        totalAmountVnd: true,
+                        createdAt: true,
+                        customer: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                    orderBy: { createdAt: "desc" },
+                    take: 5,
+                }),
+                prisma.fishingSession.findMany({
+                    where: {
+                        lakeId: tenantContext.lakeId,
+                        status: SessionStatus.ACTIVE,
+                    },
+                    include: {
+                        customer: { select: { name: true } },
+                        package: { select: { name: true } },
+                        hutLinks: { include: { hut: { select: { name: true } } } },
+                    },
+                    orderBy: { startAt: "desc" },
+                    take: 3,
+                }),
+            ]);
+
+            const todayRevenue = todayInvoices.reduce(
+                (sum, inv) => sum + Number(inv.totalAmountVnd || 0),
+                0,
+            );
+
+            return (
+                <HomeMobileView
+                    lakeName={tenantContext.lakeName}
+                    roleBadge={tenantContext.role}
+                    isSupportMode={tenantContext.isSupportMode}
+                    activeSessionsCount={activeSessionsCount}
+                    totalHutsCount={totalHutsCount}
+                    todayRevenue={todayRevenue}
+                    recentSessions={recentSessions.map((s) => ({
+                        id: s.id,
+                        customerName: s.customer?.name || "Khách lẻ",
+                        packageName: s.package.name,
+                        huts: s.hutLinks.map((hl) => hl.hut.name),
+                        startAt: s.startAt.toISOString(),
+                        status: s.status,
+                    }))}
+                    recentInvoices={todayInvoices.map((inv) => ({
+                        id: inv.id,
+                        invoiceNumber: `HD-${inv.id.slice(0, 6).toUpperCase()}`,
+                        customerName: inv.customer?.name || "Khách lẻ",
+                        totalAmountVnd: Number(inv.totalAmountVnd || 0),
+                        createdAt: inv.createdAt.toISOString(),
+                    }))}
+                />
+            );
+        }
     }
 
     const jsonLd = {
@@ -34,7 +119,7 @@ export default async function HomePage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F4F2EE] text-[#27231F] flex flex-col selection:bg-[#EFE4CF] selection:text-[#8A5A20]">
+        <div className="min-h-screen bg-[#FFFFFF] text-[#17201A] flex flex-col selection:bg-[#E8F3E5] selection:text-[#246B38]">
             {/* JSON-LD for Search Engines */}
             <script
                 type="application/ld+json"
@@ -42,16 +127,16 @@ export default async function HomePage() {
             />
 
             {/* Header */}
-            <header className="sticky top-0 z-40 w-full border-b border-[#D9D2C8] bg-white">
+            <header className="sticky top-0 z-40 w-full border-b border-[#E3E8E3] bg-white/95 backdrop-blur-md">
                 <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <Link
                         href="/"
-                        className="flex items-center gap-2.5 group focus:outline-none focus:ring-2 focus:ring-[#8A5A20] rounded-lg p-1"
+                        className="flex items-center gap-2.5 group focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] rounded-lg p-1"
                         aria-label="Quản Lí Hồ Câu - Trang chủ"
                     >
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#8A5A20] text-white">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E8F3E5] text-[#246B38] border border-[#D5E5D1]">
                             <svg
-                                className="h-5 w-5 text-white"
+                                className="h-5 w-5"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -65,10 +150,10 @@ export default async function HomePage() {
                             </svg>
                         </div>
                         <div className="flex flex-col leading-tight">
-                            <span className="text-[13px] font-bold tracking-wider text-[#27231F] uppercase">
+                            <span className="text-[13px] font-bold tracking-wider text-[#17201A] uppercase">
                                 QUẢN LÍ
                             </span>
-                            <span className="text-[11px] font-bold tracking-widest text-[#8A5A20] uppercase">
+                            <span className="text-[11px] font-bold tracking-widest text-[#246B38] uppercase">
                                 HỒ CÂU
                             </span>
                         </div>
@@ -77,13 +162,13 @@ export default async function HomePage() {
                     <div className="flex items-center gap-2.5 sm:gap-3">
                         <Link
                             href="/login"
-                            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#D9D2C8] bg-white px-4 text-xs font-semibold text-[#27231F] hover:bg-[#F4F2EE] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none transition-colors active:scale-95"
+                            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#E3E8E3] bg-white px-4 text-xs font-semibold text-[#17201A] hover:bg-[#F7F9F5] focus:ring-2 focus:ring-[#4F9D5A] focus:outline-none transition-colors active:scale-95"
                         >
                             Đăng nhập
                         </Link>
                         <Link
                             href="/register"
-                            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#8A5A20] px-4 sm:px-5 text-xs font-semibold text-white hover:bg-[#704716] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none transition-colors active:scale-95"
+                            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#4F9D5A] px-4 sm:px-5 text-xs font-semibold text-white hover:bg-[#3D8547] focus:ring-2 focus:ring-[#4F9D5A] focus:outline-none transition-colors active:scale-95 shadow-xs"
                         >
                             Dùng thử miễn phí
                         </Link>
@@ -99,17 +184,17 @@ export default async function HomePage() {
                         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-center">
                             {/* Left Column: Hero Copy */}
                             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-                                <div className="inline-flex items-center gap-2 rounded-full border border-[#2D6A4F]/30 bg-[#E8F3ED] px-3.5 py-1.5 text-xs font-semibold text-[#2D6A4F]">
-                                    <span className="flex h-2 w-2 rounded-full bg-[#2D6A4F]" />
+                                <div className="inline-flex items-center gap-2 rounded-full border border-[#D5E5D1] bg-[#E8F3E5] px-3.5 py-1.5 text-xs font-semibold text-[#246B38]">
+                                    <span className="flex h-2 w-2 rounded-full bg-[#3E9B4F]" />
                                     <span>Phần mềm vận hành dành riêng cho hồ câu</span>
                                 </div>
 
-                                <h1 className="text-3xl font-bold tracking-tight text-[#27231F] sm:text-5xl lg:text-5xl leading-[1.15]">
+                                <h1 className="text-3xl font-bold tracking-tight text-[#17201A] sm:text-5xl lg:text-5xl leading-[1.15]">
                                     Hồ câu vận hành gọn. <br />
-                                    <span className="text-[#8A5A20]">Khách vui, chủ yên tâm.</span>
+                                    <span className="text-[#246B38]">Khách vui, chủ yên tâm.</span>
                                 </h1>
 
-                                <p className="text-base text-[#766F67] sm:text-lg max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                                <p className="text-base text-[#66716A] sm:text-lg max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                                     Không còn ghi chép sổ tay thất lạc hay tính nhầm giờ câu.
                                     Quản lý trực tiếp phiên câu, đồng hồ đếm lùi, bán thêm đồ dùng,
                                     thu mua cá, kiểm soát chi phí và chốt ca tiền mặt minh bạch.
@@ -118,31 +203,31 @@ export default async function HomePage() {
                                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
                                     <Link
                                         href="/register"
-                                        className="w-full sm:w-auto inline-flex min-h-12 items-center justify-center rounded-xl bg-[#8A5A20] px-7 py-3 text-sm font-semibold text-white hover:bg-[#704716] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none transition-colors active:scale-95"
+                                        className="w-full sm:w-auto inline-flex min-h-12 items-center justify-center rounded-2xl bg-[#4F9D5A] px-7 py-3 text-sm font-semibold text-white hover:bg-[#3D8547] focus:ring-2 focus:ring-[#4F9D5A] focus:outline-none transition-colors active:scale-95 shadow-xs"
                                     >
                                         Bắt đầu sử dụng ngay
                                     </Link>
                                     <Link
                                         href="/login"
-                                        className="w-full sm:w-auto inline-flex min-h-12 items-center justify-center rounded-xl border border-[#D9D2C8] bg-white px-7 py-3 text-sm font-semibold text-[#27231F] hover:bg-[#F4F2EE] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none transition-colors active:scale-95"
+                                        className="w-full sm:w-auto inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#E3E8E3] bg-white px-7 py-3 text-sm font-semibold text-[#17201A] hover:bg-[#F7F9F5] focus:ring-2 focus:ring-[#4F9D5A] focus:outline-none transition-colors active:scale-95"
                                     >
                                         Vào quầy thu ngân
                                     </Link>
                                 </div>
 
                                 {/* Trust Metrics */}
-                                <div className="pt-6 border-t border-[#D9D2C8] grid grid-cols-3 gap-4 max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
+                                <div className="pt-6 border-t border-[#E3E8E3] grid grid-cols-3 gap-4 max-w-lg mx-auto lg:mx-0 text-center lg:text-left">
                                     <div>
-                                        <p className="text-2xl font-bold text-[#8A5A20] tabular-nums">10 giây</p>
-                                        <p className="text-xs text-[#766F67] mt-0.5">Tạo vé mở ca mới</p>
+                                        <p className="text-2xl font-bold text-[#246B38] tabular-nums">10 giây</p>
+                                        <p className="text-xs text-[#66716A] mt-0.5">Tạo vé mở ca mới</p>
                                     </div>
                                     <div>
-                                        <p className="text-2xl font-bold text-[#8A5A20] tabular-nums">100%</p>
-                                        <p className="text-xs text-[#766F67] mt-0.5">Minh bạch tiền ca</p>
+                                        <p className="text-2xl font-bold text-[#246B38] tabular-nums">100%</p>
+                                        <p className="text-xs text-[#66716A] mt-0.5">Minh bạch tiền ca</p>
                                     </div>
                                     <div>
-                                        <p className="text-2xl font-bold text-[#8A5A20] tabular-nums">0 đ</p>
-                                        <p className="text-xs text-[#766F67] mt-0.5">Thất thoát giờ câu</p>
+                                        <p className="text-2xl font-bold text-[#246B38] tabular-nums">0 đ</p>
+                                        <p className="text-xs text-[#66716A] mt-0.5">Thất thoát giờ câu</p>
                                     </div>
                                 </div>
                             </div>
@@ -160,70 +245,70 @@ export default async function HomePage() {
                                     </div>
 
                                     {/* Mockup Active Session Card 1 */}
-                                    <div className="rounded-2xl border border-[#D9D2C8] bg-white p-3.5 space-y-2">
+                                    <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 space-y-2">
                                         <div className="flex items-start justify-between">
                                             <div>
-                                                <span className="text-base font-bold text-[#27231F]">
+                                                <span className="text-base font-bold text-[#17201A]">
                                                     Chòi VIP 01
                                                 </span>
-                                                <p className="text-[11px] text-[#766F67]">
-                                                    Gói 4 tiếng · <span className="text-[#8A5A20] font-semibold">200.000đ</span>
+                                                <p className="text-[11px] text-[#66716A]">
+                                                    Gói 4 tiếng · <span className="text-[#246B38] font-bold">200.000đ</span>
                                                 </p>
                                             </div>
-                                            <div className="rounded-xl border border-[#2D6A4F]/30 bg-[#E8F3ED] px-2 py-1 text-right">
-                                                <div className="text-xs font-bold text-[#2D6A4F] tabular-nums">
+                                            <div className="rounded-xl border border-[#3E9B4F]/30 bg-[#EBF6ED] px-2 py-1 text-right">
+                                                <div className="text-xs font-bold text-[#246B38] tabular-nums">
                                                     02:45:10
                                                 </div>
-                                                <p className="text-[9px] uppercase tracking-wider text-[#2D6A4F] font-semibold">
+                                                <p className="text-[9px] uppercase tracking-wider text-[#246B38] font-semibold">
                                                     Thời gian còn
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center justify-between border-t border-[#D9D2C8] pt-2 text-[11px]">
-                                            <span className="font-semibold text-[#27231F]">Anh Tuấn (0912***)</span>
-                                            <span className="rounded bg-[#EFE4CF] text-[#8A5A20] px-1.5 py-0.5 text-[10px] font-semibold">
+                                        <div className="flex items-center justify-between border-t border-[#E3E8E3] pt-2 text-[11px]">
+                                            <span className="font-semibold text-[#17201A]">Anh Tuấn (0912***)</span>
+                                            <span className="rounded-md bg-[#E8F3E5] text-[#246B38] px-1.5 py-0.5 text-[10px] font-bold">
                                                 +2 Nước ngọt
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Mockup Active Session Card 2 (Ending Soon Warning) */}
-                                    <div className="rounded-2xl border border-[#9A4C16]/30 bg-white p-3.5 space-y-2">
+                                    <div className="rounded-2xl border border-[#D99A32]/30 bg-white p-3.5 space-y-2">
                                         <div className="flex items-start justify-between">
                                             <div>
-                                                <span className="text-base font-bold text-[#27231F]">
+                                                <span className="text-base font-bold text-[#17201A]">
                                                     Chòi A04
                                                 </span>
-                                                <p className="text-[11px] text-[#766F67]">
-                                                    Gói 3 tiếng · <span className="text-[#8A5A20] font-semibold">150.000đ</span>
+                                                <p className="text-[11px] text-[#66716A]">
+                                                    Gói 3 tiếng · <span className="text-[#246B38] font-bold">150.000đ</span>
                                                 </p>
                                             </div>
-                                            <div className="rounded-xl border border-[#9A4C16]/30 bg-[#F8ECE2] px-2 py-1 text-right">
-                                                <div className="text-xs font-bold text-[#9A4C16] tabular-nums">
+                                            <div className="rounded-xl border border-[#D99A32]/30 bg-[#FDF6E9] px-2 py-1 text-right">
+                                                <div className="text-xs font-bold text-[#8F5A0E] tabular-nums">
                                                     00:08:42
                                                 </div>
-                                                <p className="text-[9px] uppercase tracking-wider text-[#9A4C16] font-semibold">
+                                                <p className="text-[9px] uppercase tracking-wider text-[#8F5A0E] font-semibold">
                                                     Sắp hết giờ
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-1.5 pt-1">
-                                            <div className="rounded-lg border border-[#D9D2C8] bg-[#F4F2EE] py-1 text-center text-[10px] font-semibold text-[#27231F]">
+                                            <div className="rounded-lg border border-[#E3E8E3] bg-[#EEF3EB] py-1 text-center text-[10px] font-semibold text-[#17201A]">
                                                 Gia hạn +1h
                                             </div>
-                                            <div className="rounded-lg bg-[#8A5A20] py-1 text-center text-[10px] font-semibold text-white">
+                                            <div className="rounded-lg bg-[#4F9D5A] py-1 text-center text-[10px] font-bold text-white shadow-xs">
                                                 Tính tiền &amp; In vé
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Mockup Quick Revenue Card */}
-                                    <div className="rounded-2xl border border-[#D9D2C8] bg-[#F4F2EE] p-3 flex items-center justify-between text-xs">
+                                    <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-3 flex items-center justify-between text-xs">
                                         <div>
-                                            <span className="text-[#766F67]">Doanh thu tạm tính ca:</span>
-                                            <p className="font-bold text-[#8A5A20] text-sm tabular-nums">1.450.000đ</p>
+                                            <span className="text-[#66716A]">Doanh thu tạm tính ca:</span>
+                                            <p className="font-bold text-[#246B38] text-sm tabular-nums">1.450.000đ</p>
                                         </div>
-                                        <span className="rounded-lg bg-white border border-[#D9D2C8] px-2.5 py-1 text-[11px] font-semibold text-[#27231F]">
+                                        <span className="rounded-lg bg-white border border-[#E3E8E3] px-2.5 py-1 text-[11px] font-bold text-[#17201A] shadow-xs">
                                             Chốt ca →
                                         </span>
                                     </div>
@@ -316,104 +401,104 @@ export default async function HomePage() {
                 <section className="py-16 sm:py-20">
                     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                         <div className="text-center max-w-2xl mx-auto space-y-3">
-                            <h2 className="text-xs font-semibold uppercase tracking-wide text-[#8A5A20]">
+                            <h2 className="text-xs font-bold uppercase tracking-wide text-[#246B38]">
                                 Tính năng nghiệp vụ thực tế
                             </h2>
-                            <p className="text-2xl font-bold tracking-tight text-[#27231F] sm:text-3xl">
+                            <p className="text-2xl font-bold tracking-tight text-[#17201A] sm:text-3xl">
                                 Đầy đủ công cụ vận hành hồ câu từ A - Z
                             </p>
-                            <p className="text-xs text-[#766F67]">
+                            <p className="text-xs text-[#66716A]">
                                 Mọi chức năng đều bám sát thực tế thao tác tại quầy và hồ câu.
                             </p>
                         </div>
 
                         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {/* Feature 1 */}
-                            <div className="rounded-2xl border border-[#D9D2C8] bg-white p-6 space-y-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EFE4CF] text-[#8A5A20]">
+                            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-6 space-y-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F3E5] text-[#246B38]">
                                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                     </svg>
                                 </div>
-                                <h3 className="text-base font-bold text-[#27231F]">
+                                <h3 className="text-base font-bold text-[#17201A]">
                                     Quản lý phiên câu &amp; Đồng hồ
                                 </h3>
-                                <p className="text-xs text-[#766F67] leading-relaxed">
+                                <p className="text-xs text-[#66716A] leading-relaxed">
                                     Đếm ngược thời gian thực, cảnh báo quá giờ, hỗ trợ ghép nhiều chòi/ô câu vào một phiên duy nhất.
                                 </p>
                             </div>
 
                             {/* Feature 2 */}
-                            <div className="rounded-2xl border border-[#D9D2C8] bg-white p-6 space-y-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F3ED] text-[#2D6A4F]">
+                            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-6 space-y-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F3E5] text-[#246B38]">
                                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
                                     </svg>
                                 </div>
-                                <h3 className="text-base font-bold text-[#27231F]">
+                                <h3 className="text-base font-bold text-[#17201A]">
                                     Bán hàng &amp; Kiểm soát kho
                                 </h3>
-                                <p className="text-xs text-[#766F67] leading-relaxed">
+                                <p className="text-xs text-[#66716A] leading-relaxed">
                                     Bán mồi câu, nước giải khát, thuê đồ. Hỗ trợ cảnh báo xuất âm kho khi chưa kịp nhập liệu tồn đầu ngày.
                                 </p>
                             </div>
 
                             {/* Feature 3 */}
-                            <div className="rounded-2xl border border-[#D9D2C8] bg-white p-6 space-y-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F8ECE2] text-[#9A4C16]">
+                            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-6 space-y-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF6E9] text-[#8F5A0E]">
                                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                     </svg>
                                 </div>
-                                <h3 className="text-base font-bold text-[#27231F]">
+                                <h3 className="text-base font-bold text-[#17201A]">
                                     Thu mua cá chuẩn xác
                                 </h3>
-                                <p className="text-xs text-[#766F67] leading-relaxed">
+                                <p className="text-xs text-[#66716A] leading-relaxed">
                                     Nhập trọng lượng cá câu được, hệ thống tự nhân đơn giá kg và bù trừ công nợ ngay tại hóa đơn thanh toán.
                                 </p>
                             </div>
 
                             {/* Feature 4 */}
-                            <div className="rounded-2xl border border-[#D9D2C8] bg-white p-6 space-y-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EFE4CF] text-[#8A5A20]">
+                            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-6 space-y-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F3E5] text-[#246B38]">
                                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24-1.25-.37-2.53-.37-3.829 0-2.062.33-4.048.94-5.91a2.25 2.25 0 0 1 2.15-1.59h5.12a2.25 2.25 0 0 1 2.15 1.59c.61 1.862.94 3.848.94 5.91 0 1.3-.13 2.58-.37 3.829m-10.61 0a2.25 2.25 0 0 0-2.15 1.59A18.784 18.784 0 0 0 2.25 19.5h19.5c-.376-1.54-.93-2.99-1.63-4.329a2.25 2.25 0 0 0-2.15-1.59m-13.24 0h13.24" />
                                     </svg>
                                 </div>
-                                <h3 className="text-base font-bold text-[#27231F]">
+                                <h3 className="text-base font-bold text-[#17201A]">
                                     Ghi nhận chi phí phát sinh
                                 </h3>
-                                <p className="text-xs text-[#766F67] leading-relaxed">
+                                <p className="text-xs text-[#66716A] leading-relaxed">
                                     Ghi nhận tiền mua cá giống, tiền đá lạnh, tiền điện nước hoặc chi phí sửa chữa lặt vặt trực tiếp trong ca.
                                 </p>
                             </div>
 
                             {/* Feature 5 */}
-                            <div className="rounded-2xl border border-[#D9D2C8] bg-white p-6 space-y-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F3ED] text-[#2D6A4F]">
+                            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-6 space-y-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F3E5] text-[#246B38]">
                                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
                                     </svg>
                                 </div>
-                                <h3 className="text-base font-bold text-[#27231F]">
+                                <h3 className="text-base font-bold text-[#17201A]">
                                     Báo cáo ngày &amp; Chốt ca
                                 </h3>
-                                <p className="text-xs text-[#766F67] leading-relaxed">
+                                <p className="text-xs text-[#66716A] leading-relaxed">
                                     Đối chiếu doanh thu thực thu ròng, tách tiền mặt và chuyển khoản. Khóa ca minh bạch khi bàn giao giữa các ca trực.
                                 </p>
                             </div>
 
                             {/* Feature 6 */}
-                            <div className="rounded-2xl border border-[#D9D2C8] bg-white p-6 space-y-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EFE4CF] text-[#8A5A20]">
+                            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-6 space-y-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F3E5] text-[#246B38]">
                                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2m2 4h6a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2zm8-12V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4h10z" />
                                     </svg>
                                 </div>
-                                <h3 className="text-base font-bold text-[#27231F]">
+                                <h3 className="text-base font-bold text-[#17201A]">
                                     In nhiệt thật trên Android
                                 </h3>
-                                <p className="text-xs text-[#766F67] leading-relaxed">
+                                <p className="text-xs text-[#66716A] leading-relaxed">
                                     Tích hợp máy in bỏ túi 58mm/80mm qua Bluetooth, USB-OTG hoặc Wi-Fi. In vé mở ca và biên lai thu tiền tức thì.
                                 </p>
                             </div>
@@ -422,16 +507,16 @@ export default async function HomePage() {
                 </section>
 
                 {/* Public Onboarding Guide Section (No login required) */}
-                <section id="huong-dan" className="border-t border-[#D9D2C8] bg-[#FDF9F0] py-14 sm:py-16">
+                <section id="huong-dan" className="border-t border-[#E3E8E3] bg-[#F7F9F5] py-14 sm:py-16">
                     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 space-y-8">
                         <div className="text-center space-y-3 max-w-2xl mx-auto">
-                            <span className="inline-block rounded-full bg-[#EFE4CF] px-3 py-1 text-xs font-bold text-[#8A5A20] uppercase tracking-wider">
+                            <span className="inline-block rounded-full bg-[#E8F3E5] px-3 py-1 text-xs font-bold text-[#246B38] uppercase tracking-wider">
                                 Cẩm nang 10 phút
                             </span>
-                            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl text-[#27231F]">
+                            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl text-[#17201A]">
                                 11 bước vận hành hồ câu chuẩn mực
                             </h2>
-                            <p className="text-xs sm:text-sm text-[#766F67] leading-relaxed">
+                            <p className="text-xs sm:text-sm text-[#66716A] leading-relaxed">
                                 Hướng dẫn chi tiết, ngắn gọn, dễ hiểu. Nhân viên mới đọc là làm theo được ngay mà không lo thất thoát hay tính nhầm tiền.
                             </p>
                         </div>
@@ -440,30 +525,30 @@ export default async function HomePage() {
                             {ONBOARDING_STEPS.map((step) => (
                                 <div
                                     key={step.id}
-                                    className="rounded-2xl border border-[#D9D2C8] bg-white p-4 space-y-2.5 hover:border-[#8A5A20] transition-colors"
+                                    className="rounded-2xl border border-[#E3E8E3] bg-white p-4 space-y-2.5 hover:border-[#4F9D5A]/40 transition-colors shadow-xs"
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#8A5A20] text-xs font-bold text-white font-mono">
+                                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#4F9D5A] text-xs font-bold text-white font-mono shadow-xs">
                                                 {step.id}
                                             </span>
-                                            <span className="rounded bg-[#EFE4CF] px-1.5 py-0.2 text-[10px] font-bold text-[#8A5A20] uppercase">
+                                            <span className="rounded-md bg-[#E8F3E5] px-1.5 py-0.5 text-[10px] font-bold text-[#246B38] uppercase">
                                                 {step.badge}
                                             </span>
                                         </div>
                                     </div>
 
-                                    <h3 className="text-sm font-bold text-[#27231F]">
+                                    <h3 className="text-sm font-bold text-[#17201A]">
                                         {step.title}
                                     </h3>
 
-                                    <p className="text-xs text-[#766F67] leading-relaxed">
+                                    <p className="text-xs text-[#66716A] leading-relaxed">
                                         {step.summary}
                                     </p>
 
-                                    <div className="rounded-xl bg-[#F8F6F0] p-2.5 text-[11px] text-[#27231F] space-y-1">
-                                        <p className="font-semibold text-[#8A5A20]">Thao tác:</p>
-                                        <p className="text-[#766F67] leading-relaxed">{step.instructions[0]}</p>
+                                    <div className="rounded-xl bg-[#F7F9F5] p-2.5 text-[11px] text-[#17201A] space-y-1 border border-[#E3E8E3]">
+                                        <p className="font-semibold text-[#246B38]">Thao tác:</p>
+                                        <p className="text-[#66716A] leading-relaxed">{step.instructions[0]}</p>
                                     </div>
                                 </div>
                             ))}
@@ -472,22 +557,22 @@ export default async function HomePage() {
                 </section>
 
                 {/* Practical Operational Callout */}
-                <section className="border-t border-[#D9D2C8] bg-[#27231F] text-white py-14 sm:py-16">
+                <section className="border-t border-[#E3E8E3] bg-[#17201A] text-white py-14 sm:py-16">
                     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
-                        <span className="inline-block rounded-full bg-[#8A5A20] px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-white">
+                        <span className="inline-block rounded-full bg-[#4F9D5A] px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-xs">
                             Thao tác trực tiếp tại quầy
                         </span>
                         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl text-white">
                             Nhân viên mới làm quen chỉ mất 10 phút
                         </h2>
-                        <p className="text-sm text-[#D9D2C8] max-w-xl mx-auto leading-relaxed">
+                        <p className="text-sm text-[#A8B2AA] max-w-xl mx-auto leading-relaxed">
                             Giao diện nút bấm to bản, thông tin rõ ràng và tối ưu hoàn toàn cho điện thoại di động.
                             Không cần cài đặt phức tạp, mở trình duyệt là sử dụng ngay.
                         </p>
                         <div className="pt-2">
                             <Link
                                 href="/register"
-                                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#8A5A20] px-8 py-3.5 text-sm font-semibold text-white hover:bg-[#704716] transition-colors"
+                                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#4F9D5A] px-8 py-3.5 text-sm font-bold text-white hover:bg-[#246B38] shadow-md transition-all"
                             >
                                 Đăng ký tạo hồ câu ngay
                             </Link>

@@ -28,6 +28,13 @@ export async function GET(
                 status: true,
                 paidAt: true,
                 createdAt: true,
+                lake: {
+                    select: {
+                        subscriptionStatus: true,
+                        subscriptionPlan: true,
+                        subscriptionExpiresAt: true,
+                    },
+                },
             },
         });
 

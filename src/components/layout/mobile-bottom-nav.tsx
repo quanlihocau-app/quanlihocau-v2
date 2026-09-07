@@ -13,6 +13,26 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
     {
+        label: "Trang chủ",
+        href: "/",
+        isActive: (pathname: string) => pathname === "/",
+        icon: (isActive: boolean) => (
+            <svg
+                className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
+                fill={isActive ? "currentColor" : "none"}
+                viewBox="0 0 24 24"
+                strokeWidth={isActive ? 2 : 1.75}
+                stroke="currentColor"
+            >
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+                />
+            </svg>
+        ),
+    },
+    {
         label: "Đang câu",
         href: "/sessions",
         isActive: (pathname: string) =>
@@ -20,7 +40,7 @@ const NAV_ITEMS: NavItem[] = [
             (pathname.startsWith("/sessions/") && pathname !== "/sessions/new"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-transform duration-150 ${isActive ? "text-[#E3B76E] scale-110" : "text-[#BCA98D]"}`}
+                className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -40,7 +60,7 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname === "/sessions/new",
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-transform duration-150 ${isActive ? "text-[#E3B76E] scale-110" : "text-[#BCA98D]"}`}
+                className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -49,40 +69,18 @@ const NAV_ITEMS: NavItem[] = [
                 <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"
-                />
-            </svg>
-        ),
-    },
-    {
-        label: "Nhật ký",
-        href: "/invoices/history",
-        isActive: (pathname: string) =>
-            pathname.startsWith("/invoices/history") ||
-            pathname === "/invoices",
-        icon: (isActive: boolean) => (
-            <svg
-                className={`h-5 w-5 transition-transform duration-150 ${isActive ? "text-[#E3B76E] scale-110" : "text-[#BCA98D]"}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={isActive ? 2.5 : 1.75}
-                stroke="currentColor"
-            >
-                <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
+                    d="M12 4.5v15m7.5-7.5h-15"
                 />
             </svg>
         ),
     },
     {
         label: "Báo cáo",
-        href: "/reports/daily",
+        href: "/reports",
         isActive: (pathname: string) => pathname.startsWith("/reports"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-transform duration-150 ${isActive ? "text-[#E3B76E] scale-110" : "text-[#BCA98D]"}`}
+                className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -102,7 +100,7 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname.startsWith("/settings"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-transform duration-150 ${isActive ? "text-[#E3B76E] scale-110" : "text-[#BCA98D]"}`}
+                className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -123,7 +121,7 @@ export function MobileBottomNav() {
     const [pendingHref, setPendingHref] = useState<string | null>(null);
     const [prevPathname, setPrevPathname] = useState(pathname);
 
-    // Adjust state during render when pathname changes (avoids cascading render warning)
+    // Adjust state during render when pathname changes
     if (prevPathname !== pathname) {
         setPrevPathname(pathname);
         setPendingHref(null);
@@ -132,9 +130,9 @@ export function MobileBottomNav() {
     return (
         <nav
             aria-label="Mobile Navigation"
-            className="mobile-pos-nav print:hidden"
+            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 border-t border-[#E3E8E3] bg-white/95 backdrop-blur-md print:hidden shadow-sm"
         >
-            <div className="mx-auto flex h-14.5 items-center justify-around px-1 relative">
+            <div className="flex h-16 items-center justify-around px-2 relative">
                 {NAV_ITEMS.map((item) => {
                     const active = item.isActive(pathname);
                     const isPending = pendingHref === item.href && !active;
@@ -149,50 +147,54 @@ export function MobileBottomNav() {
                                     setPendingHref(item.href);
                                 }
                             }}
-                            className={`relative flex min-h-13 min-w-13 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-center transition-all duration-100 ease-out select-none cursor-pointer rounded-xl active:scale-[0.88] active:bg-white/10 ${
+                            className={`flex min-h-12 flex-1 flex-col items-center justify-center gap-1 py-1 text-center transition-all duration-120 select-none cursor-pointer active:scale-95 ${
                                 active
-                                    ? "text-[#E3B76E] font-bold"
+                                    ? "text-[#246B38]"
                                     : isPending
-                                      ? "text-[#F5D79D] font-semibold"
-                                      : "text-[#BCA98D] hover:text-[#F0D19A]"
+                                      ? "text-[#4F9D5A]"
+                                      : "text-[#66716A] hover:text-[#17201A]"
                             }`}
                         >
-                            {/* Active Top Glow Line */}
-                            {active && (
-                                <span className="absolute top-0 w-8 h-[2.5px] rounded-full bg-linear-to-r from-[#8A5A20] via-[#E3B76E] to-[#8A5A20] shadow-[0_0_8px_rgba(227,183,110,0.8)]" />
-                            )}
-
-                            {/* Icon container with loading spinner if pending */}
-                            <div className="relative flex h-5 w-5 items-center justify-center">
+                            {/* M3 Active pill container */}
+                            <div
+                                className={`flex h-8 w-13 items-center justify-center rounded-full transition-all duration-150 ${
+                                    active
+                                        ? "bg-[#E8F3E5] text-[#246B38]"
+                                        : "bg-transparent text-[#66716A]"
+                                }`}
+                            >
                                 {isPending ? (
-                                    <div className="relative flex items-center justify-center">
-                                        <svg
-                                            className="h-5 w-5 animate-spin text-[#E3B76E]"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="3.5"
-                                            />
-                                            <path
-                                                className="opacity-90"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            />
-                                        </svg>
-                                        <span className="absolute h-2 w-2 rounded-full bg-[#E3B76E] animate-ping" />
-                                    </div>
+                                    <svg
+                                        className="h-4.5 w-4.5 animate-spin text-[#4F9D5A]"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="3.5"
+                                        />
+                                        <path
+                                            className="opacity-90"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        />
+                                    </svg>
                                 ) : (
                                     item.icon(active)
                                 )}
                             </div>
 
-                            <span className="text-[10px] tracking-tight">
+                            <span
+                                className={`text-[10.5px] leading-none tracking-tight ${
+                                    active
+                                        ? "font-bold text-[#246B38]"
+                                        : "font-medium text-[#66716A]"
+                                }`}
+                            >
                                 {isPending ? "Đang mở..." : item.label}
                             </span>
                         </Link>

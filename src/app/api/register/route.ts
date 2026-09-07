@@ -152,7 +152,7 @@ export async function POST(request: Request) {
 
     try {
         const result = await prisma.$transaction(async (tx) => {
-            const trialExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            const trialExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
             const organization = await tx.organization.create({
                 data: {

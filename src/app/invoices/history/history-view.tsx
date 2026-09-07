@@ -117,7 +117,7 @@ const AUDIT_FILTER_OPTIONS: Array<{
     actions: string[];
     activeClass: string;
 }> = [
-    { key: "ALL", label: "Tất cả", actions: [], activeClass: "bg-[#8A5A20] text-white" },
+    { key: "ALL", label: "Tất cả", actions: [], activeClass: "bg-[#4F9D5A] text-white" },
     { key: "SESSION_OPEN", label: "Mở phiên", actions: ["FISHING_SESSION_OPENED", "SESSION_CREATED", "SESSION_OPENED", "INVOICE_CREATED"], activeClass: "bg-blue-700 text-white" },
     { key: "SESSION_CLOSE", label: "Đóng phiên", actions: ["FISHING_SESSION_COMPLETED", "SESSION_COMPLETED", "FISHING_SESSION_CANCELLED"], activeClass: "bg-purple-700 text-white" },
     { key: "PAYMENT", label: "Thu tiền", actions: ["PAYMENT_RECORDED", "PAYMENT_COLLECTED"], activeClass: "bg-teal-700 text-white" },
@@ -456,18 +456,18 @@ export function HistoryView({
     return (
         <div className="space-y-4">
             {/* Top Navigation Bar: Dual Tabs */}
-            <div className="rounded-2xl bg-[#EAE4D9] p-1.5 flex gap-1 shadow-inner">
+            <div className="rounded-full bg-[#EEF3EB] p-1 flex gap-1 border border-[#E3E8E3]">
                 <button
                     type="button"
                     onClick={() => setActiveTab("orders")}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`flex-1 py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                         activeTab === "orders"
-                            ? "bg-white text-[#27231F] shadow-sm"
-                            : "text-[#766F67] hover:text-[#27231F]"
+                            ? "bg-[#4F9D5A] text-white shadow-xs"
+                            : "text-[#66716A] hover:text-[#17201A]"
                     }`}
                 >
                     <svg
-                        className="h-4 w-4 text-[#8A5A20]"
+                        className={`h-4 w-4 ${activeTab === "orders" ? "text-white" : "text-[#246B38]"}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2}
@@ -479,20 +479,20 @@ export function HistoryView({
                             d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
                         />
                     </svg>
-                    Lịch sử đơn hàng ({invoices.length})
+                    Lịch sử đơn ({invoices.length})
                 </button>
 
                 <button
                     type="button"
                     onClick={() => setActiveTab("audit")}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`flex-1 py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                         activeTab === "audit"
-                            ? "bg-white text-[#27231F] shadow-sm"
-                            : "text-[#766F67] hover:text-[#27231F]"
+                            ? "bg-[#4F9D5A] text-white shadow-xs"
+                            : "text-[#66716A] hover:text-[#17201A]"
                     }`}
                 >
                     <svg
-                        className="h-4 w-4 text-[#8A5A20]"
+                        className={`h-4 w-4 ${activeTab === "audit" ? "text-white" : "text-[#246B38]"}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2}
@@ -504,7 +504,7 @@ export function HistoryView({
                             d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                         />
                     </svg>
-                    Nhật ký hoạt động ({auditEvents.length})
+                    Nhật ký ({auditEvents.length})
                 </button>
             </div>
 
@@ -525,10 +525,10 @@ export function HistoryView({
                                 <button
                                     type="button"
                                     onClick={() => setOrderTypeFilter("ALL")}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
                                         orderTypeFilter === "ALL"
-                                            ? "bg-[#8A5A20] text-white"
-                                            : "bg-[#F4F2EE] text-[#766F67] hover:text-[#27231F]"
+                                            ? "bg-[#4F9D5A] text-white"
+                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
                                     }`}
                                 >
                                     Tất cả
@@ -536,10 +536,10 @@ export function HistoryView({
                                 <button
                                     type="button"
                                     onClick={() => setOrderTypeFilter("TICKET")}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
                                         orderTypeFilter === "TICKET"
-                                            ? "bg-[#8A5A20] text-white"
-                                            : "bg-[#F4F2EE] text-[#766F67] hover:text-[#27231F]"
+                                            ? "bg-[#4F9D5A] text-white"
+                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
                                     }`}
                                 >
                                     Vé câu
@@ -547,10 +547,10 @@ export function HistoryView({
                                 <button
                                     type="button"
                                     onClick={() => setOrderTypeFilter("RETAIL")}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
                                         orderTypeFilter === "RETAIL"
-                                            ? "bg-[#8A5A20] text-white"
-                                            : "bg-[#F4F2EE] text-[#766F67] hover:text-[#27231F]"
+                                            ? "bg-[#4F9D5A] text-white"
+                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
                                     }`}
                                 >
                                     Bán lẻ
@@ -562,10 +562,10 @@ export function HistoryView({
                                 <button
                                     type="button"
                                     onClick={() => setOrderStatusFilter("ALL")}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                                         orderStatusFilter === "ALL"
-                                            ? "bg-[#27231F] text-white"
-                                            : "bg-[#F4F2EE] text-[#766F67] hover:text-[#27231F]"
+                                            ? "bg-[#17201A] text-white"
+                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
                                     }`}
                                 >
                                     Tất cả TT
@@ -573,10 +573,10 @@ export function HistoryView({
                                 <button
                                     type="button"
                                     onClick={() => setOrderStatusFilter("PAID")}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                                         orderStatusFilter === "PAID"
-                                            ? "bg-emerald-700 text-white"
-                                            : "bg-[#F4F2EE] text-[#766F67] hover:text-[#27231F]"
+                                            ? "bg-[#3E9B4F] text-white"
+                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
                                     }`}
                                 >
                                     Đã xong
@@ -584,10 +584,10 @@ export function HistoryView({
                                 <button
                                     type="button"
                                     onClick={() => setOrderStatusFilter("UNPAID")}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                                         orderStatusFilter === "UNPAID"
-                                            ? "bg-amber-700 text-white"
-                                            : "bg-[#F4F2EE] text-[#766F67] hover:text-[#27231F]"
+                                            ? "bg-[#D99A32] text-white"
+                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
                                     }`}
                                 >
                                     Còn thiếu
@@ -621,30 +621,30 @@ export function HistoryView({
                                 return (
                                     <Card
                                         key={invoice.id}
-                                        className="p-4 space-y-3 hover:border-[#8A5A20] transition-colors"
+                                        className="p-4 space-y-3 rounded-2xl border-[#E3E8E3] hover:border-[#4F9D5A] transition-colors shadow-xs"
                                     >
                                         {/* Card Header */}
                                         <div className="flex items-start justify-between">
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <span
-                                                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                                                             isTicket
                                                                 ? "bg-blue-100 text-blue-800"
-                                                                : "bg-emerald-100 text-emerald-800"
+                                                                : "bg-[#E8F3E5] text-[#246B38]"
                                                         }`}
                                                     >
                                                         {isTicket ? "Vé câu" : "Bán lẻ"}
                                                     </span>
                                                     <Link
                                                         href={`/invoices/${invoice.id}`}
-                                                        className="text-xs font-bold text-[#8A5A20] hover:underline"
+                                                        className="text-xs font-bold text-[#246B38] hover:underline"
                                                     >
                                                         HĐ #{invoice.id.slice(0, 8)}
                                                     </Link>
                                                 </div>
 
-                                                <p className="text-sm font-bold text-[#27231F] mt-1">
+                                                <p className="text-sm font-bold text-[#17201A] mt-1">
                                                     {invoice.customer?.name ?? (isTicket ? "Khách vãng lai" : "Khách lẻ")}
                                                 </p>
                                                 {invoice.customer?.phoneNormalized && (
@@ -697,9 +697,9 @@ export function HistoryView({
                                                 </span>
                                             </div>
                                             {remaining > 0 && (
-                                                <div className="flex justify-between border-t border-[#D9D2C8] pt-1 font-bold">
-                                                    <span className="text-[#9A4C16]">Còn thiếu:</span>
-                                                    <span className="text-[#9A4C16] tabular-nums">
+                                                <div className="flex justify-between border-t border-[#E3E8E3] pt-1 font-bold">
+                                                    <span className="text-[#D99A32]">Còn thiếu:</span>
+                                                    <span className="text-[#D99A32] tabular-nums">
                                                         {formatVnd(remaining)}
                                                     </span>
                                                 </div>
@@ -715,7 +715,7 @@ export function HistoryView({
                                                     variant="outline"
                                                     isLoading={reprintingId === invoice.id}
                                                     onClick={() => handleReprint(invoice)}
-                                                    className="h-8 px-2.5 text-xs font-bold text-[#8A5A20] border-[#8A5A20]/40"
+                                                    className="h-8 px-3 rounded-full text-xs font-bold text-[#246B38] border-[#4F9D5A]/40 hover:bg-[#E8F3E5]"
                                                     icon={
                                                         <svg
                                                             className="h-3.5 w-3.5"
@@ -739,7 +739,7 @@ export function HistoryView({
                                             <div className="flex items-center gap-2">
                                                 <Link
                                                     href={`/invoices/${invoice.id}`}
-                                                    className="inline-flex h-8 items-center justify-center rounded-xl border border-[#D9D2C8] bg-white px-3 text-xs font-semibold text-[#27231F] hover:bg-[#F4F2EE] transition-colors"
+                                                    className="inline-flex h-8 items-center justify-center rounded-full border border-[#E3E8E3] bg-white px-3.5 text-xs font-semibold text-[#17201A] hover:bg-[#F7F9F5] transition-colors"
                                                 >
                                                     Chi tiết
                                                 </Link>
@@ -764,7 +764,7 @@ export function HistoryView({
                             onChange={(e) => setAuditSearch(e.target.value)}
                         />
 
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1.5">
                             {AUDIT_FILTER_OPTIONS.map((opt) => {
                                 const isSelected = auditActionFilter === opt.key;
                                 return (
@@ -772,10 +772,10 @@ export function HistoryView({
                                         key={opt.key}
                                         type="button"
                                         onClick={() => setAuditActionFilter(opt.key)}
-                                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                                        className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
                                             isSelected
                                                 ? opt.activeClass
-                                                : "bg-[#F4F2EE] text-[#766F67] hover:text-[#27231F]"
+                                                : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
                                         }`}
                                     >
                                         {opt.label}
@@ -806,7 +806,7 @@ export function HistoryView({
                                 return (
                                     <Card
                                         key={ev.id}
-                                        className="p-4 space-y-2.5 overflow-hidden hover:border-[#8A5A20] transition-colors"
+                                        className="p-4 space-y-2.5 overflow-hidden rounded-2xl border-[#E3E8E3] hover:border-[#4F9D5A] transition-colors shadow-xs"
                                     >
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="space-y-1">
@@ -816,35 +816,35 @@ export function HistoryView({
                                                     >
                                                         {badgeInfo.label}
                                                     </span>
-                                                    <span className="text-xs font-mono font-bold text-[#8A5A20]">
+                                                    <span className="text-xs font-mono font-bold text-[#246B38]">
                                                         {ev.entityType} #{ev.entityId.slice(0, 8)}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-[#27231F] break-words">
+                                                <p className="text-xs text-[#17201A] wrap-break-word">
                                                     Thực hiện bởi:{" "}
-                                                    <span className="font-semibold text-[#8A5A20]">
+                                                    <span className="font-semibold text-[#246B38]">
                                                         {formatActor(ev.createdBy)}
                                                     </span>
                                                 </p>
                                             </div>
 
                                             <div className="text-right shrink-0">
-                                                <span className="text-[11px] text-[#766F67] font-mono">
+                                                <span className="text-[11px] text-[#66716A] font-mono">
                                                     {formatDateTime(ev.createdAt)}
                                                 </span>
                                             </div>
                                         </div>
 
                                         {/* Payload summary or toggle */}
-                                        <div className="rounded-xl bg-[#F4F2EE] p-2.5 text-xs">
+                                        <div className="rounded-2xl bg-[#F7F9F5] p-3 text-xs border border-[#E3E8E3]">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-[11px] font-bold text-[#766F67]">
+                                                <span className="text-[11px] font-bold text-[#66716A]">
                                                     Chi tiết tác vụ:
                                                 </span>
                                                 <button
                                                     type="button"
                                                     onClick={() => toggleAuditExpand(ev.id)}
-                                                    className="text-[11px] font-semibold text-[#8A5A20] hover:underline cursor-pointer"
+                                                    className="text-[11px] font-semibold text-[#246B38] hover:underline cursor-pointer"
                                                 >
                                                     {isExpanded ? "Thu gọn" : "Xem thêm"}
                                                 </button>
@@ -854,7 +854,7 @@ export function HistoryView({
                                                 <div className="mt-2 space-y-2">
                                                     {ev.action.includes("REPAIRED") && (
                                                         <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px]">
-                                                            💡 <b>Hệ thống tự động:</b> Đã tạo bù hóa đơn nháp thành công cho phiên câu ô 01 lúc trước để đảm bảo số liệu thu chi chính xác.
+                                                             💡 <b>Hệ thống tự động:</b> Đã tạo bù hóa đơn nháp thành công cho phiên câu ô 01 lúc trước để đảm bảo số liệu thu chi chính xác.
                                                         </div>
                                                     )}
 
@@ -869,7 +869,7 @@ export function HistoryView({
                                                                     <span className="text-slate-500 font-medium shrink-0">
                                                                         {formatPayloadKey(k)}:
                                                                     </span>
-                                                                    <span className="font-mono font-semibold text-slate-800 text-right break-words">
+                                                                    <span className="font-mono font-semibold text-slate-800 text-right wrap-break-word">
                                                                         {formatPayloadValue(k, v)}
                                                                     </span>
                                                                 </div>

@@ -128,7 +128,7 @@ export function PageProgressBar() {
         >
             {/* Main Progress Bar */}
             <div
-                className="h-full bg-linear-to-r from-[#8A5A20] via-[#E3B76E] to-[#F5D79D] transition-all duration-200 ease-out shadow-[0_0_12px_rgba(227,183,110,0.85)]"
+                className="h-full bg-linear-to-r from-[#4F9D5A] via-[#3E9B4F] to-[#8FD59A] transition-all duration-200 ease-out shadow-[0_0_12px_rgba(79,157,90,0.7)]"
                 style={{
                     width: `${progress}%`,
                     opacity: visible ? 1 : 0,
@@ -138,7 +138,7 @@ export function PageProgressBar() {
             {/* Glowing leading dot */}
             {progress > 0 && progress < 100 && (
                 <div
-                    className="absolute -top-0.5 h-1.75 w-1.75 rounded-full bg-[#FFF5DF] shadow-[0_0_10px_3px_rgba(227,183,110,0.9)] transition-all duration-200 ease-out"
+                    className="absolute -top-0.5 h-1.75 w-1.75 rounded-full bg-[#E8F3E5] shadow-[0_0_10px_3px_rgba(79,157,90,0.85)] transition-all duration-200 ease-out"
                     style={{
                         left: `calc(${progress}% - 3px)`,
                     }}

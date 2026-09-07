@@ -45,7 +45,7 @@ export default async function NewSessionPage() {
     }
 
     // Fetch active data for the current lake
-    const [customers, packages, huts, rawProducts] = await Promise.all([
+    const [customers, packages, huts, rawProducts, fishTypes] = await Promise.all([
         prisma.customer.findMany({
             where: { lakeId: tenantContext.lakeId, deletedAt: null },
             select: { id: true, name: true, phoneNormalized: true },
@@ -86,6 +86,15 @@ export default async function NewSessionPage() {
             },
             orderBy: { name: "asc" },
         }),
+        prisma.fishType.findMany({
+            where: { lakeId: tenantContext.lakeId, deletedAt: null },
+            select: {
+                id: true,
+                name: true,
+                pricePerKg: true,
+            },
+            orderBy: { name: "asc" },
+        }),
     ]);
 
     const products = rawProducts.map((p) => {
@@ -122,6 +131,7 @@ export default async function NewSessionPage() {
                         packages={packages}
                         huts={huts}
                         products={products}
+                        fishTypes={fishTypes}
                         lakeName={tenantContext.lakeName}
                         cashierName={session.user.name || session.user.email?.split("@")[0] || "Thu ngân"}
                     />

@@ -44,6 +44,13 @@ function SubscriptionModalContent({
         };
     } | null>(null);
 
+    const [paidResult, setPaidResult] = useState<{
+        expiresAt?: string | null;
+        plan?: string;
+    } | null>(null);
+    const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+    const [checkNotice, setCheckNotice] = useState<string | null>(null);
+
     // Polling order status while in QR_PAYMENT step
     useEffect(() => {
         if (step !== "QR_PAYMENT" || !orderData?.order?.id) {
@@ -57,6 +64,10 @@ function SubscriptionModalContent({
                 if (!res.ok) return;
                 const data = await res.json();
                 if (data?.order?.status === "PAID" && isMounted) {
+                    setPaidResult({
+                        expiresAt: data.order.lake?.subscriptionExpiresAt,
+                        plan: data.order.lake?.subscriptionPlan,
+                    });
                     setStep("SUCCESS");
                     router.refresh();
                 }
@@ -70,6 +81,33 @@ function SubscriptionModalContent({
             clearInterval(interval);
         };
     }, [step, orderData, router]);
+
+    const handleManualCheckPayment = async () => {
+        if (!orderData?.order?.id) return;
+        setIsCheckingPayment(true);
+        setCheckNotice(null);
+        try {
+            const res = await fetch(`/api/subscription/orders/${orderData.order.id}`);
+            if (!res.ok) throw new Error("Không thể kiểm tra đơn hàng");
+            const data = await res.json();
+            if (data?.order?.status === "PAID") {
+                setPaidResult({
+                    expiresAt: data.order.lake?.subscriptionExpiresAt,
+                    plan: data.order.lake?.subscriptionPlan,
+                });
+                setStep("SUCCESS");
+                router.refresh();
+            } else {
+                setCheckNotice(
+                    "Chưa nhận được xác nhận từ ngân hàng. Nếu bạn vừa chuyển tiền, vui lòng đợi 10-30 giây để giao dịch hoàn tất hoặc bấm lại nút kiểm tra.",
+                );
+            }
+        } catch {
+            setCheckNotice("Lỗi kết nối khi kiểm tra thanh toán. Vui lòng thử lại.");
+        } finally {
+            setIsCheckingPayment(false);
+        }
+    };
 
     const handleCreateOrder = async () => {
         setIsLoading(true);
@@ -159,28 +197,28 @@ function SubscriptionModalContent({
                             onClick={() => setSelectedPlan("SILVER")}
                             className={`relative rounded-xl border-2 p-4 cursor-pointer transition-all ${
                                 selectedPlan === "SILVER"
-                                    ? "border-[#8A5A20] bg-[#FAF8F5] shadow-xs"
-                                    : "border-[#D9D2C8] hover:border-[#C4BAAE] bg-white"
+                                    ? "border-[#4F9D5A] bg-[#E8F3E5]/50 shadow-xs ring-2 ring-[#4F9D5A]/20"
+                                    : "border-[#E3E8E3] hover:border-[#4F9D5A]/50 bg-white"
                             }`}
                         >
                             <div className="flex items-start justify-between">
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-base">🥈</span>
-                                        <h3 className="font-bold text-[#27231F] text-base">Gói Bạc (Silver)</h3>
+                                        <h3 className="font-bold text-[#17201A] text-base">Gói Bạc (Silver)</h3>
                                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
                                             Hồ vừa &amp; nhỏ
                                         </span>
                                     </div>
-                                    <p className="text-xs text-[#766F67] mt-1">Phù hợp hồ có dưới 30 chòi/ô câu</p>
+                                    <p className="text-xs text-[#66716A] mt-1">Phù hợp hồ có dưới 30 chòi/ô câu</p>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-lg font-black text-[#8A5A20]">99.000 đ</div>
-                                    <span className="text-[11px] text-[#766F67]">/ 30 ngày</span>
+                                    <div className="text-lg font-black text-[#246B38]">99.000 đ</div>
+                                    <span className="text-[11px] text-[#66716A]">/ 30 ngày</span>
                                 </div>
                             </div>
 
-                            <ul className="mt-3.5 space-y-1.5 text-xs text-[#4A443E] border-t border-[#EBE6DF] pt-3">
+                            <ul className="mt-3.5 space-y-1.5 text-xs text-[#4A443E] border-t border-[#E3E8E3] pt-3">
                                 <li className="flex items-center gap-2">
                                     <span className="text-emerald-600 font-bold">✓</span>
                                     <span>Tối đa <strong>30 ô câu</strong></span>
@@ -202,7 +240,7 @@ function SubscriptionModalContent({
                             className={`relative rounded-xl border-2 p-4 cursor-pointer transition-all ${
                                 selectedPlan === "GOLD"
                                     ? "border-[#D97706] bg-[#FFFBEB] shadow-md ring-2 ring-amber-400/30"
-                                    : "border-[#D9D2C8] hover:border-[#C4BAAE] bg-white"
+                                    : "border-[#E3E8E3] hover:border-[#C4BAAE] bg-white"
                             }`}
                         >
                             <div className="absolute -top-3 right-4 rounded-full bg-linear-to-r from-amber-500 to-amber-600 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-xs">
@@ -218,11 +256,11 @@ function SubscriptionModalContent({
                                             Không giới hạn
                                         </span>
                                     </div>
-                                    <p className="text-xs text-[#766F67] mt-1">Dành cho hồ câu chuyên nghiệp, nhiều khu</p>
+                                    <p className="text-xs text-[#66716A] mt-1">Dành cho hồ câu chuyên nghiệp, nhiều khu</p>
                                 </div>
                                 <div className="text-right">
                                     <div className="text-lg font-black text-[#D97706]">179.000 đ</div>
-                                    <span className="text-[11px] text-[#766F67]">/ 30 ngày</span>
+                                    <span className="text-[11px] text-[#66716A]">/ 30 ngày</span>
                                 </div>
                             </div>
 
@@ -247,7 +285,7 @@ function SubscriptionModalContent({
                             type="button"
                             onClick={handleCreateOrder}
                             disabled={isLoading}
-                            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#8A5A20] py-3.5 text-sm font-bold text-white hover:bg-[#704716] active:scale-[0.99] transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#4F9D5A] py-3.5 text-sm font-bold text-white hover:bg-[#246B38] active:scale-[0.99] transition-all shadow-md disabled:opacity-50 cursor-pointer"
                         >
                             {isLoading ? (
                                 <>
@@ -266,54 +304,46 @@ function SubscriptionModalContent({
 
                 {/* ── STEP 2: VIETQR PAYMENT ──────────────────────────────────── */}
                 {step === "QR_PAYMENT" && orderData && (
-                    <div className="space-y-4">
-                        {/* Dynamic VietQR Image Box */}
-                        <div className="flex flex-col items-center justify-center rounded-2xl bg-[#FAF8F5] border border-[#EBE6DF] p-4 text-center">
-                            <div className="relative rounded-xl bg-white p-2.5 shadow-md border border-[#D9D2C8]">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={orderData.paymentInfo.qrUrl}
-                                    alt="VietQR Techcombank Payment"
-                                    className="h-56 w-56 object-contain rounded-lg sm:h-64 sm:w-64"
-                                />
-                            </div>
-
-                            {/* Ghi chú pháp lý minh bạch chi phí (ĐẶT NGAY DƯỚI MÃ QR THEO YÊU CẦU) */}
-                            <p className="mt-3 text-[11px] font-medium leading-relaxed text-[#766F67] px-2 italic text-center">
-                                &ldquo;{orderData.paymentInfo.legalFeeNote}&rdquo;
-                            </p>
+                    <div className="space-y-4 text-center">
+                        <div className="relative inline-block rounded-2xl bg-white p-3 shadow-md border border-[#E3E8E3]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={orderData.paymentInfo.qrUrl}
+                                alt="VietQR Thanh toán"
+                                className="w-56 h-56 mx-auto rounded-lg"
+                            />
                         </div>
 
-                        {/* Bank Details Table with Fast Copy */}
-                        <div className="rounded-xl border border-[#D9D2C8] bg-white p-3.5 space-y-2 text-xs">
-                            <div className="flex items-center justify-between py-1 border-b border-[#F0EBE4]">
-                                <span className="text-[#766F67]">Ngân hàng:</span>
-                                <span className="font-bold text-[#27231F]">{orderData.paymentInfo.bankName} (TCB)</span>
+                        {/* Transfer Details Card */}
+                        <div className="rounded-xl border border-[#E3E8E3] bg-[#F7F9F5] p-3 text-xs text-left space-y-1.5">
+                            <div className="flex items-center justify-between py-1 border-b border-[#E3E8E3]">
+                                <span className="text-[#66716A]">Ngân hàng:</span>
+                                <span className="font-bold text-[#17201A]">{orderData.paymentInfo.bankName}</span>
                             </div>
 
-                            <div className="flex items-center justify-between py-1 border-b border-[#F0EBE4]">
-                                <span className="text-[#766F67]">Chủ tài khoản:</span>
-                                <span className="font-bold text-[#27231F] uppercase">{orderData.paymentInfo.accountName}</span>
+                            <div className="flex items-center justify-between py-1 border-b border-[#E3E8E3]">
+                                <span className="text-[#66716A]">Chủ tài khoản:</span>
+                                <span className="font-bold text-[#17201A] uppercase">{orderData.paymentInfo.accountName}</span>
                             </div>
 
-                            <div className="flex items-center justify-between py-1 border-b border-[#F0EBE4]">
-                                <span className="text-[#766F67]">Số tài khoản:</span>
+                            <div className="flex items-center justify-between py-1 border-b border-[#E3E8E3]">
+                                <span className="text-[#66716A]">Số tài khoản:</span>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="font-mono text-sm font-black text-[#102A43]">
+                                    <span className="font-mono text-sm font-black text-[#17201A]">
                                         {orderData.paymentInfo.accountNumber}
                                     </span>
                                     <button
                                         type="button"
                                         onClick={() => copyToClipboard(orderData.paymentInfo.accountNumber, "stk")}
-                                        className="rounded bg-[#EFECE6] px-2 py-0.5 text-[10px] font-bold text-[#8A5A20] hover:bg-[#E5DFD6]"
+                                        className="rounded bg-[#EEF3EB] px-2 py-0.5 text-[10px] font-bold text-[#246B38] hover:bg-[#E3E8E3]"
                                     >
                                         {copiedField === "stk" ? "✓ Đã chép" : "Sao chép"}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between py-1 border-b border-[#F0EBE4]">
-                                <span className="text-[#766F67]">Số tiền:</span>
+                            <div className="flex items-center justify-between py-1 border-b border-[#E3E8E3]">
+                                <span className="text-[#66716A]">Số tiền:</span>
                                 <div className="flex items-center gap-1.5">
                                     <span className="font-mono text-sm font-black text-rose-600">
                                         {orderData.order.amountVnd.toLocaleString("vi-VN")} đ
@@ -321,7 +351,7 @@ function SubscriptionModalContent({
                                     <button
                                         type="button"
                                         onClick={() => copyToClipboard(String(orderData.order.amountVnd), "amount")}
-                                        className="rounded bg-[#EFECE6] px-2 py-0.5 text-[10px] font-bold text-[#8A5A20] hover:bg-[#E5DFD6]"
+                                        className="rounded bg-[#EEF3EB] px-2 py-0.5 text-[10px] font-bold text-[#246B38] hover:bg-[#E3E8E3]"
                                     >
                                         {copiedField === "amount" ? "✓ Đã chép" : "Sao chép"}
                                     </button>
@@ -329,7 +359,7 @@ function SubscriptionModalContent({
                             </div>
 
                             <div className="flex items-center justify-between py-1">
-                                <span className="text-[#766F67]">Nội dung CK:</span>
+                                <span className="text-[#66716A]">Nội dung CK:</span>
                                 <div className="flex items-center gap-1.5">
                                     <span className="font-mono text-xs font-black bg-amber-100 text-amber-900 px-2 py-0.5 rounded">
                                         {orderData.paymentInfo.memo}
@@ -337,7 +367,7 @@ function SubscriptionModalContent({
                                     <button
                                         type="button"
                                         onClick={() => copyToClipboard(orderData.paymentInfo.memo, "memo")}
-                                        className="rounded bg-[#8A5A20] px-2 py-0.5 text-[10px] font-bold text-white hover:bg-[#704716]"
+                                        className="rounded bg-[#4F9D5A] px-2 py-0.5 text-[10px] font-bold text-white hover:bg-[#246B38]"
                                     >
                                         {copiedField === "memo" ? "✓ Đã chép" : "Sao chép"}
                                     </button>
@@ -353,6 +383,31 @@ function SubscriptionModalContent({
                             </div>
                             <span className="text-[11px] font-bold text-amber-700">Mã: {orderData.order.orderCode}</span>
                         </div>
+
+                        {/* Nút Kiểm Tra Thanh Toán Tức Thì */}
+                        <button
+                            type="button"
+                            onClick={handleManualCheckPayment}
+                            disabled={isCheckingPayment}
+                            className="w-full rounded-xl bg-[#246B38] py-2.5 text-xs font-bold text-white hover:bg-[#1C542C] active:scale-95 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                            {isCheckingPayment ? (
+                                <>
+                                    <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                    <span>Đang kiểm tra với hệ thống...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>🔄 Tôi đã chuyển tiền - Kiểm tra thanh toán ngay</span>
+                                </>
+                            )}
+                        </button>
+
+                        {checkNotice && (
+                            <div className="rounded-xl bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-800 text-left leading-relaxed animate-in fade-in">
+                                💡 {checkNotice}
+                            </div>
+                        )}
 
                         {/* Hotline Cứu hộ BẮT BUỘC NỔI BẬT THEO YÊU CẦU */}
                         <div className="rounded-xl bg-rose-50 border-2 border-rose-300 p-3 text-center shadow-xs">
@@ -396,8 +451,13 @@ function SubscriptionModalContent({
                         <div>
                             <h3 className="text-lg font-bold text-[#27231F]">Gia Hạn Dịch Vụ Thành Công!</h3>
                             <p className="text-xs text-[#766F67] mt-1.5 max-w-sm mx-auto">
-                                Hệ thống đã tự động cộng dồn 30 ngày sử dụng vào tài khoản hồ câu của bạn.
+                                Hệ thống đã tự động cộng dồn 30 ngày sử dụng vào tài khoản hồ câu của bạn mà không làm mất thời gian dùng thử.
                             </p>
+                            {paidResult?.expiresAt && (
+                                <p className="text-xs font-bold text-[#17201A] mt-2">
+                                    Hạn sử dụng mới: <span className="text-emerald-700 font-mono text-sm">{new Date(paidResult.expiresAt).toLocaleDateString("vi-VN")}</span>
+                                </p>
+                            )}
                         </div>
 
                         <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800 font-semibold max-w-xs mx-auto">

@@ -15,11 +15,18 @@ import {
     RetailProduct,
 } from "./retail-pos-form";
 
+export interface SelectFishType {
+    id: string;
+    name: string;
+    pricePerKg: number;
+}
+
 interface TicketOrRetailSwitcherProps {
     customers: SelectCustomer[];
     packages: SelectPackage[];
     huts: SelectHut[];
     products: RetailProduct[];
+    fishTypes?: SelectFishType[];
     lakeName?: string;
     cashierName?: string;
 }
@@ -29,6 +36,7 @@ export function TicketOrRetailSwitcher({
     packages,
     huts,
     products,
+    fishTypes = [],
     lakeName,
     cashierName,
 }: TicketOrRetailSwitcherProps) {
@@ -39,18 +47,18 @@ export function TicketOrRetailSwitcher({
     return (
         <div className="space-y-4">
             {/* Segmented Control Bar */}
-            <div className="rounded-2xl bg-[#EAE4D9] p-1.5 flex gap-1 shadow-inner">
+            <div className="rounded-2xl bg-[#EEF3EB] p-1.5 flex gap-1 shadow-2xs">
                 <button
                     type="button"
                     onClick={() => setActiveTab("ticket")}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                         activeTab === "ticket"
-                            ? "bg-white text-[#27231F] shadow-sm"
-                            : "text-[#766F67] hover:text-[#27231F]"
+                            ? "bg-white text-[#17201A] shadow-xs"
+                            : "text-[#66716A] hover:text-[#17201A]"
                     }`}
                 >
                     <svg
-                        className="h-4 w-4 text-[#8A5A20]"
+                        className={`h-4 w-4 ${activeTab === "ticket" ? "text-[#246B38]" : "text-[#66716A]"}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2}
@@ -68,14 +76,14 @@ export function TicketOrRetailSwitcher({
                 <button
                     type="button"
                     onClick={() => setActiveTab("retail")}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                         activeTab === "retail"
-                            ? "bg-white text-[#27231F] shadow-sm"
-                            : "text-[#766F67] hover:text-[#27231F]"
+                            ? "bg-white text-[#17201A] shadow-xs"
+                            : "text-[#66716A] hover:text-[#17201A]"
                     }`}
                 >
                     <svg
-                        className="h-4 w-4 text-[#8A5A20]"
+                        className={`h-4 w-4 ${activeTab === "retail" ? "text-[#246B38]" : "text-[#66716A]"}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2}
@@ -97,6 +105,8 @@ export function TicketOrRetailSwitcher({
                     customers={customers}
                     packages={packages}
                     huts={huts}
+                    products={products}
+                    fishTypes={fishTypes}
                     lakeName={lakeName}
                     cashierName={cashierName}
                 />

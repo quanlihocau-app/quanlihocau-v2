@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { InlineAlert } from "@/components/ui/inline-alert";
+import { openGuideModal } from "@/components/guide/onboarding-modal";
 
 export function PrinterSettingsSection() {
     const {
@@ -276,13 +277,16 @@ export function PrinterSettingsSection() {
 
                     <button
                         type="button"
-                        onClick={() => setShowHelp(!showHelp)}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#D9D2C8] bg-white px-3 text-xs font-semibold text-[#27231F] hover:bg-[#F4F2EE] transition-colors self-start sm:self-auto cursor-pointer"
+                        onClick={() => {
+                            setShowHelp((prev) => !prev);
+                            openGuideModal(10);
+                        }}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#D9D2C8] bg-white px-3 text-xs font-semibold text-[#27231F] hover:bg-[#F4F2EE] active:scale-95 transition-all self-start sm:self-auto cursor-pointer shadow-2xs"
                         aria-label="Hướng dẫn kết nối máy in"
-                        aria-expanded={showHelp}
+                        title="Mở hướng dẫn kết nối máy in từng bước"
                     >
-                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#8A5A20] text-[10px] text-white">?</span>
-                        <span>{showHelp ? "Ẩn trợ giúp" : "Hướng dẫn"}</span>
+                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#4F9D5A] text-[10px] text-white font-bold">?</span>
+                        <span>Hướng dẫn</span>
                     </button>
                 </div>
 
@@ -400,7 +404,7 @@ export function PrinterSettingsSection() {
                             type="text"
                             value={headerTitle}
                             onChange={(e) => setHeaderTitle(e.target.value)}
-                            className="h-12 w-full rounded-xl border border-[#D9D2C8] bg-white px-3 text-xs font-medium text-[#27231F] focus:border-[#8A5A20] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none"
+                            className="h-11 w-full rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] px-3.5 text-xs font-medium text-[#17201A] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
                             placeholder="Vé câu"
                         />
                         <Button
@@ -408,6 +412,7 @@ export function PrinterSettingsSection() {
                             size="md"
                             variant="outline"
                             onClick={() => updateTemplate({ headerTitle }, "Đã lưu tiêu đề hóa đơn!")}
+                            className="rounded-full shrink-0"
                         >
                             Lưu
                         </Button>
@@ -430,7 +435,7 @@ export function PrinterSettingsSection() {
                             type="text"
                             value={footerNote}
                             onChange={(e) => setFooterNote(e.target.value)}
-                            className="h-12 w-full rounded-xl border border-[#D9D2C8] bg-white px-3 text-xs font-medium text-[#27231F] focus:border-[#8A5A20] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none"
+                            className="h-11 w-full rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] px-3.5 text-xs font-medium text-[#17201A] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
                             placeholder="Cảm ơn quý khách & Hẹn gặp lại!"
                         />
                         <Button
@@ -438,6 +443,7 @@ export function PrinterSettingsSection() {
                             size="md"
                             variant="outline"
                             onClick={() => updateTemplate({ footerNote }, "Đã lưu nội dung cuối hóa đơn!")}
+                            className="rounded-full shrink-0"
                         >
                             Lưu
                         </Button>
@@ -445,18 +451,18 @@ export function PrinterSettingsSection() {
                 </div>
 
                 {/* Hàng 3: Hiện tên hồ */}
-                <div className="flex items-center justify-between py-4 border-b border-[#D9D2C8]">
+                <div className="flex items-center justify-between py-4 border-b border-[#E3E8E3]">
                     <div className="space-y-0.5 pr-4">
-                        <p className="text-xs font-semibold text-[#27231F]">Hiện tên hồ</p>
-                        <p className="text-xs text-[#766F67]">In tên hồ câu ở đầu phiếu.</p>
+                        <p className="text-xs font-semibold text-[#17201A]">Hiện tên hồ</p>
+                        <p className="text-xs text-[#66716A]">In tên hồ câu ở đầu phiếu.</p>
                     </div>
                     <button
                         type="button"
                         role="switch"
                         aria-checked={templateConfig.showLakeName}
                         onClick={() => updateTemplate({ showLakeName: !templateConfig.showLakeName })}
-                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#8A5A20] ${
-                            templateConfig.showLakeName ? "bg-[#8A5A20]" : "bg-[#D9D2C8]"
+                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] ${
+                            templateConfig.showLakeName ? "bg-[#4F9D5A]" : "bg-stone-300"
                         }`}
                     >
                         <span
@@ -468,18 +474,18 @@ export function PrinterSettingsSection() {
                 </div>
 
                 {/* Hàng 4: Hiện logo hồ */}
-                <div className="flex items-center justify-between py-4 border-b border-[#D9D2C8]">
+                <div className="flex items-center justify-between py-4 border-b border-[#E3E8E3]">
                     <div className="space-y-0.5 pr-4">
-                        <p className="text-xs font-semibold text-[#27231F]">Hiện logo hồ</p>
-                        <p className="text-xs text-[#766F67]">In logo monochrome nếu máy in hỗ trợ.</p>
+                        <p className="text-xs font-semibold text-[#17201A]">Hiện logo hồ</p>
+                        <p className="text-xs text-[#66716A]">In logo monochrome nếu máy in hỗ trợ.</p>
                     </div>
                     <button
                         type="button"
                         role="switch"
                         aria-checked={templateConfig.showLogo}
                         onClick={() => updateTemplate({ showLogo: !templateConfig.showLogo })}
-                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#8A5A20] ${
-                            templateConfig.showLogo ? "bg-[#8A5A20]" : "bg-[#D9D2C8]"
+                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] ${
+                            templateConfig.showLogo ? "bg-[#4F9D5A]" : "bg-stone-300"
                         }`}
                     >
                         <span
@@ -491,18 +497,18 @@ export function PrinterSettingsSection() {
                 </div>
 
                 {/* Hàng 5: Hiện số điện thoại hồ */}
-                <div className="flex items-center justify-between py-4 border-b border-[#D9D2C8]">
+                <div className="flex items-center justify-between py-4 border-b border-[#E3E8E3]">
                     <div className="space-y-0.5 pr-4">
-                        <p className="text-xs font-semibold text-[#27231F]">Hiện số điện thoại hồ</p>
-                        <p className="text-xs text-[#766F67]">In hotline liên hệ của hồ câu.</p>
+                        <p className="text-xs font-semibold text-[#17201A]">Hiện số điện thoại hồ</p>
+                        <p className="text-xs text-[#66716A]">In hotline liên hệ của hồ câu.</p>
                     </div>
                     <button
                         type="button"
                         role="switch"
                         aria-checked={templateConfig.showPhone}
                         onClick={() => updateTemplate({ showPhone: !templateConfig.showPhone })}
-                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#8A5A20] ${
-                            templateConfig.showPhone ? "bg-[#8A5A20]" : "bg-[#D9D2C8]"
+                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] ${
+                            templateConfig.showPhone ? "bg-[#4F9D5A]" : "bg-stone-300"
                         }`}
                     >
                         <span
@@ -514,18 +520,18 @@ export function PrinterSettingsSection() {
                 </div>
 
                 {/* Hàng 6: Hiện địa chỉ hồ */}
-                <div className="flex items-center justify-between py-4 border-b border-[#D9D2C8]">
+                <div className="flex items-center justify-between py-4 border-b border-[#E3E8E3]">
                     <div className="space-y-0.5 pr-4">
-                        <p className="text-xs font-semibold text-[#27231F]">Hiện địa chỉ hồ</p>
-                        <p className="text-xs text-[#766F67]">In địa chỉ vị trí hồ câu.</p>
+                        <p className="text-xs font-semibold text-[#17201A]">Hiện địa chỉ hồ</p>
+                        <p className="text-xs text-[#66716A]">In địa chỉ vị trí hồ câu.</p>
                     </div>
                     <button
                         type="button"
                         role="switch"
                         aria-checked={templateConfig.showAddress}
                         onClick={() => updateTemplate({ showAddress: !templateConfig.showAddress })}
-                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#8A5A20] ${
-                            templateConfig.showAddress ? "bg-[#8A5A20]" : "bg-[#D9D2C8]"
+                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] ${
+                            templateConfig.showAddress ? "bg-[#4F9D5A]" : "bg-stone-300"
                         }`}
                     >
                         <span
@@ -537,18 +543,18 @@ export function PrinterSettingsSection() {
                 </div>
 
                 {/* Hàng 7: Hiện tên nhân viên bán hàng */}
-                <div className="flex items-center justify-between py-4 border-b border-[#D9D2C8]">
+                <div className="flex items-center justify-between py-4 border-b border-[#E3E8E3]">
                     <div className="space-y-0.5 pr-4">
-                        <p className="text-xs font-semibold text-[#27231F]">Hiện tên nhân viên bán hàng</p>
-                        <p className="text-xs text-[#766F67]">In tên tài khoản thu ngân lập phiếu.</p>
+                        <p className="text-xs font-semibold text-[#17201A]">Hiện tên nhân viên bán hàng</p>
+                        <p className="text-xs text-[#66716A]">In tên tài khoản thu ngân lập phiếu.</p>
                     </div>
                     <button
                         type="button"
                         role="switch"
                         aria-checked={templateConfig.showCashierName}
                         onClick={() => updateTemplate({ showCashierName: !templateConfig.showCashierName })}
-                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#8A5A20] ${
-                            templateConfig.showCashierName ? "bg-[#8A5A20]" : "bg-[#D9D2C8]"
+                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] ${
+                            templateConfig.showCashierName ? "bg-[#4F9D5A]" : "bg-stone-300"
                         }`}
                     >
                         <span
@@ -560,18 +566,18 @@ export function PrinterSettingsSection() {
                 </div>
 
                 {/* Hàng 8: Tự in vé sau khi tạo phiên thành công */}
-                <div className="flex items-center justify-between py-4 border-b border-[#D9D2C8]">
+                <div className="flex items-center justify-between py-4 border-b border-[#E3E8E3]">
                     <div className="space-y-0.5 pr-4">
-                        <p className="text-xs font-semibold text-[#27231F]">Tự in vé sau khi tạo phiên thành công</p>
-                        <p className="text-xs text-[#766F67]">Tự động phát lệnh in vé câu khi mở phiên nếu có máy in kết nối.</p>
+                        <p className="text-xs font-semibold text-[#17201A]">Tự in vé sau khi tạo phiên thành công</p>
+                        <p className="text-xs text-[#66716A]">Tự động phát lệnh in vé câu khi mở phiên nếu có máy in kết nối.</p>
                     </div>
                     <button
                         type="button"
                         role="switch"
                         aria-checked={templateConfig.autoPrintSession}
                         onClick={() => updateTemplate({ autoPrintSession: !templateConfig.autoPrintSession })}
-                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#8A5A20] ${
-                            templateConfig.autoPrintSession ? "bg-[#8A5A20]" : "bg-[#D9D2C8]"
+                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] ${
+                            templateConfig.autoPrintSession ? "bg-[#4F9D5A]" : "bg-stone-300"
                         }`}
                     >
                         <span
@@ -583,18 +589,18 @@ export function PrinterSettingsSection() {
                 </div>
 
                 {/* Hàng 9: Tự in biên lai sau khi thanh toán thành công */}
-                <div className="flex items-center justify-between py-4 border-b border-[#D9D2C8]">
+                <div className="flex items-center justify-between py-4 border-b border-[#E3E8E3]">
                     <div className="space-y-0.5 pr-4">
-                        <p className="text-xs font-semibold text-[#27231F]">Tự in biên lai sau khi thanh toán thành công</p>
-                        <p className="text-xs text-[#766F67]">Tự động in phiếu thu tiền khi nhân viên bấm thu tiền thành công.</p>
+                        <p className="text-xs font-semibold text-[#17201A]">Tự in biên lai sau khi thanh toán thành công</p>
+                        <p className="text-xs text-[#66716A]">Tự động in phiếu thu tiền khi nhân viên bấm thu tiền thành công.</p>
                     </div>
                     <button
                         type="button"
                         role="switch"
                         aria-checked={templateConfig.autoPrintPayment}
                         onClick={() => updateTemplate({ autoPrintPayment: !templateConfig.autoPrintPayment })}
-                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#8A5A20] ${
-                            templateConfig.autoPrintPayment ? "bg-[#8A5A20]" : "bg-[#D9D2C8]"
+                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] ${
+                            templateConfig.autoPrintPayment ? "bg-[#4F9D5A]" : "bg-stone-300"
                         }`}
                     >
                         <span
@@ -647,13 +653,14 @@ export function PrinterSettingsSection() {
                             max={3}
                             value={copiesCount}
                             onChange={(e) => setCopiesCount(Math.min(3, Math.max(1, Number(e.target.value))))}
-                            className="h-12 w-full rounded-xl border border-[#D9D2C8] bg-white px-3 text-xs font-semibold text-[#27231F] text-center focus:border-[#8A5A20] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none"
+                            className="h-11 w-full rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] px-3 text-xs font-semibold text-[#17201A] text-center focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
                         />
                         <Button
                             type="button"
                             size="md"
                             variant="outline"
                             onClick={() => updateTemplate({ copiesCount }, "Đã lưu số bản in!")}
+                            className="rounded-full shrink-0"
                         >
                             Lưu
                         </Button>
@@ -902,7 +909,7 @@ export function PrinterSettingsSection() {
                                     variant="primary"
                                     isLoading={connectingWifi}
                                     loadingText="Đang kết nối…"
-                                    className="flex-[2]"
+                                    className="flex-2"
                                 >
                                     Lưu & Kiểm tra kết nối
                                 </Button>

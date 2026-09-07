@@ -161,15 +161,15 @@ export function DailyReportView({
                 <div className="p-4 space-y-4 pb-28">
                     {/* ── Page title + shift badge ───────────────────────────── */}
                     <div className="flex items-center justify-between">
-                        <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                        <h1 className="text-[22px] font-bold tracking-tight text-[#17201A]">
                             Báo cáo ngày
                         </h1>
                         {shift.isClosed ? (
-                            <span className="rounded-full bg-[#E8F3ED] px-3 py-1 text-xs font-bold text-[#2D6A4F] border border-[#2D6A4F]/20">
+                            <span className="rounded-full bg-[#EBF6ED] px-3 py-1 text-xs font-bold text-[#3E9B4F] border border-[#3E9B4F]/20">
                                 Đã chốt ca
                             </span>
                         ) : (
-                            <span className="rounded-full bg-[#EAE2CE] px-3 py-1 text-xs font-bold text-[#8A5B00] border border-[#DCD3C0]">
+                            <span className="rounded-full bg-[#E8F3E5] px-3 py-1 text-xs font-bold text-[#246B38] border border-[#4F9D5A]/30">
                                 Đang mở ca
                             </span>
                         )}
@@ -180,12 +180,12 @@ export function DailyReportView({
                         <InlineAlert type="success" message={successMessage} />
                     )}
 
-                    {/* Net Profit Card */}
-                    <div className="rounded-2xl bg-linear-to-br from-[#2D190F] to-[#170D09] p-4 text-[#F5F2EB] shadow-md border border-[#9E6B05]/30">
-                        <p className="text-xs text-[#BDA989] font-medium">
+                    {/* Net Profit Card - Premium M3 Forest Gradient */}
+                    <div className="rounded-3xl bg-linear-to-br from-[#1B4D28] via-[#246B38] to-[#153B1E] p-5 text-white shadow-md border border-[#4F9D5A]/30 space-y-1">
+                        <p className="text-xs text-[#A8E2B5] font-semibold tracking-wide">
                             Lợi nhuận thuần (Thực thu ròng)
                         </p>
-                        <p className="mt-1 text-2xl font-extrabold font-mono text-[#F4DFB7] tabular-nums tracking-tight">
+                        <p className="text-3xl font-black font-mono text-white tabular-nums tracking-tight">
                             {formatVnd(summary.netProfitVnd)}
                         </p>
                     </div>
@@ -193,21 +193,21 @@ export function DailyReportView({
                     {/* Two Main Cards: Doanh thu & Chi phí */}
                     <div className="grid grid-cols-2 gap-3">
                         {/* Doanh thu Card */}
-                        <div className="rounded-2xl border border-[#EAE4D7] bg-[#FFFDF9] p-3.5 shadow-xs">
-                            <p className="text-xs font-semibold text-slate-500">
+                        <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 shadow-xs">
+                            <p className="text-xs font-semibold text-[#66716A]">
                                 Tổng Doanh Thu
                             </p>
-                            <p className="mt-1 text-lg font-bold font-mono text-[#2D6A4F] tabular-nums">
+                            <p className="mt-1 text-lg font-bold font-mono text-[#246B38] tabular-nums">
                                 {formatVnd(summary.revenueVnd)}
                             </p>
                         </div>
 
                         {/* Chi phí Card */}
-                        <div className="rounded-2xl border border-[#EAE4D7] bg-[#FFFDF9] p-3.5 shadow-xs">
-                            <p className="text-xs font-semibold text-slate-500">
+                        <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 shadow-xs">
+                            <p className="text-xs font-semibold text-[#66716A]">
                                 Tổng Chi Phí
                             </p>
-                            <p className="mt-1 text-lg font-bold font-mono text-[#8B1E1E] tabular-nums">
+                            <p className="mt-1 text-lg font-bold font-mono text-[#D9534F] tabular-nums">
                                 {formatVnd(summary.expenseVnd)}
                             </p>
                         </div>
@@ -215,46 +215,46 @@ export function DailyReportView({
 
                     {/* Financial Breakdown List */}
                     <div className="space-y-2">
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#246B38] px-1">
                             Chi tiết dòng tiền
                         </p>
 
                         {/* Tiền mặt */}
-                        <div className="flex items-center justify-between rounded-xl border border-[#EAE4D7] bg-white px-3.5 py-3 shadow-xs">
-                            <span className="text-xs font-medium text-slate-700">
+                        <div className="flex items-center justify-between rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3 shadow-xs">
+                            <span className="text-xs font-medium text-[#17201A]">
                                 Tiền mặt
                             </span>
-                            <span className="text-xs font-bold font-mono text-slate-900 tabular-nums">
+                            <span className="text-xs font-bold font-mono text-[#17201A] tabular-nums">
                                 {formatVnd(summary.cashVnd)}
                             </span>
                         </div>
 
                         {/* Chuyển khoản */}
-                        <div className="flex items-center justify-between rounded-xl border border-[#EAE4D7] bg-white px-3.5 py-3 shadow-xs">
-                            <span className="text-xs font-medium text-slate-700">
+                        <div className="flex items-center justify-between rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3 shadow-xs">
+                            <span className="text-xs font-medium text-[#17201A]">
                                 Chuyển khoản (Ngân hàng)
                             </span>
-                            <span className="text-xs font-bold font-mono text-slate-900 tabular-nums">
+                            <span className="text-xs font-bold font-mono text-[#17201A] tabular-nums">
                                 {formatVnd(summary.transferVnd)}
                             </span>
                         </div>
 
                         {/* Thu mua cá */}
-                        <div className="flex items-center justify-between rounded-xl border border-[#EAE4D7] bg-white px-3.5 py-3 shadow-xs">
-                            <span className="text-xs font-medium text-slate-700">
+                        <div className="flex items-center justify-between rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3 shadow-xs">
+                            <span className="text-xs font-medium text-[#17201A]">
                                 Chi trả thu mua cá
                             </span>
-                            <span className="text-xs font-bold font-mono text-[#8B1E1E] tabular-nums">
+                            <span className="text-xs font-bold font-mono text-[#D9534F] tabular-nums">
                                 {summary.fishBuybackVnd > 0 ? `−${formatVnd(summary.fishBuybackVnd)}` : formatVnd(summary.fishBuybackVnd)}
                             </span>
                         </div>
 
                         {/* Chi khác */}
-                        <div className="flex items-center justify-between rounded-xl border border-[#EAE4D7] bg-white px-3.5 py-3 shadow-xs">
-                            <span className="text-xs font-medium text-slate-700">
+                        <div className="flex items-center justify-between rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3 shadow-xs">
+                            <span className="text-xs font-medium text-[#17201A]">
                                 Chi phí vận hành khác
                             </span>
-                            <span className="text-xs font-bold font-mono text-[#8B1E1E] tabular-nums">
+                            <span className="text-xs font-bold font-mono text-[#D9534F] tabular-nums">
                                 {summary.otherExpenseVnd > 0 ? `−${formatVnd(summary.otherExpenseVnd)}` : formatVnd(summary.otherExpenseVnd)}
                             </span>
                         </div>
@@ -266,28 +266,28 @@ export function DailyReportView({
                             {/* 1. Vé câu & Doanh thu theo gói */}
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between px-1">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
                                         Vé câu & Gói dịch vụ
                                     </p>
-                                    <span className="text-xs font-semibold text-slate-700">
+                                    <span className="text-xs font-semibold text-[#66716A]">
                                         Tổng: {breakdown.sessions.total} vé ({breakdown.sessions.completed} xong, {breakdown.sessions.active} đang câu{breakdown.sessions.cancelled > 0 ? `, ${breakdown.sessions.cancelled} hủy` : ""})
                                     </span>
                                 </div>
-                                <div className="rounded-xl border border-[#EAE4D7] bg-white divide-y divide-[#EAE4D7] shadow-xs">
+                                <div className="rounded-2xl border border-[#E3E8E3] bg-white divide-y divide-[#E3E8E3] shadow-xs overflow-hidden">
                                     {breakdown.sessions.packages.length > 0 ? (
                                         breakdown.sessions.packages.map((pkg) => (
-                                            <div key={pkg.packageName} className="flex items-center justify-between px-3.5 py-2.5 text-xs">
+                                            <div key={pkg.packageName} className="flex items-center justify-between px-4 py-3 text-xs">
                                                 <div>
-                                                    <span className="font-semibold text-slate-800">{pkg.packageName}</span>
-                                                    <span className="ml-2 text-slate-500">({pkg.count} vé)</span>
+                                                    <span className="font-semibold text-[#17201A]">{pkg.packageName}</span>
+                                                    <span className="ml-2 text-[#66716A]">({pkg.count} vé)</span>
                                                 </div>
-                                                <span className="font-bold font-mono text-slate-900 tabular-nums">
+                                                <span className="font-bold font-mono text-[#17201A] tabular-nums">
                                                     {formatVnd(pkg.totalVnd)}
                                                 </span>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="p-3 text-center text-xs text-slate-400">
+                                        <div className="p-4 text-center text-xs text-[#8A938D]">
                                             Chưa có vé câu nào trong ca này
                                         </div>
                                     )}
@@ -297,40 +297,40 @@ export function DailyReportView({
                             {/* 2. Sản phẩm & Gia hạn */}
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between px-1">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
                                         Hàng hóa & Gia hạn
                                     </p>
-                                    <span className="text-xs font-semibold text-slate-700">
+                                    <span className="text-xs font-semibold text-[#66716A]">
                                         {formatVnd(breakdown.products.totalVnd + breakdown.services.extensionsTotalVnd)}
                                     </span>
                                 </div>
-                                <div className="rounded-xl border border-[#EAE4D7] bg-white divide-y divide-[#EAE4D7] shadow-xs">
+                                <div className="rounded-2xl border border-[#E3E8E3] bg-white divide-y divide-[#E3E8E3] shadow-xs overflow-hidden">
                                     {breakdown.services.extensionsCount > 0 && (
-                                        <div className="flex items-center justify-between px-3.5 py-2.5 text-xs bg-amber-50/50">
+                                        <div className="flex items-center justify-between px-4 py-3 text-xs bg-[#FDF6E9]">
                                             <div>
-                                                <span className="font-semibold text-amber-900">Gia hạn thêm giờ</span>
-                                                <span className="ml-2 text-amber-700">({breakdown.services.extensionsCount} lần)</span>
+                                                <span className="font-semibold text-[#D99A32]">Gia hạn thêm giờ</span>
+                                                <span className="ml-2 text-[#D99A32]/80">({breakdown.services.extensionsCount} lần)</span>
                                             </div>
-                                            <span className="font-bold font-mono text-amber-900 tabular-nums">
+                                            <span className="font-bold font-mono text-[#D99A32] tabular-nums">
                                                 {formatVnd(breakdown.services.extensionsTotalVnd)}
                                             </span>
                                         </div>
                                     )}
                                     {breakdown.products.items.length > 0 ? (
                                         breakdown.products.items.map((prod) => (
-                                            <div key={prod.name} className="flex items-center justify-between px-3.5 py-2.5 text-xs">
+                                            <div key={prod.name} className="flex items-center justify-between px-4 py-3 text-xs">
                                                 <div>
-                                                    <span className="font-semibold text-slate-800">{prod.name}</span>
-                                                    <span className="ml-2 text-slate-500">(SL: {prod.quantity})</span>
+                                                    <span className="font-semibold text-[#17201A]">{prod.name}</span>
+                                                    <span className="ml-2 text-[#66716A]">(SL: {prod.quantity})</span>
                                                 </div>
-                                                <span className="font-bold font-mono text-slate-900 tabular-nums">
+                                                <span className="font-bold font-mono text-[#17201A] tabular-nums">
                                                     {formatVnd(prod.totalVnd)}
                                                 </span>
                                             </div>
                                         ))
                                     ) : (
                                         breakdown.services.extensionsCount === 0 && (
-                                            <div className="p-3 text-center text-xs text-slate-400">
+                                            <div className="p-4 text-center text-xs text-[#8A938D]">
                                                 Chưa có bán hàng kèm trong ca này
                                             </div>
                                         )
@@ -340,19 +340,19 @@ export function DailyReportView({
 
                             {/* 3. Xuất nhập kho trong ca */}
                             <div className="space-y-2">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-[#246B38] px-1">
                                     Biến động kho hàng
                                 </p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="rounded-xl border border-[#EAE4D7] bg-white p-3 shadow-xs">
-                                        <span className="text-xs font-medium text-slate-500">Đã nhập kho</span>
-                                        <p className="mt-0.5 text-sm font-bold font-mono text-emerald-700 tabular-nums">
+                                <div className="grid grid-cols-2 gap-2.5">
+                                    <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 shadow-xs">
+                                        <span className="text-xs font-medium text-[#66716A]">Đã nhập kho</span>
+                                        <p className="mt-0.5 text-sm font-bold font-mono text-[#3E9B4F] tabular-nums">
                                             +{breakdown.inventory.inCount} đơn vị
                                         </p>
                                     </div>
-                                    <div className="rounded-xl border border-[#EAE4D7] bg-white p-3 shadow-xs">
-                                        <span className="text-xs font-medium text-slate-500">Đã xuất bán</span>
-                                        <p className="mt-0.5 text-sm font-bold font-mono text-slate-800 tabular-nums">
+                                    <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 shadow-xs">
+                                        <span className="text-xs font-medium text-[#66716A]">Đã xuất bán</span>
+                                        <p className="mt-0.5 text-sm font-bold font-mono text-[#17201A] tabular-nums">
                                             -{breakdown.inventory.outCount} đơn vị
                                         </p>
                                     </div>
@@ -363,19 +363,19 @@ export function DailyReportView({
 
                     {/* Shift Closed Details (if already closed) */}
                     {shift.isClosed && shiftClose && (
-                        <Card className="border-[#2D6A4F]/30 bg-[#E8F3ED]/70 p-4 space-y-1.5 text-xs text-[#2D6A4F]">
+                        <Card className="border-[#4F9D5A]/30 bg-[#E8F3E5] p-4 space-y-1.5 text-xs text-[#246B38] rounded-2xl">
                             <div className="flex items-center justify-between font-bold">
                                 <span>Thời gian chốt ca:</span>
                                 <span className="tabular-nums font-mono">{formatDateTime(shiftClose.closedAt)}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-slate-600">Người thực hiện:</span>
-                                <span className="font-semibold text-slate-900">
+                                <span className="text-[#66716A]">Người thực hiện:</span>
+                                <span className="font-semibold text-[#17201A]">
                                     {shiftClose.closedBy || "Quản trị viên"}
                                 </span>
                             </div>
                             {shiftClose.note && (
-                                <div className="pt-1 text-xs text-slate-600 border-t border-[#2D6A4F]/20 mt-1">
+                                <div className="pt-1 text-xs text-[#66716A] border-t border-[#4F9D5A]/20 mt-1">
                                     Ghi chú: {shiftClose.note}
                                 </div>
                             )}
@@ -386,18 +386,20 @@ export function DailyReportView({
                     {!shift.isClosed && (
                         <div>
                             {canCloseShift ? (
-                                <button
+                                <Button
                                     type="button"
+                                    size="lg"
+                                    variant="primary"
                                     onClick={() => {
                                         setError(null);
                                         setIsModalOpen(true);
                                     }}
-                                    className="mobile-pos-btn mobile-pos-btn-primary w-full text-sm font-bold shadow-md cursor-pointer"
+                                    className="w-full text-sm font-bold shadow-xs min-h-12 rounded-full cursor-pointer"
                                 >
                                     Xem và chốt ca
-                                </button>
+                                </Button>
                             ) : (
-                                <div className="rounded-xl border border-[#EAE4D7] bg-white px-4 py-3 text-center text-xs text-slate-500">
+                                <div className="rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3 text-center text-xs text-[#66716A]">
                                     Chỉ Chủ hồ hoặc Quản lý mới có quyền chốt ca.
                                 </div>
                             )}
@@ -408,11 +410,11 @@ export function DailyReportView({
                 {/* Shift Close Modal */}
                 {isModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-                        <div className="w-full max-w-sm rounded-2xl bg-[#F5F2EB] border border-[#EAE4D7] shadow-2xl overflow-hidden flex flex-col space-y-4 p-5 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="w-full max-w-sm rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl overflow-hidden flex flex-col space-y-4 p-5 animate-in fade-in zoom-in-95 duration-150">
                             {/* Header */}
-                            <div className="flex items-center justify-between border-b border-[#EAE4D7] pb-3">
+                            <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
                                 <div className="flex items-center gap-2">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EAE2CE] text-[#8A5B00]">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8F3E5] text-[#246B38]">
                                         <svg
                                             className="h-4 w-4"
                                             fill="none"
@@ -427,7 +429,7 @@ export function DailyReportView({
                                             />
                                         </svg>
                                     </div>
-                                    <h3 className="text-base font-bold text-slate-900">
+                                    <h3 className="text-base font-bold text-[#17201A]">
                                         Xác nhận chốt ca
                                     </h3>
                                 </div>
@@ -435,7 +437,7 @@ export function DailyReportView({
                                     type="button"
                                     disabled={isSubmitting}
                                     onClick={() => setIsModalOpen(false)}
-                                    className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                    className="rounded-full p-1.5 text-[#66716A] hover:text-[#17201A] hover:bg-[#F7F9F5] cursor-pointer"
                                 >
                                     <svg
                                         className="h-5 w-5"
@@ -459,22 +461,22 @@ export function DailyReportView({
                             )}
 
                             {/* Summary Snapshot */}
-                            <div className="rounded-xl border border-[#EAE4D7] bg-white p-3.5 space-y-2 text-xs">
+                            <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-3.5 space-y-2 text-xs">
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Doanh thu:</span>
-                                    <span className="font-bold font-mono text-[#2D6A4F] tabular-nums">
+                                    <span className="text-[#66716A]">Doanh thu:</span>
+                                    <span className="font-bold font-mono text-[#246B38] tabular-nums">
                                         {formatVnd(summary.revenueVnd)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Chi phí:</span>
-                                    <span className="font-bold font-mono text-[#8B1E1E] tabular-nums">
+                                    <span className="text-[#66716A]">Chi phí:</span>
+                                    <span className="font-bold font-mono text-[#D9534F] tabular-nums">
                                         {formatVnd(summary.expenseVnd)}
                                     </span>
                                 </div>
-                                <div className="flex justify-between border-t border-[#F0ECE1] pt-1.5 font-bold text-slate-900">
+                                <div className="flex justify-between border-t border-[#E3E8E3] pt-1.5 font-bold text-[#17201A]">
                                     <span>Thực thu ròng:</span>
-                                    <span className="text-[#8A5B00] font-bold font-mono tabular-nums">
+                                    <span className="text-[#246B38] font-bold font-mono tabular-nums">
                                         {formatVnd(summary.netProfitVnd)}
                                     </span>
                                 </div>
@@ -482,7 +484,7 @@ export function DailyReportView({
 
                             {/* Note Input */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-slate-700">
+                                <label className="text-xs font-semibold text-[#17201A]">
                                     Ghi chú (tùy chọn):
                                 </label>
                                 <textarea
@@ -491,7 +493,7 @@ export function DailyReportView({
                                     placeholder="Nhập ghi chú chốt ca nếu có..."
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
-                                    className="w-full rounded-xl border border-[#EAE4D7] bg-white p-2.5 text-xs text-slate-900 focus:border-[#8A5B00] focus:ring-1 focus:ring-[#8A5B00] focus:outline-none"
+                                    className="w-full rounded-2xl border border-[#E3E8E3] bg-white p-3 text-xs text-[#17201A] focus:border-[#4F9D5A] focus:ring-1 focus:ring-[#4F9D5A] focus:outline-none"
                                 />
                             </div>
 
@@ -509,7 +511,7 @@ export function DailyReportView({
                                     variant="outline"
                                     disabled={isSubmitting}
                                     onClick={() => setIsModalOpen(false)}
-                                    className="flex-1"
+                                    className="flex-1 rounded-full"
                                 >
                                     Hủy
                                 </Button>
@@ -520,7 +522,7 @@ export function DailyReportView({
                                     isLoading={isSubmitting}
                                     loadingText="Đang chốt ca…"
                                     onClick={handleConfirmClose}
-                                    className="flex-2"
+                                    className="flex-2 rounded-full"
                                 >
                                     Xác nhận chốt ca
                                 </Button>

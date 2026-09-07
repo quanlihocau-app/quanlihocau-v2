@@ -12,12 +12,12 @@ export const BANK_CONFIG = {
 export const PLAN_PRICING = {
     TRIAL: {
         code: "TRIAL",
-        name: "Dùng thử 30 ngày",
+        name: "Dùng thử 7 ngày",
         priceVnd: 0,
-        durationDays: 30,
+        durationDays: 7,
         maxSpots: null,
         maxStaff: null,
-        description: "Full chức năng (giống Gói Vàng), 30 ngày dùng thử.",
+        description: "Full chức năng (giống Gói Vàng), 7 ngày dùng thử.",
     },
     SILVER: {
         code: "SILVER",

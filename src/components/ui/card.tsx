@@ -11,12 +11,12 @@ export function Card({
     ...props
 }: CardProps) {
     const variantClasses = {
-        default: "border-[#D9D2C8] bg-white text-[#27231F]",
-        muted: "border-[#D9D2C8] bg-[#F4F2EE] text-[#766F67]",
-        selected: "border-[#8A5A20] bg-[#EFE4CF] text-[#27231F]",
-        highlight: "border-[#2D6A4F]/30 bg-[#E8F3ED] text-[#27231F]",
-        warning: "border-[#9A4C16]/30 bg-[#F8ECE2] text-[#27231F]",
-        danger: "border-[#8B1E1E]/30 bg-[#FAECEC] text-[#27231F]",
+        default: "border-[#E3E8E3] bg-white text-[#17201A] shadow-xs",
+        muted: "border-[#E3E8E3] bg-[#F7F9F5] text-[#66716A]",
+        selected: "border-[#4F9D5A] bg-[#E8F3E5] text-[#17201A] shadow-xs",
+        highlight: "border-[#3E9B4F]/30 bg-[#EBF6ED] text-[#17201A]",
+        warning: "border-[#D99A32]/30 bg-[#FDF6E9] text-[#17201A]",
+        danger: "border-[#D9534F]/30 bg-[#FCEEED] text-[#17201A]",
     }[variant];
 
     return (
@@ -42,14 +42,14 @@ export function CardHeader({
 }) {
     return (
         <div
-            className={`flex items-start justify-between gap-3 border-b border-[#D9D2C8] pb-3.5 ${className}`}
+            className={`flex items-start justify-between gap-3 border-b border-[#E3E8E3] pb-3.5 ${className}`}
         >
             <div>
-                <h3 className="text-base font-bold text-[#27231F] sm:text-lg">
+                <h3 className="text-base font-bold text-[#17201A] sm:text-lg">
                     {title}
                 </h3>
                 {subtitle && (
-                    <p className="mt-0.5 text-xs text-[#766F67]">{subtitle}</p>
+                    <p className="mt-0.5 text-xs text-[#66716A]">{subtitle}</p>
                 )}
             </div>
             {action && <div className="shrink-0">{action}</div>}

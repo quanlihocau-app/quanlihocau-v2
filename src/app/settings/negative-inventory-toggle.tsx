@@ -75,10 +75,10 @@ export function NegativeInventoryToggle({
                 <InlineAlert type="success" message={message} />
             )}
 
-            <Card className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
+            <Card className="flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center rounded-2xl border-[#E3E8E3] bg-white shadow-xs">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-slate-900">
+                        <span className="text-sm font-bold text-[#17201A]">
                             Cho phép bán âm kho
                         </span>
                         {enabled ? (
@@ -87,7 +87,7 @@ export function NegativeInventoryToggle({
                             <Badge variant="neutral">Đang tắt</Badge>
                         )}
                     </div>
-                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                    <p className="text-xs text-[#66716A] font-medium leading-relaxed">
                         Khi bật, hệ thống vẫn cho phép xuất bán khi tồn kho không đủ nhưng sẽ hiển thị cảnh báo màu cam.
                     </p>
                 </div>
@@ -98,8 +98,8 @@ export function NegativeInventoryToggle({
                             type="button"
                             disabled={loading}
                             onClick={handleToggle}
-                            className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#102A43] focus:ring-offset-2 disabled:opacity-50 ${
-                                enabled ? "bg-[#0D9488]" : "bg-slate-300"
+                            className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] disabled:opacity-50 ${
+                                enabled ? "bg-[#4F9D5A]" : "bg-stone-300"
                             }`}
                             role="switch"
                             aria-checked={enabled}
@@ -112,7 +112,7 @@ export function NegativeInventoryToggle({
                             />
                         </button>
                     ) : (
-                        <span className="text-xs text-slate-400 italic">
+                        <span className="text-xs text-[#8A938D] italic">
                             Chỉ Chủ sở hữu (OWNER) có quyền thay đổi
                         </span>
                     )}

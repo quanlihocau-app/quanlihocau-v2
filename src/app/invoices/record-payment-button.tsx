@@ -208,16 +208,16 @@ export function RecordPaymentButton({
                     Thu tiền
                 </Button>
             ) : (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-                        <div className="flex items-center justify-between border-b border-[#D9D2C8] pb-3">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+                    <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-[#E3E8E3] space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
                             <div className="flex items-center gap-2">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EFE4CF] text-[#8A5A20]">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8F3E5] text-[#246B38]">
                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
                                 </div>
-                                <h3 className="text-base font-bold text-[#27231F]">
+                                <h3 className="text-base font-bold text-[#17201A]">
                                     Ghi nhận thanh toán
                                 </h3>
                             </div>
@@ -225,7 +225,7 @@ export function RecordPaymentButton({
                                 type="button"
                                 onClick={handleClose}
                                 disabled={loading}
-                                className="rounded-lg p-1.5 text-[#766F67] hover:text-[#27231F] hover:bg-[#F4F2EE]"
+                                className="rounded-full p-1.5 text-[#66716A] hover:text-[#17201A] hover:bg-[#F7F9F5] cursor-pointer"
                             >
                                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -234,11 +234,11 @@ export function RecordPaymentButton({
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] p-3 flex items-center justify-between">
-                                <span className="text-xs font-semibold text-[#766F67]">
+                            <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-3.5 flex items-center justify-between">
+                                <span className="text-xs font-semibold text-[#66716A]">
                                     Số tiền còn lại cần thu:
                                 </span>
-                                <span className="text-base font-bold text-[#8A5A20] tabular-nums">
+                                <span className="text-base font-bold text-[#246B38] tabular-nums">
                                     {new Intl.NumberFormat("vi-VN").format(remainingAmountVnd)} đ
                                 </span>
                             </div>

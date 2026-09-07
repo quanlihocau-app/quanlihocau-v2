@@ -83,16 +83,16 @@ export default async function InvoicesPage() {
     }));
 
     return (
-        <main className="mx-auto min-h-screen max-w-lg bg-[#F4F2EE] px-4 pb-24 pt-5 sm:px-6">
+        <main className="mx-auto min-h-screen max-w-lg bg-[#F7F9F5] px-4 pb-24 pt-5 sm:px-6">
             <MobileAppHeader lakeName={tenantContext.lakeName} />
 
             <div className="mb-4 flex items-center justify-between">
                 <div>
-                    <h1 className="text-[22px] font-bold tracking-tight text-[#27231F]">
+                    <h1 className="text-[22px] font-bold tracking-tight text-[#17201A]">
                         Bán hàng
                     </h1>
                 </div>
-                <span className="badge-pill bg-[#8A5A20] text-white">
+                <span className="rounded-full bg-[#E8F3E5] px-3 py-1 text-xs font-semibold text-[#246B38]">
                     Thêm vào vé
                 </span>
             </div>

@@ -330,7 +330,7 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
             <div className="flex justify-end">
                 <Link
                     href="/invoices/history"
-                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#D9D2C8] bg-white px-4 text-xs font-semibold text-[#8A5A20] hover:bg-[#F4F2EE] transition-colors"
+                    className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#E3E8E3] bg-white px-4 text-xs font-semibold text-[#246B38] hover:bg-[#E8F3E5] transition-colors shadow-xs"
                 >
                     <svg
                         className="h-4 w-4"
@@ -351,14 +351,14 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
 
             {/* Error Notification */}
             {errorMsg && (
-                <div className="rounded-xl border border-[#8B1E1E]/30 bg-[#FAECEC] p-3.5 text-xs font-semibold text-[#8B1E1E]">
+                <div className="rounded-2xl border border-[#D9534F]/30 bg-[#FCEEED] p-3.5 text-xs font-semibold text-[#D9534F]">
                     {errorMsg}
                 </div>
             )}
 
             {/* Order Mode Selector */}
-            <div className="rounded-2xl border border-[#D9D2C8] bg-white p-4">
-                <label className="text-xs font-bold uppercase tracking-wide text-[#766F67]">
+            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 shadow-xs">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
                     Hình thức bán hàng
                 </label>
                 <div className="mt-2.5 grid grid-cols-2 gap-2">
@@ -368,10 +368,10 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                             setMode("SESSION");
                             setErrorMsg("");
                         }}
-                        className={`flex h-11 items-center justify-center rounded-xl border text-xs font-bold transition-all ${
+                        className={`flex h-11 items-center justify-center rounded-full border text-xs font-bold transition-all cursor-pointer ${
                             mode === "SESSION"
-                                ? "border-[#8A5A20] bg-[#EFE4CF] text-[#8A5A20]"
-                                : "border-[#D9D2C8] bg-white text-[#27231F]"
+                                ? "border-[#4F9D5A] bg-[#4F9D5A] text-white shadow-xs"
+                                : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
                         }`}
                     >
                         Vé đang câu
@@ -382,10 +382,10 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                             setMode("RETAIL");
                             setErrorMsg("");
                         }}
-                        className={`flex h-11 items-center justify-center rounded-xl border text-xs font-bold transition-all ${
+                        className={`flex h-11 items-center justify-center rounded-full border text-xs font-bold transition-all cursor-pointer ${
                             mode === "RETAIL"
-                                ? "border-[#8A5A20] bg-[#EFE4CF] text-[#8A5A20]"
-                                : "border-[#D9D2C8] bg-white text-[#27231F]"
+                                ? "border-[#4F9D5A] bg-[#4F9D5A] text-white shadow-xs"
+                                : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
                         }`}
                     >
                         Phiếu tạm / Bán lẻ
@@ -395,18 +395,18 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                 {/* Dropdown active sessions */}
                 {mode === "SESSION" && (
                     <div className="mt-3.5 space-y-1.5">
-                        <label className="text-xs font-semibold text-[#766F67]">
+                        <label className="text-xs font-semibold text-[#66716A]">
                             Chọn vé câu:
                         </label>
                         {activeSessions.length === 0 ? (
-                            <div className="rounded-xl bg-[#FAECEC] border border-[#8B1E1E]/20 p-3 text-center text-xs text-[#8B1E1E]">
+                            <div className="rounded-2xl bg-[#FCEEED] border border-[#D9534F]/20 p-3 text-center text-xs text-[#D9534F]">
                                 Hiện không có phiên câu nào đang hoạt động. Vui lòng chuyển sang &quot;Phiếu tạm&quot; để bán lẻ.
                             </div>
                         ) : (
                             <select
                                 value={selectedSessionId}
                                 onChange={(e) => setSelectedSessionId(e.target.value)}
-                                className="h-11 w-full rounded-xl border border-[#D9D2C8] bg-white px-3 text-xs text-[#27231F] focus:border-[#8A5A20] focus:outline-none"
+                                className="h-11 w-full rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] px-3 text-xs font-medium text-[#17201A] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
                             >
                                 {activeSessions.map((session) => (
                                     <SessionDropdownItem key={session.id} session={session} />
@@ -419,17 +419,17 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                 {/* Payment method selection for Retail */}
                 {mode === "RETAIL" && (
                     <div className="mt-3.5 space-y-1.5">
-                        <label className="text-xs font-semibold text-[#766F67]">
+                        <label className="text-xs font-semibold text-[#66716A]">
                             Phương thức thanh toán:
                         </label>
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 type="button"
                                 onClick={() => setPaymentMethod("CASH")}
-                                className={`flex h-10 items-center justify-center rounded-lg border text-xs font-medium transition-all ${
+                                className={`flex h-10 items-center justify-center rounded-full border text-xs font-semibold transition-all cursor-pointer ${
                                     paymentMethod === "CASH"
-                                        ? "border-[#2D6A4F] bg-[#E8F3ED] text-[#2D6A4F] font-bold"
-                                        : "border-[#D9D2C8] bg-white text-[#27231F]"
+                                        ? "border-[#4F9D5A] bg-[#E8F3E5] text-[#246B38] font-bold"
+                                        : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
                                 }`}
                             >
                                 Tiền mặt
@@ -437,10 +437,10 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                             <button
                                 type="button"
                                 onClick={() => setPaymentMethod("BANK_TRANSFER")}
-                                className={`flex h-10 items-center justify-center rounded-lg border text-xs font-medium transition-all ${
+                                className={`flex h-10 items-center justify-center rounded-full border text-xs font-semibold transition-all cursor-pointer ${
                                     paymentMethod === "BANK_TRANSFER"
-                                        ? "border-[#2D6A4F] bg-[#E8F3ED] text-[#2D6A4F] font-bold"
-                                        : "border-[#D9D2C8] bg-white text-[#27231F]"
+                                        ? "border-[#4F9D5A] bg-[#E8F3E5] text-[#246B38] font-bold"
+                                        : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
                                 }`}
                             >
                                 Chuyển khoản
@@ -451,9 +451,9 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
             </div>
 
             {/* Catalog Grid */}
-            <div className="rounded-2xl border border-[#D9D2C8] bg-white p-4 space-y-3">
+            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 space-y-3 shadow-xs">
                 <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase tracking-wide text-[#766F67]">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
                         Danh mục sản phẩm
                     </label>
                 </div>
@@ -461,7 +461,7 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                 {/* Search */}
                 <div className="relative">
                     <svg
-                        className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#766F67]"
+                        className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#66716A]"
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2}
@@ -474,7 +474,7 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                         placeholder="Tìm sản phẩm (Tên, SKU)..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="h-10 w-full rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] pl-9 pr-3 text-[13px] text-[#27231F] placeholder:text-[#766F67] focus:border-[#8A5A20] focus:outline-none"
+                        className="h-11 w-full rounded-full border border-[#E3E8E3] bg-[#F7F9F5] pl-10 pr-4 text-[13px] text-[#17201A] placeholder:text-[#8A938D] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
                     />
                 </div>
 
@@ -482,21 +482,21 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                 <div className="max-h-75 overflow-y-auto pr-1">
                     {isLoadingProducts ? (
                         <div className="flex items-center justify-center py-8">
-                            <svg className="h-6 w-6 animate-spin text-[#8A5A20]" fill="none" viewBox="0 0 24 24">
+                            <svg className="h-6 w-6 animate-spin text-[#4F9D5A]" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                             </svg>
                         </div>
                     ) : loadError ? (
-                        <div className="rounded-xl border border-[#8B1E1E]/30 bg-[#FAECEC] p-3 text-center text-xs text-[#8B1E1E]">
+                        <div className="rounded-2xl border border-[#D9534F]/30 bg-[#FCEEED] p-3 text-center text-xs text-[#D9534F]">
                             {loadError}
                         </div>
                     ) : filteredProducts.length === 0 ? (
-                        <div className="rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] p-4 text-center text-xs text-[#766F67]">
+                        <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-4 text-center text-xs text-[#66716A]">
                             {search ? "Không tìm thấy sản phẩm." : "Hệ thống chưa có sản phẩm nào."}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2.5">
                             {filteredProducts.map((p) => {
                                 const inCart = cart.find((item) => item.product.id === p.id);
                                 return (
@@ -504,25 +504,25 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                                         key={p.id}
                                         type="button"
                                         onClick={() => addToCart(p)}
-                                        className={`flex flex-col gap-1 rounded-xl border p-3 text-left transition-all ${
+                                        className={`flex flex-col gap-1 rounded-2xl border p-3 text-left transition-all cursor-pointer ${
                                             inCart
-                                                ? "border-[#8A5A20] bg-[#EFE4CF] ring-1 ring-[#8A5A20]/20"
-                                                : "border-[#D9D2C8] bg-white hover:bg-[#F9F6F1]"
+                                                ? "border-[#4F9D5A] bg-[#E8F3E5] ring-2 ring-[#4F9D5A]/20"
+                                                : "border-[#E3E8E3] bg-[#F7F9F5] hover:bg-white hover:border-[#4F9D5A]"
                                         }`}
                                     >
-                                        <span className="text-[12px] font-bold text-[#27231F] line-clamp-2 leading-tight">
+                                        <span className="text-[12px] font-bold text-[#17201A] line-clamp-2 leading-tight">
                                             {p.name}
                                         </span>
-                                        <span className="text-[12px] font-bold text-[#8A5A20]">
+                                        <span className="text-[12px] font-bold text-[#246B38]">
                                             {formatVnd(p.priceVnd)}
                                         </span>
                                         {p.sku && (
-                                            <span className="text-[10px] text-[#766F67]">
+                                            <span className="text-[10px] font-mono text-[#66716A]">
                                                 SKU: {p.sku}
                                             </span>
                                         )}
                                         {inCart && (
-                                            <span className="mt-1 self-start rounded bg-[#8A5A20] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                            <span className="mt-1 self-start rounded-full bg-[#4F9D5A] px-2 py-0.5 text-[10px] font-bold text-white">
                                                 Đã chọn ({inCart.quantity})
                                             </span>
                                         )}
@@ -535,16 +535,16 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
             </div>
 
             {/* Pending Order Cart */}
-            <div className="rounded-2xl border border-[#D9D2C8] bg-white p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-[#D9D2C8] pb-2">
-                    <label className="text-xs font-bold uppercase tracking-wide text-[#766F67]">
+            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
                         Đơn chờ ({cart.length})
                     </label>
                     {cart.length > 0 && (
                         <button
                             type="button"
                             onClick={clearCart}
-                            className="text-xs font-bold text-[#8B1E1E] hover:underline"
+                            className="text-xs font-bold text-[#D9534F] hover:underline cursor-pointer"
                         >
                             Xóa đơn chờ
                         </button>
@@ -552,18 +552,18 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                 </div>
 
                 {cart.length === 0 ? (
-                    <div className="py-6 text-center text-xs text-[#766F67]">
+                    <div className="py-6 text-center text-xs text-[#66716A]">
                         Chưa chọn sản phẩm nào. Bấm vào sản phẩm bên trên để thêm vào đơn.
                     </div>
                 ) : (
-                    <div className="divide-y divide-[#D9D2C8] max-h-55 overflow-y-auto pr-1">
+                    <div className="divide-y divide-[#E3E8E3] max-h-55 overflow-y-auto pr-1">
                         {cart.map((item) => (
                             <div key={item.product.id} className="py-2.5 flex items-center justify-between gap-3">
                                 <div className="min-w-0 flex-1">
-                                    <p className="truncate text-xs font-bold text-[#27231F]">
+                                    <p className="truncate text-xs font-bold text-[#17201A]">
                                         {item.product.name}
                                     </p>
-                                    <p className="text-[11px] text-[#766F67]">
+                                    <p className="text-[11px] text-[#66716A]">
                                         {formatVnd(item.product.priceVnd)}
                                     </p>
                                 </div>
@@ -573,28 +573,28 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                                         <button
                                             type="button"
                                             onClick={() => updateQuantity(item.product.id, -1)}
-                                            className="flex h-7 w-7 items-center justify-center rounded border border-[#D9D2C8] bg-white text-xs font-bold text-[#27231F] active:bg-[#F4F2EE]"
+                                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E3E8E3] bg-white text-xs font-bold text-[#17201A] hover:bg-[#F7F9F5] cursor-pointer"
                                         >
                                             −
                                         </button>
-                                        <span className="w-6 text-center text-xs font-bold tabular-nums text-[#27231F]">
+                                        <span className="w-6 text-center text-xs font-bold tabular-nums text-[#17201A]">
                                             {item.quantity}
                                         </span>
                                         <button
                                             type="button"
                                             onClick={() => updateQuantity(item.product.id, 1)}
-                                            className="flex h-7 w-7 items-center justify-center rounded border border-[#D9D2C8] bg-white text-xs font-bold text-[#27231F] active:bg-[#F4F2EE]"
+                                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E3E8E3] bg-white text-xs font-bold text-[#17201A] hover:bg-[#F7F9F5] cursor-pointer"
                                         >
                                             +
                                         </button>
                                     </div>
-                                    <span className="w-16 text-right text-xs font-bold tabular-nums text-[#27231F]">
+                                    <span className="w-16 text-right text-xs font-bold tabular-nums text-[#17201A]">
                                         {formatVnd(item.product.priceVnd * item.quantity)}
                                     </span>
                                     <button
                                         type="button"
                                         onClick={() => removeFromCart(item.product.id)}
-                                        className="text-[#8B1E1E] hover:text-[#701717] p-1"
+                                        className="text-[#66716A] hover:text-[#D9534F] p-1 cursor-pointer"
                                         aria-label="Xóa mặt hàng"
                                     >
                                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -608,11 +608,11 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                 )}
             </div>
 
-            {/* Sticky Actions Bar at the bottom (relative wrapper, margin-top pushes it) */}
-            <div className="rounded-2xl border border-[#D9D2C8] bg-white p-4 space-y-3 shadow-md">
+            {/* Bottom Actions Bar */}
+            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 space-y-3 shadow-xs">
                 <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-[#766F67]">Tạm tính:</span>
-                    <span className="text-[18px] font-bold text-[#8A5A20] tabular-nums">
+                    <span className="font-semibold text-[#66716A]">Tạm tính:</span>
+                    <span className="text-[18px] font-bold text-[#246B38] tabular-nums">
                         {formatVnd(totalAmount)}
                     </span>
                 </div>
@@ -624,7 +624,7 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                     isLoading={isSubmitting}
                     disabled={cart.length === 0 || isSubmitting || (mode === "SESSION" && activeSessions.length === 0)}
                     onClick={handleSubmit}
-                    className="w-full text-sm font-semibold"
+                    className="w-full text-sm font-semibold rounded-full min-h-12"
                 >
                     {mode === "SESSION" ? "Thêm vào vé câu" : "Thanh toán phiếu tạm"}
                 </Button>
@@ -632,16 +632,16 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
 
             {/* Success Modal */}
             {successModal?.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4 text-center">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#E8F3ED] text-[#2D6A4F]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+                    <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-[#E3E8E3] space-y-4 text-center">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EBF6ED] text-[#3E9B4F]">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                             </svg>
                         </div>
                         <div>
-                            <h3 className="text-base font-bold text-[#27231F]">Thành công</h3>
-                            <p className="mt-1.5 text-xs text-[#766F67] leading-relaxed">
+                            <h3 className="text-base font-bold text-[#17201A]">Thành công</h3>
+                            <p className="mt-1.5 text-xs text-[#66716A] leading-relaxed">
                                 {successModal.message}
                             </p>
                         </div>
@@ -649,7 +649,7 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                             {successModal.invoiceId && (
                                 <Link
                                     href={`/invoices/${successModal.invoiceId}`}
-                                    className="flex h-11 items-center justify-center rounded-xl bg-[#2D6A4F] text-xs font-semibold text-white hover:bg-[#22533D] transition-colors"
+                                    className="flex h-11 items-center justify-center rounded-full bg-[#4F9D5A] text-xs font-semibold text-white hover:bg-[#246B38] transition-colors"
                                 >
                                     Xem chi tiết & In hóa đơn
                                 </Link>
@@ -657,7 +657,7 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                             <button
                                 type="button"
                                 onClick={() => setSuccessModal(null)}
-                                className="flex h-11 items-center justify-center rounded-xl border border-[#D9D2C8] bg-white text-xs font-semibold text-[#27231F] hover:bg-[#F4F2EE] transition-colors"
+                                className="flex h-11 items-center justify-center rounded-full border border-[#E3E8E3] bg-white text-xs font-semibold text-[#17201A] hover:bg-[#F7F9F5] transition-colors cursor-pointer"
                             >
                                 Bắt đầu đơn mới
                             </button>

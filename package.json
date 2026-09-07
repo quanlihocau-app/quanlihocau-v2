@@ -8,18 +8,22 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "test": "node --test --test-concurrency=1 --env-file=.env tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs"
+    "test": "node --test --test-concurrency=1 --env-file=.env tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs tests/speedsms-and-otp-security.test.mjs tests/comprehensive-reporting.test.mjs tests/test-auth-and-subscription.test.mjs"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "7.10.0",
+    "@tanstack/query-sync-storage-persister": "^5.102.8",
+    "@tanstack/react-query": "^5.102.8",
+    "@tanstack/react-query-persist-client": "^5.102.8",
     "bcryptjs": "^3.0.3",
     "next": "16.3.3",
     "next-auth": "^4.24.15",
     "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "sonner": "^2.0.8",
     "zod": "^4.5.4"
   },
   "devDependencies": {

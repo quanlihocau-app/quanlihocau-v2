@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { generateNumericOtp, sendSmsOtp } from "@/lib/otp";
-import { normalizeVietnamesePhone } from "@/lib/phone";
+import { generateNumericOtp, hashOtpCode, sendSmsOtp } from "@/lib/otp";
+import { maskPhoneNumber, normalizeVietnamesePhone } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit } from "@/lib/rate-limit";
 
@@ -23,11 +23,12 @@ export async function POST(request: Request) {
 
     const parsed = sendOtpSchema.safeParse(body);
     if (!parsed.success) {
-        const firstError = parsed.error.issues[0]?.message ?? "Vui lòng nhập số điện thoại hợp lệ.";
+        const firstError =
+            parsed.error.issues[0]?.message ?? "Vui lòng nhập số điện thoại hợp lệ.";
         return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
-    // 1. Normalize phone number
+    // 1. Chuẩn hóa số điện thoại Việt Nam về dạng E.164 (+84...)
     let normalizedPhone: string;
     try {
         const normalized = normalizeVietnamesePhone(parsed.data.phone);
@@ -39,37 +40,94 @@ export async function POST(request: Request) {
         }
         normalizedPhone = normalized;
     } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Số điện thoại không đúng định dạng di động Việt Nam.";
-        return NextResponse.json(
-            { error: message },
-            { status: 400 },
-        );
+        const message =
+            err instanceof Error
+                ? err.message
+                : "Số điện thoại không đúng định dạng di động Việt Nam.";
+        return NextResponse.json({ error: message }, { status: 400 });
     }
 
-    // 2. Rate Limiting to prevent SMS flooding
+    const masked = maskPhoneNumber(normalizedPhone);
+
+    // 2. Cooldown 60 giây giữa các lần gửi
+    const existingOtp = await prisma.otpCode.findUnique({
+        where: { phone: normalizedPhone },
+    });
+
+    const now = Date.now();
+    if (existingOtp) {
+        const elapsedMs = now - existingOtp.updatedAt.getTime();
+        const COOLDOWN_MS = 60 * 1000;
+        if (elapsedMs < COOLDOWN_MS) {
+            const waitSeconds = Math.ceil((COOLDOWN_MS - elapsedMs) / 1000);
+            return NextResponse.json(
+                {
+                    error: `Vui lòng đợi ${waitSeconds} giây trước khi yêu cầu mã OTP tiếp theo.`,
+                    retryAfterSeconds: waitSeconds,
+                },
+                {
+                    status: 429,
+                    headers: { "Retry-After": waitSeconds.toString() },
+                },
+            );
+        }
+    }
+
+    // 3. Giới hạn tỷ lệ đa tầng (Chống phá tiền SMS)
     const rawIp =
         request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
         request.headers.get("x-real-ip")?.trim() ||
         "";
     const validIp = rawIp !== "unknown" && rawIp !== "" ? rawIp : null;
+    const deviceId = request.headers.get("x-device-id")?.trim() || null;
 
     try {
         const rateLimitChecks = [
+            // Tiêu chí 6: Tối đa 5 mã/ngày cho một số điện thoại
             consumeRateLimit({
-                namespace: "otp:phone",
+                namespace: "otp:phone:daily",
+                identifier: normalizedPhone,
+                maxRequests: 5,
+                windowSeconds: 86400, // 24h
+            }),
+            // Tối đa 3 mã trong 10 phút cho 1 số điện thoại
+            consumeRateLimit({
+                namespace: "otp:phone:short",
                 identifier: normalizedPhone,
                 maxRequests: 3,
-                windowSeconds: 300, // 3 requests per 5 minutes
+                windowSeconds: 600,
             }),
         ];
 
-        if (validIp) {
+        // Tiêu chí 7: Giới hạn theo IP (ngắn hạn và theo ngày)
+        const isLocalhost =
+            validIp === "127.0.0.1" || validIp === "::1" || validIp === "localhost";
+
+        if (validIp && (!isLocalhost || process.env.NODE_ENV === "production")) {
             rateLimitChecks.push(
                 consumeRateLimit({
-                    namespace: "otp:ip",
+                    namespace: "otp:ip:short",
                     identifier: validIp,
-                    maxRequests: 10,
-                    windowSeconds: 600, // 10 requests per 10 minutes
+                    maxRequests: 15,
+                    windowSeconds: 600, // 15 requests / 10 mins
+                }),
+                consumeRateLimit({
+                    namespace: "otp:ip:daily",
+                    identifier: validIp,
+                    maxRequests: 50,
+                    windowSeconds: 86400, // 50 requests / day
+                }),
+            );
+        }
+
+        // Tiêu chí 7: Giới hạn theo Thiết bị
+        if (deviceId) {
+            rateLimitChecks.push(
+                consumeRateLimit({
+                    namespace: "otp:device:short",
+                    identifier: deviceId,
+                    maxRequests: 5,
+                    windowSeconds: 600,
                 }),
             );
         }
@@ -79,47 +137,63 @@ export async function POST(request: Request) {
 
         if (exceeded) {
             return NextResponse.json(
-                { error: "Bạn đã yêu cầu gửi OTP quá nhiều lần. Vui lòng đợi trong giây lát." },
+                {
+                    error:
+                        "Bạn hoặc số điện thoại này đã nhận quá số lượng mã OTP cho phép trong ngày. Vui lòng thử lại sau.",
+                },
                 {
                     status: 429,
                     headers: {
-                        "Retry-After": Math.max(1, exceeded.retryAfterSeconds).toString(),
+                        "Retry-After": Math.max(
+                            1,
+                            exceeded.retryAfterSeconds,
+                        ).toString(),
                     },
                 },
             );
         }
     } catch (rateErr) {
-        // Fallthrough if rate limit storage has transient issue
-        console.warn("Rate limit check warning:", rateErr);
+        console.warn("Rate limit warning:", rateErr);
     }
 
-    // 3. Generate OTP & Save
+    // 4. Sinh OTP 6 chữ số và tính thời hạn 3 phút (180 giây)
     const code = generateNumericOtp(6);
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    const expiresAt = new Date(now + 3 * 60 * 1000); // 3 phút theo tiêu chí 3
+
+    // 5. Tiêu chí 8: Không lưu OTP dạng văn bản; chỉ lưu Hash
+    const hashedCode = hashOtpCode(normalizedPhone, code);
 
     await prisma.otpCode.upsert({
         where: { phone: normalizedPhone },
         create: {
             phone: normalizedPhone,
-            code,
+            code: hashedCode,
             expiresAt,
             attempts: 0,
         },
         update: {
-            code,
+            code: hashedCode,
             expiresAt,
             attempts: 0,
+            updatedAt: new Date(),
         },
     });
 
-    // 4. Dispatch SMS
-    await sendSmsOtp(normalizedPhone, code);
+    // 6. Gửi SMS qua nhà cung cấp (SpeedSMS / Mock) và ghi OtpDeliveryLog
+    await sendSmsOtp(normalizedPhone, code, {
+        ip: validIp,
+        deviceHash: deviceId,
+    });
 
+    // 7. Tiêu chí 11 & 13: Che số điện thoại trong phản hồi và không tiết lộ sự tồn tại của tài khoản
     return NextResponse.json(
         {
-            message: "Mã OTP đã được gửi đến số điện thoại của bạn.",
+            message:
+                "Mã OTP xác thực đã được gửi đến số điện thoại của bạn nếu hợp lệ.",
             phone: normalizedPhone,
-            expiresInSeconds: 300,
+            maskedPhone: masked,
+            expiresInSeconds: 180,
+            cooldownSeconds: 60,
             ...(process.env.NODE_ENV !== "production" ? { devOtp: code } : {}),
         },
         { status: 200 },

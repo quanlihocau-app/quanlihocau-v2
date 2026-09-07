@@ -213,34 +213,34 @@ export function InvoiceLinesSection({
     return (
         <div className="space-y-5">
             {/* 1. Chi tiết các dòng hàng trong hóa đơn */}
-            <div className="rounded-2xl border border-[#D9D2C8] bg-white overflow-hidden">
-                <div className="flex items-center justify-between border-b border-[#D9D2C8] bg-[#F4F2EE] px-4 py-3 sm:px-6">
-                    <h3 className="text-xs font-semibold text-[#766F67] uppercase tracking-wide">
+            <div className="rounded-2xl border border-[#E3E8E3] bg-white overflow-hidden shadow-xs">
+                <div className="flex items-center justify-between border-b border-[#E3E8E3] bg-[#F7F9F5] px-4 py-3 sm:px-6">
+                    <h3 className="text-xs font-semibold text-[#66716A] uppercase tracking-wide">
                         Các mục tính tiền ({lines.length})
                     </h3>
                 </div>
 
                 {lines.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-[#766F67]">
+                    <div className="p-8 text-center text-xs text-[#66716A]">
                         Hóa đơn hiện chưa có mục hàng nào.
                     </div>
                 ) : (
-                    <div className="divide-y divide-[#D9D2C8]">
+                    <div className="divide-y divide-[#E3E8E3]">
                         {lines.map((line) => (
                             <div
                                 key={line.id}
-                                className="flex items-center justify-between p-3.5 sm:px-6 hover:bg-[#F4F2EE]/40 transition-colors"
+                                className="flex items-center justify-between p-3.5 sm:px-6 hover:bg-[#F7F9F5] transition-colors"
                             >
                                 <div className="space-y-0.5">
-                                    <p className="text-xs font-semibold text-[#27231F]">
+                                    <p className="text-xs font-semibold text-[#17201A]">
                                         {line.name}
                                     </p>
-                                    <p className="text-xs text-[#766F67]">
+                                    <p className="text-xs text-[#66716A]">
                                         {formatVnd(line.unitPrice)} × {line.quantity.toString()}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xs font-bold text-[#8A5A20] tabular-nums">
+                                    <span className="text-xs font-bold text-[#246B38] tabular-nums">
                                         {formatVnd(line.totalVnd)}
                                     </span>
                                     {isDraft && line.productId && (
@@ -248,7 +248,7 @@ export function InvoiceLinesSection({
                                             type="button"
                                             disabled={deletingLineId === line.id}
                                             onClick={() => handleDeleteLine(line.id)}
-                                            className="text-[#766F67] hover:text-[#8B1E1E] transition-colors p-1 cursor-pointer"
+                                            className="text-[#66716A] hover:text-[#D9534F] transition-colors p-1 cursor-pointer"
                                             title="Xóa mục này"
                                         >
                                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -265,23 +265,23 @@ export function InvoiceLinesSection({
 
             {/* 2. Interactive Product Selection Grid (DRAFT only) */}
             {isDraft && (
-                <Card className="bg-[#F4F2EE] p-4 sm:p-5 space-y-4 print:hidden">
+                <Card className="bg-[#F7F9F5] p-4 sm:p-5 space-y-4 print:hidden rounded-2xl border-[#E3E8E3] shadow-xs">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h3 className="text-xs font-semibold text-[#27231F] uppercase tracking-wide">
+                            <h3 className="text-xs font-bold text-[#17201A] uppercase tracking-wide">
                                 Chọn sản phẩm / Đồ dùng bán thêm
                             </h3>
-                            <p className="text-xs text-[#766F67] mt-0.5">
+                            <p className="text-xs text-[#66716A] mt-0.5">
                                 Nhấp chọn sản phẩm để xuất bán và cộng trực tiếp vào hóa đơn.
                             </p>
                         </div>
-                        <span className="inline-flex items-center rounded-lg bg-[#EFE4CF] border border-[#D9D2C8] px-2.5 py-0.5 text-xs font-semibold text-[#8A5A20]">
+                        <span className="inline-flex items-center rounded-full bg-[#E8F3E5] px-2.5 py-0.5 text-xs font-semibold text-[#246B38]">
                             {availableProducts.length} sản phẩm
                         </span>
                     </div>
 
                     {availableProducts.length === 0 ? (
-                        <p className="text-xs text-[#766F67] italic">
+                        <p className="text-xs text-[#66716A] italic">
                             Chưa có sản phẩm nào trong danh mục hoặc tất cả sản phẩm đã ngừng bán.
                         </p>
                     ) : (
@@ -293,10 +293,10 @@ export function InvoiceLinesSection({
                                     placeholder="Tìm theo tên hoặc mã SKU..."
                                     value={productSearch}
                                     onChange={(e) => setProductSearch(e.target.value)}
-                                    className="w-full h-11 rounded-xl border border-[#D9D2C8] bg-white pl-9 pr-3 text-xs font-medium text-[#27231F] focus:border-[#8A5A20] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none"
+                                    className="w-full h-11 rounded-full border border-[#E3E8E3] bg-white pl-10 pr-4 text-xs font-medium text-[#17201A] focus:border-[#4F9D5A] focus:ring-2 focus:ring-[#4F9D5A]/20 focus:outline-none"
                                 />
                                 <svg
-                                    className="absolute left-3 top-3.5 h-4 w-4 text-[#766F67] pointer-events-none"
+                                    className="absolute left-3.5 top-3.5 h-4 w-4 text-[#66716A] pointer-events-none"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     strokeWidth={2}
@@ -321,30 +321,30 @@ export function InvoiceLinesSection({
                                         <div
                                             key={p.id}
                                             onClick={() => setSelectedProductId(p.id)}
-                                            className={`cursor-pointer rounded-xl border p-3 flex flex-col justify-between transition-colors ${
+                                            className={`cursor-pointer rounded-2xl border p-3 flex flex-col justify-between transition-all ${
                                                 isSelected
-                                                    ? "border-[#8A5A20] bg-[#EFE4CF]"
-                                                    : "border-[#D9D2C8] bg-white hover:bg-[#F4F2EE]"
+                                                    ? "border-[#4F9D5A] bg-[#E8F3E5] ring-2 ring-[#4F9D5A]/20"
+                                                    : "border-[#E3E8E3] bg-white hover:bg-[#F7F9F5] hover:border-[#4F9D5A]"
                                             }`}
                                         >
                                             <div>
-                                                <p className="font-semibold text-xs text-[#27231F] line-clamp-1">
+                                                <p className="font-semibold text-xs text-[#17201A] line-clamp-1">
                                                     {p.name}
                                                 </p>
-                                                <p className="text-xs font-bold text-[#8A5A20] tabular-nums mt-0.5">
+                                                <p className="text-xs font-bold text-[#246B38] tabular-nums mt-0.5">
                                                     {formatVnd(p.priceVnd)}
                                                 </p>
                                             </div>
 
-                                            <div className="mt-2 flex items-center justify-between pt-1 border-t border-[#D9D2C8] text-[11px]">
-                                                <span className="text-[#766F67] font-mono">
+                                            <div className="mt-2 flex items-center justify-between pt-1 border-t border-[#E3E8E3] text-[11px]">
+                                                <span className="text-[#66716A] font-mono">
                                                     {p.sku || "—"}
                                                 </span>
                                                 <span
-                                                    className={`font-semibold rounded px-1 py-0.5 ${
+                                                    className={`font-semibold rounded-full px-1.5 py-0.2 text-[10px] ${
                                                         isOutOfStock
-                                                            ? "bg-[#FAECEC] text-[#8B1E1E] border border-[#8B1E1E]/30"
-                                                            : "bg-[#E8F3ED] text-[#2D6A4F]"
+                                                            ? "bg-[#FCEEED] text-[#D9534F]"
+                                                            : "bg-[#EBF6ED] text-[#3E9B4F]"
                                                     }`}
                                                 >
                                                     Tồn: {stock}
@@ -357,13 +357,13 @@ export function InvoiceLinesSection({
 
                             {/* Selected Product Action Bar */}
                             {selectedProduct && (
-                                <div className="rounded-xl border border-[#D9D2C8] bg-white p-3.5 space-y-3">
+                                <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 space-y-3 shadow-xs">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-xs font-bold text-[#27231F]">
+                                            <p className="text-xs font-bold text-[#17201A]">
                                                 {selectedProduct.name}
                                             </p>
-                                            <p className="text-xs text-[#8A5A20] font-bold tabular-nums">
+                                            <p className="text-xs text-[#246B38] font-bold tabular-nums">
                                                 Đơn giá: {formatVnd(selectedProduct.priceVnd)}
                                             </p>
                                         </div>
@@ -373,7 +373,7 @@ export function InvoiceLinesSection({
                                             <button
                                                 type="button"
                                                 onClick={() => handleQuantityChange(-1)}
-                                                className="h-10 w-10 rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] text-base font-bold text-[#27231F] hover:bg-[#EFE4CF] transition-colors flex items-center justify-center cursor-pointer"
+                                                className="h-10 w-10 rounded-xl border border-[#E3E8E3] bg-[#F7F9F5] text-base font-bold text-[#17201A] hover:bg-stone-100 transition-colors flex items-center justify-center cursor-pointer"
                                             >
                                                 -
                                             </button>
@@ -384,12 +384,12 @@ export function InvoiceLinesSection({
                                                 required
                                                 value={quantity}
                                                 onChange={(e) => setQuantity(e.target.value)}
-                                                className="h-10 w-14 rounded-xl border border-[#D9D2C8] text-center text-xs font-bold text-[#27231F] focus:border-[#8A5A20] focus:ring-2 focus:ring-[#8A5A20] focus:outline-none"
+                                                className="h-10 w-14 rounded-xl border border-[#E3E8E3] text-center text-xs font-bold text-[#17201A] focus:border-[#4F9D5A] focus:ring-2 focus:ring-[#4F9D5A]/20 focus:outline-none"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => handleQuantityChange(1)}
-                                                className="h-10 w-10 rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] text-base font-bold text-[#27231F] hover:bg-[#EFE4CF] transition-colors flex items-center justify-center cursor-pointer"
+                                                className="h-10 w-10 rounded-xl border border-[#E3E8E3] bg-[#F7F9F5] text-base font-bold text-[#17201A] hover:bg-stone-100 transition-colors flex items-center justify-center cursor-pointer"
                                             >
                                                 +
                                             </button>
@@ -397,10 +397,10 @@ export function InvoiceLinesSection({
                                     </div>
 
                                     {/* Estimated summary & Submit button */}
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-[#D9D2C8] pt-2.5">
-                                        <span className="text-xs text-[#766F67]">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-[#E3E8E3] pt-2.5">
+                                        <span className="text-xs text-[#66716A]">
                                             Tạm tính:{" "}
-                                            <strong className="text-sm font-bold text-[#8A5A20] tabular-nums">
+                                            <strong className="text-sm font-bold text-[#246B38] tabular-nums">
                                                 {estimatedLineTotal !== null
                                                     ? formatVnd(estimatedLineTotal)
                                                     : "—"}
@@ -413,7 +413,7 @@ export function InvoiceLinesSection({
                                             variant="primary"
                                             isLoading={addLoading}
                                             loadingText="Đang lưu…"
-                                            className="w-full sm:w-auto"
+                                            className="w-full sm:w-auto rounded-full"
                                         >
                                             Xác nhận thêm hàng
                                         </Button>

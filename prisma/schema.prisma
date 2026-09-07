@@ -126,6 +126,7 @@ model User {
   name          String
   phone         String?    @unique
   phoneVerified Boolean    @default(false)
+  phoneVerifiedAt DateTime?
   passwordHash  String?
   systemRole    SystemRole @default(USER)
   createdAt     DateTime   @default(now())
@@ -557,3 +558,22 @@ model OtpCode {
 
   @@index([phone])
 }
+
+model OtpDeliveryLog {
+  id           String    @id @default(uuid())
+  phone        String
+  maskedPhone  String
+  provider     String
+  status       String
+  ipAddress    String?
+  deviceHash   String?
+  costVnd      Int       @default(0)
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  verifiedAt   DateTime?
+
+  @@index([phone])
+  @@index([createdAt])
+  @@index([status])
+}
+

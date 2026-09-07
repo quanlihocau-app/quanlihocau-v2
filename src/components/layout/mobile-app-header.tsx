@@ -51,37 +51,46 @@ export function MobileAppHeader({
 
     return (
         <>
-            <header className="mobile-pos-header-bar shrink-0">
-                {/* Lake name + date */}
-                <div>
-                    <h2 className="mobile-pos-header-title">
-                        {lakeName}
-                    </h2>
-                    <p className="mobile-pos-header-date">{dateStr}</p>
+            <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E3E8E3] bg-white/95 px-4 py-3 backdrop-blur-md shrink-0">
+                {/* Lake name & Avatar */}
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#E8F3E5] font-bold text-[#246B38] border border-[#D5E5D1] shadow-2xs">
+                        {lakeName ? lakeName.slice(0, 2).toUpperCase() : "HC"}
+                    </div>
+                    <div className="min-w-0">
+                        <h2 className="text-[15px] font-bold text-[#17201A] leading-tight truncate">
+                            {lakeName}
+                        </h2>
+                        <p className="text-[11px] font-medium text-[#66716A] leading-tight mt-0.5">
+                            {dateStr}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Badges + Help ? Button */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2 shrink-0">
                     {roleBadge && (
-                        <span className="mobile-pos-header-badge">{roleBadge}</span>
+                        <span className="inline-flex items-center rounded-full bg-[#EEF3EB] px-2.5 py-0.5 text-[11px] font-semibold text-[#17201A] border border-[#E3E8E3]">
+                            {roleBadge}
+                        </span>
                     )}
 
                     {effectiveOnline ? (
                         isReconnecting ? (
-                            <span className="mobile-pos-header-badge bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
                                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                Đang kết nối lại...
+                                Đang nối...
                             </span>
                         ) : (
-                            <span className="mobile-pos-header-badge">
-                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#52B788]" />
-                                Đang online
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EBF6ED] px-2.5 py-0.5 text-[11px] font-semibold text-[#246B38] border border-[#CDE8C7]">
+                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#3E9B4F]" />
+                                Online
                             </span>
                         )
                     ) : (
-                        <span className="mobile-pos-header-badge bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
-                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-600 animate-pulse" />
-                            Mất mạng (Offline)
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCEEED] px-2.5 py-0.5 text-[11px] font-semibold text-[#AC3430] border border-[#F7CBC9]">
+                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#D9534F] animate-pulse" />
+                            Offline
                         </span>
                     )}
 
@@ -89,7 +98,7 @@ export function MobileAppHeader({
                     <button
                         type="button"
                         onClick={() => openGuideModal()}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#D9D2C8] bg-white text-xs font-bold text-[#8A5A20] shadow-2xs hover:bg-[#F4F2EE] active:scale-95 transition-all"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E3E8E3] bg-[#F7F9F5] text-xs font-bold text-[#246B38] hover:bg-[#EEF3EB] active:scale-95 transition-all shadow-2xs cursor-pointer"
                         aria-label="Xem hướng dẫn sử dụng"
                         title="Hướng dẫn sử dụng nhanh"
                     >

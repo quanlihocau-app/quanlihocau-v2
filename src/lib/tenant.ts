@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import { Role } from "@/generated/prisma/client";
@@ -9,6 +10,8 @@ export interface TenantContext {
     userId: string;
     userName: string;
     userEmail: string;
+    userPhone?: string | null;
+    phoneVerified: boolean;
     lakeId: string;
     lakeName: string;
     organizationId: string;
@@ -28,6 +31,17 @@ export class ForbiddenError extends Error {
     constructor(message = "Không có quyền truy cập.") {
         super(message);
         this.name = "ForbiddenError";
+    }
+}
+
+export class PhoneVerificationRequiredError extends ForbiddenError {
+    public code = "PHONE_VERIFICATION_REQUIRED";
+
+    constructor(
+        message = "Số điện thoại chưa được xác thực bằng OTP. Vui lòng xác thực số điện thoại để sử dụng phần mềm và gói dịch vụ.",
+    ) {
+        super(message);
+        this.name = "PhoneVerificationRequiredError";
     }
 }
 
@@ -54,7 +68,9 @@ export async function requireSuperAdmin(): Promise<{ id: string; email: string; 
     };
 }
 
-export async function getTenantContext(): Promise<TenantContext | null> {
+export async function getTenantContext(options?: {
+    allowUnverifiedPhone?: boolean;
+}): Promise<TenantContext | null> {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
@@ -69,7 +85,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
         if (supportLakeId) {
             const user = await prisma.user.findUnique({
                 where: { email: session.user.email.toLowerCase() },
-                select: { id: true, name: true, email: true, systemRole: true },
+                select: { id: true, name: true, email: true, phone: true, phoneVerified: true, systemRole: true },
             });
 
             if (user?.systemRole === "SUPER_ADMIN") {
@@ -85,6 +101,8 @@ export async function getTenantContext(): Promise<TenantContext | null> {
                         userId: user.id,
                         userName: user.name,
                         userEmail: user.email,
+                        userPhone: user.phone,
+                        phoneVerified: true,
                         lakeId: supportLake.id,
                         lakeName: supportLake.name,
                         organizationId: supportLake.organization.id,
@@ -123,10 +141,19 @@ export async function getTenantContext(): Promise<TenantContext | null> {
         return null;
     }
 
+    const isSuperAdmin = membership.user.systemRole === "SUPER_ADMIN";
+    const isPhoneVerified = Boolean(membership.user.phoneVerified);
+
+    if (!options?.allowUnverifiedPhone && !isSuperAdmin && !isPhoneVerified) {
+        redirect("/verify-phone");
+    }
+
     return {
         userId: membership.user.id,
         userName: membership.user.name,
         userEmail: membership.user.email,
+        userPhone: membership.user.phone,
+        phoneVerified: isPhoneVerified,
         lakeId: membership.lake.id,
         lakeName: membership.lake.name,
         organizationId: membership.lake.organization.id,
@@ -137,6 +164,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
 
 export async function requireTenantContext(
     allowedRoles?: Role[],
+    options?: { allowUnverifiedPhone?: boolean },
 ): Promise<TenantContext> {
     const session = await getServerSession(authOptions);
 
@@ -170,6 +198,13 @@ export async function requireTenantContext(
         );
     }
 
+    const isSuperAdmin = membership.user.systemRole === "SUPER_ADMIN";
+    const isPhoneVerified = Boolean(membership.user.phoneVerified);
+
+    if (!options?.allowUnverifiedPhone && !isSuperAdmin && !isPhoneVerified) {
+        throw new PhoneVerificationRequiredError();
+    }
+
     if (
         allowedRoles &&
         allowedRoles.length > 0 &&
@@ -182,6 +217,8 @@ export async function requireTenantContext(
         userId: membership.user.id,
         userName: membership.user.name,
         userEmail: membership.user.email,
+        userPhone: membership.user.phone,
+        phoneVerified: isPhoneVerified,
         lakeId: membership.lake.id,
         lakeName: membership.lake.name,
         organizationId: membership.lake.organization.id,

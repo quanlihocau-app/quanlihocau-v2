@@ -65,6 +65,28 @@ export default async function AdminLayout({
                         <span className="hidden sm:inline-flex items-center rounded-md bg-[#102A43]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#102A43] tracking-wide border border-[#102A43]/20">
                             SUPER_ADMIN
                         </span>
+
+                        {/* Navigation Tabs */}
+                        <nav className="hidden md:flex items-center gap-1.5 ml-4 pl-4 border-l border-[#D9D2C8]">
+                            <Link
+                                href="/admin/lakes"
+                                className="px-3 py-1.5 text-xs font-semibold rounded-lg text-[#27231F] hover:bg-[#F4F2EE] transition-colors"
+                            >
+                                🏞️ Hồ câu
+                            </Link>
+                            <Link
+                                href="/admin/orders"
+                                className="px-3 py-1.5 text-xs font-semibold rounded-lg text-[#27231F] hover:bg-[#F4F2EE] transition-colors flex items-center gap-1.5"
+                            >
+                                <span>💳 Đơn thanh toán</span>
+                            </Link>
+                            <Link
+                                href="/admin/otp"
+                                className="px-3 py-1.5 text-xs font-semibold rounded-lg text-[#27231F] hover:bg-[#F4F2EE] transition-colors flex items-center gap-1.5"
+                            >
+                                <span>📲 SMS OTP &amp; Chi phí</span>
+                            </Link>
+                        </nav>
                     </div>
 
                     <div className="flex items-center gap-3">

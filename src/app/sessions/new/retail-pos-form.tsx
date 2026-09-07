@@ -328,13 +328,13 @@ export function RetailPosForm({
     return (
         <div className="space-y-4">
             {/* Customer Picker Section */}
-            <Card className="p-4 space-y-3">
+            <Card className="p-4 space-y-3 rounded-2xl border-[#E3E8E3] bg-white shadow-xs">
                 <div className="flex items-center justify-between">
                     <div>
-                        <span className="text-xs font-bold uppercase tracking-wider text-[#8A5A20]">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
                             1. Khách mua hàng
                         </span>
-                        <p className="text-sm font-bold text-[#27231F] mt-0.5">
+                        <p className="text-sm font-bold text-[#17201A] mt-0.5">
                             {selectedCustomer
                                 ? `${selectedCustomer.name} ${
                                       selectedCustomer.phoneNormalized
@@ -350,7 +350,7 @@ export function RetailPosForm({
                             <button
                                 type="button"
                                 onClick={() => setSelectedCustomerId(null)}
-                                className="text-xs text-[#766F67] hover:text-red-600 underline"
+                                className="text-xs text-[#66716A] hover:text-[#D9534F] underline cursor-pointer"
                             >
                                 Bỏ chọn
                             </button>
@@ -362,6 +362,7 @@ export function RetailPosForm({
                             onClick={() =>
                                 setShowCustomerPicker(!showCustomerPicker)
                             }
+                            className="rounded-full border-[#E3E8E3] text-xs font-semibold"
                         >
                             {showCustomerPicker ? "Đóng" : "Chọn khách"}
                         </Button>
@@ -369,7 +370,7 @@ export function RetailPosForm({
                 </div>
 
                 {showCustomerPicker && (
-                    <div className="border-t border-[#D9D2C8] pt-3 space-y-3">
+                    <div className="border-t border-[#E3E8E3] pt-3 space-y-3">
                         <Input
                             placeholder="Tìm tên hoặc số điện thoại khách..."
                             value={customerSearch}
@@ -377,7 +378,7 @@ export function RetailPosForm({
                         />
 
                         {filteredCustomers.length > 0 && (
-                            <div className="space-y-1 rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] p-2">
+                            <div className="space-y-1 rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-2">
                                 {filteredCustomers.map((cust) => (
                                     <button
                                         key={cust.id}
@@ -387,13 +388,13 @@ export function RetailPosForm({
                                             setShowCustomerPicker(false);
                                             setCustomerSearch("");
                                         }}
-                                        className="w-full rounded-lg p-2 text-left hover:bg-white transition-colors flex items-center justify-between"
+                                        className="w-full rounded-xl p-2.5 text-left hover:bg-white transition-colors flex items-center justify-between cursor-pointer"
                                     >
-                                        <span className="text-xs font-bold text-[#27231F]">
+                                        <span className="text-xs font-bold text-[#17201A]">
                                             {cust.name}
                                         </span>
                                         {cust.phoneNormalized && (
-                                            <span className="text-[11px] font-mono text-[#766F67]">
+                                            <span className="text-[11px] font-mono text-[#66716A]">
                                                 {cust.phoneNormalized}
                                             </span>
                                         )}
@@ -403,7 +404,7 @@ export function RetailPosForm({
                         )}
 
                         <div className="flex items-center justify-between pt-1">
-                            <span className="text-xs text-[#766F67]">
+                            <span className="text-xs text-[#66716A]">
                                 Khách chưa có trong danh bạ?
                             </span>
                             <Button
@@ -415,14 +416,15 @@ export function RetailPosForm({
                                         !showQuickAddCustomer,
                                     )
                                 }
+                                className="rounded-full border-[#E3E8E3] text-xs"
                             >
                                 + Thêm khách mới
                             </Button>
                         </div>
 
                         {showQuickAddCustomer && (
-                            <div className="rounded-xl border border-[#D9D2C8] bg-white p-3 space-y-2">
-                                <h4 className="text-xs font-bold text-[#27231F]">
+                            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3 space-y-2.5 shadow-xs">
+                                <h4 className="text-xs font-bold text-[#17201A]">
                                     Thêm nhanh khách hàng
                                 </h4>
                                 <Input
@@ -440,7 +442,7 @@ export function RetailPosForm({
                                     }
                                 />
                                 {customerError && (
-                                    <p className="text-xs text-red-600">
+                                    <p className="text-xs text-[#D9534F]">
                                         {customerError}
                                     </p>
                                 )}
@@ -452,6 +454,7 @@ export function RetailPosForm({
                                         onClick={() =>
                                             setShowQuickAddCustomer(false)
                                         }
+                                        className="rounded-full"
                                     >
                                         Hủy
                                     </Button>
@@ -461,6 +464,7 @@ export function RetailPosForm({
                                         variant="primary"
                                         isLoading={isCreatingCustomer}
                                         onClick={handleQuickAddCustomer}
+                                        className="rounded-full"
                                     >
                                         Lưu khách
                                     </Button>
@@ -474,12 +478,12 @@ export function RetailPosForm({
             {/* Product Catalog & Cart Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Left Column: Product Selection */}
-                <Card className="p-4 space-y-3">
+                <Card className="p-4 space-y-3 rounded-2xl border-[#E3E8E3] bg-white shadow-xs">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-[#8A5A20]">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
                             2. Chọn mặt hàng
                         </span>
-                        <span className="text-xs text-[#766F67]">
+                        <span className="text-xs text-[#66716A]">
                             {productList.length} sản phẩm
                         </span>
                     </div>
@@ -492,7 +496,7 @@ export function RetailPosForm({
 
                     <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                         {filteredProducts.length === 0 ? (
-                            <p className="text-center py-6 text-xs text-[#766F67]">
+                            <p className="text-center py-6 text-xs text-[#66716A]">
                                 Không tìm thấy sản phẩm phù hợp.
                             </p>
                         ) : (
@@ -510,30 +514,30 @@ export function RetailPosForm({
                                 return (
                                     <div
                                         key={product.id}
-                                        className="flex items-center justify-between rounded-xl border border-[#D9D2C8] bg-white p-2.5 hover:border-[#8A5A20] transition-colors"
+                                        className="flex items-center justify-between rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-3 hover:border-[#4F9D5A] hover:bg-white transition-all"
                                     >
-                                        <div className="space-y-0.5">
+                                        <div className="space-y-1">
                                             <div className="flex items-center gap-1.5">
                                                 {product.sku && (
-                                                    <span className="rounded bg-[#EFE4CF] px-1.5 py-0.5 text-[10px] font-mono font-bold text-[#8A5A20]">
+                                                    <span className="rounded-md bg-[#E8F3E5] px-1.5 py-0.5 text-[10px] font-mono font-bold text-[#246B38]">
                                                         {product.sku}
                                                     </span>
                                                 )}
-                                                <h4 className="text-xs font-bold text-[#27231F]">
+                                                <h4 className="text-xs font-bold text-[#17201A]">
                                                     {product.name}
                                                 </h4>
                                             </div>
                                             <div className="flex items-center gap-2 text-[11px]">
-                                                <span className="font-bold text-[#8A5A20]">
+                                                <span className="font-bold text-[#246B38]">
                                                     {formatVnd(product.priceVnd)}
                                                 </span>
                                                 <span
-                                                    className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                                                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                                                         product.stock > 5
-                                                            ? "bg-emerald-100 text-emerald-800"
+                                                            ? "bg-[#EBF6ED] text-[#3E9B4F]"
                                                             : product.stock > 0
-                                                            ? "bg-amber-100 text-amber-800"
-                                                            : "bg-red-100 text-red-800"
+                                                            ? "bg-[#FDF6E9] text-[#D99A32]"
+                                                            : "bg-[#FCEEED] text-[#D9534F]"
                                                     }`}
                                                 >
                                                     Kho: {product.stock}
@@ -551,7 +555,7 @@ export function RetailPosForm({
                                             }
                                             disabled={isOutOfStock}
                                             onClick={() => addToCart(product)}
-                                            className="min-h-9 px-3"
+                                            className="min-h-9 px-3 rounded-full text-xs"
                                         >
                                             {isOutOfStock ? "Hết" : "+ Thêm"}
                                         </Button>
@@ -563,17 +567,17 @@ export function RetailPosForm({
                 </Card>
 
                 {/* Right Column: Order Details & Cart */}
-                <Card className="p-4 space-y-3 flex flex-col justify-between">
+                <Card className="p-4 space-y-3 flex flex-col justify-between rounded-2xl border-[#E3E8E3] bg-white shadow-xs">
                     <div className="space-y-3">
-                        <div className="flex items-center justify-between border-b border-[#D9D2C8] pb-2">
-                            <span className="text-xs font-bold uppercase tracking-wider text-[#8A5A20]">
+                        <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-2">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
                                 3. Giỏ hàng ({totalQuantity})
                             </span>
                             {cart.length > 0 && (
                                 <button
                                     type="button"
                                     onClick={clearCart}
-                                    className="text-xs text-red-600 hover:underline"
+                                    className="text-xs text-[#D9534F] hover:underline cursor-pointer"
                                 >
                                     Xóa hết
                                 </button>
@@ -581,11 +585,11 @@ export function RetailPosForm({
                         </div>
 
                         {cart.length === 0 ? (
-                            <div className="py-12 text-center text-xs text-[#766F67] space-y-1">
+                            <div className="py-12 text-center text-xs text-[#66716A] space-y-1">
                                 <p className="font-medium">
                                     Chưa có sản phẩm nào trong giỏ.
                                 </p>
-                                <p className="text-[11px] text-[#A8A29E]">
+                                <p className="text-[11px] text-[#8A938D]">
                                     Chọn mặt hàng ở bảng bên trái để thêm vào đơn.
                                 </p>
                             </div>
@@ -594,16 +598,16 @@ export function RetailPosForm({
                                 {cart.map((item) => (
                                     <div
                                         key={item.productId}
-                                        className="flex items-center justify-between rounded-xl bg-[#F4F2EE] p-2 text-xs"
+                                        className="flex items-center justify-between rounded-2xl bg-[#F7F9F5] p-2.5 text-xs border border-[#E3E8E3]"
                                     >
                                         <div className="min-w-0 flex-1 pr-2">
-                                            <p className="font-bold text-[#27231F] truncate">
+                                            <p className="font-bold text-[#17201A] truncate">
                                                 {item.name}
                                             </p>
-                                            <p className="text-[11px] text-[#766F67]">
+                                            <p className="text-[11px] text-[#66716A]">
                                                 {formatVnd(item.priceVnd)} x{" "}
                                                 {item.quantity} ={" "}
-                                                <span className="font-bold text-[#27231F]">
+                                                <span className="font-bold text-[#17201A]">
                                                     {formatVnd(
                                                         item.priceVnd *
                                                             item.quantity,
@@ -621,11 +625,11 @@ export function RetailPosForm({
                                                         -1,
                                                     )
                                                 }
-                                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-[#D9D2C8] text-sm font-bold text-[#27231F] hover:bg-slate-100"
+                                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-[#E3E8E3] text-sm font-bold text-[#17201A] hover:bg-stone-50 cursor-pointer"
                                             >
                                                 -
                                             </button>
-                                            <span className="w-6 text-center font-bold text-[#27231F]">
+                                            <span className="w-6 text-center font-bold text-[#17201A]">
                                                 {item.quantity}
                                             </span>
                                             <button
@@ -640,7 +644,7 @@ export function RetailPosForm({
                                                     item.quantity >=
                                                     item.maxStock
                                                 }
-                                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-[#D9D2C8] text-sm font-bold text-[#27231F] hover:bg-slate-100 disabled:opacity-40"
+                                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-[#E3E8E3] text-sm font-bold text-[#17201A] hover:bg-stone-50 disabled:opacity-40 cursor-pointer"
                                             >
                                                 +
                                             </button>
@@ -651,7 +655,7 @@ export function RetailPosForm({
                                                         item.productId,
                                                     )
                                                 }
-                                                className="ml-1 p-1 text-[#766F67] hover:text-red-600"
+                                                className="ml-1 p-1 text-[#66716A] hover:text-[#D9534F] cursor-pointer"
                                                 title="Xóa món"
                                             >
                                                 <svg
@@ -676,20 +680,20 @@ export function RetailPosForm({
                     </div>
 
                     {/* Cart Summary & Payment Controls */}
-                    <div className="space-y-3 pt-3 border-t border-[#D9D2C8]">
+                    <div className="space-y-3 pt-3 border-t border-[#E3E8E3]">
                         {/* Payment Method Switcher */}
                         <div>
-                            <span className="text-[11px] font-bold text-[#766F67] block mb-1">
+                            <span className="text-[11px] font-bold text-[#66716A] block mb-1">
                                 Hình thức thanh toán
                             </span>
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setPaymentMethod("CASH")}
-                                    className={`py-2 rounded-xl text-xs font-bold transition-all border ${
+                                    className={`py-2.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${
                                         paymentMethod === "CASH"
-                                            ? "bg-[#8A5A20] text-white border-[#8A5A20] shadow-sm"
-                                            : "bg-white text-[#27231F] border-[#D9D2C8] hover:bg-[#F4F2EE]"
+                                            ? "bg-[#4F9D5A] text-white border-[#4F9D5A] shadow-xs"
+                                            : "bg-white text-[#17201A] border-[#E3E8E3] hover:bg-[#F7F9F5]"
                                     }`}
                                 >
                                     Tiền mặt
@@ -699,10 +703,10 @@ export function RetailPosForm({
                                     onClick={() =>
                                         setPaymentMethod("BANK_TRANSFER")
                                     }
-                                    className={`py-2 rounded-xl text-xs font-bold transition-all border ${
+                                    className={`py-2.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${
                                         paymentMethod === "BANK_TRANSFER"
-                                            ? "bg-[#8A5A20] text-white border-[#8A5A20] shadow-sm"
-                                            : "bg-white text-[#27231F] border-[#D9D2C8] hover:bg-[#F4F2EE]"
+                                            ? "bg-[#4F9D5A] text-white border-[#4F9D5A] shadow-xs"
+                                            : "bg-white text-[#17201A] border-[#E3E8E3] hover:bg-[#F7F9F5]"
                                     }`}
                                 >
                                     Chuyển khoản
@@ -718,11 +722,11 @@ export function RetailPosForm({
                         />
 
                         {/* Total Row */}
-                        <div className="rounded-xl bg-[#F4F2EE] p-3 flex items-center justify-between">
-                            <span className="text-xs font-bold text-[#766F67]">
+                        <div className="rounded-2xl bg-[#E8F3E5] p-3 flex items-center justify-between border border-[#E3E8E3]">
+                            <span className="text-xs font-bold text-[#246B38]">
                                 Tổng thanh toán:
                             </span>
-                            <span className="text-lg font-bold text-[#27231F] tabular-nums">
+                            <span className="text-lg font-bold text-[#246B38] tabular-nums">
                                 {formatVnd(cartTotalVnd)}
                             </span>
                         </div>
@@ -735,7 +739,7 @@ export function RetailPosForm({
                         )}
 
                         {!isOnline && (
-                            <div className="rounded-xl border border-rose-300 bg-rose-50 p-2.5 text-xs text-rose-800 flex items-start gap-2 shadow-2xs">
+                            <div className="rounded-2xl border border-rose-300 bg-rose-50 p-2.5 text-xs text-rose-800 flex items-start gap-2 shadow-2xs">
                                 <span className="text-base leading-none">⚠️</span>
                                 <div>
                                     <span className="font-bold">Mất mạng:</span> Nút thanh toán tạm khóa để chống lỗi giao dịch. Vui lòng kết nối mạng để xuất bill.
@@ -750,7 +754,7 @@ export function RetailPosForm({
                             disabled={cart.length === 0 || isSubmitting || !isOnline}
                             isLoading={isSubmitting}
                             onClick={handleCheckout}
-                            className="w-full text-sm font-bold min-h-12"
+                            className="w-full text-sm font-bold min-h-12 rounded-full"
                         >
                             {!isOnline
                                 ? "Mất mạng — Không thể thanh toán"
@@ -765,9 +769,9 @@ export function RetailPosForm({
             {/* BILL RECEIPT MODAL */}
             {completedReceipt && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-                    <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-[#D9D2C8] space-y-4 max-h-[90vh] overflow-y-auto">
+                    <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl border border-[#E3E8E3] space-y-4 max-h-[90vh] overflow-y-auto">
                         <div className="text-center space-y-1">
-                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EBF6ED] text-[#3E9B4F]">
                                 <svg
                                     className="h-7 w-7"
                                     fill="none"
@@ -782,25 +786,25 @@ export function RetailPosForm({
                                     />
                                 </svg>
                             </div>
-                            <h3 className="text-lg font-bold text-[#27231F]">
+                            <h3 className="text-lg font-bold text-[#17201A]">
                                 Thanh toán bán lẻ thành công!
                             </h3>
-                            <p className="text-xs text-[#766F67]">
+                            <p className="text-xs text-[#66716A]">
                                 Đơn hàng #{completedReceipt.invoiceId.slice(0, 8)} đã được ghi sổ và xuất kho.
                             </p>
                         </div>
 
                         {/* Bill Summary Card */}
-                        <div className="rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] p-3 text-xs space-y-2">
-                            <div className="flex justify-between border-b border-[#D9D2C8] pb-1.5">
-                                <span className="text-[#766F67]">Khách hàng:</span>
-                                <span className="font-bold text-[#27231F]">
+                        <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-3 text-xs space-y-2">
+                            <div className="flex justify-between border-b border-[#E3E8E3] pb-1.5">
+                                <span className="text-[#66716A]">Khách hàng:</span>
+                                <span className="font-bold text-[#17201A]">
                                     {completedReceipt.customerName || "Khách lẻ"}
                                 </span>
                             </div>
-                            <div className="flex justify-between border-b border-[#D9D2C8] pb-1.5">
-                                <span className="text-[#766F67]">Hình thức:</span>
-                                <span className="font-bold text-[#8A5A20]">
+                            <div className="flex justify-between border-b border-[#E3E8E3] pb-1.5">
+                                <span className="text-[#66716A]">Hình thức:</span>
+                                <span className="font-bold text-[#246B38]">
                                     {completedReceipt.paymentMethod === "CASH"
                                         ? "Tiền mặt"
                                         : "Chuyển khoản"}
@@ -812,7 +816,7 @@ export function RetailPosForm({
                                 {completedReceipt.lines.map((l, idx) => (
                                     <div
                                         key={idx}
-                                        className="flex justify-between text-[#27231F]"
+                                        className="flex justify-between text-[#17201A]"
                                     >
                                         <span>
                                             {l.name} x {l.quantity}
@@ -824,9 +828,9 @@ export function RetailPosForm({
                                 ))}
                             </div>
 
-                            <div className="flex justify-between border-t border-[#D9D2C8] pt-1.5 text-sm font-bold text-[#27231F]">
+                            <div className="flex justify-between border-t border-[#E3E8E3] pt-1.5 text-sm font-bold text-[#17201A]">
                                 <span>Tổng tiền:</span>
-                                <span className="text-emerald-700">
+                                <span className="text-[#246B38]">
                                     {formatVnd(completedReceipt.totalAmountVnd)}
                                 </span>
                             </div>
@@ -841,7 +845,7 @@ export function RetailPosForm({
                                     variant="outline"
                                     isLoading={isPrinting}
                                     onClick={() => handlePrintReceipt(false)}
-                                    className="w-full text-xs font-bold"
+                                    className="w-full text-xs font-bold rounded-full"
                                 >
                                     In hóa đơn (58mm)
                                 </Button>
@@ -851,7 +855,7 @@ export function RetailPosForm({
                                     variant="outline"
                                     isLoading={isPrinting}
                                     onClick={() => handlePrintReceipt(true)}
-                                    className="w-full text-xs font-bold text-[#8A5A20] border-[#8A5A20]"
+                                    className="w-full text-xs font-bold text-[#246B38] border-[#4F9D5A] rounded-full hover:bg-[#E8F3E5]"
                                 >
                                     In lại bill
                                 </Button>
@@ -863,13 +867,13 @@ export function RetailPosForm({
                                     size="lg"
                                     variant="primary"
                                     onClick={resetForNewSale}
-                                    className="w-full text-xs font-bold"
+                                    className="w-full text-xs font-bold rounded-full"
                                 >
                                     Tạo đơn bán mới
                                 </Button>
                                 <Link
                                     href="/invoices/history"
-                                    className="inline-flex h-11 items-center justify-center rounded-xl border border-[#D9D2C8] bg-white px-3 text-xs font-bold text-[#27231F] hover:bg-[#F4F2EE] transition-colors"
+                                    className="inline-flex h-11 items-center justify-center rounded-full border border-[#E3E8E3] bg-white px-3 text-xs font-bold text-[#17201A] hover:bg-[#F7F9F5] transition-colors"
                                 >
                                     Xem Nhật ký
                                 </Link>
