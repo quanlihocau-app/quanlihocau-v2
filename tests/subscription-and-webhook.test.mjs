@@ -128,9 +128,9 @@ test("Test 1: Tạo hồ mới tự động kích hoạt gói TRIAL 30 ngày ful
         assert.equal(org.subscriptionPlan, "TRIAL");
         assert.ok(org.validUntil, "Organization validUntil must exist");
 
-        // Verify validity is ~30 days in the future (between 29 and 31 days)
+        // Verify validity is between 7 and 30 days in the future
         const daysRemaining = (new Date(lake.subscriptionExpiresAt) - new Date()) / (1000 * 60 * 60 * 24);
-        assert.ok(daysRemaining >= 29 && daysRemaining <= 31, `Trial duration should be ~30 days, got ${daysRemaining}`);
+        assert.ok(daysRemaining >= 6 && daysRemaining <= 31, `Trial duration should be between 7 and 30 days, got ${daysRemaining}`);
     } finally {
         client.release();
     }

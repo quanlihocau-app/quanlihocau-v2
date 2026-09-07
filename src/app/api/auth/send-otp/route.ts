@@ -186,10 +186,25 @@ export async function POST(request: Request) {
     });
 
     if (!dispatchResult.success) {
+        if (process.env.NODE_ENV !== "production") {
+            console.warn(`[SMS OTP Dev Fallback] SpeedSMS failed: ${dispatchResult.error}. Providing devOtp: ${code}`);
+            return NextResponse.json(
+                {
+                    message: "Mã OTP xác thực đã được gửi (Chế độ phát triển).",
+                    phone: normalizedPhone,
+                    maskedPhone: masked,
+                    expiresInSeconds: 180,
+                    cooldownSeconds: 60,
+                    devOtp: code,
+                    providerWarning: dispatchResult.error,
+                },
+                { status: 200 },
+            );
+        }
         return NextResponse.json(
             {
                 error: `Không thể gửi tin nhắn SMS OTP: ${dispatchResult.error || "Lỗi nhà cung cấp dịch vụ viễn thông."}`,
-                ...(process.env.NODE_ENV !== "production" ? { devOtp: code, providerError: dispatchResult.error } : {}),
+                providerError: dispatchResult.error,
             },
             { status: 502 },
         );

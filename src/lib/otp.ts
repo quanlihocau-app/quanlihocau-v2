@@ -64,6 +64,10 @@ export function verifyOtpHash(
 export function getOtpProvider(): OtpProvider {
     const configured = process.env.OTP_PROVIDER?.toUpperCase();
 
+    if (configured === "MOCK" || process.env.NODE_ENV === "test") {
+        return new MockOtpProvider();
+    }
+
     if (configured === "ZALO_ZNS") {
         return new ZaloZnsProvider();
     }

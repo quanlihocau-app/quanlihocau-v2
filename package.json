@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "test": "node --test --test-concurrency=1 --env-file=.env tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs tests/speedsms-and-otp-security.test.mjs tests/comprehensive-reporting.test.mjs tests/test-auth-and-subscription.test.mjs"
+    "test": "node --test --test-concurrency=1 --env-file=.env tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs tests/speedsms-and-otp-security.test.mjs tests/comprehensive-reporting.test.mjs tests/test-auth-and-subscription.test.mjs tests/prepaid-and-postpaid-billing.test.mjs"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",

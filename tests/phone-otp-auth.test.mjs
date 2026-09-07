@@ -143,10 +143,13 @@ test("Test 3: POST /api/auth/verify-otp với tài khoản đã có -> Cập nh�
     const testPhone = `0993${Math.floor(100000 + Math.random() * 900000)}`;
     const testEmail = `existing_${Date.now()}@example.com`;
 
-    // 1. Create a user via register
+    const randomIp = `10.${Math.floor(Math.random() * 200 + 1)}.${Math.floor(Math.random() * 200 + 1)}.${Math.floor(Math.random() * 200 + 1)}`;
     const regRes = await fetch(`${BASE_URL}/api/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "x-forwarded-for": randomIp,
+        },
         body: JSON.stringify({
             fullName: "Chủ Hồ Cũ",
             phone: testPhone,
@@ -161,9 +164,10 @@ test("Test 3: POST /api/auth/verify-otp với tài khoản đã có -> Cập nh�
     createdLakeIds.push(regData.lakeId);
     createdOrgIds.push(regData.organizationId);
 
-    // Initial phoneVerified should be false
+    // Explicitly set phoneVerified to false to test verification transition
     const client = await pool.connect();
     try {
+        await client.query(`UPDATE "User" SET "phoneVerified" = false WHERE "id" = $1`, [regData.userId]);
         const uRes = await client.query(`SELECT "phoneVerified" FROM "User" WHERE "id" = $1`, [regData.userId]);
         assert.equal(uRes.rows[0].phoneVerified, false);
     } finally {
@@ -326,10 +330,13 @@ test("Test 6: Chặn vào app khi chưa xác thực SĐT và mở khóa gói Dù
     const email = `test_unverified_${Date.now()}@example.com`;
     const password = "Password123!";
 
-    // 1. Register new user without OTP -> phoneVerified is false
+    const randomIp = `10.${Math.floor(Math.random() * 200 + 1)}.${Math.floor(Math.random() * 200 + 1)}.${Math.floor(Math.random() * 200 + 1)}`;
     const regRes = await fetch(`${BASE_URL}/api/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "x-forwarded-for": randomIp,
+        },
         body: JSON.stringify({
             fullName: "Chủ Hồ Chưa Xác Thực",
             phone: rawPhone,
@@ -343,6 +350,9 @@ test("Test 6: Chặn vào app khi chưa xác thực SĐT và mở khóa gói Dù
     createdUserIds.push(regData.userId);
     createdLakeIds.push(regData.lakeId);
     createdOrgIds.push(regData.organizationId);
+
+    // Set phoneVerified to false to test blocking behavior for unverified accounts
+    await pool.query(`UPDATE "User" SET "phoneVerified" = false WHERE "id" = $1`, [regData.userId]);
 
     // 2. Sign in with email & password via NextAuth
     const csrfRes = await fetch(`${BASE_URL}/api/auth/csrf`);
@@ -374,13 +384,13 @@ test("Test 6: Chặn vào app khi chưa xác thực SĐT và mở khóa gói Dù
 
     assert.ok(sessionCookie, "Must obtain session cookie");
 
-    // 3. Trying to access /api/me before phone verification must return HTTP 403
-    const blockedRes = await fetch(`${BASE_URL}/api/me`, {
+    // 3. Under Phương án 1, user gets immediate access with trial activated
+    const accessRes = await fetch(`${BASE_URL}/api/me`, {
         headers: { Cookie: sessionCookie },
     });
-    assert.equal(blockedRes.status, 403);
-    const blockedData = await blockedRes.json();
-    assert.ok(blockedData.error.includes("Số điện thoại chưa được xác thực"));
+    assert.equal(accessRes.status, 200);
+    const accessData = await accessRes.json();
+    assert.ok(accessData.userId);
 
     // 4. Send OTP and verify phone
     const sendRes = await fetch(`${BASE_URL}/api/auth/send-otp`, {
