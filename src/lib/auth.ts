@@ -40,8 +40,8 @@ declare module "next-auth/jwt" {
 }
 
 const loginSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(8),
+    email: z.string().trim().min(3),
+    password: z.string().min(1),
 });
 
 export const authOptions: NextAuthOptions = {
@@ -86,12 +86,12 @@ export const authOptions: NextAuthOptions = {
     providers: [
         CredentialsProvider({
             id: "credentials",
-            name: "Email và mật khẩu",
+            name: "Email hoặc Số điện thoại",
             credentials: {
                 email: {
-                    label: "Email",
-                    type: "email",
-                    placeholder: "owner@example.com",
+                    label: "Tài khoản",
+                    type: "text",
+                    placeholder: "Email hoặc Số điện thoại",
                 },
                 password: {
                     label: "Mật khẩu",
@@ -105,8 +105,21 @@ export const authOptions: NextAuthOptions = {
                     return null;
                 }
 
-                const user = await prisma.user.findUnique({
-                    where: { email: parsed.data.email.toLowerCase() },
+                const identifier = parsed.data.email.trim();
+                let normalizedPhone: string | null = null;
+                try {
+                    normalizedPhone = normalizeVietnamesePhone(identifier);
+                } catch {
+                    normalizedPhone = null;
+                }
+
+                const user = await prisma.user.findFirst({
+                    where: {
+                        OR: [
+                            { email: identifier.toLowerCase() },
+                            ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
+                        ],
+                    },
                 });
 
                 if (!user?.passwordHash) {
