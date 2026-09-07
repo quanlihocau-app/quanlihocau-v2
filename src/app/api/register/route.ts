@@ -143,7 +143,10 @@ export async function POST(request: Request) {
 
     if (existingPhone) {
         return NextResponse.json(
-            { error: "Số điện thoại này đã được đăng ký tài khoản khác." },
+            {
+                error:
+                    "Số điện thoại này đã từng được sử dụng để nhận gói dùng thử 7 ngày. Mỗi số điện thoại chỉ được dùng thử 1 lần. Vui lòng đăng nhập hoặc nâng cấp gói cước để tiếp tục.",
+            },
             { status: 409 },
         );
     }
@@ -178,6 +181,8 @@ export async function POST(request: Request) {
                     email,
                     phone: normalizedPhone,
                     passwordHash,
+                    phoneVerified: true,
+                    phoneVerifiedAt: new Date(),
                 },
             });
 
@@ -198,7 +203,8 @@ export async function POST(request: Request) {
 
         return NextResponse.json(
             {
-                message: "Đăng ký thành công.",
+                message:
+                    "Đăng ký thành công. Tài khoản của bạn đã được kích hoạt gói dùng thử 7 ngày toàn bộ tính năng.",
                 ...result,
             },
             { status: 201 },

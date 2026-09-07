@@ -143,8 +143,9 @@ export async function getTenantContext(options?: {
 
     const isSuperAdmin = membership.user.systemRole === "SUPER_ADMIN";
     const isPhoneVerified = Boolean(membership.user.phoneVerified);
+    const requireSms = process.env.REQUIRE_SMS_VERIFICATION === "true";
 
-    if (!options?.allowUnverifiedPhone && !isSuperAdmin && !isPhoneVerified) {
+    if (requireSms && !options?.allowUnverifiedPhone && !isSuperAdmin && !isPhoneVerified) {
         redirect("/verify-phone");
     }
 
@@ -200,8 +201,9 @@ export async function requireTenantContext(
 
     const isSuperAdmin = membership.user.systemRole === "SUPER_ADMIN";
     const isPhoneVerified = Boolean(membership.user.phoneVerified);
+    const requireSms = process.env.REQUIRE_SMS_VERIFICATION === "true";
 
-    if (!options?.allowUnverifiedPhone && !isSuperAdmin && !isPhoneVerified) {
+    if (requireSms && !options?.allowUnverifiedPhone && !isSuperAdmin && !isPhoneVerified) {
         throw new PhoneVerificationRequiredError();
     }
 

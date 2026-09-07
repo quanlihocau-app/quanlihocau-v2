@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,9 +74,26 @@ export default function RegisterPage() {
             }
 
             setSuccess(true);
+
+            // Tự động đăng nhập vào ứng dụng ngay để trải nghiệm gói 7 ngày
+            try {
+                const signInResult = await signIn("credentials", {
+                    redirect: false,
+                    email,
+                    password,
+                });
+                if (signInResult?.ok) {
+                    router.push("/sessions");
+                    router.refresh();
+                    return;
+                }
+            } catch {
+                // Fallback nếu auto-login gặp sự cố
+            }
+
             setIsSubmitting(false);
 
-            // Chuyển hướng ngay sang trang đăng nhập
+            // Chuyển hướng sang trang đăng nhập nếu chưa auto-login
             setTimeout(() => {
                 router.push(`/login?registered=1&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`);
             }, 600);
@@ -165,7 +183,7 @@ export default function RegisterPage() {
                 {success && (
                     <InlineAlert
                         type="success"
-                        message="Đăng ký thành công! Đang chuyển hướng sang trang đăng nhập…"
+                        message="Đăng ký thành công! Đã kích hoạt 7 ngày trải nghiệm miễn phí toàn bộ tính năng, đang vào ứng dụng…"
                     />
                 )}
 

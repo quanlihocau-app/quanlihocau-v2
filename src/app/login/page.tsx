@@ -20,7 +20,7 @@ function LoginForm() {
     const initialEmail = searchParams.get("email") || "";
     const initialPhone = searchParams.get("phone") || "";
 
-    const [mode, setMode] = useState<LoginMode>("PHONE_OTP");
+    const [mode, setMode] = useState<LoginMode>("EMAIL_PASSWORD");
     const [otpStep, setOtpStep] = useState<OtpStep>("PHONE");
 
     // Phone OTP states
@@ -190,7 +190,7 @@ function LoginForm() {
                 <InlineAlert
                     type="success"
                     title="Đăng ký hồ câu thành công!"
-                    message="Tài khoản của bạn đã được khởi tạo. Vui lòng xác thực số điện thoại bằng mã SMS OTP để kích hoạt gói Dùng thử 7 ngày và vào ứng dụng."
+                    message="Tài khoản của bạn đã được khởi tạo và kích hoạt gói dùng thử 7 ngày toàn bộ tính năng. Vui lòng đăng nhập để bắt đầu quản lý hồ câu."
                 />
             )}
 
