@@ -287,10 +287,17 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                         ? InvoiceStatus.PARTIALLY_PAID
                                         : finalInvoice.status;
 
+                                const refundedVnd = parsed.data.settlement?.refundVnd || 0;
+                                const balanceDueVnd = Math.max(0, grossAmount - netPaid + refundedVnd);
+
                                 await tx.invoice.update({
                                     where: { id: finalInvoice.id },
                                     data: {
+                                        subtotalVnd: grossAmount,
                                         totalAmountVnd: grossAmount,
+                                        paidAmountVnd: Math.max(0, netPaid),
+                                        refundedAmountVnd: refundedVnd,
+                                        balanceDueVnd: balanceDueVnd,
                                         status: finalStatus,
                                     },
                                 });
@@ -405,6 +412,23 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                     (s, p) => (p.direction === "IN" ? s + p.amountVnd : s - p.amountVnd),
                                     0,
                                 );
+                                const hutCount = Math.max(updatedSession.hutLinks.length, 1);
+                                const packagePrice = session.packagePriceVndSnapshot || updatedSession.package?.priceVnd || 0;
+                                const pkgTotal = packagePrice * hutCount;
+                                const itemsTotal = finalInv.lines
+                                    .filter((l) => l.productId)
+                                    .reduce((s, l) => s + l.totalVnd, 0);
+                                const extTotal = finalInv.lines
+                                    .filter((l) => !l.productId && !l.fishBuybackId && l.name.toLowerCase().includes("gia hạn"))
+                                    .reduce((s, l) => s + l.totalVnd, 0);
+                                const fishTotal = Math.abs(
+                                    finalInv.lines
+                                        .filter((l) => l.fishBuybackId !== null || l.totalVnd < 0)
+                                        .reduce((s, l) => s + l.totalVnd, 0),
+                                );
+                                const settleAmount = parsed.data.settlement?.amountVnd ?? 0;
+                                const prepaidAmount = Math.max(0, pTotal - settleAmount);
+
                                 receiptData = {
                                     invoiceId: finalInv.id,
                                     sessionId: session.id,
@@ -420,9 +444,15 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                         unitPrice: l.unitPrice,
                                         totalVnd: l.totalVnd,
                                     })),
+                                    packageTotalVnd: pkgTotal,
+                                    itemsTotalVnd: itemsTotal,
+                                    extensionsTotalVnd: extTotal,
+                                    fishBuybackTotalVnd: fishTotal,
+                                    prepaidAmountVnd: prepaidAmount,
+                                    supplementaryAmountVnd: settleAmount,
                                     totalAmountVnd: gTotal,
                                     paidAmountVnd: pTotal,
-                                    paymentAmountVnd: parsed.data.settlement?.amountVnd ?? 0,
+                                    paymentAmountVnd: settleAmount,
                                     remainingVnd: Math.max(0, gTotal - pTotal),
                                     refundAmountVnd:
                                         parsed.data.settlement?.refundVnd ??

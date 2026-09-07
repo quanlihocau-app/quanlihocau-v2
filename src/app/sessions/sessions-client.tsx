@@ -47,6 +47,7 @@ export interface SerializablePayment {
 
 export interface SerializableSession {
     id: string;
+    paymentTiming?: "PREPAID" | "POSTPAID";
     startAt: string;
     plannedEndAt: string;
     customer: {
@@ -386,15 +387,26 @@ export function SessionsClient({
                                     : "border-[#E3E8E3] hover:border-[#4F9D5A]/50"
                             }`}
                         >
-                            {/* Hàng 1: Mã ô & Thời lượng */}
+                            {/* Hàng 1: Mã ô & Thời lượng & Trạng thái thu tiền */}
                             <div>
                                 <div className="flex items-start justify-between gap-1 mb-1">
                                     <span className="text-sm font-bold text-[#17201A] leading-tight truncate">
                                         {hutLabel}
                                     </span>
-                                    <span className="shrink-0 text-[11px] font-medium text-[#66716A]">
-                                        {formatDuration(s.package.durationMinutes)}
-                                    </span>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        {s.paymentTiming === "PREPAID" ? (
+                                            <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 border border-emerald-200/80">
+                                                Đã thu trước
+                                            </span>
+                                        ) : (
+                                            <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-800 border border-amber-200/80">
+                                                Thu sau
+                                            </span>
+                                        )}
+                                        <span className="text-[11px] font-medium text-[#66716A]">
+                                            {formatDuration(s.package.durationMinutes)}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 {/* Hàng 2: Tên khách hàng */}
@@ -414,16 +426,16 @@ export function SessionsClient({
 
                             {/* Hàng 4: Chi tiết bill & Kết quả */}
                             <div className="mt-2 pt-2 border-t border-[#E3E8E3]">
-                                {/* Micro breakdown nếu có khoản giảm trừ (Thu cá hoặc Đã nộp trước) */}
+                                {/* Micro breakdown nếu có khoản giảm trừ hoặc đã thu trước */}
                                 {fishBuybackTotal > 0 || totalPaid > 0 ? (
                                     <div className="space-y-0.5 text-[10px] text-[#66716A] mb-1.5 bg-[#F7F9F5] p-1.5 rounded-xl border border-[#E3E8E3]">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[#66716A]">Dịch vụ (gói+món):</span>
+                                            <span className="text-[#66716A]">Tổng chi phí:</span>
                                             <span className="font-mono text-[#17201A] font-medium">+{formatVnd(totalCharges)}</span>
                                         </div>
                                         {totalPaid > 0 && (
                                             <div className="flex items-center justify-between text-[#246B38]">
-                                                <span>Đã nộp trước:</span>
+                                                <span>Đã thu trước:</span>
                                                 <span className="font-mono font-medium">-{formatVnd(totalPaid)}</span>
                                             </div>
                                         )}
@@ -436,7 +448,7 @@ export function SessionsClient({
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-between text-xs mb-1.5">
-                                        <span className="text-[#66716A] font-medium">Tạm tính:</span>
+                                        <span className="text-[#66716A] font-medium">Tiền gói câu:</span>
                                         <span className="font-mono font-bold text-[#17201A]">+{formatVnd(totalCharges)}</span>
                                     </div>
                                 )}
@@ -523,7 +535,7 @@ export function SessionsClient({
                                                 ? `Thối -${formatVnd(Math.abs(netBalance))} & In`
                                                 : netBalance > 0
                                                 ? `Thu +${formatVnd(netBalance)} & In`
-                                                : `Đóng & In bill`}
+                                                : `Kết thúc & In bill`}
                                         </span>
                                     </button>
                                 )}

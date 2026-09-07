@@ -60,6 +60,11 @@ enum InvoiceStatus {
   VOIDED
 }
 
+enum PaymentTiming {
+  PREPAID
+  POSTPAID
+}
+
 enum PaymentMethod {
   CASH
   BANK_TRANSFER
@@ -244,6 +249,7 @@ model FishingSession {
   packageDurationMinutesSnapshot Int
   packagePriceVndSnapshot        Int
   overtimeHourlyVndSnapshot      Int
+  paymentTiming                  PaymentTiming @default(POSTPAID)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -355,9 +361,14 @@ model Invoice {
   lakeId           String
   customerId       String?
   fishingSessionId String?
-  status           InvoiceStatus
-  totalAmountVnd   Int
-  createdAt        DateTime      @default(now())
+  status            InvoiceStatus
+  totalAmountVnd    Int
+  subtotalVnd       Int           @default(0)
+  discountAmountVnd Int           @default(0)
+  paidAmountVnd     Int           @default(0)
+  refundedAmountVnd Int           @default(0)
+  balanceDueVnd     Int           @default(0)
+  createdAt         DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
   lake           Lake            @relation(fields: [lakeId], references: [id])

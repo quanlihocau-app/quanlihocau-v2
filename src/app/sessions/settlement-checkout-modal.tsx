@@ -590,7 +590,7 @@ export function SettlementCheckoutModal({
                                         ? `Thối tiền ${formatVnd(preview.financials.refundVnd)} & In bill`
                                         : preview.financials.netDueVnd > 0
                                         ? `Thu thêm ${formatVnd(preview.financials.netDueVnd)} & In bill`
-                                        : "Hoàn tất & In bill"}
+                                        : "Kết thúc & In bill"}
                                 </Button>
                             </div>
                         </div>

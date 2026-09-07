@@ -78,7 +78,7 @@ export default async function SessionsPage() {
             },
             invoices: {
                 where: {
-                    status: InvoiceStatus.DRAFT,
+                    status: { not: InvoiceStatus.VOIDED },
                 },
                 include: {
                     lines: {
@@ -169,6 +169,7 @@ export default async function SessionsPage() {
     // ── Serialize: convert Date → ISO string and Decimal/BigInt for client ────────
     const serializedSessions: SerializableSession[] = activeSessions.map((s) => ({
         id: s.id,
+        paymentTiming: s.paymentTiming,
         startAt: s.startAt.toISOString(),
         plannedEndAt: s.plannedEndAt.toISOString(),
         customer: s.customer
@@ -199,6 +200,9 @@ export default async function SessionsPage() {
         invoices: s.invoices.map((inv) => ({
             id: inv.id,
             totalAmountVnd: Number(inv.totalAmountVnd),
+            paidAmountVnd: Number(inv.paidAmountVnd || 0),
+            subtotalVnd: Number(inv.subtotalVnd || 0),
+            balanceDueVnd: Number(inv.balanceDueVnd || 0),
             lines: inv.lines.map((l) => ({
                 id: l.id,
                 productId: l.productId,

@@ -37,8 +37,11 @@ export function buildSessionTicketEscPos(
         builder.text(data.organizationName.toUpperCase()).feed(1);
     }
     builder.bold(true).size(2, 2).text(data.lakeName.toUpperCase()).feed(1);
-    builder.bold(false).size(1, 1);
-    builder.bold(true).text("--- PHIEU CAU CA ---").feed(1);
+    const isPrepaid =
+        data.paymentTiming === "PREPAID" ||
+        (data.prepaidAmountVnd !== undefined && data.prepaidAmountVnd > 0);
+
+    builder.bold(true).text(isPrepaid ? "--- VE CAU - DA THANH TOAN ---" : "--- VE CAU - THU SAU ---").feed(1);
     if (data.isReprint) {
         builder.bold(true).text("*** BAN IN LAI ***").feed(1);
     }
@@ -84,9 +87,11 @@ export function buildSessionTicketEscPos(
     }
 
     // 4. Prepayment / Financials at ticket creation
-    if (data.prepaidAmountVnd !== undefined) {
-        builder.divider("-");
-        builder.twoCols("Tam thu (Coc):", formatVnd(data.prepaidAmountVnd));
+    builder.divider("-");
+    builder.twoCols("Tong tien ve:", formatVnd(data.packagePriceVnd));
+    if (isPrepaid) {
+        const paidAmount = data.prepaidAmountVnd ?? data.packagePriceVnd;
+        builder.twoCols("Da thanh toan:", formatVnd(paidAmount));
         if (data.paymentMethod) {
             const methodLabel =
                 data.paymentMethod === "CASH"
@@ -96,11 +101,11 @@ export function buildSessionTicketEscPos(
                     : data.paymentMethod;
             builder.twoCols("Hinh thuc:", methodLabel);
         }
-        if (data.balanceDueVnd !== undefined) {
-            builder.bold(true);
-            builder.twoCols("Con lai:", formatVnd(data.balanceDueVnd));
-            builder.bold(false);
-        }
+        builder.bold(true).twoCols("Con phai thu:", "0d").bold(false);
+    } else {
+        builder.twoCols("Da thanh toan:", "0d");
+        const remaining = data.balanceDueVnd ?? data.packagePriceVnd;
+        builder.bold(true).twoCols("Con phai thu:", formatVnd(remaining)).bold(false);
     }
 
     builder.divider("=");
@@ -180,20 +185,31 @@ export function buildPaymentReceiptEscPos(
     builder.divider("=");
 
     // 4. Financial Summary
-    builder.twoCols("Tong cong:", formatVnd(data.totalAmountVnd));
-    if (data.paymentAmountVnd !== undefined && data.paymentAmountVnd > 0) {
+    builder.twoCols("Tong hoa don:", formatVnd(data.totalAmountVnd));
+    if (data.prepaidAmountVnd !== undefined && data.prepaidAmountVnd > 0) {
+        builder.twoCols("Da thu truoc:", formatVnd(data.prepaidAmountVnd));
+    }
+    if (data.supplementaryAmountVnd !== undefined && data.supplementaryAmountVnd > 0) {
+        builder.bold(true);
+        builder.twoCols("Thu bo sung:", formatVnd(data.supplementaryAmountVnd));
+        builder.bold(false);
+    } else if (data.paymentAmountVnd !== undefined && data.paymentAmountVnd > 0) {
         builder.bold(true);
         builder.twoCols("Thu lan nay:", formatVnd(data.paymentAmountVnd));
         builder.bold(false);
     }
     builder.twoCols("Da thanh toan:", formatVnd(data.paidAmountVnd));
+
+    if (data.changeAmountVnd !== undefined && data.changeAmountVnd > 0) {
+        builder.twoCols("Tien thoi lai:", formatVnd(data.changeAmountVnd));
+    }
     if (data.refundAmountVnd && data.refundAmountVnd > 0) {
         builder.bold(true);
         builder.twoCols("Hoan tra khach:", formatVnd(data.refundAmountVnd));
         builder.bold(false);
     } else {
         builder.bold(true);
-        builder.twoCols("Con lai:", formatVnd(data.remainingVnd));
+        builder.twoCols("Con phai thu:", formatVnd(data.remainingVnd));
         builder.bold(false);
     }
 

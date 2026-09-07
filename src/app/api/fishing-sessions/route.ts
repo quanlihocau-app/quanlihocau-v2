@@ -144,7 +144,7 @@ export async function POST(request: Request) {
 
             console.error("[openSession error]:", err);
             return NextResponse.json(
-                { ok: false, error: "Không thể mở phiên câu do lỗi hệ thống." },
+                { ok: false, error: "Không thể mở phiên câu do lỗi hệ thống.", detail: err instanceof Error ? err.stack || err.message : String(err) },
                 { status: 500 },
             );
         }

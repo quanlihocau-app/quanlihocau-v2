@@ -24,6 +24,7 @@ import {
     addQuickFishTypeAction,
 } from "../quick-create-actions";
 import { RetailProduct } from "./retail-pos-form";
+import { BANK_CONFIG, generateVietQrUrl } from "@/lib/vietqr";
 
 export interface SelectCustomer {
     id: string;
@@ -186,9 +187,18 @@ export function OpenSessionForm({
     const [isProductSheetOpen, setIsProductSheetOpen] = useState(false);
     const [isFishTypeSheetOpen, setIsFishTypeSheetOpen] = useState(false);
 
-    // Ticket modal state
+    // Ticket & Payment timing state
     const [createdTicket, setCreatedTicket] =
         useState<CreatedSessionTicket | null>(null);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [selectedPaymentTiming, setSelectedPaymentTiming] = useState<"PREPAID" | "POSTPAID">("PREPAID");
+    const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+    const [paymentMethodChoice, setPaymentMethodChoice] = useState<"CASH" | "BANK_TRANSFER" | "VIETQR" | "SPLIT">("CASH");
+    const [cashCustomerGives, setCashCustomerGives] = useState<number | "">("");
+    const [splitCashAmount, setSplitCashAmount] = useState<number | "">("");
+    const [splitBankAmount, setSplitBankAmount] = useState<number | "">("");
+    const [transferConfirmed, setTransferConfirmed] = useState(false);
+    const [tempOrderCode, setTempOrderCode] = useState("");
     const [isPrinting, setIsPrinting] = useState(false);
     const [printSuccessNotice, setPrintSuccessNotice] = useState<string | null>(
         null,
@@ -536,7 +546,15 @@ export function OpenSessionForm({
         }
     }
 
-    async function handleSubmit(e: FormEvent) {
+    const packagePriceTotal =
+        (selectedPackage?.priceVnd || 0) * selectedHutIds.length;
+    const itemsPriceTotal = selectedItems.reduce(
+        (sum, it) => sum + it.priceVnd * it.quantity,
+        0,
+    );
+    const grandTotalPrice = packagePriceTotal + itemsPriceTotal;
+
+    function handleSubmit(e: FormEvent) {
         e.preventDefault();
         if (isSubmitting) return;
         setFormError("");
@@ -551,8 +569,19 @@ export function OpenSessionForm({
             return;
         }
 
+        const randomCode = Date.now().toString().slice(-6);
+        setTempOrderCode(randomCode);
+        setCashCustomerGives(grandTotalPrice);
+        setSplitCashAmount("");
+        setSplitBankAmount("");
+        setTransferConfirmed(false);
+        setIsConfirmModalOpen(true);
+    }
+
+    async function handleStartPostpaidSession() {
+        if (isSubmitting) return;
         setIsSubmitting(true);
-        const loadingId = toast.loading("Đang đồng bộ dữ liệu lên hệ thống...");
+        const loadingId = toast.loading("Đang bắt đầu phiên câu (Thu sau)...");
 
         try {
             const idempotencyKey = crypto.randomUUID();
@@ -566,6 +595,8 @@ export function OpenSessionForm({
                     customerId: selectedCustomerId || null,
                     packageId: selectedPackageId,
                     hutIds: selectedHutIds,
+                    paymentTiming: "POSTPAID",
+                    paymentMode: "POSTPAID",
                     items:
                         selectedItems.length > 0
                             ? selectedItems.map((it) => ({
@@ -604,7 +635,6 @@ export function OpenSessionForm({
             };
 
             const resolvedSessionId = result.id || result.data?.session?.id;
-            const resolvedInvoiceId = result.invoiceId || result.data?.invoice?.id;
             const resolvedStartTime =
                 result.startTime ||
                 result.startAt ||
@@ -617,7 +647,6 @@ export function OpenSessionForm({
             if (
                 !response.ok ||
                 !resolvedSessionId ||
-                !resolvedInvoiceId ||
                 !resolvedStartTime
             ) {
                 toast.dismiss(loadingId);
@@ -651,10 +680,7 @@ export function OpenSessionForm({
                     selectedPackage?.name ||
                     result.packageNameSnapshot ||
                     "Gói câu",
-                packagePriceVnd:
-                    (selectedPackage?.priceVnd ||
-                        result.packagePriceVndSnapshot ||
-                        0) * selectedHutIds.length,
+                packagePriceVnd: packagePriceTotal,
                 durationMinutes:
                     selectedPackage?.durationMinutes ||
                     result.packageDurationMinutesSnapshot ||
@@ -675,9 +701,40 @@ export function OpenSessionForm({
 
             setCreatedTicket(ticketData);
             clearDraft();
+            setIsConfirmModalOpen(false);
             setIsSubmitting(false);
             toast.dismiss(loadingId);
-            toast.success("Mở ca câu thành công!");
+            toast.success("Bắt đầu ca câu thành công (Thu sau)!");
+
+            // Print ticket for postpaid session
+            if (isConnected) {
+                printSessionTicket(
+                    {
+                        sessionId: ticketData.sessionId,
+                        ticketCode: ticketData.ticketCode,
+                        lakeName: ticketData.lakeName,
+                        huts: ticketData.huts,
+                        packageName: ticketData.packageName,
+                        packagePriceVnd: ticketData.packagePriceVnd,
+                        durationMinutes: ticketData.durationMinutes,
+                        customerName: ticketData.customerName,
+                        customerPhone: ticketData.customerPhone,
+                        startAt: ticketData.startAt,
+                        plannedEndAt: ticketData.plannedEndAt,
+                        cashierName: ticketData.cashierName,
+                        note: ticketData.note,
+                        paymentTiming: "POSTPAID",
+                        balanceDueVnd: grandTotalPrice,
+                        prepaidAmountVnd: 0,
+                    },
+                    { manual: false },
+                ).catch(() => {});
+            }
+
+            setTimeout(() => {
+                router.push("/sessions");
+                router.refresh();
+            }, 600);
         } catch {
             toast.dismiss(loadingId);
             const msg = "Đã có lỗi xảy ra khi mở phiên câu.";
@@ -687,50 +744,255 @@ export function OpenSessionForm({
         }
     }
 
-    async function handlePrintTicket(isReprint = false) {
-        if (!createdTicket) return;
-        setIsPrinting(true);
-        setPrintSuccessNotice("Đang gửi lệnh in vé câu…");
+    async function handleConfirmPrepaidPayment() {
+        if (isSubmitting) return;
+
+        // Validation based on chosen payment method
+        if (paymentMethodChoice === "CASH") {
+            const given =
+                typeof cashCustomerGives === "number"
+                    ? cashCustomerGives
+                    : Number(cashCustomerGives);
+            if (isNaN(given) || given < grandTotalPrice) {
+                toast.error("Số tiền khách đưa chưa đủ để thanh toán vé câu.");
+                return;
+            }
+        } else if (
+            paymentMethodChoice === "BANK_TRANSFER" ||
+            paymentMethodChoice === "VIETQR"
+        ) {
+            if (!transferConfirmed) {
+                toast.error("Vui lòng tích xác nhận đã nhận đủ tiền chuyển khoản.");
+                return;
+            }
+        } else if (paymentMethodChoice === "SPLIT") {
+            const cashPart = Number(splitCashAmount) || 0;
+            const bankPart = Number(splitBankAmount) || 0;
+            if (cashPart + bankPart !== grandTotalPrice) {
+                toast.error(
+                    `Tổng số tiền kết hợp (${formatPrice(
+                        cashPart + bankPart,
+                    )}) phải bằng tổng hóa đơn (${formatPrice(grandTotalPrice)}).`,
+                );
+                return;
+            }
+        }
+
+        setIsSubmitting(true);
+        const loadingId = toast.loading("Đang ghi nhận thanh toán & Bắt đầu ca câu...");
+
+        const paymentsPayload: Array<{
+            method: "CASH" | "BANK_TRANSFER";
+            amountVnd: number;
+            reference?: string;
+        }> = [];
+
+        if (paymentMethodChoice === "CASH") {
+            paymentsPayload.push({
+                method: "CASH",
+                amountVnd: grandTotalPrice,
+            });
+        } else if (
+            paymentMethodChoice === "BANK_TRANSFER" ||
+            paymentMethodChoice === "VIETQR"
+        ) {
+            paymentsPayload.push({
+                method: "BANK_TRANSFER",
+                amountVnd: grandTotalPrice,
+                reference: tempOrderCode ? `VECAU_${tempOrderCode}` : undefined,
+            });
+        } else if (paymentMethodChoice === "SPLIT") {
+            const cashPart = Number(splitCashAmount) || 0;
+            const bankPart = Number(splitBankAmount) || 0;
+            if (cashPart > 0) {
+                paymentsPayload.push({
+                    method: "CASH",
+                    amountVnd: cashPart,
+                });
+            }
+            if (bankPart > 0) {
+                paymentsPayload.push({
+                    method: "BANK_TRANSFER",
+                    amountVnd: bankPart,
+                    reference: tempOrderCode ? `VECAU_${tempOrderCode}` : undefined,
+                });
+            }
+        }
 
         try {
-            if (isConnected) {
-                await printSessionTicket(
-                    {
-                        sessionId: createdTicket.sessionId,
-                        ticketCode: createdTicket.ticketCode,
-                        lakeName: createdTicket.lakeName,
-                        huts: createdTicket.huts,
-                        packageName: createdTicket.packageName,
-                        packagePriceVnd: createdTicket.packagePriceVnd,
-                        durationMinutes: createdTicket.durationMinutes,
-                        customerName: createdTicket.customerName,
-                        customerPhone: createdTicket.customerPhone,
-                        startAt: createdTicket.startAt,
-                        plannedEndAt: createdTicket.plannedEndAt,
-                        cashierName: createdTicket.cashierName,
-                        note: createdTicket.note,
-                        isReprint,
-                    },
-                    { manual: true },
+            const idempotencyKey = crypto.randomUUID();
+            const response = await fetch("/api/fishing-sessions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Idempotency-Key": idempotencyKey,
+                },
+                body: JSON.stringify({
+                    customerId: selectedCustomerId || null,
+                    packageId: selectedPackageId,
+                    hutIds: selectedHutIds,
+                    paymentTiming: "PREPAID",
+                    paymentMode: "PREPAID",
+                    payments: paymentsPayload,
+                    items:
+                        selectedItems.length > 0
+                            ? selectedItems.map((it) => ({
+                                  productId: it.productId,
+                                  quantity: it.quantity,
+                              }))
+                            : undefined,
+                }),
+            });
+
+            const result = (await response.json().catch(() => ({}))) as {
+                ok?: boolean;
+                id?: string;
+                invoiceId?: string;
+                startAt?: string;
+                startTime?: string;
+                plannedEndAt?: string;
+                endTime?: string;
+                data?: {
+                    session?: {
+                        id: string;
+                        startTime: string;
+                        endTime: string;
+                    };
+                    invoice?: {
+                        id: string;
+                    };
+                };
+                packageNameSnapshot?: string;
+                packagePriceVndSnapshot?: number;
+                packageDurationMinutesSnapshot?: number;
+                customer?: { name?: string; phoneNormalized?: string | null } | null;
+                error?: string;
+                code?: string;
+                requestId?: string;
+            };
+
+            const resolvedSessionId = result.id || result.data?.session?.id;
+            const resolvedStartTime =
+                result.startTime ||
+                result.startAt ||
+                result.data?.session?.startTime;
+            const resolvedEndTime =
+                result.endTime ||
+                result.plannedEndAt ||
+                result.data?.session?.endTime;
+
+            if (
+                !response.ok ||
+                !resolvedSessionId ||
+                !resolvedStartTime
+            ) {
+                toast.dismiss(loadingId);
+                if (response.status === 409 || result.code === "SPOT_OCCUPIED") {
+                    const msg = result.error ?? "Ô câu đã có khách đang câu.";
+                    setFormError(msg);
+                    toast.error(msg);
+                    await refreshHuts();
+                } else {
+                    const reqIdInfo = result.requestId
+                        ? ` (Mã: ${result.requestId})`
+                        : "";
+                    const msg =
+                        (result.error ?? "Không thể hoàn tất thanh toán và mở phiên.") +
+                        reqIdInfo;
+                    setFormError(msg);
+                    toast.error(msg);
+                }
+                setIsSubmitting(false);
+                return;
+            }
+
+            const selectedHutsInfo = hutList
+                .filter((h) => selectedHutIds.includes(h.id))
+                .map((h) => ({ name: h.name, areaName: h.area.name }));
+
+            const ticketData: CreatedSessionTicket = {
+                sessionId: resolvedSessionId,
+                ticketCode: `#${resolvedSessionId.slice(0, 8).toUpperCase()}`,
+                lakeName: lakeName || "HỒ CÂU KIM THÔNG",
+                huts: selectedHutsInfo,
+                packageName:
+                    selectedPackage?.name ||
+                    result.packageNameSnapshot ||
+                    "Gói câu",
+                packagePriceVnd: packagePriceTotal,
+                durationMinutes:
+                    selectedPackage?.durationMinutes ||
+                    result.packageDurationMinutesSnapshot ||
+                    0,
+                customerName:
+                    selectedCustomer?.name ||
+                    result.customer?.name ||
+                    "Khách lẻ",
+                customerPhone:
+                    selectedCustomer?.phoneNormalized ||
+                    result.customer?.phoneNormalized ||
+                    null,
+                startAt: resolvedStartTime,
+                plannedEndAt: resolvedEndTime || null,
+                cashierName: cashierName || "Thu ngân",
+                note: note.trim() || null,
+            };
+
+            setCreatedTicket(ticketData);
+            clearDraft();
+            setIsCheckoutModalOpen(false);
+            setIsConfirmModalOpen(false);
+            setIsSubmitting(false);
+            toast.dismiss(loadingId);
+            toast.success("Thanh toán thành công & Bắt đầu ca câu!");
+
+            // Print prepaid ticket
+            try {
+                if (isConnected) {
+                    await printSessionTicket(
+                        {
+                            sessionId: ticketData.sessionId,
+                            ticketCode: ticketData.ticketCode,
+                            lakeName: ticketData.lakeName,
+                            huts: ticketData.huts,
+                            packageName: ticketData.packageName,
+                            packagePriceVnd: ticketData.packagePriceVnd,
+                            durationMinutes: ticketData.durationMinutes,
+                            customerName: ticketData.customerName,
+                            customerPhone: ticketData.customerPhone,
+                            startAt: ticketData.startAt,
+                            plannedEndAt: ticketData.plannedEndAt,
+                            cashierName: ticketData.cashierName,
+                            note: ticketData.note,
+                            paymentTiming: "PREPAID",
+                            prepaidAmountVnd: grandTotalPrice,
+                            balanceDueVnd: 0,
+                            paymentMethod:
+                                paymentMethodChoice === "CASH"
+                                    ? "CASH"
+                                    : paymentMethodChoice === "SPLIT"
+                                    ? "SPLIT"
+                                    : "BANK_TRANSFER",
+                        },
+                        { manual: false },
+                    );
+                }
+            } catch {
+                toast.warning(
+                    "Thanh toán thành công, in bill thất bại. Bạn có thể in lại từ danh sách phiên.",
                 );
-            } else {
-                window.print();
             }
+
+            setTimeout(() => {
+                router.push("/sessions");
+                router.refresh();
+            }, 600);
         } catch {
-            window.print();
-        } finally {
-            setIsPrinting(false);
-            setPrintSuccessNotice(
-                isReprint
-                    ? "Đã gửi lệnh in lại!"
-                    : "Đã in vé! Đang chuyển sang Đang câu…",
-            );
-            if (!isReprint) {
-                setTimeout(() => {
-                    router.push("/sessions");
-                    router.refresh();
-                }, 800);
-            }
+            toast.dismiss(loadingId);
+            const msg = "Đã xảy ra lỗi kết nối khi xử lý thanh toán thu trước.";
+            setFormError(msg);
+            toast.error(msg);
+            setIsSubmitting(false);
         }
     }
 
@@ -1528,38 +1790,39 @@ export function OpenSessionForm({
                 }}
             />
 
-            {/* MODAL: VÉ CÂU (BILL TẠM TÍNH) */}
-            {createdTicket && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-3 animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-sm rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-3.5">
-                        {/* Ticket Header */}
+            {/* ========================================================================= */}
+            {/* MODAL 1: MÀN HÌNH XÁC NHẬN VÉ CÂU & CHỌN THU TIỀN TRƯỚC / THU TIỀN SAU      */}
+            {/* ========================================================================= */}
+            {isConfirmModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4">
+                        {/* Header */}
                         <div className="text-center space-y-1">
                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F3E5] text-[#246B38] text-xs font-bold uppercase tracking-wider">
                                 <span>🎫</span>
-                                <span>Vé câu (Tạm tính)</span>
+                                <span>Xác nhận vé câu</span>
                             </div>
                             <h2 className="text-base font-extrabold uppercase text-[#17201A] tracking-wide">
-                                {createdTicket.lakeName}
+                                {lakeName || "HỒ CÂU KIM THÔNG"}
                             </h2>
                             <p className="text-xs text-[#66716A] font-mono">
-                                Mã vé: {createdTicket.ticketCode}
+                                Mã dự kiến: #{tempOrderCode}
                             </p>
                         </div>
 
-                        {/* Dashed divider */}
                         <div className="border-b border-dashed border-[#E3E8E3]" />
 
-                        {/* Ticket Content */}
+                        {/* Chi tiết vé */}
                         <div className="rounded-2xl bg-[#F7F9F5] p-3.5 border border-[#E3E8E3] space-y-2 text-xs">
                             <div className="flex justify-between">
                                 <span className="text-[#66716A]">Khách hàng:</span>
                                 <div className="text-right">
                                     <span className="font-bold text-[#17201A]">
-                                        {createdTicket.customerName}
+                                        {selectedCustomer?.name || "Khách lẻ"}
                                     </span>
-                                    {createdTicket.customerPhone && (
+                                    {selectedCustomer?.phoneNormalized && (
                                         <p className="text-[11px] font-mono text-[#66716A]">
-                                            {createdTicket.customerPhone}
+                                            {selectedCustomer.phoneNormalized}
                                         </p>
                                     )}
                                 </div>
@@ -1568,12 +1831,9 @@ export function OpenSessionForm({
                             <div className="flex justify-between">
                                 <span className="text-[#66716A]">Vị trí / Ô câu:</span>
                                 <span className="font-bold text-[#17201A] text-right">
-                                    {createdTicket.huts
-                                        .map((h) =>
-                                            h.areaName
-                                                ? `${h.name} (${h.areaName})`
-                                                : h.name,
-                                        )
+                                    {hutList
+                                        .filter((h) => selectedHutIds.includes(h.id))
+                                        .map((h) => (h.area ? `${h.name} (${h.area.name})` : h.name))
                                         .join(", ") || "Tự do"}
                                 </span>
                             </div>
@@ -1581,103 +1841,556 @@ export function OpenSessionForm({
                             <div className="flex justify-between">
                                 <span className="text-[#66716A]">Gói câu:</span>
                                 <span className="font-semibold text-[#17201A] text-right">
-                                    {createdTicket.packageName} ({formatDuration(createdTicket.durationMinutes)})
+                                    {selectedPackage?.name} ({formatDuration(selectedPackage?.durationMinutes || 0)})
                                 </span>
                             </div>
 
-                            <div className="border-t border-dashed border-[#E3E8E3] my-1 pt-1.5 space-y-1.5">
-                                <div className="flex justify-between">
-                                    <span className="text-[#66716A]">Giờ vào:</span>
-                                    <span className="font-semibold text-[#246B38] font-mono">
-                                        {formatDateTime(createdTicket.startAt)}
-                                    </span>
+                            {selectedItems.length > 0 && (
+                                <div className="border-t border-dashed border-[#E3E8E3] pt-1.5 space-y-1">
+                                    <span className="text-[#66716A] font-semibold block">Sản phẩm kèm:</span>
+                                    {selectedItems.map((it) => (
+                                        <div key={it.productId} className="flex justify-between pl-2 text-[11px]">
+                                            <span>• {it.name} (x{it.quantity})</span>
+                                            <span className="font-mono">{formatPrice(it.priceVnd * it.quantity)}</span>
+                                        </div>
+                                    ))}
                                 </div>
-
-                                <div className="flex justify-between">
-                                    <span className="text-[#66716A]">
-                                        Giờ ra (dự kiến):
-                                    </span>
-                                    <span className="font-semibold text-[#D9534F] font-mono">
-                                        {formatDateTime(
-                                            createdTicket.plannedEndAt,
-                                        )}
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between">
-                                    <span className="text-[#66716A]">Nhân viên:</span>
-                                    <span className="font-medium text-[#17201A]">
-                                        {createdTicket.cashierName}
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between">
-                                    <span className="text-[#66716A]">Ghi chú:</span>
-                                    <span className="font-medium text-[#17201A] text-right max-w-45 truncate">
-                                        {createdTicket.note || "—"}
-                                    </span>
-                                </div>
-                            </div>
+                            )}
 
                             <div className="border-t border-dashed border-[#E3E8E3] pt-2 flex justify-between items-center">
                                 <span className="text-xs font-bold text-[#17201A]">
-                                    Tạm tính tiền gói:
+                                    Tổng tiền tạm tính:
                                 </span>
                                 <span className="text-base font-extrabold font-mono text-[#246B38] tabular-nums">
-                                    {formatPrice(createdTicket.packagePriceVnd)}
+                                    {formatPrice(grandTotalPrice)}
                                 </span>
                             </div>
                         </div>
 
-                        {/* Footer message */}
-                        <p className="text-[11px] text-center text-[#66716A] italic">
-                            * Vui lòng giữ vé câu cho đến khi kết thúc ca câu.
-                        </p>
+                        {/* 2 LỰA CHỌN NGHIỆP VỤ LỚN */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-[#17201A] uppercase tracking-wider block">
+                                Lựa chọn hình thức thu tiền:
+                            </label>
 
-                        {printSuccessNotice && (
-                            <InlineAlert
-                                type="success"
-                                message={printSuccessNotice}
-                            />
-                        )}
+                            <div className="grid grid-cols-1 gap-2.5">
+                                {/* Option 1: Thu tiền trước */}
+                                <div
+                                    onClick={() => setSelectedPaymentTiming("PREPAID")}
+                                    className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                                        selectedPaymentTiming === "PREPAID"
+                                            ? "border-emerald-600 bg-emerald-50/90 shadow-sm"
+                                            : "border-[#E3E8E3] bg-white hover:bg-slate-50"
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xl">💳</span>
+                                            <span className="text-sm font-bold text-[#17201A]">
+                                                Thu tiền trước
+                                            </span>
+                                        </div>
+                                        <div
+                                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                                selectedPaymentTiming === "PREPAID"
+                                                    ? "border-emerald-600 bg-emerald-600"
+                                                    : "border-slate-300 bg-white"
+                                            }`}
+                                        >
+                                            {selectedPaymentTiming === "PREPAID" && (
+                                                <div className="w-2 h-2 rounded-full bg-white" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-[#4E5A51] leading-relaxed pl-7">
+                                        Thu tiền gói câu ngay, sau đó bắt đầu phiên.
+                                    </p>
+                                </div>
 
-                        {/* Action Buttons */}
+                                {/* Option 2: Thu tiền sau */}
+                                <div
+                                    onClick={() => setSelectedPaymentTiming("POSTPAID")}
+                                    className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                                        selectedPaymentTiming === "POSTPAID"
+                                            ? "border-emerald-600 bg-emerald-50/90 shadow-sm"
+                                            : "border-[#E3E8E3] bg-white hover:bg-slate-50"
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xl">🕒</span>
+                                            <span className="text-sm font-bold text-[#17201A]">
+                                                Thu tiền sau
+                                            </span>
+                                        </div>
+                                        <div
+                                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                                selectedPaymentTiming === "POSTPAID"
+                                                    ? "border-emerald-600 bg-emerald-600"
+                                                    : "border-slate-300 bg-white"
+                                            }`}
+                                        >
+                                            {selectedPaymentTiming === "POSTPAID" && (
+                                                <div className="w-2 h-2 rounded-full bg-white" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-[#4E5A51] leading-relaxed pl-7">
+                                        Bắt đầu phiên trước, thanh toán toàn bộ khi kết thúc.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* NÚT CHÍNH PHÍA TRÊN THAY ĐỔI THEO LỰA CHỌN */}
                         <div className="space-y-2 pt-1">
+                            {selectedPaymentTiming === "PREPAID" ? (
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    variant="primary"
+                                    onClick={() => {
+                                        setIsConfirmModalOpen(false);
+                                        setIsCheckoutModalOpen(true);
+                                    }}
+                                    className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white"
+                                >
+                                    💳 Thanh toán &amp; Bắt đầu câu
+                                </Button>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    variant="primary"
+                                    isLoading={isSubmitting}
+                                    loadingText="Đang mở ô &amp; bắt đầu…"
+                                    onClick={handleStartPostpaidSession}
+                                    className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white"
+                                >
+                                    🎣 Bắt đầu câu
+                                </Button>
+                            )}
+
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setIsConfirmModalOpen(false)}
+                                disabled={isSubmitting}
+                                className="w-full text-xs text-slate-600 hover:bg-slate-100"
+                            >
+                                Quay lại chỉnh sửa
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* MODAL 2: MÀN HÌNH THANH TOÁN THU TRƯỚC (PREPAID CHECKOUT MODAL)          */}
+            {/* ========================================================================= */}
+            {isCheckoutModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-lg rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4">
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="h-9 w-9 rounded-2xl bg-[#E8F3E5] flex items-center justify-center text-emerald-700 text-lg font-bold">
+                                    💳
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-[#17201A]">
+                                        Thanh toán vé câu (Thu trước)
+                                    </h3>
+                                    <p className="text-xs text-[#66716A]">
+                                        Ô câu: {hutList.filter((h) => selectedHutIds.includes(h.id)).map((h) => h.name).join(", ")} · {selectedCustomer?.name || "Khách lẻ"}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsCheckoutModalOpen(false);
+                                    setIsConfirmModalOpen(true);
+                                }}
+                                className="rounded-full p-1.5 text-[#66716A] hover:bg-[#F7F9F5] hover:text-[#17201A] transition-colors"
+                            >
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Tổng quan đơn hàng */}
+                        <div className="rounded-2xl bg-[#F7F9F5] p-3.5 border border-[#E3E8E3] space-y-1.5 text-xs">
+                            <div className="flex justify-between">
+                                <span className="text-[#66716A]">Tiền gói câu:</span>
+                                <span className="font-semibold font-mono text-[#17201A]">
+                                    {formatPrice(packagePriceTotal)}
+                                </span>
+                            </div>
+                            {itemsPriceTotal > 0 && (
+                                <div className="flex justify-between">
+                                    <span className="text-[#66716A]">Sản phẩm ({selectedItems.length} món):</span>
+                                    <span className="font-semibold font-mono text-[#17201A]">
+                                        +{formatPrice(itemsPriceTotal)}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="border-t border-dashed border-[#E3E8E3] pt-2 flex justify-between items-center">
+                                <span className="text-xs font-bold text-[#17201A] uppercase tracking-wider">
+                                    Số tiền cần thu:
+                                </span>
+                                <span className="text-lg font-extrabold font-mono text-[#246B38] tabular-nums">
+                                    {formatPrice(grandTotalPrice)}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* 4 Phương thức thanh toán Tabs */}
+                        <div>
+                            <label className="text-xs font-bold text-[#17201A] uppercase tracking-wider block mb-2">
+                                Phương thức thanh toán:
+                            </label>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setPaymentMethodChoice("CASH")}
+                                    className={`py-2 px-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                                        paymentMethodChoice === "CASH"
+                                            ? "border-emerald-600 bg-emerald-700 text-white shadow-xs"
+                                            : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-slate-50"
+                                    }`}
+                                >
+                                    <span>💵</span>
+                                    <span>Tiền mặt</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPaymentMethodChoice("BANK_TRANSFER")}
+                                    className={`py-2 px-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                                        paymentMethodChoice === "BANK_TRANSFER"
+                                            ? "border-emerald-600 bg-emerald-700 text-white shadow-xs"
+                                            : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-slate-50"
+                                    }`}
+                                >
+                                    <span>🏦</span>
+                                    <span>Chuyển khoản</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPaymentMethodChoice("VIETQR")}
+                                    className={`py-2 px-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                                        paymentMethodChoice === "VIETQR"
+                                            ? "border-emerald-600 bg-emerald-700 text-white shadow-xs"
+                                            : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-slate-50"
+                                    }`}
+                                >
+                                    <span>📱</span>
+                                    <span>Quét mã QR</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPaymentMethodChoice("SPLIT");
+                                        if (!splitCashAmount && !splitBankAmount) {
+                                            const half = Math.round(grandTotalPrice / 2);
+                                            setSplitCashAmount(half);
+                                            setSplitBankAmount(grandTotalPrice - half);
+                                        }
+                                    }}
+                                    className={`py-2 px-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                                        paymentMethodChoice === "SPLIT"
+                                            ? "border-emerald-600 bg-emerald-700 text-white shadow-xs"
+                                            : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-slate-50"
+                                    }`}
+                                >
+                                    <span>🔄</span>
+                                    <span>Kết hợp</span>
+                                </button>
+                            </div>
+
+                            {/* Chi tiết từng phương thức */}
+                            {paymentMethodChoice === "CASH" && (
+                                <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 space-y-3">
+                                    <div>
+                                        <label className="text-xs font-bold text-[#17201A] block mb-1">
+                                            Số tiền khách đưa (VNĐ):
+                                        </label>
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            step={1000}
+                                            value={cashCustomerGives}
+                                            onChange={(e) =>
+                                                setCashCustomerGives(
+                                                    e.target.value === "" ? "" : Number(e.target.value),
+                                                )
+                                            }
+                                            placeholder="Nhập số tiền khách đưa"
+                                            className="text-base font-bold font-mono"
+                                        />
+                                    </div>
+
+                                    {/* Nút gợi ý nhanh */}
+                                    <div className="flex flex-wrap gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setCashCustomerGives(grandTotalPrice)}
+                                            className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors"
+                                        >
+                                            Đủ {formatPrice(grandTotalPrice)}
+                                        </button>
+                                        {grandTotalPrice <= 200000 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setCashCustomerGives(200000)}
+                                                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors"
+                                            >
+                                                200.000đ
+                                            </button>
+                                        )}
+                                        {grandTotalPrice <= 500000 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setCashCustomerGives(500000)}
+                                                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors"
+                                            >
+                                                500.000đ
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setCashCustomerGives(
+                                                    Math.ceil(grandTotalPrice / 100000) * 100000,
+                                                )
+                                            }
+                                            className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors"
+                                        >
+                                            {formatPrice(Math.ceil(grandTotalPrice / 100000) * 100000)}
+                                        </button>
+                                    </div>
+
+                                    {/* Hiển thị tiền thối */}
+                                    <div className="rounded-xl bg-slate-50 p-3 border border-slate-200 space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-slate-700">
+                                                Tiền thối lại cho khách:
+                                            </span>
+                                            <span
+                                                className={`text-base font-extrabold font-mono tabular-nums ${
+                                                    Number(cashCustomerGives || 0) >= grandTotalPrice
+                                                        ? "text-emerald-700"
+                                                        : "text-rose-600"
+                                                }`}
+                                            >
+                                                {Number(cashCustomerGives || 0) >= grandTotalPrice
+                                                    ? formatPrice(Number(cashCustomerGives || 0) - grandTotalPrice)
+                                                    : `Khách đưa thiếu ${formatPrice(
+                                                          grandTotalPrice - Number(cashCustomerGives || 0),
+                                                      )}`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {paymentMethodChoice === "BANK_TRANSFER" && (
+                                <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 space-y-2.5 text-xs">
+                                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-600">Ngân hàng:</span>
+                                            <span className="font-bold text-slate-900">{BANK_CONFIG.bankName}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-slate-600">Số tài khoản:</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="font-mono font-extrabold text-emerald-700 text-sm">
+                                                    {BANK_CONFIG.accountNumber}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(BANK_CONFIG.accountNumber);
+                                                        toast.success("Đã sao chép STK!");
+                                                    }}
+                                                    className="px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-[10px] font-semibold text-slate-800"
+                                                >
+                                                    Copy
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-600">Chủ tài khoản:</span>
+                                            <span className="font-bold text-slate-900">{BANK_CONFIG.accountName}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-600">Số tiền:</span>
+                                            <span className="font-mono font-bold text-emerald-700">
+                                                {formatPrice(grandTotalPrice)}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-slate-600">Nội dung CK:</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="font-mono font-bold text-slate-900">
+                                                    VECAU {tempOrderCode}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(`VECAU ${tempOrderCode}`);
+                                                        toast.success("Đã sao chép nội dung!");
+                                                    }}
+                                                    className="px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-[10px] font-semibold text-slate-800"
+                                                >
+                                                    Copy
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <label className="flex items-start gap-2 pt-1 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={transferConfirmed}
+                                            onChange={(e) => setTransferConfirmed(e.target.checked)}
+                                            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                        />
+                                        <span className="text-[11px] text-slate-700 font-medium">
+                                            Tôi xác nhận khách đã chuyển đủ{" "}
+                                            <strong className="text-emerald-700">{formatPrice(grandTotalPrice)}</strong>{" "}
+                                            vào tài khoản ngân hàng.
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
+
+                            {paymentMethodChoice === "VIETQR" && (
+                                <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 space-y-3 text-center">
+                                    <div className="mx-auto w-52 h-52 rounded-xl bg-white border border-slate-200 p-2 shadow-xs flex items-center justify-center">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={generateVietQrUrl({ amount: grandTotalPrice, orderCode: tempOrderCode || "VECAU" }).qrUrl}
+                                            alt="VietQR Chuyển khoản"
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-[#66716A]">
+                                        Quét mã bằng ứng dụng ngân hàng bất kỳ để chuyển khoản tự động đúng số tiền và nội dung.
+                                    </p>
+                                    <label className="flex items-start justify-center gap-2 text-left cursor-pointer pt-1">
+                                        <input
+                                            type="checkbox"
+                                            checked={transferConfirmed}
+                                            onChange={(e) => setTransferConfirmed(e.target.checked)}
+                                            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                        />
+                                        <span className="text-[11px] text-slate-700 font-medium">
+                                            Khách đã quét QR &amp; Chuyển tiền thành công.
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
+
+                            {paymentMethodChoice === "SPLIT" && (
+                                <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 space-y-3">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                                                Tiền mặt (VNĐ):
+                                            </label>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                value={splitCashAmount}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === "" ? "" : Number(e.target.value);
+                                                    setSplitCashAmount(val);
+                                                    if (typeof val === "number" && val <= grandTotalPrice) {
+                                                        setSplitBankAmount(grandTotalPrice - val);
+                                                    }
+                                                }}
+                                                placeholder="Tiền mặt"
+                                                className="text-xs font-mono font-bold"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                                                Chuyển khoản (VNĐ):
+                                            </label>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                value={splitBankAmount}
+                                                onChange={(e) => {
+                                                    const val = e.target.value === "" ? "" : Number(e.target.value);
+                                                    setSplitBankAmount(val);
+                                                    if (typeof val === "number" && val <= grandTotalPrice) {
+                                                        setSplitCashAmount(grandTotalPrice - val);
+                                                    }
+                                                }}
+                                                placeholder="Chuyển khoản"
+                                                className="text-xs font-mono font-bold"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-200 text-xs flex justify-between items-center">
+                                        <span className="text-slate-600">Tổng thanh toán:</span>
+                                        <span
+                                            className={`font-mono font-bold ${
+                                                Number(splitCashAmount || 0) + Number(splitBankAmount || 0) === grandTotalPrice
+                                                    ? "text-emerald-700"
+                                                    : "text-rose-600"
+                                            }`}
+                                        >
+                                            {formatPrice(Number(splitCashAmount || 0) + Number(splitBankAmount || 0))} / {formatPrice(grandTotalPrice)}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Nút hành động */}
+                        <div className="space-y-2 pt-2 border-t border-[#E3E8E3]">
                             <Button
                                 type="button"
                                 size="lg"
                                 variant="primary"
-                                isLoading={isPrinting}
-                                loadingText="Đang in vé…"
-                                onClick={() => handlePrintTicket(false)}
-                                className="w-full shadow-md font-bold text-sm"
+                                isLoading={isSubmitting}
+                                loadingText="Đang xác nhận thanh toán &amp; in bill…"
+                                disabled={
+                                    isSubmitting ||
+                                    !isOnline ||
+                                    (paymentMethodChoice === "CASH" &&
+                                        Number(cashCustomerGives || 0) < grandTotalPrice) ||
+                                    ((paymentMethodChoice === "BANK_TRANSFER" ||
+                                        paymentMethodChoice === "VIETQR") &&
+                                        !transferConfirmed) ||
+                                    (paymentMethodChoice === "SPLIT" &&
+                                        Number(splitCashAmount || 0) + Number(splitBankAmount || 0) !== grandTotalPrice)
+                                }
+                                onClick={handleConfirmPrepaidPayment}
+                                className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white"
                             >
-                                🖨️ In vé câu & Sang Đang câu
+                                ✅ Xác nhận đã thu {formatPrice(grandTotalPrice)} &amp; Bắt đầu câu
                             </Button>
 
-                            <div className="grid grid-cols-2 gap-2">
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handlePrintTicket(true)}
-                                    disabled={isPrinting}
-                                    className="w-full text-xs"
-                                >
-                                    In thêm 1 bản
-                                </Button>
-
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={handleSkipAndNavigate}
-                                    disabled={isPrinting}
-                                    className="w-full text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100"
-                                >
-                                    Không in, chuyển tiếp ➔
-                                </Button>
-                            </div>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={isSubmitting}
+                                onClick={() => {
+                                    setIsCheckoutModalOpen(false);
+                                    setIsConfirmModalOpen(true);
+                                }}
+                                className="w-full text-xs text-slate-600 hover:bg-slate-100"
+                            >
+                                Quay lại
+                            </Button>
                         </div>
                     </div>
                 </div>

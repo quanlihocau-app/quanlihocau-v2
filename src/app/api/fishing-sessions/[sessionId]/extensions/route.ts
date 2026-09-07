@@ -184,7 +184,7 @@ export async function POST(request: Request, { params }: RouteParams) {
                             throw new Error("PACKAGE_NOT_FOUND");
                         }
 
-                        // 3. Find linked DRAFT Invoice
+                        // 3. Find linked Invoice
                         const invoice = await tx.invoice.findUnique({
                             where: {
                                 lakeId_fishingSessionId: {
@@ -194,7 +194,7 @@ export async function POST(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        if (!invoice || invoice.status !== InvoiceStatus.DRAFT) {
+                        if (!invoice || invoice.status === InvoiceStatus.VOIDED) {
                             throw new Error("NO_DRAFT_INVOICE");
                         }
 
@@ -229,16 +229,26 @@ export async function POST(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // 7. Recalculate Invoice totalAmountVnd
+                        // 7. Recalculate Invoice totalAmountVnd, balanceDueVnd, and status
                         const linesAgg = await tx.invoiceLine.aggregate({
                             where: { invoiceId: invoice.id },
                             _sum: { totalVnd: true },
                         });
                         const newTotalAmountVnd = linesAgg._sum.totalVnd ?? 0;
+                        const paidAmountVnd = invoice.paidAmountVnd ?? 0;
+                        const refundedAmountVnd = invoice.refundedAmountVnd ?? 0;
+                        const balanceDueVnd = Math.max(0, newTotalAmountVnd - paidAmountVnd + refundedAmountVnd);
+                        const newStatus = balanceDueVnd === 0
+                            ? InvoiceStatus.PAID
+                            : (paidAmountVnd > 0 ? InvoiceStatus.PARTIALLY_PAID : InvoiceStatus.DRAFT);
 
                         await tx.invoice.update({
                             where: { id: invoice.id },
-                            data: { totalAmountVnd: newTotalAmountVnd },
+                            data: {
+                                totalAmountVnd: newTotalAmountVnd,
+                                balanceDueVnd,
+                                status: newStatus,
+                            },
                         });
 
                         // 8. Create AuditEvent

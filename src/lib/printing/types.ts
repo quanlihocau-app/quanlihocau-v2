@@ -82,6 +82,7 @@ export interface SessionTicketData {
     plannedEndAt?: Date | string | null;
     cashierName?: string | null;
     items?: Array<{ name: string; quantity: number; unitPrice: number; totalVnd: number }>;
+    paymentTiming?: "PREPAID" | "POSTPAID";
     prepaidAmountVnd?: number;
     paymentMethod?: string;
     balanceDueVnd?: number;
@@ -107,11 +108,18 @@ export interface PaymentReceiptData {
     hutNames?: string | null;
     packageName?: string | null;
     lines: PaymentReceiptLineItem[];
+    packageTotalVnd?: number;
+    itemsTotalVnd?: number;
+    extensionsTotalVnd?: number;
+    fishBuybackTotalVnd?: number;
     totalAmountVnd: number;
+    prepaidAmountVnd?: number;
     paidAmountVnd: number;
     paymentAmountVnd?: number;
+    supplementaryAmountVnd?: number;
     remainingVnd: number;
     refundAmountVnd?: number;
+    changeAmountVnd?: number;
     paymentMethod: string;
     paymentTime: Date | string;
     cashierName?: string | null;

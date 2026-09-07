@@ -36,6 +36,7 @@ export const openSessionSchema = z.object({
     // Backward compatibility for flat customerId
     customerId: z.string().uuid().nullable().optional(),
     paymentMode: z.enum(["PREPAID", "POSTPAID"]).default("POSTPAID").optional(),
+    paymentTiming: z.enum(["PREPAID", "POSTPAID"]).optional(),
     payments: z
         .array(
             z.object({
@@ -70,6 +71,7 @@ export interface OpenSessionResult {
             status: SessionStatus;
             startTime: string;
             endTime: string;
+            paymentTiming: "PREPAID" | "POSTPAID";
         };
         invoice: {
             id: string;
@@ -87,6 +89,9 @@ export interface OpenSessionResult {
     plannedEndAt: string;
     invoiceId: string;
     totalAmountVnd: number;
+    paymentTiming: "PREPAID" | "POSTPAID";
+    paidAmountVnd: number;
+    balanceDueVnd: number;
     packageNameSnapshot: string;
     packagePriceVndSnapshot: number;
     packageDurationMinutesSnapshot: number;
@@ -242,6 +247,9 @@ export async function openSession(
                     );
 
                     // 5. Create FishingSession
+                    const resolvedPaymentTiming =
+                        input.paymentTiming || input.paymentMode || "POSTPAID";
+
                     const session = await tx.fishingSession.create({
                         data: {
                             lakeId: tenantContext.lakeId,
@@ -254,6 +262,7 @@ export async function openSession(
                             packageDurationMinutesSnapshot: pkg.durationMinutes,
                             packagePriceVndSnapshot: pkg.priceVnd,
                             overtimeHourlyVndSnapshot: pkg.overtimeHourlyVnd,
+                            paymentTiming: resolvedPaymentTiming === "PREPAID" ? "PREPAID" : "POSTPAID",
                         },
                     });
 
@@ -369,6 +378,7 @@ export async function openSession(
                         }
                     }
 
+                    const balanceDueVnd = Math.max(0, totalGrossAmountVnd - totalPaidVnd);
                     const invoiceStatus =
                         totalPaidVnd >= totalGrossAmountVnd
                             ? InvoiceStatus.PAID
@@ -384,6 +394,11 @@ export async function openSession(
                             fishingSessionId: session.id,
                             status: invoiceStatus,
                             totalAmountVnd: totalGrossAmountVnd,
+                            subtotalVnd: totalGrossAmountVnd,
+                            discountAmountVnd: 0,
+                            paidAmountVnd: totalPaidVnd,
+                            refundedAmountVnd: 0,
+                            balanceDueVnd,
                             lines: {
                                 create: linesToCreate,
                             },
@@ -407,6 +422,7 @@ export async function openSession(
                                 packageId: pkg.id,
                                 hutIds: input.hutIds,
                                 customerId: resolvedCustomerId,
+                                paymentTiming: session.paymentTiming,
                                 startAt: now.toISOString(),
                                 plannedEndAt: plannedEndAt.toISOString(),
                             }),
@@ -419,12 +435,18 @@ export async function openSession(
                             lakeId: tenantContext.lakeId,
                             entityType: "Invoice",
                             entityId: invoice.id,
-                            action: "INVOICE_CREATED",
+                            action: resolvedPaymentTiming === "PREPAID" ? "INVOICE_PREPAID" : "INVOICE_CREATED",
                             payload: JSON.stringify({
                                 fishingSessionId: session.id,
                                 status: invoice.status,
+                                paymentTiming: session.paymentTiming,
                                 totalAmountVnd: totalGrossAmountVnd,
                                 paidAmountVnd: totalPaidVnd,
+                                balanceDueVnd,
+                                payments: paymentsToCreate.map((p) => ({
+                                    method: p.method,
+                                    amountVnd: p.amountVnd,
+                                })),
                             }),
                             createdBy: tenantContext.userId,
                         },
@@ -440,13 +462,14 @@ export async function openSession(
                                 status: session.status,
                                 startTime: now.toISOString(),
                                 endTime: plannedEndAt.toISOString(),
+                                paymentTiming: session.paymentTiming,
                             },
                             invoice: {
                                 id: invoice.id,
                                 status: invoice.status,
                                 totalAmountVnd: totalGrossAmountVnd,
                                 paidAmountVnd: totalPaidVnd,
-                                balanceDueVnd: totalGrossAmountVnd - totalPaidVnd,
+                                balanceDueVnd: balanceDueVnd,
                             },
                             serverNow: now.toISOString(),
                         },
@@ -458,6 +481,9 @@ export async function openSession(
                         plannedEndAt: plannedEndAt.toISOString(),
                         invoiceId: invoice.id,
                         totalAmountVnd: totalGrossAmountVnd,
+                        paymentTiming: session.paymentTiming,
+                        paidAmountVnd: totalPaidVnd,
+                        balanceDueVnd: balanceDueVnd,
                         packageNameSnapshot: pkg.name,
                         packagePriceVndSnapshot: pkg.priceVnd,
                         packageDurationMinutesSnapshot: pkg.durationMinutes,

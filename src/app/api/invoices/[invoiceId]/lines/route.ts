@@ -184,11 +184,11 @@ export async function POST(request: Request, { params }: RouteParams) {
             );
         }
 
-        // 2. Strict status check: only DRAFT allowed
-        if (invoice.status !== InvoiceStatus.DRAFT) {
+        // 2. Strict status check: do not allow modifying VOIDED invoices
+        if (invoice.status === InvoiceStatus.VOIDED) {
             return NextResponse.json(
                 {
-                    error: "Chỉ có thể thêm sản phẩm khi hóa đơn ở trạng thái Nháp (DRAFT).",
+                    error: "Không thể thêm sản phẩm vào hóa đơn đã bị hủy (VOIDED).",
                 },
                 { status: 409 },
             );
@@ -246,8 +246,8 @@ export async function POST(request: Request, { params }: RouteParams) {
                             where: { id: invoice.id },
                         });
 
-                        if (!txInvoice || txInvoice.status !== InvoiceStatus.DRAFT) {
-                            throw new Error("INVOICE_NOT_DRAFT");
+                        if (!txInvoice || txInvoice.status === InvoiceStatus.VOIDED) {
+                            throw new Error("INVOICE_VOIDED");
                         }
 
                         // Fetch lake settings regarding negative inventory
@@ -313,11 +313,19 @@ export async function POST(request: Request, { params }: RouteParams) {
                         });
 
                         const newTotalAmountVnd = linesAgg._sum.totalVnd ?? 0;
+                        const paidAmountVnd = txInvoice.paidAmountVnd ?? 0;
+                        const refundedAmountVnd = txInvoice.refundedAmountVnd ?? 0;
+                        const balanceDueVnd = Math.max(0, newTotalAmountVnd - paidAmountVnd + refundedAmountVnd);
+                        const newStatus = balanceDueVnd === 0
+                            ? InvoiceStatus.PAID
+                            : (paidAmountVnd > 0 ? InvoiceStatus.PARTIALLY_PAID : InvoiceStatus.DRAFT);
 
                         const updatedInvoice = await tx.invoice.update({
                             where: { id: invoice.id },
                             data: {
                                 totalAmountVnd: newTotalAmountVnd,
+                                balanceDueVnd,
+                                status: newStatus,
                             },
                         });
 
