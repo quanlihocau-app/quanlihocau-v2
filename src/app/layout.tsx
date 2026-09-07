@@ -70,7 +70,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="vi" className={`h-full antialiased ${beVietnamPro.variable}`}>
-            <body className="min-h-full flex flex-col bg-[#FFFFFF] text-[#17201A] selection:bg-[#E8F3E5] selection:text-[#246B38]">
+            <body className="min-h-full flex flex-col bg-[#061F13] text-[#17201A] selection:bg-[#E8F3E5] selection:text-[#246B38]">
                 <Providers>
                     <Suspense fallback={null}>
                         <PageProgressBar />

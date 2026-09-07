@@ -104,7 +104,7 @@ export default function RegisterPage() {
     }
 
     return (
-        <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10 sm:px-6 bg-[#F7F9F5]">
+        <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10 sm:px-6 bg-transparent">
             {/* Header Brand */}
             <div className="mb-6 text-center">
                 <Link
@@ -128,10 +128,10 @@ export default function RegisterPage() {
                         </svg>
                     </div>
                     <div className="flex flex-col text-left leading-tight">
-                        <span className="text-sm font-bold tracking-wider text-[#17201A] uppercase">
+                        <span className="text-sm font-black tracking-wider text-white uppercase drop-shadow-sm">
                             QUẢN LÍ HỒ CÂU
                         </span>
-                        <span className="text-[11px] font-semibold text-[#246B38]">
+                        <span className="text-[11px] font-bold text-emerald-300">
                             Phần mềm vận hành hồ câu dịch vụ
                         </span>
                     </div>

@@ -259,10 +259,10 @@ export default async function SessionsPage() {
                 <main className="flex-1 px-4 sm:px-5 py-4 overflow-y-auto">
                     {/* ── Section header ──────────────────────────────────────── */}
                     <div className="mb-4 flex items-center justify-between">
-                        <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                        <h1 className="text-xl font-black tracking-tight text-white drop-shadow-sm">
                             Đang câu
                         </h1>
-                        <span className="inline-flex items-center rounded-full bg-[#EAE2CE] px-3 py-1 text-xs font-semibold text-[#8A5B00]">
+                        <span className="inline-flex items-center rounded-full bg-black/30 px-3 py-1 text-xs font-bold text-emerald-200 border border-emerald-400/30 backdrop-blur-md shadow-xs">
                             {serializedSessions.length} vé · {activeHutCount} ô
                         </span>
                     </div>

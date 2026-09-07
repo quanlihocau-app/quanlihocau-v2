@@ -534,15 +534,15 @@ export function SessionsClient({
             </div>
 
             {/* Gợi ý nhấn giữ */}
-            <p className="text-center text-[11px] text-[#66716A] mt-3">
+            <p className="text-center text-[11px] text-emerald-200 font-medium mt-3 drop-shadow-2xs">
                 💡 Nhấn giữ 1 ô câu để xem chi tiết đầy đủ của phiên
             </p>
 
             {/* Thanh thao tác nhanh (Quick Action Toolbar) */}
             {selectedSession && (
-                <div className="mt-4 pt-3 border-t border-[#E3E8E3]">
+                <div className="mt-4 pt-3 border-t border-emerald-500/20">
                     <div className="mb-3 text-center">
-                        <span className="inline-block text-xs font-semibold text-[#246B38] bg-[#E8F3E5] rounded-full px-3 py-1">
+                        <span className="inline-block text-xs font-bold text-emerald-100 bg-black/40 border border-emerald-400/30 rounded-full px-3.5 py-1 backdrop-blur-md shadow-xs">
                             Đang chọn:{" "}
                             {selectedSession.hutLinks
                                 .map((hl) => hl.hut.name)

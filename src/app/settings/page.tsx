@@ -91,7 +91,7 @@ export default async function SettingsPage() {
     const roleBadge = isOwner ? "Chủ hồ" : isManager ? "Quản lý" : "Nhân viên";
 
     return (
-        <main className="mx-auto min-h-screen max-w-lg bg-[#F7F9F5] px-4 pb-24 pt-5 sm:px-6">
+        <main className="mx-auto min-h-screen max-w-lg bg-transparent px-4 pb-24 pt-5 sm:px-6">
             {/* ── App Header ─────────────────────────────────────────── */}
             <MobileAppHeader
                 lakeName={tenantContext.lakeName}
@@ -100,10 +100,10 @@ export default async function SettingsPage() {
 
             {/* ── Page title + role badge ─────────────────────────────── */}
             <div className="mb-4 flex items-center justify-between">
-                <h1 className="text-[22px] font-bold tracking-tight text-[#17201A]">
+                <h1 className="text-[22px] font-black tracking-tight text-white drop-shadow-sm">
                     Cài đặt
                 </h1>
-                <span className="rounded-full bg-[#E8F3E5] px-3 py-1 text-xs font-semibold text-[#246B38]">
+                <span className="rounded-full bg-black/30 px-3 py-1 text-xs font-bold text-emerald-200 border border-emerald-400/30 backdrop-blur-md shadow-xs">
                     {roleBadge}
                 </span>
             </div>

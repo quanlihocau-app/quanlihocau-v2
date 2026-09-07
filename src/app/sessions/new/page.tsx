@@ -118,10 +118,10 @@ export default async function NewSessionPage() {
 
                 <div className="p-4 space-y-4 pb-28">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                            Tạo vé & Bán hàng
+                        <h1 className="text-xl font-black tracking-tight text-white drop-shadow-sm">
+                            Tạo vé &amp; Bán hàng
                         </h1>
-                        <span className="rounded-full bg-[#EAE2CE] px-2.5 py-0.5 text-xs font-bold text-[#8A5B00]">
+                        <span className="rounded-full bg-black/30 px-2.5 py-0.5 text-xs font-bold text-emerald-200 border border-emerald-400/30 backdrop-blur-md shadow-xs">
                             POS Hồ câu
                         </span>
                     </div>
