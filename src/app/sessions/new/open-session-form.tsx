@@ -79,20 +79,6 @@ function formatDuration(minutes: number): string {
     return `${minutes} phút`;
 }
 
-function formatDateTime(date: Date | string | null | undefined): string {
-    if (!date) return "—";
-    const d = typeof date === "string" ? new Date(date) : date;
-    if (isNaN(d.getTime())) return "—";
-    return new Intl.DateTimeFormat("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        timeZone: "Asia/Ho_Chi_Minh",
-    }).format(d);
-}
-
 export interface CreatedSessionTicket {
     sessionId: string;
     ticketCode: string;
@@ -188,8 +174,6 @@ export function OpenSessionForm({
     const [isFishTypeSheetOpen, setIsFishTypeSheetOpen] = useState(false);
 
     // Ticket & Payment timing state
-    const [createdTicket, setCreatedTicket] =
-        useState<CreatedSessionTicket | null>(null);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [selectedPaymentTiming, setSelectedPaymentTiming] = useState<"PREPAID" | "POSTPAID">("PREPAID");
     const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
@@ -199,10 +183,6 @@ export function OpenSessionForm({
     const [splitBankAmount, setSplitBankAmount] = useState<number | "">("");
     const [transferConfirmed, setTransferConfirmed] = useState(false);
     const [tempOrderCode, setTempOrderCode] = useState("");
-    const [isPrinting, setIsPrinting] = useState(false);
-    const [printSuccessNotice, setPrintSuccessNotice] = useState<string | null>(
-        null,
-    );
 
     // ── Offline & Network Synchronization State ──────────────────────────────
     const { isOnline } = useNetworkStatus();
@@ -699,7 +679,6 @@ export function OpenSessionForm({
                 note: note.trim() || null,
             };
 
-            setCreatedTicket(ticketData);
             clearDraft();
             setIsConfirmModalOpen(false);
             setIsSubmitting(false);
@@ -938,7 +917,6 @@ export function OpenSessionForm({
                 note: note.trim() || null,
             };
 
-            setCreatedTicket(ticketData);
             clearDraft();
             setIsCheckoutModalOpen(false);
             setIsConfirmModalOpen(false);
@@ -965,28 +943,24 @@ export function OpenSessionForm({
                             cashierName: ticketData.cashierName,
                             note: ticketData.note,
                             paymentTiming: "PREPAID",
-                            prepaidAmountVnd: grandTotalPrice,
+                            prepaidAmountVnd: packagePriceTotal,
                             balanceDueVnd: 0,
-                            paymentMethod:
-                                paymentMethodChoice === "CASH"
-                                    ? "CASH"
-                                    : paymentMethodChoice === "SPLIT"
-                                    ? "SPLIT"
-                                    : "BANK_TRANSFER",
+                            paymentMethod: paymentMethodChoice === "VIETQR" ? "BANK_TRANSFER" : paymentMethodChoice === "SPLIT" ? "CASH" : paymentMethodChoice,
                         },
                         { manual: false },
                     );
+                    toast.success("Đã in vé thành công!");
                 }
-            } catch {
-                toast.warning(
-                    "Thanh toán thành công, in bill thất bại. Bạn có thể in lại từ danh sách phiên.",
-                );
+            } catch (err: unknown) {
+                console.error("Print prepaid ticket failed:", err);
+                toast.error("Thanh toán thành công, in bill thất bại. Bạn có thể in lại trong chi tiết ca câu.");
             }
 
+            // Navigate back to session list
             setTimeout(() => {
                 router.push("/sessions");
                 router.refresh();
-            }, 600);
+            }, 800);
         } catch {
             toast.dismiss(loadingId);
             const msg = "Đã xảy ra lỗi kết nối khi xử lý thanh toán thu trước.";
@@ -994,11 +968,6 @@ export function OpenSessionForm({
             toast.error(msg);
             setIsSubmitting(false);
         }
-    }
-
-    function handleSkipAndNavigate() {
-        router.push("/sessions");
-        router.refresh();
     }
 
     // Group huts by area
