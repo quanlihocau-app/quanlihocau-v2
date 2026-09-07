@@ -180,16 +180,26 @@ export async function POST(request: Request) {
     });
 
     // 6. Gửi SMS qua nhà cung cấp (SpeedSMS / Mock) và ghi OtpDeliveryLog
-    await sendSmsOtp(normalizedPhone, code, {
+    const dispatchResult = await sendSmsOtp(normalizedPhone, code, {
         ip: validIp,
         deviceHash: deviceId,
     });
+
+    if (!dispatchResult.success) {
+        return NextResponse.json(
+            {
+                error: `Không thể gửi tin nhắn SMS OTP: ${dispatchResult.error || "Lỗi nhà cung cấp dịch vụ viễn thông."}`,
+                ...(process.env.NODE_ENV !== "production" ? { devOtp: code, providerError: dispatchResult.error } : {}),
+            },
+            { status: 502 },
+        );
+    }
 
     // 7. Tiêu chí 11 & 13: Che số điện thoại trong phản hồi và không tiết lộ sự tồn tại của tài khoản
     return NextResponse.json(
         {
             message:
-                "Mã OTP xác thực đã được gửi đến số điện thoại của bạn nếu hợp lệ.",
+                "Mã OTP xác thực đã được gửi đến số điện thoại của bạn.",
             phone: normalizedPhone,
             maskedPhone: masked,
             expiresInSeconds: 180,
