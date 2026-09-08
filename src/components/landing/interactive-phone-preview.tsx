@@ -26,9 +26,9 @@ export function InteractivePhonePreview() {
     };
 
     return (
-        <div className="relative mx-auto w-full max-w-[360px] select-none">
+        <div className="relative mx-auto w-full max-w-90 select-none">
             {/* Ambient Glow behind phone */}
-            <div className="absolute -inset-1.5 rounded-[42px] bg-gradient-to-tr from-[#246B38] to-[#4ADE80]/30 opacity-60 blur-xl transition-all duration-500" />
+            <div className="absolute -inset-1.5 rounded-[42px] bg-linear-to-tr from-[#246B38] to-[#4ADE80]/30 opacity-60 blur-xl transition-all duration-500" />
 
             {/* Phone Outer Shell */}
             <div className="relative rounded-[38px] border-4 border-[#1E482D] bg-[#061F13] p-3 shadow-2xl shadow-black/80">

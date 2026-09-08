@@ -141,7 +141,7 @@ export default async function HomePage() {
                         className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#4ADE80] rounded-xl p-1"
                         aria-label="Quản Lí Hồ Câu - Trang chủ"
                     >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#246B38] to-[#123E27] text-[#4ADE80] border border-[#2F7E47] shadow-sm group-hover:scale-105 transition-transform">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-linear-to-br from-[#246B38] to-[#123E27] text-[#4ADE80] border border-[#2F7E47] shadow-sm group-hover:scale-105 transition-transform">
                             <svg
                                 className="h-5 w-5"
                                 fill="none"
@@ -209,10 +209,10 @@ export default async function HomePage() {
             {/* ── MAIN CONTENT ───────────────────────────────────────────────────── */}
             <main className="flex-1">
                 {/* ── HERO SECTION ───────────────────────────────────────────────── */}
-                <section className="relative overflow-hidden pt-10 pb-16 sm:pt-16 sm:pb-24 lg:pb-28 bg-gradient-to-b from-[#061F13] via-[#092B1B] to-[#061F13]">
+                <section className="relative overflow-hidden pt-10 pb-16 sm:pt-16 sm:pb-24 lg:pb-28 bg-linear-to-b from-[#061F13] via-[#092B1B] to-[#061F13]">
                     {/* Glowing radial background accents */}
-                    <div className="absolute top-10 left-1/4 -translate-x-1/2 w-[500px] h-[500px] bg-[#246B38]/20 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute bottom-10 right-1/4 translate-x-1/2 w-[400px] h-[400px] bg-[#123E27]/30 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute top-10 left-1/4 -translate-x-1/2 w-125 h-125 bg-[#246B38]/20 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute bottom-10 right-1/4 translate-x-1/2 w-100 h-100 bg-[#123E27]/30 rounded-full blur-3xl pointer-events-none" />
 
                     <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-center">
@@ -475,7 +475,7 @@ export default async function HomePage() {
                             </div>
 
                             {/* Option 3: Quản Lí Hồ Câu */}
-                            <div className="rounded-3xl border-2 border-[#22C55E] bg-gradient-to-b from-[#0C3520] to-[#082618] p-6 space-y-4 shadow-2xl relative">
+                            <div className="rounded-3xl border-2 border-[#22C55E] bg-linear-to-b from-[#0C3520] to-[#082618] p-6 space-y-4 shadow-2xl relative">
                                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#22C55E] px-4 py-0.5 text-[11px] font-extrabold text-[#061F13] uppercase tracking-wider shadow-md">
                                     Khuyên dùng cho chủ hồ
                                 </div>
@@ -806,8 +806,8 @@ export default async function HomePage() {
                 </section>
 
                 {/* ── BIG FINAL CALL TO ACTION ─────────────────────────────────────── */}
-                <section className="relative overflow-hidden py-16 sm:py-24 bg-gradient-to-b from-[#082618] to-[#04160D]">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-[#22C55E]/15 rounded-full blur-3xl pointer-events-none" />
+                <section className="relative overflow-hidden py-16 sm:py-24 bg-linear-to-b from-[#082618] to-[#04160D]">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-75 bg-[#22C55E]/15 rounded-full blur-3xl pointer-events-none" />
 
                     <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
                         <span className="inline-block rounded-full bg-[#22C55E] px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider text-[#061F13] shadow-md">

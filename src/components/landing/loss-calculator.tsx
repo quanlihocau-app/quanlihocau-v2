@@ -22,9 +22,9 @@ export function LakeLossCalculator() {
     const totalMonthlyLoss = monthlyOvertimeLoss + monthlyMissedItemLoss;
 
     return (
-        <section className="relative overflow-hidden py-16 sm:py-20 bg-gradient-to-b from-[#061F13] to-[#0A2E1C] border-y border-[#164329]">
+        <section className="relative overflow-hidden py-16 sm:py-20 bg-linear-to-b from-[#061F13] to-[#0A2E1C] border-y border-[#164329]">
             {/* Subtle background glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[#246B38]/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-87.5 bg-[#246B38]/15 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
                 {/* Header */}
@@ -143,7 +143,7 @@ export function LakeLossCalculator() {
                     </div>
 
                     {/* Result Output Card */}
-                    <div className="lg:col-span-5 flex flex-col justify-between rounded-3xl border-2 border-[#D97706]/50 bg-gradient-to-br from-[#1C1308] via-[#2A1B0A] to-[#140E06] p-6 sm:p-8 text-center shadow-2xl relative">
+                    <div className="lg:col-span-5 flex flex-col justify-between rounded-3xl border-2 border-[#D97706]/50 bg-linear-to-br from-[#1C1308] via-[#2A1B0A] to-[#140E06] p-6 sm:p-8 text-center shadow-2xl relative">
                         <div className="space-y-4">
                             <span className="inline-block rounded-full bg-[#B45309]/30 px-3 py-1 text-xs font-bold text-[#FBBF24] uppercase tracking-wider border border-[#F59E0B]/30">
                                 Ước tính thất thoát mỗi tháng
