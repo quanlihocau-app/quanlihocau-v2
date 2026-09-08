@@ -269,25 +269,15 @@ test("Test 4: POST /api/auth/verify-otp với số mới -> Tự động đăng 
     }
 });
 
-test("Test 5: Đăng nhập NextAuth bằng phone-otp cấp session cookie thành công", async () => {
+test("Test 5: Đăng nhập NextAuth bằng phone-otp đã bị vô hiệu hóa", async () => {
     const authPhone = `0995${Math.floor(100000 + Math.random() * 900000)}`;
 
-    // 1. Send OTP
-    const sendRes = await fetch(`${BASE_URL}/api/auth/send-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: authPhone }),
-    });
-    assert.equal(sendRes.status, 200);
-    const sendData = await sendRes.json();
-
-    // 2. NextAuth CSRF
+    // 1. NextAuth CSRF
     const csrfRes = await fetch(`${BASE_URL}/api/auth/csrf`);
     const csrfData = await csrfRes.json();
     const csrfCookies = csrfRes.headers.get("set-cookie") || "";
 
-    // 3. Call NextAuth callback with provider phone-otp
-    const otpCode5 = sendData.devOtp || (await getOtpCode(authPhone));
+    // 2. Call NextAuth callback with provider phone-otp
     const loginRes = await fetch(`${BASE_URL}/api/auth/callback/phone-otp`, {
         method: "POST",
         headers: {
@@ -297,7 +287,7 @@ test("Test 5: Đăng nhập NextAuth bằng phone-otp cấp session cookie thàn
         body: new URLSearchParams({
             csrfToken: csrfData.csrfToken,
             phone: authPhone,
-            code: otpCode5,
+            code: "123456",
             redirect: "false",
             json: "true",
         }),
@@ -311,18 +301,7 @@ test("Test 5: Đăng nhập NextAuth bằng phone-otp cấp session cookie thàn
         .filter((c) => c.startsWith("next-auth.session-token") || c.startsWith("__Secure-next-auth.session-token"))
         .join("; ");
 
-    assert.ok(sessionCookie, "Must set session-token cookie on successful OTP login");
-
-    // 4. Access authenticated endpoint /api/me with sessionCookie
-    const meRes = await fetch(`${BASE_URL}/api/me`, {
-        headers: { Cookie: sessionCookie },
-    });
-    assert.equal(meRes.status, 200);
-    const meData = await meRes.json();
-    assert.ok(meData.userId);
-    createdUserIds.push(meData.userId);
-    if (meData.lakeId) createdLakeIds.push(meData.lakeId);
-    if (meData.organizationId) createdOrgIds.push(meData.organizationId);
+    assert.equal(sessionCookie, "", "Không được cấp session-token khi dùng phone-otp");
 });
 
 test("Test 6: Chặn vào app khi chưa xác thực SĐT và mở khóa gói Dùng thử 7 ngày sau khi xác thực OTP", async () => {

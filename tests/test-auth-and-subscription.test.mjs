@@ -141,7 +141,7 @@ test("Auth: Đăng nhập thành công với Email + Password đúng & truy cậ
     assert.equal(meData.lake.id, lakeId);
 });
 
-test("Auth: Đăng nhập qua số điện thoại + SMS OTP", async () => {
+test("Auth: Đăng nhập phone-otp không được cấp session", async () => {
     const phone = testUser.phone;
 
     // 1. Yêu cầu gửi OTP

@@ -430,3 +430,89 @@ test("Test 5: Thu mua cá tính vào bill phiên câu: (Gói câu + SP) - (Tạm
     const invCheck = await pool.query(`SELECT "status" FROM "Invoice" WHERE "id" = $1`, [invoiceId]);
     assert.equal(invCheck.rows[0].status, "PAID");
 });
+
+test("Test 6: Tính phụ thu quá giờ tự động khi đồng hồ hết giờ và chốt vào hóa đơn khi kết thúc ca", async () => {
+    // Tạo ô câu riêng cho test
+    const hutRes = await pool.query(
+        `INSERT INTO "Hut" ("id", "lakeId", "areaId", "name", "updatedAt")
+         VALUES (gen_random_uuid(), $1, (SELECT "id" FROM "Area" WHERE "lakeId" = $1 LIMIT 1), 'Ô Overtime', NOW())
+         RETURNING "id"`,
+        [testLakeIdA],
+    );
+    const overtimeHutId = hutRes.rows[0].id;
+
+    // 1. Mở phiên câu mới
+    const openRes = await fetch(`${BASE_URL}/api/fishing-sessions`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Cookie: authCookieA,
+        },
+        body: JSON.stringify({
+            hutIds: [overtimeHutId],
+            packageId: testPackageIdA,
+            paymentTiming: "POSTPAID",
+        }),
+    });
+    assert.equal(openRes.status, 201);
+    const openData = await openRes.json();
+    const sessionId = openData.id;
+    assert.ok(sessionId);
+    const invRow = await pool.query(`SELECT "id" FROM "Invoice" WHERE "fishingSessionId" = $1`, [sessionId]);
+    const invoiceId = invRow.rows[0].id;
+
+    // 2. Giả lập phiên câu đã hết giờ và lố 30 phút trong quá khứ
+    await pool.query(
+        `UPDATE "FishingSession"
+         SET "startAt" = NOW() - INTERVAL '5 hours 30 minutes',
+             "plannedEndAt" = NOW() - INTERVAL '30 minutes'
+         WHERE "id" = $1`,
+        [sessionId],
+    );
+
+    // 3. GET /api/fishing-sessions/[sessionId] xem trước quyết toán
+    const previewRes = await fetch(`${BASE_URL}/api/fishing-sessions/${sessionId}`, {
+        headers: { Cookie: authCookieA },
+    });
+    assert.equal(previewRes.status, 200);
+    const previewData = await previewRes.json();
+
+    // Với giá quá giờ 50.000đ/h, lố 30 phút -> phụ thu 25.000đ
+    assert.ok(previewData.financials.overtimeTotalVnd >= 24000 && previewData.financials.overtimeTotalVnd <= 26000);
+    assert.ok(previewData.financials.overtimeMinutes >= 29);
+    assert.equal(
+        previewData.financials.grossChargeVnd,
+        previewData.financials.packageTotalVnd + previewData.financials.overtimeTotalVnd,
+    );
+    assert.equal(previewData.financials.netDueVnd, previewData.financials.grossChargeVnd);
+
+    // 4. Kết thúc phiên câu
+    const completeRes = await fetch(`${BASE_URL}/api/fishing-sessions/${sessionId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Cookie: authCookieA,
+        },
+        body: JSON.stringify({
+            action: "COMPLETE",
+            settlement: {
+                amountVnd: previewData.financials.grossChargeVnd,
+                paymentMethod: "CASH",
+            },
+        }),
+    });
+    assert.equal(completeRes.status, 200);
+
+    // 5. Kiểm tra DB: phải có dòng InvoiceLine "Thêm giờ: Quá giờ..."
+    const lineRes = await pool.query(
+        `SELECT "name", "totalVnd", "unitPrice" FROM "InvoiceLine" WHERE "invoiceId" = $1 AND "name" LIKE '%Thêm giờ%'`,
+        [invoiceId],
+    );
+    assert.equal(lineRes.rows.length, 1);
+    assert.ok(lineRes.rows[0].totalVnd >= 24000);
+
+    // Ô câu được giải phóng
+    const hutCheck = await pool.query(`SELECT "currentSessionId" FROM "Hut" WHERE "id" = $1`, [overtimeHutId]);
+    assert.equal(hutCheck.rows[0].currentSessionId, null);
+});
+

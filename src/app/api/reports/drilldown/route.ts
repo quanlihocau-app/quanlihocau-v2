@@ -320,6 +320,57 @@ export async function GET(request: NextRequest) {
                 paymentMethod: isCash ? "Tiền mặt" : "Chuyển khoản",
                 status: p.direction === PaymentDirection.IN ? "Tiền vào (+)" : "Tiền ra (-)",
             }));
+        } else if (metric === "auditEvents") {
+            title = "Chi tiết Nhật ký thao tác (Audit Logs)";
+            const where: Prisma.AuditEventWhereInput = {
+                lakeId,
+                createdAt: { gte: dateRange.from, lte: dateRange.to },
+            };
+
+            totalCount = await prisma.auditEvent.count({ where });
+            const audits = await prisma.auditEvent.findMany({
+                where,
+                orderBy: { createdAt: "desc" },
+                skip,
+                take: limit,
+            });
+
+            items = audits.map((a) => {
+                let parsedPayload: Record<string, unknown> | null = null;
+                try {
+                    parsedPayload = JSON.parse(a.payload);
+                } catch {
+                    parsedPayload = null;
+                }
+
+                let summary = a.action.replace(/_/g, " ");
+                if (a.action.includes("SESSION")) {
+                    summary = "Thao tác phiên câu";
+                } else if (a.action.includes("INVOICE")) {
+                    summary = "Thao tác hóa đơn";
+                } else if (a.action.includes("PAYMENT")) {
+                    summary = "Giao dịch thanh toán";
+                }
+
+                if (parsedPayload && typeof parsedPayload === "object") {
+                    const keys = Object.keys(parsedPayload).slice(0, 2);
+                    if (keys.length > 0) {
+                        summary += ` (${keys.map(k => `${k}: ${String(parsedPayload?.[k])}`).join(", ")})`;
+                    }
+                }
+
+                return {
+                    id: a.id,
+                    code: a.id.substring(0, 8).toUpperCase(),
+                    dateTime: formatVnDateTimeDisplay(a.createdAt),
+                    customerName: a.createdBy || "Hệ thống",
+                    staffName: a.createdBy || "Nhân viên",
+                    content: `[${a.action}] ${summary}`,
+                    amountVnd: 0,
+                    paymentMethod: a.entityType || "Hệ thống",
+                    status: "Đã ghi nhận",
+                };
+            });
         } else {
             // Default: Fishing sessions
             title = "Chi tiết Các phiên / Vé câu";

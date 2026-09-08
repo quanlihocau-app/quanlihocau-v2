@@ -63,6 +63,34 @@ export const viewport: Viewport = {
     maximumScale: 5,
 };
 
+const jsonLdSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+        {
+            "@type": "SoftwareApplication",
+            "@id": "https://quanlihocau.com/#software",
+            "name": "Quản Lí Hồ Câu",
+            "operatingSystem": "All",
+            "applicationCategory": "BusinessApplication",
+            "description": "Phần mềm quản lý hồ câu dịch vụ chuyên nghiệp: tính tiền phiên câu theo giờ, tự động tính phụ thu quá giờ, bán lẻ đồ câu, kiểm soát thất thoát và báo cáo doanh thu.",
+            "url": "https://quanlihocau.com",
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "VND",
+                "availability": "https://schema.org/InStock",
+            },
+        },
+        {
+            "@type": "Organization",
+            "@id": "https://quanlihocau.com/#organization",
+            "name": "Quản Lí Hồ Câu",
+            "url": "https://quanlihocau.com",
+            "logo": "https://quanlihocau.com/favicon.ico",
+        },
+    ],
+};
+
 export default function RootLayout({
     children,
 }: {
@@ -70,6 +98,12 @@ export default function RootLayout({
 }) {
     return (
         <html lang="vi" className={`h-full antialiased ${beVietnamPro.variable}`}>
+            <head>
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}
+                />
+            </head>
             <body className="min-h-full flex flex-col bg-[#061F13] text-[#17201A] selection:bg-[#E8F3E5] selection:text-[#246B38]">
                 <Providers>
                     <Suspense fallback={null}>

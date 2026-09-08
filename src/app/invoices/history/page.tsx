@@ -10,7 +10,11 @@ import { HistoryView } from "./history-view";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 
-export default async function InvoiceHistoryPage() {
+export default async function InvoiceHistoryPage({
+    searchParams,
+}: {
+    searchParams?: Promise<{ tab?: string }>;
+}) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
@@ -34,6 +38,9 @@ export default async function InvoiceHistoryPage() {
             </main>
         );
     }
+
+    const resolvedParams = searchParams ? await searchParams : undefined;
+    const initialTab = resolvedParams?.tab === "audit" ? "audit" : "orders";
 
     const canManageInvoices =
         tenantContext.role === Role.OWNER ||
@@ -174,6 +181,7 @@ export default async function InvoiceHistoryPage() {
                         canManageInvoices={canManageInvoices}
                         canReversePayments={canReversePayments}
                         lakeName={tenantContext.lakeName}
+                        initialTab={initialTab}
                     />
                 </div>
 

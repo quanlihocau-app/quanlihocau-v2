@@ -60,10 +60,12 @@ export interface SerializableSession {
         name: string;
         durationMinutes: number;
         priceVnd: number;
+        overtimeHourlyVnd?: number;
     };
     packageNameSnapshot?: string;
     packageDurationMinutesSnapshot?: number;
     packagePriceVndSnapshot?: number;
+    overtimeHourlyVndSnapshot?: number;
     hutLinks: Array<{
         hut: {
             id: string;
@@ -118,12 +120,20 @@ function formatDateTime(isoString: string): string {
     return `${hh}:${mm} - ${d}/${m}/${y}`;
 }
 
-// ── Hàm tính toán tài chính thống nhất cho phiên câu ─────────────────────────
-// Kết quả = (Gói câu + Sản phẩm + Gia hạn) - (Tiền tạm tính đã nộp + Tiền thu cá)
+function formatOvertimeDuration(minutes: number): string {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    if (h === 0) return `${m}p`;
+    if (m === 0) return `${h}h`;
+    return `${h}h${m}p`;
+}
+
+// ── Hàm tính toán tài chính thống nhất cho phiên câu (bao gồm quá giờ thời gian thực) ─
+// Kết quả = (Gói câu + Sản phẩm + Gia hạn + Quá giờ) - (Tiền tạm tính đã nộp + Tiền thu cá)
 // Nếu < 0 (Âm): Hồ thối lại tiền cho khách
 // Nếu > 0 (Dương): Hồ thu thêm của khách
 // Nếu = 0: Đã thanh toán đủ
-function computeSessionFinancials(s: SerializableSession) {
+function computeSessionFinancials(s: SerializableSession, currentNowMs: number = Date.now()) {
     const invoice = s.invoices[0];
     const lines = invoice?.lines ?? [];
     const payments = invoice?.payments ?? [];
@@ -133,12 +143,26 @@ function computeSessionFinancials(s: SerializableSession) {
             l.productId !== null ||
             (!l.fishBuybackId &&
                 !l.name.startsWith("Gia hạn:") &&
-                !l.name.startsWith("Tiền ca:")),
+                !l.name.startsWith("Tiền ca:") &&
+                !l.name.toLowerCase().includes("thêm giờ") &&
+                !l.name.toLowerCase().includes("phụ trội") &&
+                !l.name.toLowerCase().includes("quá giờ")),
     );
     const extensionLines = lines.filter((l) => l.name.startsWith("Gia hạn:"));
     const fishBuybackLines = lines.filter(
         (l) => l.fishBuybackId !== null || l.totalVnd < 0,
     );
+
+    // Kiểm tra xem đã có dòng phụ thu quá giờ được lưu cố định trong hóa đơn chưa
+    const recordedOvertimeLines = lines.filter(
+        (l) =>
+            !l.productId &&
+            !l.fishBuybackId &&
+            (l.name.toLowerCase().includes("thêm giờ") ||
+                l.name.toLowerCase().includes("phụ trội") ||
+                l.name.toLowerCase().includes("quá giờ")),
+    );
+    const recordedOvertimeTotal = recordedOvertimeLines.reduce((sum, l) => sum + l.totalVnd, 0);
 
     const productCount = productLines.reduce(
         (sum, l) => sum + l.quantity,
@@ -163,8 +187,26 @@ function computeSessionFinancials(s: SerializableSession) {
     const hutCount = Math.max(s.hutLinks.length, 1);
     const packageTotal = basePackagePrice * hutCount;
 
-    // Tổng chi phí (Total Cost) = Tiền gói câu + Gia hạn + Sản phẩm/Dịch vụ
-    const totalCharges = packageTotal + productsTotal + extensionsTotal;
+    // ── Tính phụ thu quá giờ theo thời gian thực ─────────────────────────────
+    const plannedEndMs = new Date(s.plannedEndAt).getTime();
+    const isOvertime = currentNowMs > plannedEndMs;
+    const overtimeRate = s.overtimeHourlyVndSnapshot ?? s.package.overtimeHourlyVnd ?? 0;
+
+    let liveOvertimeMinutes = 0;
+    let liveOvertimeVnd = 0;
+
+    if (recordedOvertimeLines.length > 0) {
+        liveOvertimeVnd = recordedOvertimeTotal;
+    } else if (isOvertime && overtimeRate > 0) {
+        const diffMs = currentNowMs - plannedEndMs;
+        liveOvertimeMinutes = Math.floor(diffMs / 60_000);
+        if (liveOvertimeMinutes > 0) {
+            liveOvertimeVnd = Math.round((liveOvertimeMinutes / 60) * overtimeRate * hutCount);
+        }
+    }
+
+    // Tổng chi phí = Tiền gói câu + Gia hạn + Sản phẩm/Dịch vụ + Phụ thu quá giờ
+    const totalCharges = packageTotal + productsTotal + extensionsTotal + liveOvertimeVnd;
 
     // Tiền cọc / Đã thu trước (Prepaid) từ khách
     const paidIn = payments
@@ -181,10 +223,10 @@ function computeSessionFinancials(s: SerializableSession) {
             : totalPaidFromPayments;
     const totalPaid = paidAmountVnd;
 
-    // Tổng giảm trừ (Total Deductions) = Tiền cọc/Thu trước (paidAmountVnd) + Tiền thu mua cá
+    // Tổng giảm trừ = Tiền cọc/Thu trước (paidAmountVnd) + Tiền thu mua cá
     const totalDeductions = paidAmountVnd + fishBuybackTotal;
 
-    // Số dư ròng (Net Balance) = Tổng chi phí - Tổng giảm trừ
+    // Số dư ròng = Tổng chi phí - Tổng giảm trừ
     const netBalance = totalCharges - totalDeductions;
 
     return {
@@ -193,6 +235,12 @@ function computeSessionFinancials(s: SerializableSession) {
         productLines,
         extensionLines,
         fishBuybackLines,
+        recordedOvertimeLines,
+        isOvertime,
+        liveOvertimeMinutes,
+        liveOvertimeVnd,
+        overtimeRate,
+        hutCount,
         productCount,
         productsTotal,
         totalProductsVnd: productsTotal,
@@ -230,16 +278,26 @@ export function SessionsClient({
     const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
     const didLongPressRef = useRef<boolean>(false);
 
+    // ── Đồng hồ thời gian thực đồng bộ máy chủ để tính phụ thu quá giờ ───────
+    const { isOnline, serverOffsetMs } = useNetworkStatus();
+    const [nowMs, setNowMs] = useState(() => Date.now() + (serverOffsetMs || 0));
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setNowMs(Date.now() + (serverOffsetMs || 0));
+        }, 1_000);
+        return () => clearInterval(timer);
+    }, [serverOffsetMs]);
+
     const selectedSession =
         activeSessions.find((s) => s.id === selectedId) ??
         activeSessions[0] ??
         null;
     const selectedSessionFinancials = selectedSession
-        ? computeSessionFinancials(selectedSession)
+        ? computeSessionFinancials(selectedSession, nowMs)
         : null;
 
     // ── Auto Re-sync khi có mạng lại hoặc khi mở lại màn hình ─────────────────
-    const { isOnline } = useNetworkStatus();
     const wasOfflineRef = useRef(false);
     const lastSyncTimeRef = useRef(0);
 
@@ -351,10 +409,12 @@ export function SessionsClient({
                         fishBuybackTotal,
                         productCount,
                         extensionHours,
+                        liveOvertimeMinutes,
+                        liveOvertimeVnd,
                         totalCharges,
                         totalPaid,
                         netBalance,
-                    } = computeSessionFinancials(s);
+                    } = computeSessionFinancials(s, nowMs);
 
                     return (
                         <div
@@ -426,13 +486,19 @@ export function SessionsClient({
 
                             {/* Hàng 4: Chi tiết bill & Kết quả */}
                             <div className="mt-2 pt-2 border-t border-[#E3E8E3]">
-                                {/* Micro breakdown nếu có khoản giảm trừ hoặc đã thu trước */}
-                                {fishBuybackTotal > 0 || totalPaid > 0 ? (
+                                {/* Micro breakdown nếu có khoản giảm trừ, đã thu trước hoặc có phụ thu quá giờ */}
+                                {fishBuybackTotal > 0 || totalPaid > 0 || liveOvertimeVnd > 0 ? (
                                     <div className="space-y-0.5 text-[10px] text-[#66716A] mb-1.5 bg-[#F7F9F5] p-1.5 rounded-xl border border-[#E3E8E3]">
                                         <div className="flex items-center justify-between">
                                             <span className="text-[#66716A]">Tổng chi phí:</span>
                                             <span className="font-mono text-[#17201A] font-medium">+{formatVnd(totalCharges)}</span>
                                         </div>
+                                        {liveOvertimeVnd > 0 && (
+                                            <div className="flex items-center justify-between text-rose-600 font-bold animate-pulse">
+                                                <span>⏱️ Quá giờ {liveOvertimeMinutes > 0 ? `(+${formatOvertimeDuration(liveOvertimeMinutes)})` : ""}:</span>
+                                                <span className="font-mono">+{formatVnd(liveOvertimeVnd)}</span>
+                                            </div>
+                                        )}
                                         {totalPaid > 0 && (
                                             <div className="flex items-center justify-between text-[#246B38]">
                                                 <span>Đã thu trước:</span>
@@ -487,9 +553,14 @@ export function SessionsClient({
                                     </span>
                                 </div>
 
-                                {/* Badges tóm tắt món / gia hạn */}
-                                {(productCount > 0 || extensionHours > 0) && (
+                                {/* Badges tóm tắt món / gia hạn / quá giờ */}
+                                {(productCount > 0 || extensionHours > 0 || liveOvertimeVnd > 0) && (
                                     <div className="flex flex-wrap gap-1 mt-1.5">
+                                        {liveOvertimeVnd > 0 && (
+                                            <span className="inline-flex items-center rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[10px] font-bold text-rose-700 animate-pulse">
+                                                ⏱️ +{formatOvertimeDuration(liveOvertimeMinutes)} quá giờ
+                                            </span>
+                                        )}
                                         {productCount > 0 && (
                                             <span className="inline-flex items-center rounded-full bg-[#EEF3EB] px-2 py-0.5 text-[10px] font-semibold text-[#17201A]">
                                                 +{productCount} món
@@ -640,7 +711,7 @@ export function SessionsClient({
 
                             {/* Card: Danh sách sản phẩm & dịch vụ */}
                             {(() => {
-                                const detailFinancials = computeSessionFinancials(detailSession);
+                                const detailFinancials = computeSessionFinancials(detailSession, nowMs);
                                 const {
                                     productLines,
                                     extensionLines,
@@ -648,6 +719,10 @@ export function SessionsClient({
                                     totalProductsVnd,
                                     totalExtensionsVnd,
                                     fishBuybackTotal,
+                                    liveOvertimeVnd,
+                                    liveOvertimeMinutes,
+                                    overtimeRate,
+                                    hutCount,
                                     totalCharges,
                                     totalPaid,
                                     netBalance,
@@ -655,6 +730,20 @@ export function SessionsClient({
 
                                 return (
                                     <>
+                                        {/* Phụ thu quá giờ */}
+                                        {liveOvertimeVnd > 0 && (
+                                            <div className="rounded-xl bg-rose-50 p-3.5 border border-rose-200 shadow-xs space-y-2">
+                                                <h4 className="font-bold text-rose-800 flex justify-between border-b border-rose-200 pb-1.5">
+                                                    <span>⏱️ Phụ thu quá giờ {liveOvertimeMinutes > 0 ? `(+${formatOvertimeDuration(liveOvertimeMinutes)})` : ""}</span>
+                                                    <span className="font-mono text-rose-700 font-bold">+{formatVnd(liveOvertimeVnd)}</span>
+                                                </h4>
+                                                <div className="flex justify-between py-0.5 text-rose-700 text-[11px]">
+                                                    <span>Đơn giá phụ thu:</span>
+                                                    <span className="font-mono">{formatVnd(overtimeRate)}/h {hutCount > 1 ? `× ${hutCount} ô` : ""}</span>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Gia hạn */}
                                         {extensionLines.length > 0 && (
                                             <div className="rounded-xl bg-white p-3.5 border border-[#EAE4D7] shadow-xs space-y-2">
@@ -724,7 +813,7 @@ export function SessionsClient({
                                         {/* Tổng kết toàn bộ bill */}
                                         <div className="rounded-xl bg-[#25130D] text-[#F4DFB7] p-3.5 shadow-md space-y-2">
                                             <div className="flex justify-between text-xs text-[#BDA989]">
-                                                <span>Tổng chi phí (Gói + SP + Gia hạn):</span>
+                                                <span>Tổng chi phí (Gói + SP + Gia hạn + Quá giờ):</span>
                                                 <span className="font-mono font-medium text-white">{formatVnd(totalCharges)}</span>
                                             </div>
                                             {totalPaid > 0 && (

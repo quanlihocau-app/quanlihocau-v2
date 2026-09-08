@@ -184,10 +184,12 @@ export default async function SessionsPage() {
             name: s.package.name,
             durationMinutes: s.package.durationMinutes,
             priceVnd: Number(s.package.priceVnd),
+            overtimeHourlyVnd: Number(s.package.overtimeHourlyVnd || 0),
         },
         packageNameSnapshot: s.packageNameSnapshot,
         packageDurationMinutesSnapshot: s.packageDurationMinutesSnapshot,
         packagePriceVndSnapshot: s.packagePriceVndSnapshot,
+        overtimeHourlyVndSnapshot: s.overtimeHourlyVndSnapshot,
         hutLinks: s.hutLinks.map((hl) => ({
             hut: {
                 id: hl.hut.id,

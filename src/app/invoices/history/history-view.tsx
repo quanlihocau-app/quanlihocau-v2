@@ -287,10 +287,11 @@ export function HistoryView({
     invoices,
     auditEvents,
     lakeName,
-}: HistoryViewProps) {
+    initialTab = "orders",
+}: HistoryViewProps & { initialTab?: "orders" | "audit" }) {
     const { isConnected, printPaymentReceipt } = usePrinter();
 
-    const [activeTab, setActiveTab] = useState<"orders" | "audit">("orders");
+    const [activeTab, setActiveTab] = useState<"orders" | "audit">(initialTab);
     const [reprintingId, setReprintingId] = useState<string | null>(null);
 
     // Filter states for Orders

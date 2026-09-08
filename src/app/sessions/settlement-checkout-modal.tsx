@@ -42,6 +42,8 @@ interface SettlementPreviewData {
         packageTotalVnd: number;
         itemsTotalVnd: number;
         extensionsTotalVnd: number;
+        overtimeTotalVnd?: number;
+        overtimeMinutes?: number;
         fishBuybackTotalVnd?: number;
         otherTotalVnd: number;
         grossChargeVnd: number;
@@ -390,6 +392,13 @@ export function SettlementCheckoutModal({
                                     <div className="flex justify-between text-[#27231F]">
                                         <span>Phí gia hạn thêm giờ:</span>
                                         <span className="font-semibold">{formatVnd(preview.financials.extensionsTotalVnd)}</span>
+                                    </div>
+                                )}
+
+                                {(preview.financials.overtimeTotalVnd ?? 0) > 0 && (
+                                    <div className="flex justify-between text-rose-600 font-semibold">
+                                        <span>⏱️ Phụ thu quá giờ {preview.financials.overtimeMinutes ? `(+${preview.financials.overtimeMinutes}p)` : ""}:</span>
+                                        <span className="font-mono font-bold">+{formatVnd(preview.financials.overtimeTotalVnd!)}</span>
                                     </div>
                                 )}
 

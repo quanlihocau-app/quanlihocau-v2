@@ -256,6 +256,17 @@ export default async function SettingsPage() {
                     <ChevronRight />
                 </Link>
 
+                {/* Hướng dẫn & Cẩm nang sử dụng */}
+                <Link href="/settings/guide" className="menu-row">
+                    <div>
+                        <p className="text-[14px] font-semibold text-[#17201A]">Cẩm nang &amp; Hướng dẫn sử dụng</p>
+                        <p className="text-[12px] text-[#66716A] mt-0.5">
+                            11 bài hướng dẫn vận hành quầy, mở ca, in bill, xử lý sự cố
+                        </p>
+                    </div>
+                    <ChevronRight />
+                </Link>
+
                 {/* Sản phẩm và kho - negative inventory toggle (inline) */}
                 {lake && (
                     <div className="rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3.5 shadow-xs">

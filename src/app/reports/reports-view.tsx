@@ -806,33 +806,47 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {activeTab === "system" && (
                         <div className="pt-3 space-y-3">
                             <h4 className="text-xs font-bold uppercase text-slate-500">
-                                26-29. Nhật ký, OTP & Gói SaaS
+                                26-28. Nhật ký thao tác & Gói SaaS
                             </h4>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                                    <span className="text-[11px] text-slate-500 block">26. Nhật ký thao tác (Audit)</span>
-                                    <span className="text-base font-bold text-slate-800">
-                                        {analyticsData?.breakdown?.auditEventsCount ?? 0} sự kiện
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div
+                                    onClick={() => setDrilldownMetric("auditEvents")}
+                                    className="cursor-pointer rounded-xl border border-blue-200/80 bg-blue-50/50 p-3.5 hover:bg-blue-100/60 transition-all group"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-semibold text-blue-700 block">
+                                            26. Nhật ký thao tác (Audit Logs)
+                                        </span>
+                                        <span className="text-[10px] font-medium text-blue-600 bg-blue-100/80 px-2 py-0.5 rounded-full group-hover:bg-blue-200 transition-colors">
+                                            Bấm xem chi tiết ↗
+                                        </span>
+                                    </div>
+                                    <div className="mt-1 flex items-baseline justify-between">
+                                        <span className="text-xl font-bold text-slate-900">
+                                            {analyticsData?.breakdown?.auditEventsCount ?? 0} sự kiện
+                                        </span>
+                                        <span
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                router.push("/invoices/history?tab=audit");
+                                            }}
+                                            className="text-[11px] text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium"
+                                        >
+                                            Xem toàn bộ nhật ký
+                                        </span>
+                                    </div>
+                                    <span className="text-[11px] text-slate-500 block mt-1">
+                                        Ghi vết hành động của nhân viên & giao dịch trong kỳ lọc
                                     </span>
                                 </div>
 
-                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                                    <span className="text-[11px] text-slate-500 block">27. Tin nhắn SMS OTP</span>
-                                    <span className="text-base font-bold text-slate-800">
-                                        {analyticsData?.breakdown?.otp?.totalSent ?? 0} tin
-                                    </span>
-                                    <span className="text-[10px] text-slate-500 block mt-0.5">
-                                        Xác thực: {analyticsData?.breakdown?.otp?.totalVerified ?? 0} • Chi phí: {formatVnd(analyticsData?.breakdown?.otp?.totalCostVnd ?? 0)}
-                                    </span>
-                                </div>
-
-                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                                    <span className="text-[11px] text-slate-500 block">28-29. Gói cước SaaS</span>
-                                    <span className="text-base font-bold text-emerald-800">
+                                <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-3.5">
+                                    <span className="text-[11px] font-semibold text-emerald-800 block">27-28. Gói cước SaaS</span>
+                                    <span className="text-xl font-bold text-emerald-800 mt-1 block">
                                         {analyticsData?.lake?.plan || "TRIAL"}
                                     </span>
-                                    <span className="text-[10px] text-slate-500 block mt-0.5">
-                                        Hạn dùng: {analyticsData?.lake?.expiresAt ? new Date(analyticsData.lake.expiresAt).toLocaleDateString("vi-VN") : "Vô thời hạn"}
+                                    <span className="text-[11px] text-slate-500 block mt-1">
+                                        Hạn dùng: <strong className="text-slate-700">{analyticsData?.lake?.expiresAt ? new Date(analyticsData.lake.expiresAt).toLocaleDateString("vi-VN") : "Vô thời hạn"}</strong>
                                     </span>
                                 </div>
                             </div>
