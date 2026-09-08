@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
@@ -50,6 +51,15 @@ export interface SelectFishType {
     id: string;
     name: string;
     pricePerKg: number;
+}
+
+function ModalPortal({ children }: { children: React.ReactNode }) {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+    if (!mounted) return null;
+    return createPortal(children, document.body);
 }
 
 interface OpenSessionFormProps {
@@ -1401,12 +1411,12 @@ export function OpenSessionForm({
                 </div>
 
                 {productList.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[#CCD5CA] p-3 text-center space-y-1.5">
+                    <div className="rounded-xl border border-dashed border-[#CCD5CA] p-4 text-center space-y-2.5 bg-[#FAFCF9]">
                         <p className="text-xs text-[#66716A]">Chưa có sản phẩm / dịch vụ nào trong kho.</p>
                         <button
                             type="button"
                             onClick={() => setIsProductSheetOpen(true)}
-                            className="text-xs font-bold text-[#246B38] underline cursor-pointer"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#388E3C] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#2E7D32] transition-colors cursor-pointer"
                         >
                             + Thêm sản phẩm đầu tiên (Nước suối, Mồi câu...)
                         </button>
@@ -1763,6 +1773,7 @@ export function OpenSessionForm({
             {/* MODAL 1: MÀN HÌNH XÁC NHẬN VÉ CÂU & CHỌN THU TIỀN TRƯỚC / THU TIỀN SAU      */}
             {/* ========================================================================= */}
             {isConfirmModalOpen && (
+                <ModalPortal>
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 animate-in fade-in duration-200">
                     <div className="relative w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4">
                         {/* Header */}
@@ -1953,12 +1964,14 @@ export function OpenSessionForm({
                         </div>
                     </div>
                 </div>
+                </ModalPortal>
             )}
 
             {/* ========================================================================= */}
             {/* MODAL 2: MÀN HÌNH THANH TOÁN THU TRƯỚC (PREPAID CHECKOUT MODAL)          */}
             {/* ========================================================================= */}
             {isCheckoutModalOpen && (
+                <ModalPortal>
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 animate-in fade-in duration-200">
                     <div className="relative w-full max-w-lg rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4">
                         {/* Header */}
@@ -2363,6 +2376,7 @@ export function OpenSessionForm({
                         </div>
                     </div>
                 </div>
+                </ModalPortal>
             )}
         </>
     );
