@@ -401,3 +401,33 @@ a, button, [role="button"] {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* -------------------------------------------------------------------------- */
+/* PWA Standalone & Mobile App Mode Enhancements                              */
+/* -------------------------------------------------------------------------- */
+@media (display-mode: standalone) {
+  /* Prevent rubberband bouncy reload and accidental swipe navigation */
+  html, body {
+    overscroll-behavior-y: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Allow text selection in form fields and tables */
+  input, textarea, [contenteditable="true"], table {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+/* Ensure full screen height respects mobile dynamic viewports */
+html {
+  height: -webkit-fill-available;
+}
+
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+}
+
+

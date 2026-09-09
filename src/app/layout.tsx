@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro } from "next/font/google";
 import { Suspense } from "react";
 
 import { PageProgressBar } from "@/components/ui/page-progress-bar";
+import { PwaInstallPrompt } from "@/components/pwa/pwa-install-prompt";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -54,13 +55,39 @@ export const metadata: Metadata = {
     alternates: {
         canonical: "https://quanlihocau.com",
     },
+    manifest: "/manifest.webmanifest",
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: "black-translucent",
+        title: "Hồ Câu POS",
+    },
+    formatDetection: {
+        telephone: false,
+    },
+    icons: {
+        icon: [
+            { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+            { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+            { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+            { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+        ],
+        apple: [
+            { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+            { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        ],
+    },
 };
 
 export const viewport: Viewport = {
-    themeColor: "#4F9D5A",
+    themeColor: [
+        { media: "(prefers-color-scheme: dark)", color: "#082618" },
+        { media: "(prefers-color-scheme: light)", color: "#082618" },
+    ],
     width: "device-width",
     initialScale: 1,
-    maximumScale: 5,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: "cover",
 };
 
 const jsonLdSchema = {
@@ -99,6 +126,13 @@ export default function RootLayout({
     return (
         <html lang="vi" className={`h-full antialiased ${beVietnamPro.variable}`}>
             <head>
+                <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+                <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+                <meta name="apple-mobile-web-app-title" content="Hồ Câu POS" />
+                <meta name="mobile-web-app-capable" content="yes" />
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}
@@ -110,6 +144,7 @@ export default function RootLayout({
                         <PageProgressBar />
                     </Suspense>
                     {children}
+                    <PwaInstallPrompt />
                 </Providers>
             </body>
         </html>

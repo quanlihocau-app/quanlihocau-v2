@@ -51,7 +51,10 @@ export function MobileAppHeader({
 
     return (
         <>
-            <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E3E8E3] bg-white/95 px-4 py-3 backdrop-blur-md shrink-0">
+            <header
+                style={{ paddingTop: "max(12px, env(safe-area-inset-top, 12px))" }}
+                className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E3E8E3] bg-white/95 px-4 pb-3 backdrop-blur-md shrink-0"
+            >
                 {/* Lake name & Avatar */}
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#E8F3E5] font-bold text-[#246B38] border border-[#D5E5D1] shadow-2xs">

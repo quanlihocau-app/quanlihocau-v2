@@ -9,6 +9,7 @@ import { getTenantContext } from "@/lib/tenant";
 
 import { NegativeInventoryToggle } from "./negative-inventory-toggle";
 import { SubscriptionBanner } from "./subscription-banner";
+import { PwaInstallSettingRow } from "./pwa-install-button";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 
@@ -266,6 +267,9 @@ export default async function SettingsPage() {
                     </div>
                     <ChevronRight />
                 </Link>
+
+                {/* Cài đặt App ra Màn hình chính (PWA) */}
+                <PwaInstallSettingRow />
 
                 {/* Sản phẩm và kho - negative inventory toggle (inline) */}
                 {lake && (
