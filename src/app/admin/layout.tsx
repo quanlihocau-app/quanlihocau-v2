@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
 export default async function AdminLayout({
     children,
@@ -110,9 +111,11 @@ export default async function AdminLayout({
             </header>
 
             {/* Admin Main Body */}
-            <main className="flex-1 pb-16">
+            <main className="flex-1 pb-24">
                 {children}
             </main>
+
+            <MobileBottomNav isSuperAdmin={true} />
         </div>
     );
 }

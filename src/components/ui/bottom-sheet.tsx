@@ -27,7 +27,8 @@ export function BottomSheet({
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
+        const timer = setTimeout(() => setMounted(true), 0);
+        return () => clearTimeout(timer);
     }, []);
 
     // Handle Escape key to close & body scroll lock
@@ -54,7 +55,7 @@ export function BottomSheet({
 
     const modalContent = (
         <div
-            className={`fixed inset-0 z-[100] flex justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 ${
+            className={`fixed inset-0 z-100 flex justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 ${
                 isCenter ? "items-center p-3 sm:p-4" : "items-end"
             }`}
             onClick={(e) => {

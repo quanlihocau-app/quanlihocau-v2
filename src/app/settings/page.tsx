@@ -14,10 +14,10 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 
 // Arrow icon for menu rows
-function ChevronRight() {
+function ChevronRight({ className }: { className?: string }) {
     return (
         <svg
-            className="h-4 w-4 shrink-0 text-[#8A938D]"
+            className={className ?? "h-4 w-4 shrink-0 text-[#8A938D]"}
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2.5}
@@ -83,6 +83,7 @@ export default async function SettingsPage() {
                 email: true,
                 phone: true,
                 phoneVerified: true,
+                systemRole: true,
             },
         }),
     ]);
@@ -160,6 +161,34 @@ export default async function SettingsPage() {
 
             {/* ── Menu list ─────────────────────────────────────────── */}
             <div className="space-y-2.5">
+                {/* Quản trị hệ thống SaaS (Chỉ dành cho SUPER_ADMIN) */}
+                {currentUser?.systemRole === "SUPER_ADMIN" && (
+                    <Link
+                        href="/admin/lakes"
+                        className="menu-row bg-slate-900 text-white border-slate-700 hover:bg-slate-800 transition-colors shadow-sm"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-bold text-base shadow-xs shrink-0">
+                                👑
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-[14px] font-bold text-amber-400">
+                                        Quản trị nền tảng SaaS
+                                    </p>
+                                    <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
+                                        ADMIN TAB
+                                    </span>
+                                </div>
+                                <p className="text-[12px] text-slate-300 mt-0.5">
+                                    Quản lý toàn bộ hồ câu, doanh thu, đơn hàng &amp; SMS OTP
+                                </p>
+                            </div>
+                        </div>
+                        <ChevronRight className="text-slate-400" />
+                    </Link>
+                )}
+
                 {/* Hướng dẫn sử dụng & Cẩm nang */}
                 <Link href="/settings/guide" className="menu-row bg-[#E8F3E5]/60 border-[#4F9D5A]/40 hover:bg-[#E8F3E5]">
                     <div>
@@ -295,7 +324,7 @@ export default async function SettingsPage() {
                 </Link>
             </div>
 
-            <MobileBottomNav />
+            <MobileBottomNav isSuperAdmin={currentUser?.systemRole === "SUPER_ADMIN"} />
         </main>
     );
 }

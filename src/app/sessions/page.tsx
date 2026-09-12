@@ -21,6 +21,10 @@ export default async function SessionsPage() {
     const tenantContext = await getTenantContext();
 
     if (!tenantContext) {
+        if (session.user.systemRole === "SUPER_ADMIN") {
+            redirect("/admin/lakes");
+        }
+
         return (
             <main className="mx-auto flex min-h-screen max-w-md items-center px-4 py-8">
                 <div className="w-full rounded-2xl border border-[#8B1E1E]/30 bg-[#FAECEC] p-6 text-center">
@@ -284,7 +288,7 @@ export default async function SessionsPage() {
                     />
                 </main>
 
-                <MobileBottomNav />
+                <MobileBottomNav isSuperAdmin={session.user.systemRole === "SUPER_ADMIN"} />
             </div>
         </div>
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -53,12 +53,15 @@ export interface SelectFishType {
     pricePerKg: number;
 }
 
+const emptySubscribe = () => () => {};
+
 function ModalPortal({ children }: { children: React.ReactNode }) {
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-    if (!mounted) return null;
+    const isMounted = useSyncExternalStore(
+        emptySubscribe,
+        () => true,
+        () => false
+    );
+    if (!isMounted) return null;
     return createPortal(children, document.body);
 }
 

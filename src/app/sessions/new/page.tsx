@@ -137,7 +137,7 @@ export default async function NewSessionPage() {
                     />
                 </div>
 
-                <MobileBottomNav />
+                <MobileBottomNav isSuperAdmin={session.user.systemRole === "SUPER_ADMIN"} />
             </div>
         </div>
     );

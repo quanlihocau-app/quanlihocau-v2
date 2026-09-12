@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>;
@@ -8,31 +8,39 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PwaInstallPrompt() {
+    const isStandalone = useSyncExternalStore(
+        (callback) => {
+            const mql = window.matchMedia("(display-mode: standalone)");
+            mql.addEventListener("change", callback);
+            return () => mql.removeEventListener("change", callback);
+        },
+        () =>
+            window.matchMedia("(display-mode: standalone)").matches ||
+            (window.navigator as unknown as { standalone?: boolean }).standalone === true,
+        () => false
+    );
+    const isIOS = useSyncExternalStore(
+        () => () => {},
+        () => {
+            const userAgent = window.navigator.userAgent.toLowerCase();
+            return (
+                /iphone|ipad|ipod/.test(userAgent) ||
+                (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1)
+            );
+        },
+        () => false
+    );
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-    const [isIOS, setIsIOS] = useState(false);
-    const [isStandalone, setIsStandalone] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [showDetailGuide, setShowDetailGuide] = useState(false);
 
     useEffect(() => {
-        // 1. Check if already running in standalone mode (installed)
-        const isStandaloneMode =
-            window.matchMedia("(display-mode: standalone)").matches ||
-            (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-
-        if (isStandaloneMode) {
-            setIsStandalone(true);
+        // 1. If already running in standalone mode (installed), do not show prompt
+        if (isStandalone) {
             return;
         }
 
-        // 2. Check if iOS
-        const userAgent = window.navigator.userAgent.toLowerCase();
-        const isIosDevice =
-            /iphone|ipad|ipod/.test(userAgent) ||
-            (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
-        setIsIOS(isIosDevice);
-
-        // 3. Check dismissal in localStorage (show once per 7 days if dismissed)
+        // 2. Check dismissal in localStorage (show once per 7 days if dismissed)
         const dismissedAt = localStorage.getItem("pwa_install_dismissed_at");
         const sevenDays = 7 * 24 * 60 * 60 * 1000;
         const recentlyDismissed = dismissedAt && Date.now() - Number(dismissedAt) < sevenDays;
@@ -122,7 +130,7 @@ export function PwaInstallPrompt() {
                             <button
                                 type="button"
                                 onClick={handleInstallClick}
-                                className="rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:from-emerald-400 hover:to-emerald-500 active:scale-95 transition-all cursor-pointer"
+                                className="rounded-xl bg-linear-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:from-emerald-400 hover:to-emerald-500 active:scale-95 transition-all cursor-pointer"
                             >
                                 {deferredPrompt ? "Cài đặt" : "Xem cách cài"}
                             </button>

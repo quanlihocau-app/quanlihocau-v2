@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 
 interface NavItem {
@@ -14,8 +15,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
     {
         label: "Trang chủ",
-        href: "/",
-        isActive: (pathname: string) => pathname === "/",
+        href: "/home",
+        isActive: (pathname: string) => pathname === "/home",
         icon: (isActive: boolean) => (
             <svg
                 className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
@@ -116,8 +117,34 @@ const NAV_ITEMS: NavItem[] = [
     },
 ];
 
-export function MobileBottomNav() {
+const ADMIN_NAV_ITEM: NavItem = {
+    label: "Quản trị",
+    href: "/admin/lakes",
+    isActive: (pathname: string) => pathname.startsWith("/admin"),
+    icon: (isActive: boolean) => (
+        <svg
+            className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
+            fill={isActive ? "currentColor" : "none"}
+            viewBox="0 0 24 24"
+            strokeWidth={isActive ? 2 : 1.75}
+            stroke="currentColor"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+            />
+        </svg>
+    ),
+};
+
+interface MobileBottomNavProps {
+    isSuperAdmin?: boolean;
+}
+
+export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottomNavProps = {}) {
     const pathname = usePathname();
+    const { data: session } = useSession();
     const [pendingHref, setPendingHref] = useState<string | null>(null);
     const [prevPathname, setPrevPathname] = useState(pathname);
 
@@ -127,14 +154,21 @@ export function MobileBottomNav() {
         setPendingHref(null);
     }
 
+    const isSuperAdmin =
+        isSuperAdminProp !== undefined
+            ? isSuperAdminProp
+            : session?.user?.systemRole === "SUPER_ADMIN";
+
+    const navItems = isSuperAdmin ? [...NAV_ITEMS, ADMIN_NAV_ITEM] : NAV_ITEMS;
+
     return (
         <nav
             aria-label="Mobile Navigation"
             style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
             className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 border-t border-[#E3E8E3] bg-white/95 backdrop-blur-md print:hidden shadow-sm"
         >
-            <div className="flex h-16 items-center justify-around px-2 relative">
-                {NAV_ITEMS.map((item) => {
+            <div className="flex h-16 items-center justify-around px-1 sm:px-2 relative">
+                {navItems.map((item) => {
                     const active = item.isActive(pathname);
                     const isPending = pendingHref === item.href && !active;
 
@@ -158,7 +192,7 @@ export function MobileBottomNav() {
                         >
                             {/* M3 Active pill container */}
                             <div
-                                className={`flex h-8 w-13 items-center justify-center rounded-full transition-all duration-150 ${
+                                className={`flex h-8 w-11 sm:w-13 items-center justify-center rounded-full transition-all duration-150 ${
                                     active
                                         ? "bg-[#E8F3E5] text-[#246B38]"
                                         : "bg-transparent text-[#66716A]"

@@ -138,6 +138,35 @@ export async function getTenantContext(options?: {
     });
 
     if (!membership) {
+        const user = await prisma.user.findUnique({
+            where: { email: session.user.email.toLowerCase() },
+            select: { id: true, name: true, email: true, phone: true, phoneVerified: true, systemRole: true },
+        });
+
+        if (user?.systemRole === "SUPER_ADMIN") {
+            const fallbackLake = await prisma.lake.findFirst({
+                where: { deletedAt: null },
+                include: { organization: true },
+                orderBy: { createdAt: "asc" },
+            });
+
+            if (fallbackLake) {
+                return {
+                    userId: user.id,
+                    userName: user.name,
+                    userEmail: user.email,
+                    userPhone: user.phone,
+                    phoneVerified: true,
+                    lakeId: fallbackLake.id,
+                    lakeName: fallbackLake.name,
+                    organizationId: fallbackLake.organization.id,
+                    organizationName: fallbackLake.organization.name,
+                    role: Role.OWNER,
+                    isSupportMode: false,
+                };
+            }
+        }
+
         return null;
     }
 
@@ -173,58 +202,23 @@ export async function requireTenantContext(
         throw new AuthenticationError("Chưa đăng nhập.");
     }
 
-    const membership = await prisma.membership.findFirst({
-        where: {
-            user: {
-                email: session.user.email,
-            },
-            deletedAt: null,
-        },
-        include: {
-            user: true,
-            lake: {
-                include: {
-                    organization: true,
-                },
-            },
-        },
-        orderBy: {
-            createdAt: "asc",
-        },
-    });
-
-    if (!membership) {
+    const context = await getTenantContext(options);
+    if (!context) {
         throw new ForbiddenError(
             "Không tìm thấy thông tin hồ câu hoặc quyền truy cập đã bị vô hiệu hóa.",
         );
     }
 
-    const isSuperAdmin = membership.user.systemRole === "SUPER_ADMIN";
-    const isPhoneVerified = Boolean(membership.user.phoneVerified);
-    const requireSms = process.env.REQUIRE_SMS_VERIFICATION === "true";
-
-    if (requireSms && !options?.allowUnverifiedPhone && !isSuperAdmin && !isPhoneVerified) {
-        throw new PhoneVerificationRequiredError();
-    }
+    const isSuperAdmin = session.user.systemRole === "SUPER_ADMIN";
 
     if (
+        !isSuperAdmin &&
         allowedRoles &&
         allowedRoles.length > 0 &&
-        !allowedRoles.includes(membership.role)
+        !allowedRoles.includes(context.role)
     ) {
         throw new ForbiddenError("Bạn không có quyền thực hiện thao tác này.");
     }
 
-    return {
-        userId: membership.user.id,
-        userName: membership.user.name,
-        userEmail: membership.user.email,
-        userPhone: membership.user.phone,
-        phoneVerified: isPhoneVerified,
-        lakeId: membership.lake.id,
-        lakeName: membership.lake.name,
-        organizationId: membership.lake.organization.id,
-        organizationName: membership.lake.organization.name,
-        role: membership.role,
-    };
+    return context;
 }

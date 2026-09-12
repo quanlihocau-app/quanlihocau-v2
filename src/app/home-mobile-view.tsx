@@ -11,6 +11,7 @@ export interface HomeMobileViewProps {
     lakeName: string;
     roleBadge?: string;
     isSupportMode?: boolean;
+    isSuperAdmin?: boolean;
     activeSessionsCount: number;
     totalHutsCount: number;
     todayRevenue: number;
@@ -135,6 +136,7 @@ export function HomeMobileView({
     lakeName,
     roleBadge,
     isSupportMode,
+    isSuperAdmin,
     activeSessionsCount,
     totalHutsCount,
     todayRevenue,
@@ -166,6 +168,30 @@ export function HomeMobileView({
                         onChange={setSearchQuery}
                         placeholder="Tìm tính năng, mở vé, báo cáo..."
                     />
+
+                    {/* ── Exclusive Super Admin Portal Shortcut ─────────────── */}
+                    {isSuperAdmin && (
+                        <Link
+                            href="/admin/lakes"
+                            className="flex items-center justify-between rounded-2xl bg-[#102A43] p-3.5 text-white shadow-sm border border-[#1E3A5F] active:scale-[0.99] transition-transform"
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400 text-slate-950 font-bold text-sm shadow-xs">
+                                    👑
+                                </span>
+                                <div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-xs font-bold text-amber-300">QUẢN TRỊ VIÊN HỆ THỐNG</span>
+                                        <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 border border-amber-400/30">SUPER ADMIN</span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-300 mt-0.5">Quản trị toàn bộ hồ câu, doanh thu &amp; đơn hàng SaaS</p>
+                                </div>
+                            </div>
+                            <svg className="h-5 w-5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </Link>
+                    )}
 
                     {/* ── Hero Promotional / Operational Banner ───────────── */}
                     <div className="relative overflow-hidden rounded-3xl bg-[#E8F3E5] p-5 border border-[#D5E5D1] shadow-xs">
@@ -390,7 +416,7 @@ export function HomeMobileView({
                 </main>
 
                 {/* ── Navigation Bar ─────────────────────────────────────── */}
-                <MobileBottomNav />
+                <MobileBottomNav isSuperAdmin={isSuperAdmin} />
             </div>
         </div>
     );

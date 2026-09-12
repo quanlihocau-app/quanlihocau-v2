@@ -17,11 +17,11 @@ const beVietnamPro = Be_Vietnam_Pro({
 export const metadata: Metadata = {
     metadataBase: new URL("https://quanlihocau.com"),
     title: {
-        default: "Quản Lí Hồ Câu | Phần mềm quản lý hồ câu",
-        template: "%s | Quản Lí Hồ Câu",
+        default: "Quản Lý Hồ Câu — Hồ đông vẫn nhàn, tiền hàng vẫn rõ",
+        template: "%s | Quản Lý Hồ Câu",
     },
     description:
-        "Phần mềm vận hành dành riêng cho hồ câu: quản lý phiên câu, ô câu, hóa đơn, kho, chi phí và báo cáo ca vào một luồng làm việc rõ ràng cho nhân viên tại quầy.",
+        "Phần mềm quản lý hồ câu trên điện thoại: quản lý nhân viên từ xa, vé câu, hàng hóa, thanh toán, báo cáo và hạn chế thất thoát. Tư vấn miễn phí: 0855 550 813.",
     keywords: [
         "quản lý hồ câu",
         "phần mềm hồ câu",
