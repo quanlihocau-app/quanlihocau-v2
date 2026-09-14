@@ -111,6 +111,7 @@ export interface PaymentReceiptData {
     packageTotalVnd?: number;
     itemsTotalVnd?: number;
     extensionsTotalVnd?: number;
+    overtimeTotalVnd?: number;
     fishBuybackTotalVnd?: number;
     totalAmountVnd: number;
     prepaidAmountVnd?: number;

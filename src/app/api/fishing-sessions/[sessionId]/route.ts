@@ -83,6 +83,15 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                 customer: {
                                     select: { name: true, phoneNormalized: true },
                                 },
+                                package: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        durationMinutes: true,
+                                        priceVnd: true,
+                                        overtimeHourlyVnd: true,
+                                    },
+                                },
                             },
                         });
 
@@ -188,7 +197,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                         productId: im.productId,
                                         name: im.product.name,
                                         unitPrice: im.product.priceVnd,
-                                        quantity: new Prisma.Decimal(qty),
+                                        quantity: qty,
                                         totalVnd: lineTotal,
                                     });
                                 }
@@ -246,7 +255,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                 // Tự động chốt và ghi nhận phụ thu quá giờ nếu phiên vượt quá thời gian dự kiến
                                 const endedAtMs = endedAt.getTime();
                                 const plannedEndMs = session.plannedEndAt.getTime();
-                                const overtimeRate = session.overtimeHourlyVndSnapshot || 0;
+                                const overtimeRate = session.overtimeHourlyVndSnapshot || session.package?.overtimeHourlyVnd || 0;
                                 const effectiveHutCount = Math.max(hutIds.length, 1);
 
                                 if (endedAtMs > plannedEndMs && overtimeRate > 0) {
@@ -263,6 +272,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                             (l) =>
                                                 !l.productId &&
                                                 !l.fishBuybackId &&
+                                                !l.name.toLowerCase().includes("gia hạn") &&
                                                 (l.name.toLowerCase().includes("thêm giờ") ||
                                                     l.name.toLowerCase().includes("phụ trội") ||
                                                     l.name.toLowerCase().includes("quá giờ")),
@@ -274,7 +284,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                                 data: {
                                                     name: `Thêm giờ: Quá giờ ${durationText}${effectiveHutCount > 1 ? ` (${effectiveHutCount} ô)` : ""}`,
                                                     unitPrice: overtimeRate * effectiveHutCount,
-                                                    quantity: new Prisma.Decimal(Number((overtimeMinutes / 60).toFixed(2))),
+                                                    quantity: Number((overtimeMinutes / 60).toFixed(2)),
                                                     totalVnd: overtimeVnd,
                                                 },
                                             });
@@ -284,7 +294,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                                     invoiceId: finalInvoice.id,
                                                     name: `Thêm giờ: Quá giờ ${durationText}${effectiveHutCount > 1 ? ` (${effectiveHutCount} ô)` : ""}`,
                                                     unitPrice: overtimeRate * effectiveHutCount,
-                                                    quantity: new Prisma.Decimal(Number((overtimeMinutes / 60).toFixed(2))),
+                                                    quantity: Number((overtimeMinutes / 60).toFixed(2)),
                                                     totalVnd: overtimeVnd,
                                                 },
                                             });
@@ -476,6 +486,17 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                 const extTotal = finalInv.lines
                                     .filter((l) => !l.productId && !l.fishBuybackId && l.name.toLowerCase().includes("gia hạn"))
                                     .reduce((s, l) => s + l.totalVnd, 0);
+                                const otTotal = finalInv.lines
+                                    .filter(
+                                        (l) =>
+                                            !l.productId &&
+                                            !l.fishBuybackId &&
+                                            !l.name.toLowerCase().includes("gia hạn") &&
+                                            (l.name.toLowerCase().includes("thêm giờ") ||
+                                                l.name.toLowerCase().includes("phụ trội") ||
+                                                l.name.toLowerCase().includes("quá giờ")),
+                                    )
+                                    .reduce((s, l) => s + l.totalVnd, 0);
                                 const fishTotal = Math.abs(
                                     finalInv.lines
                                         .filter((l) => l.fishBuybackId !== null || l.totalVnd < 0)
@@ -502,6 +523,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                     packageTotalVnd: pkgTotal,
                                     itemsTotalVnd: itemsTotal,
                                     extensionsTotalVnd: extTotal,
+                                    overtimeTotalVnd: otTotal,
                                     fishBuybackTotalVnd: fishTotal,
                                     prepaidAmountVnd: prepaidAmount,
                                     supplementaryAmountVnd: settleAmount,
@@ -600,13 +622,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         // Unreachable — loop always returns or throws — but satisfies TypeScript
         return NextResponse.json({ error: "Lỗi hệ thống." }, { status: 500 });
     } catch (error) {
+        console.error("PATCH CAUGHT ERROR:", error);
         if (error instanceof AuthenticationError) {
             return NextResponse.json({ error: error.message }, { status: 401 });
         }
         if (error instanceof ForbiddenError) {
             return NextResponse.json({ error: error.message }, { status: 403 });
         }
-        return NextResponse.json({ error: "Lỗi hệ thống." }, { status: 500 });
+        return NextResponse.json({ error: "Lỗi hệ thống.", details: error instanceof Error ? error.message : String(error) }, { status: 500 });
     }
 }
 

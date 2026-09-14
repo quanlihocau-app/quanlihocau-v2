@@ -285,7 +285,7 @@ export function SessionsClient({
     useEffect(() => {
         const timer = setInterval(() => {
             setNowMs(Date.now() + (serverOffsetMs || 0));
-        }, 1_000);
+        }, 10_000);
         return () => clearInterval(timer);
     }, [serverOffsetMs]);
 

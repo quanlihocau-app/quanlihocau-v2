@@ -172,10 +172,11 @@ export function SettlementCheckoutModal({
         setSubmitError(null);
 
         const netDue = preview.financials.netDueVnd;
-        const refundVnd = preview.financials.refundVnd;
+        const refundVnd = Math.round(preview.financials.refundVnd);
 
-        const numCollect =
+        const rawCollect =
             typeof collectAmount === "string" ? Number(collectAmount) : collectAmount;
+        const numCollect = Math.round(rawCollect);
 
         const payload: {
             action: "COMPLETE";
@@ -209,7 +210,10 @@ export function SettlementCheckoutModal({
             const result = await res.json();
 
             if (!res.ok) {
-                setSubmitError(result.error || "Không thể hoàn tất quyết toán phiên.");
+                const errorMsg = result.details
+                    ? `${result.error || "Không thể hoàn tất quyết toán phiên."} (${result.details})`
+                    : result.error || "Không thể hoàn tất quyết toán phiên.";
+                setSubmitError(errorMsg);
                 setIsSubmitting(false);
                 return;
             }
