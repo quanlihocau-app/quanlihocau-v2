@@ -25,16 +25,41 @@ function formatPrice(vnd: number): string {
     return new Intl.NumberFormat("vi-VN").format(vnd) + "đ";
 }
 
+let cachedProducts: Product[] | null = null;
+let fetchProductsPromise: Promise<Product[]> | null = null;
+
+export async function getCachedProducts(): Promise<Product[]> {
+    if (cachedProducts) return cachedProducts;
+    if (fetchProductsPromise) return fetchProductsPromise;
+
+    fetchProductsPromise = fetch("/api/products")
+        .then((r) => r.json())
+        .then((data: { products?: Product[]; error?: string }) => {
+            if (data.products) {
+                cachedProducts = data.products;
+                return cachedProducts;
+            }
+            return [];
+        })
+        .catch(() => [])
+        .finally(() => {
+            fetchProductsPromise = null;
+        });
+
+    return fetchProductsPromise;
+}
+
 // ── Add Product Modal ─────────────────────────────────────────────────────────
 interface AddProductModalProps {
     invoiceId: string;
     onClose: () => void;
     onSuccess: () => void;
+    onOptimisticAdd?: (product: Product, quantity: number) => void;
 }
 
-function AddProductModal({ invoiceId, onClose, onSuccess }: AddProductModalProps) {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+function AddProductModal({ invoiceId, onClose, onSuccess, onOptimisticAdd }: AddProductModalProps) {
+    const [products, setProducts] = useState<Product[]>(() => cachedProducts ?? []);
+    const [isLoadingProducts, setIsLoadingProducts] = useState(!cachedProducts);
     const [loadError, setLoadError] = useState("");
     const [search, setSearch] = useState("");
     const [selectedProductId, setSelectedProductId] = useState<string>("");
@@ -45,26 +70,25 @@ function AddProductModal({ invoiceId, onClose, onSuccess }: AddProductModalProps
 
     const searchRef = useRef<HTMLInputElement>(null);
 
-    // Load products on mount
+    // Load products with memory cache for instant 0ms open
     useEffect(() => {
         let cancelled = false;
 
-        fetch("/api/products")
-            .then((r) => r.json())
-            .then((data: { products?: Product[]; error?: string }) => {
-                if (cancelled) return;
-                if (data.error) {
-                    setLoadError(data.error);
-                } else {
-                    setProducts(data.products ?? []);
-                }
-            })
-            .catch(() => {
-                if (!cancelled) setLoadError("Không thể tải danh sách sản phẩm.");
-            })
-            .finally(() => {
-                if (!cancelled) setIsLoadingProducts(false);
-            });
+        if (!cachedProducts) {
+            getCachedProducts()
+                .then((prods) => {
+                    if (!cancelled) {
+                        setProducts(prods);
+                        setIsLoadingProducts(false);
+                    }
+                })
+                .catch(() => {
+                    if (!cancelled) {
+                        setLoadError("Không thể tải danh sách sản phẩm.");
+                        setIsLoadingProducts(false);
+                    }
+                });
+        }
 
         return () => {
             cancelled = true;
@@ -125,9 +149,13 @@ function AddProductModal({ invoiceId, onClose, onSuccess }: AddProductModalProps
             setSubmitSuccess(data.message ?? "Đã thêm sản phẩm thành công!");
             setIsSubmitting(false);
 
+            if (onOptimisticAdd && selectedProduct) {
+                onOptimisticAdd(selectedProduct, quantity);
+            }
+
             setTimeout(() => {
                 onSuccess();
-            }, 700);
+            }, 150);
         } catch {
             setSubmitError("Lỗi kết nối mạng. Vui lòng thử lại.");
             setIsSubmitting(false);
@@ -433,6 +461,7 @@ interface FishBuybackModalProps {
     fishTypes?: Array<{ id: string; name: string; pricePerKg: number }>;
     onClose: () => void;
     onSuccess: () => void;
+    onOptimisticBuyback?: (type: { id: string; name: string; pricePerKg: number }, weight: number, totalVnd: number) => void;
 }
 
 function FishBuybackModal({
@@ -441,6 +470,7 @@ function FishBuybackModal({
     fishTypes = [],
     onClose,
     onSuccess,
+    onOptimisticBuyback,
 }: FishBuybackModalProps) {
     const [types, setTypes] = useState(fishTypes);
     const [selectedTypeId, setSelectedTypeId] = useState(fishTypes[0]?.id ?? "");
@@ -502,9 +532,14 @@ function FishBuybackModal({
 
             setSubmitSuccess(data.message ?? "Đã ghi nhận thu cá thành công!");
             setIsSubmitting(false);
+
+            if (onOptimisticBuyback && selectedType) {
+                onOptimisticBuyback(selectedType, weight, totalPayout);
+            }
+
             setTimeout(() => {
                 onSuccess();
-            }, 700);
+            }, 150);
         } catch {
             setSubmitError("Lỗi kết nối mạng. Vui lòng thử lại.");
             setIsSubmitting(false);
@@ -655,6 +690,9 @@ export interface SessionActionsProps {
     packages?: ActionPackage[];
     fishTypes?: Array<{ id: string; name: string; pricePerKg: number }>;
     netBalance?: number;
+    onOptimisticAddProduct?: (product: Product, quantity: number) => void;
+    onOptimisticExtend?: (pkg: ActionPackage) => void;
+    onOptimisticFishBuyback?: (type: { id: string; name: string; pricePerKg: number }, weight: number, totalVnd: number) => void;
 }
 
 export function SessionActions({
@@ -665,6 +703,9 @@ export function SessionActions({
     packages = [],
     fishTypes = [],
     netBalance,
+    onOptimisticAddProduct,
+    onOptimisticExtend,
+    onOptimisticFishBuyback,
 }: SessionActionsProps) {
     const router = useRouter();
 
@@ -839,10 +880,14 @@ export function SessionActions({
             setExtensionSuccess(data.message ?? "Đã gia hạn thành công!");
             setIsExtending(false);
 
+            if (onOptimisticExtend && selectedPkg) {
+                onOptimisticExtend(selectedPkg);
+            }
+
             setTimeout(() => {
                 setIsExtensionModalOpen(false);
                 router.refresh();
-            }, 800);
+            }, 150);
         } catch {
             setExtensionError(
                 "Lỗi kết nối mạng khi gia hạn. Vui lòng thử lại.",
@@ -888,12 +933,12 @@ export function SessionActions({
                             <p className="text-xs font-bold text-[#27231F]">
                                 Chưa tìm thấy hóa đơn của phiên
                             </p>
-                            <p className="text-xs text-[#766F67] mt-0.5 leading-relaxed">
-                                Vui lòng tải lại trang để hệ thống đồng bộ dữ liệu phiên câu.
+                            <p className="text-xs text-[#9A4C16] mt-0.5">
+                                Không thể thêm hàng hoặc gia hạn khi phiên câu chưa được liên kết với hóa đơn mở ca.
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 pt-1">
+                    <div className="flex justify-end">
                         <Button
                             type="button"
                             size="sm"
@@ -1044,6 +1089,7 @@ export function SessionActions({
                     invoiceId={invoiceId}
                     onClose={() => setIsAddProductModalOpen(false)}
                     onSuccess={handleAddProductSuccess}
+                    onOptimisticAdd={onOptimisticAddProduct}
                 />
             )}
 
@@ -1058,6 +1104,7 @@ export function SessionActions({
                         setIsFishBuybackOpen(false);
                         router.refresh();
                     }}
+                    onOptimisticBuyback={onOptimisticFishBuyback}
                 />
             )}
 

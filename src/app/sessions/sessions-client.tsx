@@ -125,17 +125,19 @@ export function SessionsClient({
     canOpenSession,
 }: SessionsClientProps) {
     const router = useRouter();
+    const [sessions, setSessions] = useState<SerializableSession[]>(activeSessions);
     const [selectedId, setSelectedId] = useState<string>(
         activeSessions[0]?.id ?? "",
     );
     const [settlementSessionId, setSettlementSessionId] = useState<string | null>(null);
 
+    // Sync when server data arrives
+    useEffect(() => {
+        setSessions(activeSessions);
+    }, [activeSessions]);
+
     // Modal Chi tiết phiên câu khi nhấn giữ
     const [detailSession, setDetailSession] = useState<SerializableSession | null>(null);
-
-    // Long press detection
-    const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
-    const didLongPressRef = useRef<boolean>(false);
 
     // ── Đồng hồ thời gian thực đồng bộ máy chủ để tính phụ thu quá giờ ───────
     const { isOnline, serverOffsetMs } = useNetworkStatus();
@@ -149,8 +151,8 @@ export function SessionsClient({
     }, [serverOffsetMs]);
 
     const selectedSession =
-        activeSessions.find((s) => s.id === selectedId) ??
-        activeSessions[0] ??
+        sessions.find((s) => s.id === selectedId) ??
+        sessions[0] ??
         null;
     const selectedSessionFinancials = selectedSession
         ? computeSessionFinancials(selectedSession, nowMs)
@@ -207,8 +209,141 @@ export function SessionsClient({
         setSettlementSessionId(id);
     }, []);
 
+    // ── Optimistic UI Handlers (Cập nhật tức thì 0ms trước khi server phản hồi) ─
+    const handleOptimisticAddProduct = useCallback(
+        (product: { id: string; name: string; priceVnd: number }, quantity: number) => {
+            if (!selectedSession) return;
+            const targetSessionId = selectedSession.id;
+            setSessions((prev) =>
+                prev.map((s) => {
+                    if (s.id !== targetSessionId) return s;
+                    const inv = s.invoices[0];
+                    if (!inv) return s;
+
+                    const newLine: SerializableInvoiceLine = {
+                        id: `optimistic-${Date.now()}`,
+                        productId: product.id,
+                        fishBuybackId: null,
+                        name: product.name,
+                        unitPrice: product.priceVnd,
+                        quantity,
+                        totalVnd: product.priceVnd * quantity,
+                        createdAt: new Date().toISOString(),
+                        product: {
+                            id: product.id,
+                            name: product.name,
+                            priceVnd: product.priceVnd,
+                        },
+                    };
+
+                    const updatedLines = [...(inv.lines ?? []), newLine];
+                    const updatedInv = {
+                        ...inv,
+                        totalAmountVnd: inv.totalAmountVnd + newLine.totalVnd,
+                        lines: updatedLines,
+                    };
+
+                    return {
+                        ...s,
+                        invoices: [updatedInv, ...s.invoices.slice(1)],
+                    };
+                }),
+            );
+        },
+        [selectedSession],
+    );
+
+    const handleOptimisticExtend = useCallback(
+        (pkg: ActionPackage) => {
+            if (!selectedSession) return;
+            const targetSessionId = selectedSession.id;
+            setSessions((prev) =>
+                prev.map((s) => {
+                    if (s.id !== targetSessionId) return s;
+                    const inv = s.invoices[0];
+                    if (!inv) return s;
+
+                    const currentPlannedEnd = new Date(s.plannedEndAt);
+                    const newPlannedEnd = new Date(
+                        currentPlannedEnd.getTime() + pkg.durationMinutes * 60_000,
+                    );
+
+                    const newLine: SerializableInvoiceLine = {
+                        id: `optimistic-ext-${Date.now()}`,
+                        productId: null,
+                        fishBuybackId: null,
+                        name: `Gia hạn: ${pkg.name}`,
+                        unitPrice: pkg.priceVnd,
+                        quantity: 1,
+                        totalVnd: pkg.priceVnd,
+                        createdAt: new Date().toISOString(),
+                    };
+
+                    const updatedLines = [...(inv.lines ?? []), newLine];
+                    const updatedInv = {
+                        ...inv,
+                        totalAmountVnd: inv.totalAmountVnd + pkg.priceVnd,
+                        lines: updatedLines,
+                    };
+
+                    return {
+                        ...s,
+                        plannedEndAt: newPlannedEnd.toISOString(),
+                        invoices: [updatedInv, ...s.invoices.slice(1)],
+                    };
+                }),
+            );
+        },
+        [selectedSession],
+    );
+
+    const handleOptimisticFishBuyback = useCallback(
+        (type: { id: string; name: string; pricePerKg: number }, weight: number, totalVnd: number) => {
+            if (!selectedSession) return;
+            const targetSessionId = selectedSession.id;
+            setSessions((prev) =>
+                prev.map((s) => {
+                    if (s.id !== targetSessionId) return s;
+                    const inv = s.invoices[0];
+                    if (!inv) return s;
+
+                    const newLine: SerializableInvoiceLine = {
+                        id: `optimistic-fish-${Date.now()}`,
+                        productId: null,
+                        fishBuybackId: `optimistic-fb-${Date.now()}`,
+                        name: `Thu cá: ${type.name} (${weight}kg)`,
+                        unitPrice: type.pricePerKg,
+                        quantity: weight,
+                        totalVnd: -totalVnd,
+                        createdAt: new Date().toISOString(),
+                        fishBuyback: {
+                            id: `optimistic-fb-${Date.now()}`,
+                            weight,
+                            pricePerKg: type.pricePerKg,
+                            totalVnd: -totalVnd,
+                            fishType: { id: type.id, name: type.name },
+                        },
+                    };
+
+                    const updatedLines = [...(inv.lines ?? []), newLine];
+                    const updatedInv = {
+                        ...inv,
+                        totalAmountVnd: inv.totalAmountVnd - totalVnd,
+                        lines: updatedLines,
+                    };
+
+                    return {
+                        ...s,
+                        invoices: [updatedInv, ...s.invoices.slice(1)],
+                    };
+                }),
+            );
+        },
+        [selectedSession],
+    );
+
     // ── Empty state ───────────────────────────────────────────────────────────
-    if (activeSessions.length === 0) {
+    if (sessions.length === 0) {
         return (
             <div className="flex min-h-[calc(100vh-220px)] items-center justify-center">
                 <div
@@ -252,7 +387,7 @@ export function SessionsClient({
         <>
             {/* Lưới thẻ phiên (2 cột) */}
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                {activeSessions.map((s) => (
+                {sessions.map((s) => (
                     <SessionGridCard
                         key={s.id}
                         session={s}
@@ -294,6 +429,9 @@ export function SessionsClient({
                         packages={packages}
                         fishTypes={fishTypes}
                         netBalance={selectedSessionFinancials?.netBalance}
+                        onOptimisticAddProduct={handleOptimisticAddProduct}
+                        onOptimisticExtend={handleOptimisticExtend}
+                        onOptimisticFishBuyback={handleOptimisticFishBuyback}
                     />
                 </div>
             )}
