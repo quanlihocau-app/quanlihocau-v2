@@ -60,28 +60,41 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                     </nav>
 
                     {/* Action buttons */}
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 sm:gap-2.5">
                         {isLoggedIn ? (
                             <Link
                                 href="/sessions"
-                                className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-[#246B38] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#2F8546] shadow-sm transition-all"
+                                className="inline-flex min-h-9.5 items-center justify-center gap-1.5 rounded-xl bg-[#4F9D5A] px-4 py-1.5 text-xs font-black text-white hover:bg-[#3D8547] shadow-sm transition-all"
                             >
-                                <span>Vào quầy thu ngân</span>
+                                <span>Vào ứng dụng</span>
                                 <span>→</span>
                             </Link>
                         ) : (
-                            <Link
-                                href="/login"
-                                className="hidden sm:inline-flex min-h-9 items-center justify-center rounded-xl border border-[#246B38] bg-[#0A2A1A] px-3.5 text-xs font-semibold text-[#D5E5D1] hover:text-white hover:bg-[#123E27] transition-all"
-                            >
-                                Đăng nhập
-                            </Link>
+                            <>
+                                <Link
+                                    href="/login"
+                                    className="inline-flex min-h-9.5 items-center justify-center rounded-xl border border-[#246B38] bg-[#0A2A1A] px-3 sm:px-3.5 text-xs font-bold text-[#D5E5D1] hover:text-white hover:bg-[#123E27] transition-all"
+                                >
+                                    Đăng nhập
+                                </Link>
+                                <Link
+                                    href="/register"
+                                    className="inline-flex min-h-9.5 items-center justify-center gap-1.5 rounded-xl bg-[#4F9D5A] px-3.5 sm:px-4 text-xs font-black text-white hover:bg-[#3D8547] transition-all shadow-md shadow-[#4F9D5A]/25"
+                                >
+                                    <span>Dùng miễn phí</span>
+                                    <span className="hidden sm:inline">30 ngày</span>
+                                    <span>→</span>
+                                </Link>
+                            </>
                         )}
                         <a
-                            href="#lien-he"
-                            className="inline-flex min-h-9 items-center justify-center rounded-xl bg-[#133F25] border border-[#2F7E47] px-4 text-xs font-bold text-white hover:bg-[#1A5231] transition-all shadow-xs"
+                            href="https://zalo.me/0855550813"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hidden lg:inline-flex min-h-9.5 items-center justify-center rounded-xl bg-[#133F25] border border-[#2F7E47] px-3 text-xs font-bold text-white hover:bg-[#1A5231] transition-all shadow-xs"
+                            title="Tư vấn hotline/Zalo: 0855 550 813"
                         >
-                            Tư vấn miễn phí
+                            Tư vấn: 0855 550 813
                         </a>
                     </div>
                 </div>
@@ -113,20 +126,29 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                 </p>
 
                                 {/* Action Buttons */}
-                                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
-                                    <a
-                                        href="#lien-he"
-                                        className="w-full sm:w-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-7 py-3 text-sm font-black text-white hover:bg-[#3D8547] shadow-lg shadow-[#4F9D5A]/30 active:scale-95 transition-all"
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 pt-2">
+                                    <Link
+                                        href={isLoggedIn ? "/sessions" : "/register"}
+                                        className="inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-7 py-3.5 text-sm sm:text-base font-black text-white hover:bg-[#3D8547] shadow-xl shadow-[#4F9D5A]/35 active:scale-95 transition-all text-center"
                                     >
-                                        <span>Nhận tư vấn miễn phí</span>
+                                        <span>{isLoggedIn ? "Vào ứng dụng ngay" : "Bắt đầu dùng thử miễn phí 30 ngày"}</span>
                                         <span>→</span>
-                                    </a>
-                                    <a
-                                        href="#trinh-dien"
-                                        className="w-full sm:w-auto inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#246B38] bg-[#0A2A1A]/80 backdrop-blur-xs px-6 py-3 text-sm font-bold text-white hover:bg-[#123E27] transition-all"
+                                    </Link>
+                                    <Link
+                                        href={isLoggedIn ? "/sessions" : "/login"}
+                                        className="inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl border border-[#246B38] bg-[#0A2A1A]/90 backdrop-blur-xs px-6 py-3.5 text-sm sm:text-base font-bold text-[#D5E5D1] hover:text-white hover:bg-[#123E27] transition-all text-center"
                                     >
-                                        Xem app hoạt động
-                                    </a>
+                                        <span>{isLoggedIn ? "Quầy thu ngân" : "Đăng nhập tài khoản"}</span>
+                                    </Link>
+                                </div>
+
+                                {/* Reassurance Tagline */}
+                                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-3 gap-y-1 text-xs text-[#52D879] font-semibold pt-0.5">
+                                    <span>🎁 Miễn phí 30 ngày</span>
+                                    <span>•</span>
+                                    <span>⚡ Kích hoạt 30 giây</span>
+                                    <span>•</span>
+                                    <span>🛡️ Không cần thẻ ngân hàng</span>
                                 </div>
 
                                 {/* 3 Trust Checkmarks */}
@@ -411,6 +433,61 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                 {/* ── 7. PHẦN TRÌNH DIỄN ỨNG DỤNG TƯƠNG TÁC (4 TABS) ──────────────── */}
                 <InteractiveAppShowcase />
 
+                {/* ── 7.5. PHẦN CTA GIỮA TRANG (DÙNG THỬ MIỄN PHÍ) ───────────────── */}
+                <section className="py-12 sm:py-16 bg-[#061F13] text-white border-t border-[#143B25]">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <div className="relative overflow-hidden rounded-3xl border-2 border-[#2F7E47] bg-linear-to-r from-[#0E3621] via-[#144A2D] to-[#0A2818] p-7 sm:p-12 shadow-2xl">
+                            {/* Decorative background ambient glows */}
+                            <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[#4ADE80]/15 blur-3xl" />
+                            <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-[#246B38]/30 blur-3xl" />
+
+                            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                                <div className="lg:col-span-7 space-y-3.5 text-center lg:text-left">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#4ADE80]/40 bg-[#0E3621] px-3.5 py-1 text-xs font-black text-[#52D879]">
+                                        🎁 DÙNG THỬ TRỌN VẸN TÍNH NĂNG
+                                    </span>
+                                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-snug">
+                                        Sẵn sàng để hồ câu của bạn <br className="hidden sm:inline" />
+                                        vận hành nhàn và rõ ràng hơn?
+                                    </h2>
+                                    <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
+                                        Đăng ký ngay tài khoản Chủ hồ để trải nghiệm 30 ngày đầy đủ tính năng: tạo vé câu, sơ đồ chòi, đếm giờ tự động, bán hàng quầy và xem báo cáo doanh thu từ xa.
+                                    </p>
+                                    <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 pt-1 text-xs text-[#A8C9B4]">
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="text-[#4ADE80] font-bold">✓</span>
+                                            <span>Không cần cài đặt rườm rà</span>
+                                        </span>
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="text-[#4ADE80] font-bold">✓</span>
+                                            <span>Mở trên điện thoại là dùng</span>
+                                        </span>
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="text-[#4ADE80] font-bold">✓</span>
+                                            <span>Hỗ trợ vẽ sơ đồ hồ miễn phí</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="lg:col-span-5 flex flex-col sm:flex-row lg:flex-col items-stretch gap-3 justify-center">
+                                    <Link
+                                        href={isLoggedIn ? "/sessions" : "/register"}
+                                        className="inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-7 py-3.5 text-sm sm:text-base font-black text-white hover:bg-[#3D8547] shadow-xl shadow-[#4F9D5A]/40 active:scale-95 transition-all text-center"
+                                    >
+                                        <span>{isLoggedIn ? "Vào ứng dụng ngay →" : "Đăng ký dùng miễn phí 30 ngày →"}</span>
+                                    </Link>
+                                    <Link
+                                        href={isLoggedIn ? "/sessions" : "/login"}
+                                        className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-[#2F7E47] bg-[#071D12]/90 px-6 py-3 text-xs sm:text-sm font-bold text-[#D5E5D1] hover:text-white hover:bg-[#123E27] transition-all text-center"
+                                    >
+                                        <span>{isLoggedIn ? "Quầy thu ngân" : "Đã có tài khoản? Đăng nhập"}</span>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 {/* ── 8. PHẦN TẠO NIỀM TIN ───────────────────────────────────────── */}
                 <section className="py-16 sm:py-24 bg-linear-to-b from-[#082417] to-[#061F13] text-white border-t border-[#123824]">
                     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center space-y-8">
@@ -550,32 +627,50 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                                <a
-                                    href="tel:0855550813"
-                                    className="w-full sm:w-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-8 py-3.5 text-sm font-black text-white hover:bg-[#3D8547] shadow-lg shadow-[#4F9D5A]/30 active:scale-95 transition-all"
-                                >
-                                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.4} stroke="currentColor">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
-                                        />
-                                    </svg>
-                                    <span>Gọi tư vấn miễn phí</span>
-                                </a>
+                            <div className="pt-2 space-y-4">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+                                    <Link
+                                        href={isLoggedIn ? "/sessions" : "/register"}
+                                        className="w-full sm:w-auto inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-8 py-3.5 text-sm sm:text-base font-black text-white hover:bg-[#3D8547] shadow-xl shadow-[#4F9D5A]/35 active:scale-95 transition-all text-center"
+                                    >
+                                        <span>{isLoggedIn ? "Vào ứng dụng ngay →" : "Đăng ký dùng thử miễn phí 30 ngày →"}</span>
+                                    </Link>
 
-                                <a
-                                    href="https://zalo.me/0855550813"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-full sm:w-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#0068FF] px-8 py-3.5 text-sm font-black text-white hover:bg-[#0055D4] shadow-lg shadow-[#0068FF]/30 active:scale-95 transition-all"
-                                >
-                                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-black text-[#0068FF]">
-                                        Z
-                                    </span>
-                                    <span>Nhắn Zalo ngay</span>
-                                </a>
+                                    <Link
+                                        href={isLoggedIn ? "/sessions" : "/login"}
+                                        className="w-full sm:w-auto inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl border border-[#246B38] bg-[#0A2A1A] px-6 py-3.5 text-sm sm:text-base font-bold text-[#D5E5D1] hover:text-white hover:bg-[#123E27] transition-all text-center"
+                                    >
+                                        <span>{isLoggedIn ? "Quầy thu ngân" : "Đăng nhập tài khoản"}</span>
+                                    </Link>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
+                                    <a
+                                        href="tel:0855550813"
+                                        className="w-full sm:w-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#133F25] border border-[#2F7E47] px-6 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-[#1A5231] transition-all shadow-xs"
+                                    >
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.4} stroke="currentColor">
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
+                                            />
+                                        </svg>
+                                        <span>Gọi 0855 550 813</span>
+                                    </a>
+
+                                    <a
+                                        href="https://zalo.me/0855550813"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full sm:w-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0068FF] px-6 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-[#0055D4] shadow-md transition-all"
+                                    >
+                                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-[9px] font-black text-[#0068FF]">
+                                            Z
+                                        </span>
+                                        <span>Nhắn Zalo tư vấn</span>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -590,7 +685,15 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                         <span>•</span>
                         <span>Hồ đông vẫn nhàn, tiền hàng vẫn rõ</span>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center justify-center gap-4">
+                        <Link href="/register" className="text-[#52D879] font-bold hover:underline">
+                            Dùng thử miễn phí
+                        </Link>
+                        <span>•</span>
+                        <Link href="/login" className="hover:text-white transition-colors font-semibold">
+                            Đăng nhập
+                        </Link>
+                        <span>•</span>
                         <a href="tel:0855550813" className="hover:text-[#52D879] transition-colors">
                             Hotline: 0855 550 813
                         </a>
@@ -601,18 +704,14 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                             rel="noopener noreferrer"
                             className="hover:text-[#52D879] transition-colors"
                         >
-                            Zalo: 0855 550 813
+                            Zalo
                         </a>
-                        <span>•</span>
-                        <Link href="/login" className="hover:text-white transition-colors">
-                            Quản trị
-                        </Link>
                     </div>
                 </div>
             </footer>
 
             {/* ── 12. FIXED MOBILE CONTACT BAR ─────────────────────────────────── */}
-            <MobileContactBar />
+            <MobileContactBar isLoggedIn={isLoggedIn} />
         </div>
     );
 }
