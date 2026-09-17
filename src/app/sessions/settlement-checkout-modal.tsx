@@ -59,7 +59,7 @@ interface SettlementCheckoutModalProps {
     sessionId: string;
     isOpen: boolean;
     onClose: () => void;
-    onCompleted?: () => void;
+    onCompleted?: (sessionId?: string) => void;
 }
 
 function formatVnd(amount: number): string {
@@ -210,9 +210,13 @@ export function SettlementCheckoutModal({
             const result = await res.json();
 
             if (!res.ok) {
+                const rawError =
+                    typeof result.error === "object" && result.error !== null
+                        ? result.error.message
+                        : result.error;
                 const errorMsg = result.details
-                    ? `${result.error || "Không thể hoàn tất quyết toán phiên."} (${result.details})`
-                    : result.error || "Không thể hoàn tất quyết toán phiên.";
+                    ? `${rawError || "Không thể hoàn tất quyết toán phiên."} (${result.details})`
+                    : rawError || "Không thể hoàn tất quyết toán phiên.";
                 setSubmitError(errorMsg);
                 setIsSubmitting(false);
                 return;
@@ -230,8 +234,7 @@ export function SettlementCheckoutModal({
                 }
             } else {
                 // Fallback close if no receiptData
-                router.refresh();
-                if (onCompleted) onCompleted();
+                if (onCompleted) onCompleted(sessionId);
                 onClose();
             }
         } catch {
@@ -336,8 +339,7 @@ export function SettlementCheckoutModal({
                                     size="lg"
                                     variant="primary"
                                     onClick={() => {
-                                        router.refresh();
-                                        if (onCompleted) onCompleted();
+                                        if (onCompleted) onCompleted(sessionId);
                                         onClose();
                                     }}
                                     className="w-full"

@@ -622,7 +622,7 @@ export function OpenSessionForm({
                 packagePriceVndSnapshot?: number;
                 packageDurationMinutesSnapshot?: number;
                 customer?: { name?: string; phoneNormalized?: string | null } | null;
-                error?: string;
+                error?: string | { code?: string; message?: string };
                 code?: string;
                 requestId?: string;
             };
@@ -643,8 +643,12 @@ export function OpenSessionForm({
                 !resolvedStartTime
             ) {
                 toast.dismiss(loadingId);
+                const errorText =
+                    typeof result.error === "object" && result.error !== null
+                        ? result.error.message
+                        : result.error;
                 if (response.status === 409 || result.code === "SPOT_OCCUPIED") {
-                    const msg = result.error ?? "Ô câu đã có khách đang câu.";
+                    const msg = errorText ?? "Ô câu đã có khách đang câu.";
                     setFormError(msg);
                     toast.error(msg);
                     await refreshHuts();
@@ -652,7 +656,7 @@ export function OpenSessionForm({
                     const reqIdInfo = result.requestId
                         ? ` (Mã: ${result.requestId})`
                         : "";
-                    const msg = (result.error ?? "Không thể mở phiên câu.") + reqIdInfo;
+                    const msg = (errorText ?? "Không thể mở phiên câu.") + reqIdInfo;
                     setFormError(msg);
                     toast.error(msg);
                 }
@@ -858,7 +862,7 @@ export function OpenSessionForm({
                 packagePriceVndSnapshot?: number;
                 packageDurationMinutesSnapshot?: number;
                 customer?: { name?: string; phoneNormalized?: string | null } | null;
-                error?: string;
+                error?: string | { code?: string; message?: string };
                 code?: string;
                 requestId?: string;
             };
@@ -879,8 +883,12 @@ export function OpenSessionForm({
                 !resolvedStartTime
             ) {
                 toast.dismiss(loadingId);
+                const errorText =
+                    typeof result.error === "object" && result.error !== null
+                        ? result.error.message
+                        : result.error;
                 if (response.status === 409 || result.code === "SPOT_OCCUPIED") {
-                    const msg = result.error ?? "Ô câu đã có khách đang câu.";
+                    const msg = errorText ?? "Ô câu đã có khách đang câu.";
                     setFormError(msg);
                     toast.error(msg);
                     await refreshHuts();
@@ -889,7 +897,7 @@ export function OpenSessionForm({
                         ? ` (Mã: ${result.requestId})`
                         : "";
                     const msg =
-                        (result.error ?? "Không thể hoàn tất thanh toán và mở phiên.") +
+                        (errorText ?? "Không thể hoàn tất thanh toán và mở phiên.") +
                         reqIdInfo;
                     setFormError(msg);
                     toast.error(msg);

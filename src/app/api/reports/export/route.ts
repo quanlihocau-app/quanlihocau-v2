@@ -11,6 +11,7 @@ import {
     getDateRangeForPreset,
 } from "@/lib/reports/date-utils";
 import { getTenantContext } from "@/lib/tenant";
+import { createInternalErrorResponse } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
 
@@ -220,11 +221,10 @@ export async function GET(request: NextRequest) {
             },
         });
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "Internal Server Error";
-        console.error("Error in GET /api/reports/export:", error);
-        return NextResponse.json(
-            { error: "Internal Server Error", details: message },
-            { status: 500 }
+        return createInternalErrorResponse(
+            "GET /api/reports/export error",
+            error,
+            "Có lỗi hệ thống xảy ra khi xuất báo cáo. Vui lòng thử lại.",
         );
     }
 }

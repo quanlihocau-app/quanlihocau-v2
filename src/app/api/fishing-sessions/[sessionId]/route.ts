@@ -8,6 +8,7 @@ import {
     ForbiddenError,
     requireTenantContext,
 } from "@/lib/tenant";
+import { createInternalErrorResponse } from "@/lib/api-error";
 
 const actionSchema = z.object({
     action: z.enum(["COMPLETE", "CANCEL"], {
@@ -69,7 +70,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
             try {
                 const result = await prisma.$transaction(
                     async (tx) => {
-                        // 1. Find ACTIVE session belonging to this tenant
+                        // 1. Find ACTIVE session belonging to this tenant with full relation graph
                         const session = await tx.fishingSession.findFirst({
                             where: {
                                 id: sessionId,
@@ -78,10 +79,27 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                             },
                             include: {
                                 hutLinks: {
-                                    select: { hutId: true },
+                                    include: {
+                                        hut: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                                area: {
+                                                    select: {
+                                                        id: true,
+                                                        name: true,
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    },
                                 },
                                 customer: {
-                                    select: { name: true, phoneNormalized: true },
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        phoneNormalized: true,
+                                    },
                                 },
                                 package: {
                                     select: {
@@ -103,15 +121,45 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                         const endedAt = new Date();
 
                         // 2. Invariant Guard: Session must have a linked Invoice before completing
+                        let finalInvoice: { id: string; status: InvoiceStatus } | null = null;
+                        let invLines: Array<{
+                            id?: string;
+                            productId?: string | null;
+                            fishBuybackId?: string | null;
+                            name: string;
+                            quantity: Prisma.Decimal | number;
+                            unitPrice: number;
+                            totalVnd: number;
+                        }> = [];
+                        let invPayments: Array<{
+                            id: string;
+                            amountVnd: number;
+                            method: "CASH" | "BANK_TRANSFER";
+                            direction: "IN" | "OUT";
+                        }> = [];
+
                         if (action === "COMPLETE") {
                             const existingInvoice = await tx.invoice.findFirst({
                                 where: {
                                     fishingSessionId: session.id,
                                     lakeId: tenantContext.lakeId,
                                 },
+                                include: {
+                                    lines: true,
+                                    payments: true,
+                                },
                             });
 
-                            let finalInvoice = existingInvoice;
+                            if (existingInvoice) {
+                                finalInvoice = existingInvoice;
+                                invLines = [...existingInvoice.lines];
+                                invPayments = existingInvoice.payments.map((p) => ({
+                                    id: p.id,
+                                    amountVnd: p.amountVnd,
+                                    method: p.method as "CASH" | "BANK_TRANSFER",
+                                    direction: p.direction as "IN" | "OUT",
+                                }));
+                            }
                             if (!existingInvoice) {
                                 // Must authoritatively reconstruct from snapshot, extensions and inventory movements
                                 if (
@@ -230,6 +278,11 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                     },
                                 });
 
+                                invLines = await tx.invoiceLine.findMany({
+                                    where: { invoiceId: finalInvoice.id },
+                                });
+                                invPayments = [];
+
                                 await tx.auditEvent.create({
                                     data: {
                                         lakeId: tenantContext.lakeId,
@@ -248,10 +301,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                             }
 
                             if (finalInvoice) {
-                                let invLines = await tx.invoiceLine.findMany({
-                                    where: { invoiceId: finalInvoice.id },
-                                });
-
                                 // Tự động chốt và ghi nhận phụ thu quá giờ nếu phiên vượt quá thời gian dự kiến
                                 const endedAtMs = endedAt.getTime();
                                 const plannedEndMs = session.plannedEndAt.getTime();
@@ -278,8 +327,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                                     l.name.toLowerCase().includes("quá giờ")),
                                         );
 
-                                        if (existingOvertimeLine) {
-                                            await tx.invoiceLine.update({
+                                        if (existingOvertimeLine && existingOvertimeLine.id) {
+                                            const updatedLine = await tx.invoiceLine.update({
                                                 where: { id: existingOvertimeLine.id },
                                                 data: {
                                                     name: `Thêm giờ: Quá giờ ${durationText}${effectiveHutCount > 1 ? ` (${effectiveHutCount} ô)` : ""}`,
@@ -288,8 +337,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                                     totalVnd: overtimeVnd,
                                                 },
                                             });
+                                            invLines = invLines.map((l) => (l.id === updatedLine.id ? updatedLine : l));
                                         } else if (overtimeVnd > 0) {
-                                            await tx.invoiceLine.create({
+                                            const createdLine = await tx.invoiceLine.create({
                                                 data: {
                                                     invoiceId: finalInvoice.id,
                                                     name: `Thêm giờ: Quá giờ ${durationText}${effectiveHutCount > 1 ? ` (${effectiveHutCount} ô)` : ""}`,
@@ -298,18 +348,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                                     totalVnd: overtimeVnd,
                                                 },
                                             });
+                                            invLines.push(createdLine);
                                         }
-
-                                        // Cập nhật lại danh sách dòng hóa đơn sau khi chốt quá giờ
-                                        invLines = await tx.invoiceLine.findMany({
-                                            where: { invoiceId: finalInvoice.id },
-                                        });
                                     }
                                 }
-
-                                const invPayments = await tx.payment.findMany({
-                                    where: { invoiceId: finalInvoice.id },
-                                });
 
                                 const grossAmount = invLines.reduce((s, l) => s + l.totalVnd, 0);
                                 let netPaid = invPayments.reduce((s, p) => {
@@ -317,7 +359,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                 }, 0);
 
                                 if (parsed.data.settlement?.amountVnd && parsed.data.settlement.amountVnd > 0) {
-                                    await tx.payment.create({
+                                    const newPayment = await tx.payment.create({
                                         data: {
                                             lakeId: tenantContext.lakeId,
                                             invoiceId: finalInvoice.id,
@@ -328,8 +370,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                         },
                                     });
                                     netPaid += parsed.data.settlement.amountVnd;
+                                    invPayments.push({
+                                        id: newPayment.id,
+                                        amountVnd: newPayment.amountVnd,
+                                        method: newPayment.method as "CASH" | "BANK_TRANSFER",
+                                        direction: "IN",
+                                    });
                                 } else if (parsed.data.settlement?.refundVnd && parsed.data.settlement.refundVnd > 0) {
-                                    await tx.payment.create({
+                                    const newPayment = await tx.payment.create({
                                         data: {
                                             lakeId: tenantContext.lakeId,
                                             invoiceId: finalInvoice.id,
@@ -340,6 +388,12 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                         },
                                     });
                                     netPaid -= parsed.data.settlement.refundVnd;
+                                    invPayments.push({
+                                        id: newPayment.id,
+                                        amountVnd: newPayment.amountVnd,
+                                        method: newPayment.method as "CASH" | "BANK_TRANSFER",
+                                        direction: "OUT",
+                                    });
                                 }
 
                                 const finalStatus =
@@ -375,7 +429,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                 ? SessionStatus.COMPLETED
                                 : SessionStatus.CANCELLED;
 
-                        await tx.fishingSession.update({
+                        const updatedFishingSession = await tx.fishingSession.update({
                             where: { id: session.id },
                             data: {
                                 status: newStatus,
@@ -423,122 +477,89 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // 5. Return updated session with relations
-                        const updatedSession =
-                            await tx.fishingSession.findUniqueOrThrow({
-                                where: { id: session.id },
-                                include: {
-                                    customer: {
-                                        select: {
-                                            id: true,
-                                            name: true,
-                                            phoneNormalized: true,
-                                        },
-                                    },
-                                    package: {
-                                        select: {
-                                            id: true,
-                                            name: true,
-                                            durationMinutes: true,
-                                            priceVnd: true,
-                                        },
-                                    },
-                                    hutLinks: {
-                                        include: {
-                                            hut: {
-                                                select: {
-                                                    id: true,
-                                                    name: true,
-                                                    area: {
-                                                        select: {
-                                                            id: true,
-                                                            name: true,
-                                                        },
-                                                    },
-                                                },
-                                            },
-                                        },
-                                    },
-                                },
-                            });
+                        // 5. Construct updated session with known relations (0 redundant round-trips)
+                        const updatedSession = {
+                            ...updatedFishingSession,
+                            customer: session.customer,
+                            package: session.package
+                                ? {
+                                      id: session.package.id,
+                                      name: session.package.name,
+                                      durationMinutes: session.package.durationMinutes,
+                                      priceVnd: session.package.priceVnd,
+                                  }
+                                : null,
+                            hutLinks: session.hutLinks,
+                        };
 
                         let receiptData = null;
-                        if (action === "COMPLETE") {
-                            const finalInv = await tx.invoice.findFirst({
-                                where: {
-                                    fishingSessionId: session.id,
-                                    lakeId: tenantContext.lakeId,
-                                },
-                                include: { lines: true, payments: true },
-                            });
-                            if (finalInv) {
-                                const gTotal = finalInv.lines.reduce((s, l) => s + l.totalVnd, 0);
-                                const pTotal = finalInv.payments.reduce(
-                                    (s, p) => (p.direction === "IN" ? s + p.amountVnd : s - p.amountVnd),
-                                    0,
-                                );
-                                const hutCount = Math.max(updatedSession.hutLinks.length, 1);
-                                const packagePrice = session.packagePriceVndSnapshot || updatedSession.package?.priceVnd || 0;
-                                const pkgTotal = packagePrice * hutCount;
-                                const itemsTotal = finalInv.lines
-                                    .filter((l) => l.productId)
-                                    .reduce((s, l) => s + l.totalVnd, 0);
-                                const extTotal = finalInv.lines
-                                    .filter((l) => !l.productId && !l.fishBuybackId && l.name.toLowerCase().includes("gia hạn"))
-                                    .reduce((s, l) => s + l.totalVnd, 0);
-                                const otTotal = finalInv.lines
-                                    .filter(
-                                        (l) =>
-                                            !l.productId &&
-                                            !l.fishBuybackId &&
-                                            !l.name.toLowerCase().includes("gia hạn") &&
-                                            (l.name.toLowerCase().includes("thêm giờ") ||
-                                                l.name.toLowerCase().includes("phụ trội") ||
-                                                l.name.toLowerCase().includes("quá giờ")),
-                                    )
-                                    .reduce((s, l) => s + l.totalVnd, 0);
-                                const fishTotal = Math.abs(
-                                    finalInv.lines
-                                        .filter((l) => l.fishBuybackId !== null || l.totalVnd < 0)
-                                        .reduce((s, l) => s + l.totalVnd, 0),
-                                );
-                                const settleAmount = parsed.data.settlement?.amountVnd ?? 0;
-                                const prepaidAmount = Math.max(0, pTotal - settleAmount);
+                        if (action === "COMPLETE" && finalInvoice) {
+                            const gTotal = invLines.reduce((s, l) => s + l.totalVnd, 0);
+                            const pTotal = invPayments.reduce(
+                                (s, p) => (p.direction === "IN" ? s + p.amountVnd : s - p.amountVnd),
+                                0,
+                            );
+                            const hutCount = Math.max(updatedSession.hutLinks.length, 1);
+                            const packagePrice = session.packagePriceVndSnapshot || updatedSession.package?.priceVnd || 0;
+                            const pkgTotal = packagePrice * hutCount;
+                            const itemsTotal = invLines
+                                .filter((l) => l.productId)
+                                .reduce((s, l) => s + l.totalVnd, 0);
+                            const extTotal = invLines
+                                .filter((l) => !l.productId && !l.fishBuybackId && l.name.toLowerCase().includes("gia hạn"))
+                                .reduce((s, l) => s + l.totalVnd, 0);
+                            const otTotal = invLines
+                                .filter(
+                                    (l) =>
+                                        !l.productId &&
+                                        !l.fishBuybackId &&
+                                        !l.name.toLowerCase().includes("gia hạn") &&
+                                        (l.name.toLowerCase().includes("thêm giờ") ||
+                                            l.name.toLowerCase().includes("phụ trội") ||
+                                            l.name.toLowerCase().includes("quá giờ")),
+                                )
+                                .reduce((s, l) => s + l.totalVnd, 0);
+                            const fishTotal = Math.abs(
+                                invLines
+                                    .filter((l) => l.fishBuybackId !== null || l.totalVnd < 0)
+                                    .reduce((s, l) => s + l.totalVnd, 0),
+                            );
+                            const settleAmount = parsed.data.settlement?.amountVnd ?? 0;
+                            const prepaidAmount = Math.max(0, pTotal - settleAmount);
 
-                                receiptData = {
-                                    invoiceId: finalInv.id,
-                                    sessionId: session.id,
-                                    lakeName: tenantContext.lakeName,
-                                    customerName: session.customer?.name || "Khách lẻ",
-                                    customerPhone: session.customer?.phoneNormalized || null,
-                                    hutNames:
-                                        updatedSession.hutLinks.map((hl) => hl.hut.name).join(", ") || "Tự do",
-                                    packageName: session.packageNameSnapshot || "Gói câu",
-                                    lines: finalInv.lines.map((l) => ({
-                                        name: l.name,
-                                        quantity: Number(l.quantity),
-                                        unitPrice: l.unitPrice,
-                                        totalVnd: l.totalVnd,
-                                    })),
-                                    packageTotalVnd: pkgTotal,
-                                    itemsTotalVnd: itemsTotal,
-                                    extensionsTotalVnd: extTotal,
-                                    overtimeTotalVnd: otTotal,
-                                    fishBuybackTotalVnd: fishTotal,
-                                    prepaidAmountVnd: prepaidAmount,
-                                    supplementaryAmountVnd: settleAmount,
-                                    totalAmountVnd: gTotal,
-                                    paidAmountVnd: pTotal,
-                                    paymentAmountVnd: settleAmount,
-                                    remainingVnd: Math.max(0, gTotal - pTotal),
-                                    refundAmountVnd:
-                                        parsed.data.settlement?.refundVnd ??
-                                        (pTotal > gTotal ? pTotal - gTotal : 0),
-                                    paymentMethod: parsed.data.settlement?.paymentMethod || "CASH",
-                                    paymentTime: endedAt.toISOString(),
-                                    cashierName: tenantContext.userId || null,
-                                };
-                            }
+                            receiptData = {
+                                invoiceId: finalInvoice.id,
+                                sessionId: session.id,
+                                lakeName: tenantContext.lakeName,
+                                customerName: session.customer?.name || "Khách lẻ",
+                                customerPhone: session.customer?.phoneNormalized || null,
+                                hutNames:
+                                    updatedSession.hutLinks.map((hl) => hl.hut.name).join(", ") || "Tự do",
+                                packageName: session.packageNameSnapshot || "Gói câu",
+                                lines: invLines.map((l) => ({
+                                    name: l.name,
+                                    quantity: Number(l.quantity),
+                                    unitPrice: l.unitPrice,
+                                    totalVnd: l.totalVnd,
+                                })),
+                                packageTotalVnd: pkgTotal,
+                                itemsTotalVnd: itemsTotal,
+                                extensionsTotalVnd: extTotal,
+                                overtimeTotalVnd: otTotal,
+                                fishBuybackTotalVnd: fishTotal,
+                                prepaidAmountVnd: prepaidAmount,
+                                supplementaryAmountVnd: settleAmount,
+                                totalAmountVnd: gTotal,
+                                paidAmountVnd: pTotal,
+                                paymentAmountVnd: settleAmount,
+                                remainingVnd: Math.max(0, gTotal - pTotal),
+                                refundAmountVnd:
+                                    parsed.data.settlement?.refundVnd ??
+                                    (pTotal > gTotal ? pTotal - gTotal : 0),
+                                paymentMethod: parsed.data.settlement?.paymentMethod || "CASH",
+                                paymentTime: endedAt.toISOString(),
+                                cashierName: tenantContext.userId || null,
+                            };
                         }
 
                         return {
@@ -571,12 +592,15 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                     txError.message.startsWith("INVOICE_INVARIANT_BROKEN")
                 ) {
                     const requestId = crypto.randomUUID();
+                    console.error("[INVOICE_INVARIANT_BROKEN]:", {
+                        requestId,
+                        error: txError,
+                    });
                     return NextResponse.json(
                         {
                             ok: false,
                             code: "INVOICE_INVARIANT_BROKEN",
                             error: "Không thể hoàn tất phiên câu: Phiên chưa có hóa đơn và không thể đối chiếu dữ liệu gốc an toàn. Vui lòng liên hệ Chủ hồ (OWNER) hoặc Thu ngân (CASHIER) để xử lý.",
-                            details: txError.message,
                             requestId,
                         },
                         { status: 422 },
@@ -620,16 +644,23 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         }
 
         // Unreachable — loop always returns or throws — but satisfies TypeScript
-        return NextResponse.json({ error: "Lỗi hệ thống." }, { status: 500 });
+        return createInternalErrorResponse(
+            "PATCH /api/fishing-sessions/[sessionId] unreachable",
+            new Error("Lỗi hệ thống."),
+            "Có lỗi hệ thống xảy ra. Vui lòng thử lại.",
+        );
     } catch (error) {
-        console.error("PATCH CAUGHT ERROR:", error);
         if (error instanceof AuthenticationError) {
             return NextResponse.json({ error: error.message }, { status: 401 });
         }
         if (error instanceof ForbiddenError) {
             return NextResponse.json({ error: error.message }, { status: 403 });
         }
-        return NextResponse.json({ error: "Lỗi hệ thống.", details: error instanceof Error ? error.message : String(error) }, { status: 500 });
+        return createInternalErrorResponse(
+            "PATCH /api/fishing-sessions/[sessionId] error",
+            error,
+            "Có lỗi hệ thống xảy ra. Vui lòng thử lại.",
+        );
     }
 }
 

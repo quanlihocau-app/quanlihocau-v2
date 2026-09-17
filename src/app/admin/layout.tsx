@@ -70,6 +70,12 @@ export default async function AdminLayout({
                         {/* Navigation Tabs */}
                         <nav className="hidden md:flex items-center gap-1.5 ml-4 pl-4 border-l border-[#D9D2C8]">
                             <Link
+                                href="/admin/users"
+                                className="px-3 py-1.5 text-xs font-semibold rounded-lg text-[#27231F] hover:bg-[#F4F2EE] transition-colors flex items-center gap-1.5"
+                            >
+                                <span>👥 Người dùng</span>
+                            </Link>
+                            <Link
                                 href="/admin/lakes"
                                 className="px-3 py-1.5 text-xs font-semibold rounded-lg text-[#27231F] hover:bg-[#F4F2EE] transition-colors"
                             >

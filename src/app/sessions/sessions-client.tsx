@@ -126,15 +126,16 @@ export function SessionsClient({
 }: SessionsClientProps) {
     const router = useRouter();
     const [sessions, setSessions] = useState<SerializableSession[]>(activeSessions);
+    const [prevActiveSessions, setPrevActiveSessions] = useState(activeSessions);
     const [selectedId, setSelectedId] = useState<string>(
         activeSessions[0]?.id ?? "",
     );
     const [settlementSessionId, setSettlementSessionId] = useState<string | null>(null);
 
-    // Sync when server data arrives
-    useEffect(() => {
+    if (activeSessions !== prevActiveSessions) {
+        setPrevActiveSessions(activeSessions);
         setSessions(activeSessions);
-    }, [activeSessions]);
+    }
 
     // Modal Chi tiết phiên câu khi nhấn giữ
     const [detailSession, setDetailSession] = useState<SerializableSession | null>(null);
@@ -696,7 +697,11 @@ export function SessionsClient({
                     sessionId={settlementSessionId}
                     isOpen={true}
                     onClose={() => setSettlementSessionId(null)}
-                    onCompleted={() => {
+                    onCompleted={(completedId) => {
+                        const targetId = completedId || settlementSessionId;
+                        if (targetId) {
+                            setSessions((prev) => prev.filter((s) => s.id !== targetId));
+                        }
                         setSettlementSessionId(null);
                         router.refresh();
                     }}

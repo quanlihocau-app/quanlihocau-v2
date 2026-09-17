@@ -13,14 +13,21 @@ export interface NetworkStatus {
     checkConnectivity: () => Promise<boolean>;
 }
 
+import { sessionTicker } from "@/lib/ticker/session-ticker";
+
 // Global cache để dùng chung giữa các components không bị ping nhiều lần cùng lúc
 let cachedIsOnline: boolean = typeof navigator !== "undefined" ? navigator.onLine : true;
 let cachedOffsetMs: number = 0;
 const listeners = new Set<(status: { isOnline: boolean; isReconnecting: boolean; serverOffsetMs: number }) => void>();
 
+export function getCachedServerOffsetMs(): number {
+    return cachedOffsetMs;
+}
+
 function notifyAll(status: { isOnline: boolean; isReconnecting: boolean; serverOffsetMs: number }) {
     cachedIsOnline = status.isOnline;
     cachedOffsetMs = status.serverOffsetMs;
+    sessionTicker.setServerOffsetMs(status.serverOffsetMs);
     listeners.forEach((fn) => fn(status));
 }
 

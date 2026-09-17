@@ -41,124 +41,126 @@ export default async function SessionsPage() {
         );
     }
 
-    // ── Fetch active sessions with all relations ────────────────────────
-    const activeSessions = await prisma.fishingSession.findMany({
-        where: {
-            lakeId: tenantContext.lakeId,
-            status: SessionStatus.ACTIVE,
-        },
-        include: {
-            customer: {
-                select: {
-                    id: true,
-                    name: true,
-                    phoneNormalized: true,
-                },
+    // ── Fetch active sessions, packages, and fish types in parallel ──────
+    const [activeSessions, packages, fishTypes] = await Promise.all([
+        prisma.fishingSession.findMany({
+            where: {
+                lakeId: tenantContext.lakeId,
+                status: SessionStatus.ACTIVE,
             },
-            package: {
-                select: {
-                    id: true,
-                    name: true,
-                    durationMinutes: true,
-                    priceVnd: true,
-                    overtimeHourlyVnd: true,
-                },
-            },
-            hutLinks: {
-                include: {
-                    hut: {
-                        select: {
-                            id: true,
-                            name: true,
-                            area: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                },
-                            },
-                        },
+            include: {
+                customer: {
+                    select: {
+                        id: true,
+                        name: true,
+                        phoneNormalized: true,
                     },
                 },
-            },
-            invoices: {
-                where: {
-                    status: { not: InvoiceStatus.VOIDED },
+                package: {
+                    select: {
+                        id: true,
+                        name: true,
+                        durationMinutes: true,
+                        priceVnd: true,
+                        overtimeHourlyVnd: true,
+                    },
                 },
-                include: {
-                    lines: {
-                        include: {
-                            product: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    priceVnd: true,
-                                },
-                            },
-                            fishBuyback: {
-                                include: {
-                                    fishType: {
-                                        select: {
-                                            id: true,
-                                            name: true,
-                                        },
+                hutLinks: {
+                    include: {
+                        hut: {
+                            select: {
+                                id: true,
+                                name: true,
+                                area: {
+                                    select: {
+                                        id: true,
+                                        name: true,
                                     },
                                 },
                             },
                         },
-                        orderBy: {
-                            createdAt: "asc",
-                        },
-                    },
-                    payments: {
-                        select: {
-                            id: true,
-                            amountVnd: true,
-                            method: true,
-                            direction: true,
-                            createdAt: true,
-                        },
                     },
                 },
-                take: 1,
+                invoices: {
+                    where: {
+                        status: { not: InvoiceStatus.VOIDED },
+                    },
+                    include: {
+                        lines: {
+                            include: {
+                                product: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        priceVnd: true,
+                                    },
+                                },
+                                fishBuyback: {
+                                    include: {
+                                        fishType: {
+                                            select: {
+                                                id: true,
+                                                name: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                            orderBy: {
+                                createdAt: "asc",
+                            },
+                        },
+                        payments: {
+                            select: {
+                                id: true,
+                                amountVnd: true,
+                                method: true,
+                                direction: true,
+                                createdAt: true,
+                            },
+                        },
+                    },
+                    take: 1,
+                },
             },
-        },
-        orderBy: {
-            startAt: "desc",
-        },
-    });
+            orderBy: {
+                startAt: "desc",
+            },
+        }),
 
-    // ── Fetch active packages for extensions ─────────────────────────────
-    const packages = await prisma.package.findMany({
-        where: {
-            lakeId: tenantContext.lakeId,
-            deletedAt: null,
-        },
-        select: {
-            id: true,
-            name: true,
-            durationMinutes: true,
-            priceVnd: true,
-        },
-        orderBy: {
-            createdAt: "asc",
-        },
-    });
+        // ── Fetch active packages for extensions in parallel ────────────────
+        prisma.package.findMany({
+            where: {
+                lakeId: tenantContext.lakeId,
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                name: true,
+                durationMinutes: true,
+                priceVnd: true,
+            },
+            orderBy: {
+                createdAt: "asc",
+            },
+        }),
 
-    // ── Fetch active fish types for buybacks ─────────────────────────────
-    const fishTypes = await prisma.fishType.findMany({
-        where: {
-            lakeId: tenantContext.lakeId,
-            deletedAt: null,
-        },
-        select: {
-            id: true,
-            name: true,
-            pricePerKg: true,
-        },
-        orderBy: {
-            name: "asc",
-        },
-    });
+        // ── Fetch active fish types for buybacks in parallel ────────────────
+        prisma.fishType.findMany({
+            where: {
+                lakeId: tenantContext.lakeId,
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                name: true,
+                pricePerKg: true,
+            },
+            orderBy: {
+                name: "asc",
+            },
+        }),
+    ]);
 
     const canOpenSession =
         tenantContext.role === Role.OWNER ||

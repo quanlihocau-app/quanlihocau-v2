@@ -7,6 +7,7 @@ import {
     requireTenantContext,
 } from "@/lib/tenant";
 import { openSession } from "@/lib/services/open-session.service";
+import { createInternalErrorResponse } from "@/lib/api-error";
 
 const validStatuses = Object.values(SessionStatus);
 
@@ -142,10 +143,10 @@ export async function POST(request: Request) {
                 );
             }
 
-            console.error("[openSession error]:", err);
-            return NextResponse.json(
-                { ok: false, error: "Không thể mở phiên câu do lỗi hệ thống.", detail: err instanceof Error ? err.stack || err.message : String(err) },
-                { status: 500 },
+            return createInternalErrorResponse(
+                "openSession error",
+                err,
+                "Không thể mở phiên câu do lỗi hệ thống. Vui lòng thử lại.",
             );
         }
     } catch (error) {
@@ -155,6 +156,10 @@ export async function POST(request: Request) {
         if (error instanceof ForbiddenError) {
             return NextResponse.json({ ok: false, error: error.message }, { status: 403 });
         }
-        return NextResponse.json({ ok: false, error: "Lỗi hệ thống." }, { status: 500 });
+        return createInternalErrorResponse(
+            "POST /api/fishing-sessions outer error",
+            error,
+            "Có lỗi hệ thống xảy ra. Vui lòng thử lại.",
+        );
     }
 }

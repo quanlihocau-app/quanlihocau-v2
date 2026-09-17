@@ -219,7 +219,7 @@ export async function POST(request: Request) {
             maskedPhone: masked,
             expiresInSeconds: 180,
             cooldownSeconds: 60,
-            ...(process.env.NODE_ENV !== "production" ? { devOtp: code } : {}),
+            ...(process.env.NODE_ENV !== "production" || process.env.OTP_PROVIDER === "MOCK" ? { devOtp: code } : {}),
         },
         { status: 200 },
     );

@@ -123,21 +123,33 @@ model Lake {
   auditEvents        AuditEvent[]
   idempotencyKeys    IdempotencyKey[]
   subscriptionOrders SubscriptionOrder[]
+
+  @@index([subscriptionStatus])
+  @@index([subscriptionExpiresAt])
 }
 
 model User {
-  id            String     @id @default(uuid())
-  email         String     @unique
-  name          String
-  phone         String?    @unique
-  phoneVerified Boolean    @default(false)
+  id              String     @id @default(uuid())
+  email           String     @unique
+  name            String
+  phone           String?    @unique
+  phoneVerified   Boolean    @default(false)
   phoneVerifiedAt DateTime?
-  passwordHash  String?
-  systemRole    SystemRole @default(USER)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime @updatedAt
+  passwordHash    String?
+  systemRole      SystemRole @default(USER)
+  isLocked        Boolean    @default(false)
+  lockedAt        DateTime?
+  lockedReason    String?
+  lastLoginAt     DateTime?
+  sessionVersion  Int        @default(1)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   memberships Membership[]
+
+  @@index([createdAt])
+  @@index([isLocked])
+  @@index([lastLoginAt])
 }
 
 model Membership {
@@ -475,7 +487,7 @@ model ShiftClose {
 
 model AuditEvent {
   id         String   @id @default(uuid())
-  lakeId     String
+  lakeId     String?
   entityType String
   entityId   String
   action     String
@@ -483,9 +495,12 @@ model AuditEvent {
   createdBy  String
   createdAt  DateTime @default(now())
 
-  lake Lake @relation(fields: [lakeId], references: [id])
+  lake Lake? @relation(fields: [lakeId], references: [id])
 
   @@index([lakeId, createdAt])
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([createdBy])
 }
 
 model IdempotencyKey {

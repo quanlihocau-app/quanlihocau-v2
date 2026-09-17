@@ -17,6 +17,7 @@ declare module "next-auth" {
             systemRole?: SystemRole;
             phoneVerified?: boolean;
             phone?: string | null;
+            sessionVersion?: number;
         };
     }
     interface User {
@@ -26,6 +27,7 @@ declare module "next-auth" {
         systemRole?: SystemRole;
         phoneVerified?: boolean;
         phone?: string | null;
+        sessionVersion?: number;
     }
 }
 
@@ -35,6 +37,7 @@ declare module "next-auth/jwt" {
         systemRole?: SystemRole;
         phoneVerified?: boolean;
         phone?: string | null;
+        sessionVersion?: number;
     }
 }
 
@@ -57,27 +60,48 @@ export const authOptions: NextAuthOptions = {
                 token.systemRole = user.systemRole;
                 token.phoneVerified = user.phoneVerified;
                 token.phone = user.phone;
+                token.sessionVersion = user.sessionVersion;
             }
             if (token.email) {
                 const dbUser = await prisma.user.findUnique({
                     where: { email: token.email.toLowerCase() },
-                    select: { id: true, systemRole: true, phoneVerified: true, phone: true },
+                    select: {
+                        id: true,
+                        systemRole: true,
+                        phoneVerified: true,
+                        phone: true,
+                        isLocked: true,
+                        sessionVersion: true,
+                    },
                 });
-                if (dbUser) {
-                    token.id = dbUser.id;
-                    token.systemRole = dbUser.systemRole;
-                    token.phoneVerified = dbUser.phoneVerified;
-                    token.phone = dbUser.phone;
+
+                // Invalidate if account deleted, locked, or session was revoked
+                if (
+                    !dbUser ||
+                    dbUser.isLocked ||
+                    (token.sessionVersion !== undefined &&
+                        dbUser.sessionVersion !== token.sessionVersion)
+                ) {
+                    return {};
                 }
+
+                token.id = dbUser.id;
+                token.systemRole = dbUser.systemRole;
+                token.phoneVerified = dbUser.phoneVerified;
+                token.phone = dbUser.phone;
+                token.sessionVersion = dbUser.sessionVersion;
             }
             return token;
         },
         async session({ session, token }) {
-            if (session.user) {
+            if (session.user && token.id) {
                 session.user.id = token.id as string;
                 session.user.systemRole = token.systemRole as SystemRole;
                 session.user.phoneVerified = Boolean(token.phoneVerified);
                 session.user.phone = (token.phone as string) || null;
+                session.user.sessionVersion = token.sessionVersion as number;
+            } else if (!token.id) {
+                return null as unknown as typeof session;
             }
             return session;
         },
@@ -121,7 +145,15 @@ export const authOptions: NextAuthOptions = {
                     },
                 });
 
-                if (!user?.passwordHash) {
+                if (!user) {
+                    return null;
+                }
+
+                if (user.isLocked) {
+                    throw new Error("Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên.");
+                }
+
+                if (!user.passwordHash) {
                     return null;
                 }
 
@@ -134,6 +166,16 @@ export const authOptions: NextAuthOptions = {
                     return null;
                 }
 
+                // Update lastLoginAt safely
+                prisma.user
+                    .update({
+                        where: { id: user.id },
+                        data: { lastLoginAt: new Date() },
+                    })
+                    .catch((err) => {
+                        console.error("[auth] Failed to update lastLoginAt:", err);
+                    });
+
                 return {
                     id: user.id,
                     name: user.name,
@@ -141,6 +183,7 @@ export const authOptions: NextAuthOptions = {
                     systemRole: user.systemRole,
                     phoneVerified: user.phoneVerified,
                     phone: user.phone,
+                    sessionVersion: user.sessionVersion,
                 };
             },
         }),

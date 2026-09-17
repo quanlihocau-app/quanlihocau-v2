@@ -54,10 +54,14 @@ export async function requireSuperAdmin(): Promise<{ id: string; email: string; 
 
     const user = await prisma.user.findUnique({
         where: { email: session.user.email.toLowerCase() },
-        select: { id: true, email: true, name: true, systemRole: true },
+        select: { id: true, email: true, name: true, systemRole: true, isLocked: true },
     });
 
-    if (user?.systemRole !== "SUPER_ADMIN") {
+    if (!user || user.isLocked) {
+        throw new ForbiddenError("Tài khoản đã bị tạm khóa hoặc không tồn tại.");
+    }
+
+    if (user.systemRole !== "SUPER_ADMIN") {
         throw new ForbiddenError("Yêu cầu quyền Quản trị viên hệ thống (SUPER_ADMIN).");
     }
 
@@ -137,13 +141,21 @@ export async function getTenantContext(options?: {
         },
     });
 
+    if (membership?.user?.isLocked) {
+        return null;
+    }
+
     if (!membership) {
         const user = await prisma.user.findUnique({
             where: { email: session.user.email.toLowerCase() },
-            select: { id: true, name: true, email: true, phone: true, phoneVerified: true, systemRole: true },
+            select: { id: true, name: true, email: true, phone: true, phoneVerified: true, systemRole: true, isLocked: true },
         });
 
-        if (user?.systemRole === "SUPER_ADMIN") {
+        if (!user || user.isLocked) {
+            return null;
+        }
+
+        if (user.systemRole === "SUPER_ADMIN") {
             const fallbackLake = await prisma.lake.findFirst({
                 where: { deletedAt: null },
                 include: { organization: true },

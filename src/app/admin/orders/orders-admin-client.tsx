@@ -50,12 +50,16 @@ interface OrdersAdminClientProps {
     };
 }
 
+const DUMMY_BANK_REF_REGEX =
+    /^(none|na|n\/a|null|undefined|0|khong|khong co|không có|chua co|chưa có|test|fake|dummy)$/i;
+
 export function OrdersAdminClient({
     initialOrders,
     initialStats,
     initialPagination,
 }: OrdersAdminClientProps) {
     const router = useRouter();
+
     const [orders, setOrders] = useState<OrderItem[]>(initialOrders);
     const [stats, setStats] = useState(initialStats);
     const [pagination, setPagination] = useState(initialPagination);
@@ -67,8 +71,12 @@ export function OrdersAdminClient({
 
     // Modal state for manual confirmation
     const [confirmModalOrder, setConfirmModalOrder] = useState<OrderItem | null>(null);
+    const [reconciliationMethod, setReconciliationMethod] = useState<
+        "BANK_STATEMENT" | "CASH" | "DIRECT_VERIFICATION" | "OTHER"
+    >("BANK_STATEMENT");
     const [reason, setReason] = useState("");
     const [bankRef, setBankRef] = useState("");
+    const [modalError, setModalError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [actionMessage, setActionMessage] = useState<{
         type: "success" | "error";
@@ -112,38 +120,88 @@ export function OrdersAdminClient({
 
     function openConfirmModal(order: OrderItem) {
         setConfirmModalOrder(order);
-        setReason(`Đã kiểm tra chuyển khoản ngân hàng Techcombank khớp số tiền ${order.amountVnd.toLocaleString("vi-VN")}đ`);
+        setReconciliationMethod("BANK_STATEMENT");
+        setReason(`Đã đối soát sao kê ngân hàng khớp số tiền ${order.amountVnd.toLocaleString("vi-VN")}đ cho đơn ${order.orderCode}`);
         setBankRef("");
+        setModalError(null);
         setActionMessage(null);
     }
 
     async function handleConfirmSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (!confirmModalOrder) return;
-        if (!reason.trim() || reason.trim().length < 5) {
-            setActionMessage({
-                type: "error",
-                text: "Vui lòng nhập lý do xác nhận (ít nhất 5 ký tự).",
-            });
+        // Prevent double clicks or invalid state
+        if (isSubmitting || !confirmModalOrder) return;
+
+        const trimmedReason = reason.trim();
+        const trimmedBankRef = bankRef.trim();
+
+        if (!trimmedReason || trimmedReason.length < 5) {
+            setModalError("Vui lòng nhập lý do xác nhận (ít nhất 5 ký tự).");
+            return;
+        }
+
+        if (trimmedBankRef) {
+            if (DUMMY_BANK_REF_REGEX.test(trimmedBankRef)) {
+                setModalError(
+                    "Mã giao dịch ngân hàng không được là giá trị giả mạo (none, n/a, null, test...). Nếu không có mã, vui lòng để trống.",
+                );
+                return;
+            }
+            if (trimmedBankRef.length < 3) {
+                setModalError("Mã giao dịch ngân hàng thực tế phải có ít nhất 3 ký tự.");
+                return;
+            }
+        } else if (trimmedReason.length < 10) {
+            setModalError(
+                "Khi để trống mã giao dịch ngân hàng, vui lòng nhập lý do đối soát chi tiết (tối thiểu 10 ký tự).",
+            );
             return;
         }
 
         setIsSubmitting(true);
+        setModalError(null);
         setActionMessage(null);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         try {
             const res = await fetch(`/api/admin/orders/${confirmModalOrder.id}/confirm`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                signal: controller.signal,
                 body: JSON.stringify({
-                    reason: reason.trim(),
-                    bankRef: bankRef.trim() || undefined,
+                    reconciliationMethod,
+                    reason: trimmedReason,
+                    bankRef: trimmedBankRef || undefined,
+                    expectedAmountVnd: confirmModalOrder.amountVnd,
+                    expectedPlanCode: confirmModalOrder.planCode,
+                    expectedOrganizationId: confirmModalOrder.organizationId,
                 }),
             });
 
-            const data = await res.json();
+            clearTimeout(timeoutId);
+
+            let data: { error?: string; message?: string; alreadyPaid?: boolean };
+            try {
+                data = await res.json();
+            } catch {
+                data = { error: `Máy chủ phản hồi không hợp lệ (${res.status}).` };
+            }
+
             if (!res.ok) {
-                throw new Error(data.error || "Không thể xác nhận đơn hàng.");
+                if (res.status === 409 && data.alreadyPaid) {
+                    setActionMessage({
+                        type: "error",
+                        text: data.message || "Đơn hàng này đã được xác nhận thanh toán trước đó.",
+                    });
+                    setConfirmModalOrder(null);
+                    router.refresh();
+                    await fetchOrders(pagination.page, selectedStatus, searchQuery);
+                    return;
+                }
+                setModalError(data.error || "Không thể xác nhận đơn hàng.");
+                return;
             }
 
             setActionMessage({
@@ -162,12 +220,14 @@ export function OrdersAdminClient({
                 paidCount: prev.paidCount + 1,
             }));
         } catch (err: unknown) {
-            const error = err as Error;
-            setActionMessage({
-                type: "error",
-                text: error.message || "Đã xảy ra lỗi khi xác nhận.",
-            });
+            if (err instanceof Error && err.name === "AbortError") {
+                setModalError("Yêu cầu xác nhận quá thời gian chờ (15s). Vui lòng kiểm tra lại kết nối mạng.");
+            } else {
+                const error = err as Error;
+                setModalError(error.message || "Đã xảy ra lỗi khi xác nhận.");
+            }
         } finally {
+            clearTimeout(timeoutId);
             setIsSubmitting(false);
         }
     }
@@ -356,7 +416,7 @@ export function OrdersAdminClient({
                                                 {order.organization.name}
                                             </div>
                                             <div className="text-[10px] text-[#8A5A20] mt-0.5">
-                                                Hạn: {order.lake.subscriptionExpiresAt ? new Date(order.lake.subscriptionExpiresAt).toLocaleDateString("vi-VN") : "Chưa có"}
+                                                Hạn: {order.lake.subscriptionExpiresAt ? new Date(order.lake.subscriptionExpiresAt).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "Chưa có"}
                                             </div>
                                         </td>
 
@@ -402,6 +462,7 @@ export function OrdersAdminClient({
 
                                         <td className="px-4 py-3.5 text-[#627D98] text-[11px]">
                                             {new Date(order.createdAt).toLocaleString("vi-VN", {
+                                                timeZone: "Asia/Ho_Chi_Minh",
                                                 hour: "2-digit",
                                                 minute: "2-digit",
                                                 day: "2-digit",
@@ -461,8 +522,16 @@ export function OrdersAdminClient({
 
             {/* Manual Confirm Modal */}
             {confirmModalOrder && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-                    <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-[#D9D2C8] animate-in fade-in zoom-in-95 duration-200">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
+                    onClick={() => {
+                        if (!isSubmitting) setConfirmModalOrder(null);
+                    }}
+                >
+                    <div
+                        className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-[#D9D2C8] animate-in fade-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="flex items-center justify-between border-b border-[#EBE6DF] pb-3 mb-4">
                             <div>
                                 <h3 className="text-base font-bold text-[#102A43] flex items-center gap-2">
@@ -476,12 +545,20 @@ export function OrdersAdminClient({
 
                             <button
                                 type="button"
+                                disabled={isSubmitting}
                                 onClick={() => setConfirmModalOrder(null)}
-                                className="rounded-lg p-1 text-[#627D98] hover:bg-[#F4F2EE]"
+                                className="rounded-lg p-1 text-[#627D98] hover:bg-[#F4F2EE] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 ✕
                             </button>
                         </div>
+
+                        {modalError && (
+                            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 flex items-start gap-2">
+                                <span className="text-sm">⚠️</span>
+                                <div className="flex-1 font-medium">{modalError}</div>
+                            </div>
+                        )}
 
                         <form onSubmit={handleConfirmSubmit} className="space-y-4">
                             {/* Order summary */}
@@ -495,8 +572,12 @@ export function OrdersAdminClient({
                                     <span className="font-bold text-[#27231F]">{confirmModalOrder.lake.name}</span>
                                 </div>
                                 <div className="flex justify-between">
+                                    <span className="text-[#627D98]">Tổ chức / Khách hàng:</span>
+                                    <span className="font-bold text-[#27231F]">{confirmModalOrder.organization.name}</span>
+                                </div>
+                                <div className="flex justify-between">
                                     <span className="text-[#627D98]">Gói cước:</span>
-                                    <span className="font-bold text-[#8A5A20]">{confirmModalOrder.planCode} (30 ngày)</span>
+                                    <span className="font-bold text-[#8A5A20]">{confirmModalOrder.planCode} ({confirmModalOrder.durationDays || 30} ngày)</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-[#627D98]">Số tiền thanh toán:</span>
@@ -504,58 +585,96 @@ export function OrdersAdminClient({
                                         {confirmModalOrder.amountVnd.toLocaleString("vi-VN")} đ
                                     </span>
                                 </div>
+                                <div className="flex justify-between">
+                                    <span className="text-[#627D98]">Hạn hiện tại:</span>
+                                    <span className="text-[#627D98]">
+                                        {confirmModalOrder.lake.subscriptionExpiresAt
+                                            ? new Date(confirmModalOrder.lake.subscriptionExpiresAt).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })
+                                            : "Chưa kích hoạt / Đã hết hạn"}
+                                    </span>
+                                </div>
                                 <div className="flex justify-between pt-1 border-t border-[#D9D2C8]/60">
                                     <span className="text-[#627D98]">Hạn mới dự kiến:</span>
                                     <span className="font-bold text-emerald-700">
-                                        {calculateEstimatedNewExpires(confirmModalOrder).toLocaleDateString("vi-VN")}
+                                        {calculateEstimatedNewExpires(confirmModalOrder).toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}
                                     </span>
                                 </div>
                             </div>
 
                             <div>
                                 <label className="block text-xs font-bold text-[#27231F] mb-1">
-                                    Mã giao dịch ngân hàng (Tùy chọn)
+                                    Phương thức đối soát <span className="text-rose-500">*</span>
                                 </label>
-                                <input
-                                    type="text"
-                                    value={bankRef}
-                                    onChange={(e) => setBankRef(e.target.value)}
-                                    placeholder="Ví dụ: FT262507891234 hoặc để trống hệ thống tự sinh"
-                                    className="w-full rounded-xl border border-[#D9D2C8] px-3 py-2 text-xs text-[#27231F] placeholder:text-[#9FB3C8] focus:border-[#102A43] focus:outline-hidden"
-                                />
+                                <select
+                                    disabled={isSubmitting}
+                                    value={reconciliationMethod}
+                                    onChange={(e) =>
+                                        setReconciliationMethod(
+                                            e.target.value as "BANK_STATEMENT" | "CASH" | "DIRECT_VERIFICATION" | "OTHER",
+                                        )
+                                    }
+                                    className="w-full rounded-xl border border-[#D9D2C8] bg-white px-3 py-2 text-xs text-[#27231F] focus:border-[#102A43] focus:outline-hidden disabled:bg-gray-100 disabled:opacity-60"
+                                >
+                                    <option value="BANK_STATEMENT">🏦 Sao kê tài khoản ngân hàng (Bank Statement)</option>
+                                    <option value="DIRECT_VERIFICATION">🔍 Kiểm tra giao dịch chuyển khoản trực tiếp</option>
+                                    <option value="CASH">💵 Thu tiền mặt trực tiếp</option>
+                                    <option value="OTHER">📝 Phương thức đối soát khác</option>
+                                </select>
                             </div>
 
                             <div>
                                 <label className="block text-xs font-bold text-[#27231F] mb-1">
-                                    Lý do xác nhận <span className="text-rose-500">*</span>
+                                    Mã giao dịch ngân hàng thực tế (Tùy chọn)
+                                </label>
+                                <input
+                                    type="text"
+                                    disabled={isSubmitting}
+                                    value={bankRef}
+                                    onChange={(e) => setBankRef(e.target.value)}
+                                    placeholder="Ví dụ: FT262507891234 (Để trống nếu không có, hệ thống không tạo mã giả)"
+                                    className="w-full rounded-xl border border-[#D9D2C8] px-3 py-2 text-xs text-[#27231F] placeholder:text-[#9FB3C8] focus:border-[#102A43] focus:outline-hidden disabled:bg-gray-100 disabled:opacity-60"
+                                />
+                                <span className="text-[10px] text-[#627D98]">
+                                    Chỉ nhập mã giao dịch thực tế trên sao kê. Không nhập mã giả (none, n/a, null...). Nếu không có mã, hãy để trống và ghi rõ lý do bên dưới.
+                                </span>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-[#27231F] mb-1">
+                                    Lý do xác nhận đối soát <span className="text-rose-500">*</span>
                                 </label>
                                 <textarea
+                                    disabled={isSubmitting}
                                     value={reason}
                                     onChange={(e) => setReason(e.target.value)}
                                     rows={3}
                                     required
-                                    placeholder="Ghi rõ thông tin sao kê, thời gian hoặc biên lai chuyển khoản..."
-                                    className="w-full rounded-xl border border-[#D9D2C8] p-3 text-xs text-[#27231F] placeholder:text-[#9FB3C8] focus:border-[#102A43] focus:outline-hidden"
+                                    placeholder="Ghi rõ căn cứ đối soát (thời gian sao kê, biên lai, số tài khoản người gửi...)"
+                                    className="w-full rounded-xl border border-[#D9D2C8] p-3 text-xs text-[#27231F] placeholder:text-[#9FB3C8] focus:border-[#102A43] focus:outline-hidden disabled:bg-gray-100 disabled:opacity-60"
                                 />
                                 <span className="text-[10px] text-[#627D98]">
-                                    Lý do này sẽ được ghi vĩnh viễn vào nhật ký Audit Log của hệ thống.
+                                    Lý do này sẽ được ghi vĩnh viễn vào nhật ký Audit Log của hệ thống (tối thiểu 10 ký tự nếu không có mã GD). Lý do thủ công không thay thế bằng chứng tự động.
                                 </span>
                             </div>
 
                             <div className="flex items-center gap-2 pt-2">
                                 <button
                                     type="button"
+                                    disabled={isSubmitting}
                                     onClick={() => setConfirmModalOrder(null)}
-                                    className="flex-1 rounded-xl border border-[#D9D2C8] py-2.5 text-xs font-semibold text-[#627D98] hover:bg-[#F4F2EE]"
+                                    className="flex-1 rounded-xl border border-[#D9D2C8] py-2.5 text-xs font-semibold text-[#627D98] hover:bg-[#F4F2EE] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                                 >
                                     Hủy
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="flex-1 rounded-xl bg-[#246B38] py-2.5 text-xs font-bold text-white hover:bg-[#1C542C] active:scale-95 transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                                    className="flex-1 rounded-xl bg-[#246B38] py-2.5 text-xs font-bold text-white hover:bg-[#1C542C] active:scale-95 transition-all shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
                                 >
-                                    {isSubmitting ? "Đang xác nhận..." : "✓ Xác nhận kích hoạt"}
+                                    {isSubmitting && (
+                                        <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                    )}
+                                    <span>{isSubmitting ? "Đang xác nhận..." : "✓ Xác nhận kích hoạt"}</span>
                                 </button>
                             </div>
                         </form>

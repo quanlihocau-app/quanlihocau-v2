@@ -56,7 +56,7 @@ export interface HistoryInvoice {
 
 export interface HistoryAuditEvent {
     id: string;
-    lakeId: string;
+    lakeId: string | null;
     entityType: string;
     entityId: string;
     action: string;
