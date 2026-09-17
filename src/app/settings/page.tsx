@@ -300,17 +300,12 @@ export default async function SettingsPage() {
                 {/* Cài đặt App ra Màn hình chính (PWA) */}
                 <PwaInstallSettingRow />
 
-                {/* Sản phẩm và kho - negative inventory toggle (inline) */}
+                {/* Cho phép bán âm kho */}
                 {lake && (
-                    <div className="rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3.5 shadow-xs">
-                        <p className="text-[13px] font-semibold text-[#17201A] mb-2">
-                            Cho phép bán âm kho
-                        </p>
-                        <NegativeInventoryToggle
-                            initialAllowNegative={lake.allowNegativeInventory ?? false}
-                            canEdit={isOwner}
-                        />
-                    </div>
+                    <NegativeInventoryToggle
+                        initialAllowNegative={lake.allowNegativeInventory ?? false}
+                        canEdit={isOwner}
+                    />
                 )}
             </div>
 
