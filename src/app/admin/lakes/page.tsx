@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/tenant";
 import { LakesAdminClient, LakeItem, StatsOverview } from "./lakes-admin-client";
 import { privateRouteMetadata } from "@/lib/metadata";
+import { isTestLake } from "@/lib/test-account";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function AdminLakesPage() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [totalCount, lakes, totalLakes, activeCount, trialCount, graceCount, suspendedCount] =
+    const [totalCount, lakes, totalLakes, activeCount, trialCount, graceCount, suspendedCount, allLakesForStats] =
         await Promise.all([
             prisma.lake.count({ where: { deletedAt: null } }),
             prisma.lake.findMany({
@@ -74,7 +75,22 @@ export default async function AdminLakesPage() {
             prisma.lake.count({ where: { deletedAt: null, subscriptionStatus: SubscriptionStatus.TRIAL } }),
             prisma.lake.count({ where: { deletedAt: null, subscriptionStatus: SubscriptionStatus.GRACE_PERIOD } }),
             prisma.lake.count({ where: { deletedAt: null, subscriptionStatus: SubscriptionStatus.SUSPENDED } }),
+            prisma.lake.findMany({
+                where: { deletedAt: null },
+                select: {
+                    name: true,
+                    memberships: {
+                        where: { role: Role.OWNER, deletedAt: null },
+                        select: { user: { select: { email: true } } },
+                    },
+                },
+            }),
         ]);
+
+    const testCount = allLakesForStats.filter((l) =>
+        isTestLake(l.name, l.memberships[0]?.user?.email)
+    ).length;
+    const commercialCount = Math.max(0, totalLakes - testCount);
 
     const initialLakes: LakeItem[] = lakes.map((lake) => {
         const owner = lake.memberships[0]?.user || null;
@@ -90,11 +106,14 @@ export default async function AdminLakesPage() {
             currentMonthSessionsCount: lake._count.fishingSessions,
             currentMonthInvoicesCount: lake._count.invoices,
             createdAt: lake.createdAt.toISOString(),
+            isTestAccount: isTestLake(lake.name, owner?.email || ""),
         };
     });
 
     const initialStats: StatsOverview = {
         totalLakes,
+        commercialLakes: commercialCount,
+        testLakes: testCount,
         activeCount,
         trialCount,
         graceCount,

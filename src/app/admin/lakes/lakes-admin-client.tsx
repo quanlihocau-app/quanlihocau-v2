@@ -16,10 +16,13 @@ export interface LakeItem {
     currentMonthSessionsCount: number;
     currentMonthInvoicesCount: number;
     createdAt: string;
+    isTestAccount?: boolean;
 }
 
 export interface StatsOverview {
     totalLakes: number;
+    commercialLakes?: number;
+    testLakes?: number;
     activeCount: number;
     trialCount: number;
     graceCount: number;
@@ -101,6 +104,7 @@ export function LakesAdminClient({
 
     const [search, setSearch] = useState("");
     const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+    const [selectedAccountType, setSelectedAccountType] = useState<string>("ALL");
     const [loading, setLoading] = useState(false);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -115,7 +119,12 @@ export function LakesAdminClient({
     const [impersonatingLake, setImpersonatingLake] = useState<LakeItem | null>(null);
     const [isImpersonating, setIsImpersonating] = useState(false);
 
-    async function fetchLakes(page = 1, currentSearch = search, currentStatus = selectedStatus) {
+    async function fetchLakes(
+        page = 1,
+        currentSearch = search,
+        currentStatus = selectedStatus,
+        currentAccountType = selectedAccountType
+    ) {
         setLoading(true);
         try {
             const params = new URLSearchParams();
@@ -123,6 +132,7 @@ export function LakesAdminClient({
             params.set("limit", pagination.limit.toString());
             if (currentSearch) params.set("search", currentSearch);
             if (currentStatus !== "ALL") params.set("status", currentStatus);
+            if (currentAccountType !== "ALL") params.set("accountType", currentAccountType);
 
             const res = await fetch(`/api/admin/lakes?${params.toString()}`);
             if (res.ok) {
@@ -141,11 +151,11 @@ export function LakesAdminClient({
     // Debounced search / filter trigger
     useEffect(() => {
         const handler = setTimeout(() => {
-            fetchLakes(1, search, selectedStatus);
+            fetchLakes(1, search, selectedStatus, selectedAccountType);
         }, 300);
         return () => clearTimeout(handler);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search, selectedStatus]);
+    }, [search, selectedStatus, selectedAccountType]);
 
     function openEditModal(lake: LakeItem) {
         setEditingLake(lake);
@@ -222,46 +232,81 @@ export function LakesAdminClient({
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
             {/* Top Stats Banner */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                <div className="rounded-2xl border border-[#D9D2C8] bg-white p-4 shadow-xs">
-                    <span className="text-[11px] font-semibold text-[#766F67] uppercase tracking-wider">
-                        Tổng số hồ
-                    </span>
-                    <p className="mt-1 text-2xl font-bold text-[#102A43] tabular-nums">
-                        {stats.totalLakes}
-                    </p>
+            <div className="space-y-3">
+                {/* Growth Measurement: Commercial vs Test */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-[#D9D2C8] bg-white p-4 shadow-xs">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-semibold text-[#766F67] uppercase tracking-wider">
+                                Tổng số hồ đã tạo
+                            </span>
+                            <span className="text-base">📊</span>
+                        </div>
+                        <p className="mt-1 text-2xl font-bold text-[#102A43] tabular-nums">
+                            {stats.totalLakes}
+                        </p>
+                        <p className="text-[11px] text-[#766F67] mt-0.5">Bao gồm toàn bộ hồ trong hệ thống</p>
+                    </div>
+                    <div className="rounded-2xl border border-emerald-300 bg-emerald-50/70 p-4 shadow-xs">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wider">
+                                Khách thương mại thật
+                            </span>
+                            <span className="text-base">🏢</span>
+                        </div>
+                        <p className="mt-1 text-2xl font-extrabold text-emerald-700 tabular-nums">
+                            {stats.commercialLakes ?? stats.totalLakes}
+                        </p>
+                        <p className="text-[11px] text-emerald-800 mt-0.5">Không tính tài khoản thử nghiệm / nội bộ</p>
+                    </div>
+                    <div className="rounded-2xl border border-purple-200 bg-purple-50/70 p-4 shadow-xs">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-purple-900 uppercase tracking-wider">
+                                Hồ thử nghiệm & Test
+                            </span>
+                            <span className="text-base">🧪</span>
+                        </div>
+                        <p className="mt-1 text-2xl font-extrabold text-purple-700 tabular-nums">
+                            {stats.testLakes ?? 0}
+                        </p>
+                        <p className="text-[11px] text-purple-800 mt-0.5">Được cách ly khỏi chỉ số tăng trưởng thương mại</p>
+                    </div>
                 </div>
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-xs">
-                    <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider">
-                        Đang hoạt động
-                    </span>
-                    <p className="mt-1 text-2xl font-bold text-emerald-700 tabular-nums">
-                        {stats.activeCount}
-                    </p>
-                </div>
-                <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 shadow-xs">
-                    <span className="text-[11px] font-semibold text-blue-800 uppercase tracking-wider">
-                        Đang dùng thử
-                    </span>
-                    <p className="mt-1 text-2xl font-bold text-blue-700 tabular-nums">
-                        {stats.trialCount}
-                    </p>
-                </div>
-                <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 shadow-xs">
-                    <span className="text-[11px] font-semibold text-amber-800 uppercase tracking-wider">
-                        Đang gia hạn
-                    </span>
-                    <p className="mt-1 text-2xl font-bold text-amber-700 tabular-nums">
-                        {stats.graceCount}
-                    </p>
-                </div>
-                <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-4 shadow-xs col-span-2 sm:col-span-1">
-                    <span className="text-[11px] font-semibold text-rose-800 uppercase tracking-wider">
-                        Tạm ngưng
-                    </span>
-                    <p className="mt-1 text-2xl font-bold text-rose-700 tabular-nums">
-                        {stats.suspendedCount}
-                    </p>
+
+                {/* Subscription Status Breakdown */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="rounded-xl border border-emerald-200 bg-white p-3 shadow-xs">
+                        <span className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider">
+                            Đang hoạt động (ACTIVE)
+                        </span>
+                        <p className="mt-1 text-xl font-bold text-emerald-700 tabular-nums">
+                            {stats.activeCount}
+                        </p>
+                    </div>
+                    <div className="rounded-xl border border-blue-200 bg-white p-3 shadow-xs">
+                        <span className="text-[10px] font-semibold text-blue-800 uppercase tracking-wider">
+                            Đang dùng thử (TRIAL)
+                        </span>
+                        <p className="mt-1 text-xl font-bold text-blue-700 tabular-nums">
+                            {stats.trialCount}
+                        </p>
+                    </div>
+                    <div className="rounded-xl border border-amber-200 bg-white p-3 shadow-xs">
+                        <span className="text-[10px] font-semibold text-amber-800 uppercase tracking-wider">
+                            Đang gia hạn (GRACE)
+                        </span>
+                        <p className="mt-1 text-xl font-bold text-amber-700 tabular-nums">
+                            {stats.graceCount}
+                        </p>
+                    </div>
+                    <div className="rounded-xl border border-rose-200 bg-white p-3 shadow-xs">
+                        <span className="text-[10px] font-semibold text-rose-800 uppercase tracking-wider">
+                            Tạm ngưng (SUSPENDED)
+                        </span>
+                        <p className="mt-1 text-xl font-bold text-rose-700 tabular-nums">
+                            {stats.suspendedCount}
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -300,21 +345,38 @@ export function LakesAdminClient({
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
-                        <label className="text-xs font-semibold text-[#766F67] shrink-0">
-                            Trạng thái:
-                        </label>
-                        <select
-                            value={selectedStatus}
-                            onChange={(e) => setSelectedStatus(e.target.value)}
-                            className="w-full sm:w-auto rounded-xl border border-[#D9D2C8] bg-white px-3 py-2 text-xs font-medium text-[#27231F] focus:border-[#8A5A20] focus:outline-none"
-                        >
-                            <option value="ALL">Tất cả trạng thái</option>
-                            <option value={SubscriptionStatus.ACTIVE}>Hoạt động (ACTIVE)</option>
-                            <option value={SubscriptionStatus.TRIAL}>Dùng thử (TRIAL)</option>
-                            <option value={SubscriptionStatus.GRACE_PERIOD}>Gia hạn (GRACE_PERIOD)</option>
-                            <option value={SubscriptionStatus.SUSPENDED}>Tạm ngưng (SUSPENDED)</option>
-                        </select>
+                    <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                        <div className="flex items-center gap-1.5">
+                            <label className="text-xs font-semibold text-[#766F67] shrink-0">
+                                Loại hồ:
+                            </label>
+                            <select
+                                value={selectedAccountType}
+                                onChange={(e) => setSelectedAccountType(e.target.value)}
+                                className="w-full sm:w-auto rounded-xl border border-[#D9D2C8] bg-white px-3 py-2 text-xs font-medium text-[#27231F] focus:border-[#8A5A20] focus:outline-none"
+                            >
+                                <option value="ALL">Tất cả loại hồ</option>
+                                <option value="COMMERCIAL">Chỉ khách thương mại</option>
+                                <option value="TEST">Chỉ hồ test / nội bộ</option>
+                            </select>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                            <label className="text-xs font-semibold text-[#766F67] shrink-0">
+                                Trạng thái:
+                            </label>
+                            <select
+                                value={selectedStatus}
+                                onChange={(e) => setSelectedStatus(e.target.value)}
+                                className="w-full sm:w-auto rounded-xl border border-[#D9D2C8] bg-white px-3 py-2 text-xs font-medium text-[#27231F] focus:border-[#8A5A20] focus:outline-none"
+                            >
+                                <option value="ALL">Tất cả trạng thái</option>
+                                <option value={SubscriptionStatus.ACTIVE}>Hoạt động (ACTIVE)</option>
+                                <option value={SubscriptionStatus.TRIAL}>Dùng thử (TRIAL)</option>
+                                <option value={SubscriptionStatus.GRACE_PERIOD}>Gia hạn (GRACE_PERIOD)</option>
+                                <option value={SubscriptionStatus.SUSPENDED}>Tạm ngưng (SUSPENDED)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -349,8 +411,19 @@ export function LakesAdminClient({
                                     <tr key={lake.id} className="hover:bg-[#FDF9F0]/60 transition-colors">
                                         {/* Lake Info */}
                                         <td className="px-4 py-4 sm:px-6">
-                                            <div className="font-bold text-[#27231F] text-sm">
-                                                {lake.lakeName}
+                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                <span className="font-bold text-[#27231F] text-sm">
+                                                    {lake.lakeName}
+                                                </span>
+                                                {lake.isTestAccount ? (
+                                                    <span className="inline-flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700">
+                                                        🧪 Test / Demo
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                                        🏢 Thương mại
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="text-[11px] text-[#766F67]">
                                                 {lake.organizationName}
