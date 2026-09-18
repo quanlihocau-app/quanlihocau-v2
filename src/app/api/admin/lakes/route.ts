@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Role, SubscriptionStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/tenant";
+import { isTestLake } from "@/lib/test-account";
 
 export async function GET(request: NextRequest) {
     try {
@@ -102,39 +103,68 @@ export async function GET(request: NextRequest) {
         ]);
 
         // Aggregate high-level stats for dashboard pills
-        const [totalLakes, activeCount, trialCount, graceCount, suspendedCount] = await Promise.all([
+        const [totalLakes, activeCount, trialCount, graceCount, suspendedCount, allLakesForStats] = await Promise.all([
             prisma.lake.count({ where: { deletedAt: null } }),
             prisma.lake.count({ where: { deletedAt: null, subscriptionStatus: SubscriptionStatus.ACTIVE } }),
             prisma.lake.count({ where: { deletedAt: null, subscriptionStatus: SubscriptionStatus.TRIAL } }),
             prisma.lake.count({ where: { deletedAt: null, subscriptionStatus: SubscriptionStatus.GRACE_PERIOD } }),
             prisma.lake.count({ where: { deletedAt: null, subscriptionStatus: SubscriptionStatus.SUSPENDED } }),
+            prisma.lake.findMany({
+                where: { deletedAt: null },
+                select: {
+                    name: true,
+                    memberships: {
+                        where: { role: Role.OWNER, deletedAt: null },
+                        select: { user: { select: { email: true } } },
+                    },
+                },
+            }),
         ]);
 
+        const testCount = allLakesForStats.filter((l) =>
+            isTestLake(l.name, l.memberships[0]?.user?.email)
+        ).length;
+        const commercialCount = Math.max(0, totalLakes - testCount);
+
+        const accountType = searchParams.get("accountType") || "ALL";
+
+        let mappedLakes = lakes.map((lake) => {
+            const owner = lake.memberships[0]?.user || null;
+            const isTest = isTestLake(lake.name, owner?.email || "");
+            return {
+                id: lake.id,
+                lakeName: lake.name,
+                organizationName: lake.organization.name,
+                ownerName: owner?.name || "Chưa có chủ sở hữu",
+                ownerPhone: owner?.phone || "—",
+                ownerEmail: owner?.email || "—",
+                subscriptionStatus: lake.subscriptionStatus,
+                subscriptionExpiresAt: lake.subscriptionExpiresAt,
+                currentMonthSessionsCount: lake._count.fishingSessions,
+                currentMonthInvoicesCount: lake._count.invoices,
+                createdAt: lake.createdAt,
+                isTestAccount: isTest,
+            };
+        });
+
+        if (accountType === "COMMERCIAL") {
+            mappedLakes = mappedLakes.filter((l) => !l.isTestAccount);
+        } else if (accountType === "TEST") {
+            mappedLakes = mappedLakes.filter((l) => l.isTestAccount);
+        }
+
         return NextResponse.json({
-            data: lakes.map((lake) => {
-                const owner = lake.memberships[0]?.user || null;
-                return {
-                    id: lake.id,
-                    lakeName: lake.name,
-                    organizationName: lake.organization.name,
-                    ownerName: owner?.name || "Chưa có chủ sở hữu",
-                    ownerPhone: owner?.phone || "—",
-                    ownerEmail: owner?.email || "—",
-                    subscriptionStatus: lake.subscriptionStatus,
-                    subscriptionExpiresAt: lake.subscriptionExpiresAt,
-                    currentMonthSessionsCount: lake._count.fishingSessions,
-                    currentMonthInvoicesCount: lake._count.invoices,
-                    createdAt: lake.createdAt,
-                };
-            }),
+            data: mappedLakes,
             pagination: {
                 page,
                 limit,
-                totalCount,
-                totalPages: Math.ceil(totalCount / limit) || 1,
+                totalCount: accountType === "COMMERCIAL" ? commercialCount : accountType === "TEST" ? testCount : totalCount,
+                totalPages: Math.ceil((accountType === "COMMERCIAL" ? commercialCount : accountType === "TEST" ? testCount : totalCount) / limit) || 1,
             },
             stats: {
                 totalLakes,
+                commercialLakes: commercialCount,
+                testLakes: testCount,
                 activeCount,
                 trialCount,
                 graceCount,

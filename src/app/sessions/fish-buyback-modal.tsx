@@ -2,9 +2,52 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 function formatPrice(vnd: number): string {
     return new Intl.NumberFormat("vi-VN").format(vnd) + "đ";
+}
+
+function cleanWeightInput(raw: string): string {
+    if (!raw) return "";
+
+    // 1. Chỉ giữ số, dấu chấm và dấu phẩy
+    let cleaned = raw.replace(/[^0-9.,]/g, "");
+
+    // 2. Nếu bắt đầu bằng dấu phân tách (. hoặc ,), tự động thêm "0" ở trước: ví dụ ",5" -> "0,5"
+    if (cleaned.startsWith(",") || cleaned.startsWith(".")) {
+        cleaned = "0" + cleaned;
+    }
+
+    // 3. Chỉ giữ dấu phân tách đầu tiên (. hoặc ,), loại bỏ các dấu chấm/phẩy dư thừa phía sau
+    const firstSepIndex = cleaned.search(/[.,]/);
+    if (firstSepIndex !== -1) {
+        const sep = cleaned[firstSepIndex];
+        const before = cleaned.slice(0, firstSepIndex);
+        const after = cleaned.slice(firstSepIndex + 1).replace(/[.,]/g, "");
+        // Giới hạn tối đa 2 chữ số phần thập phân (hỗ trợ nhập 0,5 ; 3,4 ; 1,25 ; 12,50)
+        const trimmedAfter = after.slice(0, 2);
+        cleaned = before + sep + trimmedAfter;
+    }
+
+    // 4. Xử lý số 0 ở đầu số nguyên: "03" -> "3", "00" -> "0", nhưng giữ "0," và "0."
+    if (
+        cleaned.length > 1 &&
+        cleaned.startsWith("0") &&
+        !cleaned.startsWith("0.") &&
+        !cleaned.startsWith("0,")
+    ) {
+        cleaned = cleaned.replace(/^0+/, "") || "0";
+    }
+
+    return cleaned;
+}
+
+function parseWeight(input: string): number {
+    if (!input) return 0;
+    const normalized = input.replace(",", ".");
+    const parsed = parseFloat(normalized);
+    return isNaN(parsed) || parsed <= 0 ? 0 : parsed;
 }
 
 export interface FishBuybackModalProps {
@@ -30,10 +73,17 @@ export function FishBuybackModal({
 }: FishBuybackModalProps) {
     const [types, setTypes] = useState(fishTypes);
     const [selectedTypeId, setSelectedTypeId] = useState(fishTypes[0]?.id ?? "");
-    const [weight, setWeight] = useState(1);
+    const [weightInput, setWeightInput] = useState("1");
+    const weight = parseWeight(weightInput);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [submitSuccess, setSubmitSuccess] = useState("");
+
+    const { onBackdropClick } = useModalDismiss({
+        isOpen: true,
+        onClose,
+        disabled: isSubmitting,
+    });
 
     useEffect(() => {
         if (types.length === 0) {
@@ -103,8 +153,11 @@ export function FishBuybackModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl space-y-4 animate-in fade-in duration-150">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 modal-backdrop-animate"
+            onClick={onBackdropClick}
+        >
+            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl space-y-4 modal-content-animate">
                 <div className="flex items-center justify-between border-b border-[#EAE4D7] pb-3">
                     <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAECEC] text-[#8B1E1E]">
@@ -174,23 +227,41 @@ export function FishBuybackModal({
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            onClick={() => setWeight((w) => Math.max(0.5, Math.round((w - 0.5) * 10) / 10))}
-                            className="h-10 w-10 rounded-lg border border-[#EAE4D7] bg-white font-bold text-slate-800 hover:bg-slate-50"
+                            onClick={() => {
+                                const newW = Math.max(0.1, Math.round((weight - 0.5) * 100) / 100);
+                                const sep = weightInput.includes(".") ? "." : ",";
+                                setWeightInput(String(newW).replace(".", sep));
+                            }}
+                            className="h-10 w-10 rounded-lg border border-[#EAE4D7] bg-white font-bold text-slate-800 hover:bg-slate-50 cursor-pointer"
                         >
                             -
                         </button>
                         <input
-                            type="number"
-                            step="0.1"
-                            min="0.1"
-                            value={weight}
-                            onChange={(e) => setWeight(Math.max(0, parseFloat(e.target.value) || 0))}
+                            type="text"
+                            inputMode="decimal"
+                            autoComplete="off"
+                            value={weightInput}
+                            onFocus={(e) => {
+                                const input = e.currentTarget;
+                                setTimeout(() => {
+                                    try {
+                                        input.select();
+                                    } catch {}
+                                }, 50);
+                            }}
+                            onChange={(e) => {
+                                setWeightInput(cleanWeightInput(e.target.value));
+                            }}
                             className="h-10 flex-1 text-center font-mono font-bold text-slate-900 border border-[#EAE4D7] rounded-lg bg-[#FFFDF9]"
                         />
                         <button
                             type="button"
-                            onClick={() => setWeight((w) => Math.round((w + 0.5) * 10) / 10)}
-                            className="h-10 w-10 rounded-lg border border-[#EAE4D7] bg-white font-bold text-slate-800 hover:bg-slate-50"
+                            onClick={() => {
+                                const newW = Math.round((weight + 0.5) * 100) / 100;
+                                const sep = weightInput.includes(".") ? "." : ",";
+                                setWeightInput(String(newW).replace(".", sep));
+                            }}
+                            className="h-10 w-10 rounded-lg border border-[#EAE4D7] bg-white font-bold text-slate-800 hover:bg-slate-50 cursor-pointer"
                         >
                             +
                         </button>

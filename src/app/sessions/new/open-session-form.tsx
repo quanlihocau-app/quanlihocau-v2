@@ -16,16 +16,16 @@ import { useNetworkStatus } from "@/lib/network/use-network-status";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useToast } from "@/components/ui/toast";
 import { useFishingSpots, useFishingPackages } from "@/hooks/use-fishing-catalog";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 import {
     addQuickHutAction,
-    deleteQuickHutAction,
     addQuickPackageAction,
-    deleteQuickPackageAction,
     addQuickProductAction,
     addQuickFishTypeAction,
 } from "../quick-create-actions";
 import { RetailProduct } from "./retail-pos-form";
 import { BANK_CONFIG, generateVietQrUrl } from "@/lib/vietqr";
+import { CheckInTimeSection, type CheckInTimeState } from "./check-in-time-section";
 
 export interface SelectCustomer {
     id: string;
@@ -135,7 +135,6 @@ export function OpenSessionForm({
 }: OpenSessionFormProps) {
     const router = useRouter();
     const toast = useToast();
-    const queryClient = useQueryClient();
     const { isConnected, printSessionTicket } = usePrinter();
 
     // Customer state
@@ -150,6 +149,9 @@ export function OpenSessionForm({
     const [newCustomerPhone, setNewCustomerPhone] = useState("");
     const [customerError, setCustomerError] = useState("");
     const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+    // Tên & SĐT khách vãng lai nhanh (khi không tạo bản ghi khách hàng riêng)
+    const [guestName, setGuestName] = useState("");
+    const [guestPhone, setGuestPhone] = useState("");
 
     // SWR / TanStack Query Caching with LocalStorage Persistence
     useFishingSpots(initialHuts as unknown as import("@/hooks/use-fishing-catalog").FishingHut[]);
@@ -196,6 +198,33 @@ export function OpenSessionForm({
     const [splitBankAmount, setSplitBankAmount] = useState<number | "">("");
     const [transferConfirmed, setTransferConfirmed] = useState(false);
     const [tempOrderCode, setTempOrderCode] = useState("");
+
+    // Custom check-in time & overtime acknowledgment
+    const [checkInState, setCheckInState] = useState<CheckInTimeState | null>(null);
+    const [acknowledgedOvertime, setAcknowledgedOvertime] = useState(false);
+
+    const handleCloseConfirmModal = useCallback(() => {
+        if (!isSubmitting) setIsConfirmModalOpen(false);
+    }, [isSubmitting]);
+
+    const { onBackdropClick: onConfirmBackdropClick } = useModalDismiss({
+        isOpen: isConfirmModalOpen,
+        onClose: handleCloseConfirmModal,
+        closeOnEscape: !isSubmitting,
+    });
+
+    const handleCloseCheckoutModal = useCallback(() => {
+        if (!isSubmitting) {
+            setIsCheckoutModalOpen(false);
+            setIsConfirmModalOpen(true);
+        }
+    }, [isSubmitting]);
+
+    const { onBackdropClick: onCheckoutBackdropClick } = useModalDismiss({
+        isOpen: isCheckoutModalOpen,
+        onClose: handleCloseCheckoutModal,
+        closeOnEscape: !isSubmitting,
+    });
 
     // ── Offline & Network Synchronization State ──────────────────────────────
     const { isOnline } = useNetworkStatus();
@@ -346,6 +375,8 @@ export function OpenSessionForm({
         clearDraft();
         setSelectedHutIds([]);
         setSelectedCustomerId(null);
+        setGuestName("");
+        setGuestPhone("");
         setSelectedItems([]);
         setSelectedFishTypeId("");
         setNote("");
@@ -380,66 +411,6 @@ export function OpenSessionForm({
                   ? [...prev, hutId]
                   : prev,
         );
-    }
-
-    async function handleDeleteHut(hutId: string, hutName: string) {
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa/ẩn ô câu "${hutName}" khỏi danh mục không?`)) {
-            return;
-        }
-
-        const deletePromise = (async () => {
-            const res = await deleteQuickHutAction({ hutId });
-            if (!res.ok) {
-                if (res.redirectTo) {
-                    router.push(res.redirectTo);
-                }
-                throw new Error(res.error || "Không thể xóa ô câu.");
-            }
-            setHutList((prev) => prev.filter((item) => item.id !== hutId));
-            setSelectedHutIds((prev) => prev.filter((id) => id !== hutId));
-            queryClient.invalidateQueries({ queryKey: ["fishing-catalog", "spots"] });
-            return res.data;
-        })();
-
-        toast.promise(deletePromise, {
-            loading: "Đang xử lý xóa ô câu...",
-            success: `Đã xóa ô câu "${hutName}" khỏi danh mục!`,
-            error: (err: unknown) => {
-                const message = err instanceof Error ? err.message : "Thất bại: Có lỗi xảy ra!";
-                return `Thất bại: ${message}`;
-            },
-        });
-    }
-
-    async function handleDeletePackage(packageId: string, packageName: string) {
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa/ẩn gói câu "${packageName}" khỏi danh mục không?`)) {
-            return;
-        }
-
-        const deletePromise = (async () => {
-            const res = await deleteQuickPackageAction({ packageId });
-            if (!res.ok) {
-                if (res.redirectTo) {
-                    router.push(res.redirectTo);
-                }
-                throw new Error(res.error || "Không thể xóa gói câu.");
-            }
-            setPackageList((prev) => prev.filter((item) => item.id !== packageId));
-            if (selectedPackageId === packageId) {
-                setSelectedPackageId("");
-            }
-            queryClient.invalidateQueries({ queryKey: ["fishing-catalog", "packages"] });
-            return res.data;
-        })();
-
-        toast.promise(deletePromise, {
-            loading: "Đang xử lý xóa gói câu...",
-            success: `Đã xóa gói câu "${packageName}" khỏi danh mục!`,
-            error: (err: unknown) => {
-                const message = err instanceof Error ? err.message : "Thất bại: Có lỗi xảy ra!";
-                return `Thất bại: ${message}`;
-            },
-        });
     }
 
     const refreshHuts = useCallback(async () => {
@@ -557,8 +528,13 @@ export function OpenSessionForm({
             return;
         }
 
-        if (selectedHutIds.length === 0) {
+        if (!selectedHutIds.length) {
             setFormError("Vui lòng chọn ít nhất một ô câu.");
+            return;
+        }
+
+        if (checkInState && !checkInState.isValid) {
+            setFormError(checkInState.errorMessage || "Giờ vào không hợp lệ. Vui lòng kiểm tra lại.");
             return;
         }
 
@@ -568,6 +544,7 @@ export function OpenSessionForm({
         setSplitCashAmount("");
         setSplitBankAmount("");
         setTransferConfirmed(false);
+        setAcknowledgedOvertime(false);
         setIsConfirmModalOpen(true);
     }
 
@@ -586,10 +563,21 @@ export function OpenSessionForm({
                 },
                 body: JSON.stringify({
                     customerId: selectedCustomerId || null,
+                    ...((!selectedCustomerId && guestName.trim().length >= 2) ? {
+                        customer: {
+                            mode: "NEW",
+                            name: guestName.trim(),
+                            phone: guestPhone.trim() || null,
+                        },
+                    } : {}),
                     packageId: selectedPackageId,
                     hutIds: selectedHutIds,
                     paymentTiming: "POSTPAID",
                     paymentMode: "POSTPAID",
+                    customStartAt:
+                        checkInState?.isCustom && checkInState?.customStartAt
+                            ? checkInState.customStartAt
+                            : undefined,
                     items:
                         selectedItems.length > 0
                             ? selectedItems.map((it) => ({
@@ -685,6 +673,7 @@ export function OpenSessionForm({
                 customerName:
                     selectedCustomer?.name ||
                     result.customer?.name ||
+                    (guestName.trim().length >= 2 ? guestName.trim() : null) ||
                     "Khách lẻ",
                 customerPhone:
                     selectedCustomer?.phoneNormalized ||
@@ -697,6 +686,8 @@ export function OpenSessionForm({
             };
 
             clearDraft();
+            setGuestName("");
+            setGuestPhone("");
             setIsConfirmModalOpen(false);
             setIsSubmitting(false);
             toast.dismiss(loadingId);
@@ -825,10 +816,21 @@ export function OpenSessionForm({
                 },
                 body: JSON.stringify({
                     customerId: selectedCustomerId || null,
+                    ...((!selectedCustomerId && guestName.trim().length >= 2) ? {
+                        customer: {
+                            mode: "NEW",
+                            name: guestName.trim(),
+                            phone: guestPhone.trim() || null,
+                        },
+                    } : {}),
                     packageId: selectedPackageId,
                     hutIds: selectedHutIds,
                     paymentTiming: "PREPAID",
                     paymentMode: "PREPAID",
+                    customStartAt:
+                        checkInState?.isCustom && checkInState?.customStartAt
+                            ? checkInState.customStartAt
+                            : undefined,
                     payments: paymentsPayload,
                     items:
                         selectedItems.length > 0
@@ -927,6 +929,7 @@ export function OpenSessionForm({
                 customerName:
                     selectedCustomer?.name ||
                     result.customer?.name ||
+                    (guestName.trim().length >= 2 ? guestName.trim() : null) ||
                     "Khách lẻ",
                 customerPhone:
                     selectedCustomer?.phoneNormalized ||
@@ -939,6 +942,8 @@ export function OpenSessionForm({
             };
 
             clearDraft();
+            setGuestName("");
+            setGuestPhone("");
             setIsCheckoutModalOpen(false);
             setIsConfirmModalOpen(false);
             setIsSubmitting(false);
@@ -1139,6 +1144,28 @@ export function OpenSessionForm({
                     </div>
                 ) : (
                     <div className="space-y-2">
+                        {/* Ô nhập tên khách nhanh khi chọn Khách lẻ */}
+                        {!showQuickAddCustomer && (
+                            <div className="space-y-1.5">
+                                <Input
+                                    placeholder="Tên khách (nếu có)…"
+                                    value={guestName}
+                                    onChange={(e) => setGuestName(e.target.value)}
+                                />
+                                {guestName.trim().length > 0 && (
+                                    <Input
+                                        placeholder="Số điện thoại (tùy chọn)…"
+                                        value={guestPhone}
+                                        onChange={(e) => setGuestPhone(e.target.value)}
+                                        type="tel"
+                                        inputMode="tel"
+                                    />
+                                )}
+                                {guestName.trim().length > 0 && guestName.trim().length < 2 && (
+                                    <p className="text-[11px] text-amber-700">Tên khách phải có ít nhất 2 ký tự để lưu vào vé.</p>
+                                )}
+                            </div>
+                        )}
                         <Input
                             placeholder="Tìm theo tên hoặc số điện thoại..."
                             value={customerSearch}
@@ -1152,6 +1179,8 @@ export function OpenSessionForm({
                                         onClick={() => {
                                             setSelectedCustomerId(c.id);
                                             setCustomerSearch("");
+                                            setGuestName("");
+                                            setGuestPhone("");
                                         }}
                                         className="cursor-pointer p-3 text-xs hover:bg-[#F7F9F5] flex items-center justify-between transition-colors"
                                     >
@@ -1221,19 +1250,6 @@ export function OpenSessionForm({
                                         >
                                             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            title="Xóa ô này khỏi danh mục (Chỉ Chủ hồ / Quản lý)"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteHut(h.id, h.name);
-                                            }}
-                                            className="text-rose-600 hover:text-rose-800 p-0.5 rounded cursor-pointer transition-colors"
-                                        >
-                                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                                             </svg>
                                         </button>
                                     </span>
@@ -1370,19 +1386,6 @@ export function OpenSessionForm({
                                         <span className="text-xs font-bold font-mono text-[#246B38] tabular-nums">
                                             {formatPrice(p.priceVnd)}
                                         </span>
-                                        <button
-                                            type="button"
-                                            title="Xóa gói câu này khỏi danh mục (Chỉ Chủ hồ / Quản lý)"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeletePackage(p.id, p.name);
-                                            }}
-                                            className="p-1 text-slate-300 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                                        >
-                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                            </svg>
-                                        </button>
                                     </div>
                                 </div>
                             );
@@ -1391,10 +1394,23 @@ export function OpenSessionForm({
                 )}
             </Card>
 
-            {/* 4. GHI CHÚ VÉ CÂU */}
+            {/* 4. GIỜ VÀO TÙY CHỌN & XEM TRƯỚC THỜI GIAN CA CÂU */}
+            <CheckInTimeSection
+                durationMinutes={selectedPackage?.durationMinutes || 0}
+                packageName={selectedPackage?.name}
+                overtimeHourlyVnd={
+                    selectedPackage && "overtimeHourlyVnd" in selectedPackage
+                        ? Number((selectedPackage as { overtimeHourlyVnd?: number }).overtimeHourlyVnd) || 50000
+                        : 50000
+                }
+                hutCount={selectedHutIds.length || 1}
+                onStateChange={setCheckInState}
+            />
+
+            {/* 5. GHI CHÚ VÉ CÂU */}
             <Card className="space-y-2 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
                 <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                    4. Ghi chú vé câu (tùy chọn)
+                    5. Ghi chú vé câu (tùy chọn)
                 </label>
                 <Input
                     placeholder="Ví dụ: Khách quen, mượn cần câu số 2, cọc trước…"
@@ -1699,10 +1715,19 @@ export function OpenSessionForm({
                 variant="primary"
                 isLoading={isSubmitting}
                 loadingText="Đang tạo vé…"
-                disabled={isSubmitting || !isOnline || availableHuts.length === 0}
+                disabled={
+                    isSubmitting ||
+                    !isOnline ||
+                    availableHuts.length === 0 ||
+                    (checkInState ? !checkInState.isValid : false)
+                }
                 className="w-full shadow-md font-bold"
             >
-                {!isOnline ? "Mất mạng — Không thể mở vé" : "Tạo vé và mở ô"}
+                {!isOnline
+                    ? "Mất mạng — Không thể mở vé"
+                    : checkInState && !checkInState.isValid
+                    ? "Giờ vào không hợp lệ"
+                    : "Tạo vé và mở ô"}
             </Button>
         </form>
 
@@ -1785,8 +1810,11 @@ export function OpenSessionForm({
             {/* ========================================================================= */}
             {isConfirmModalOpen && (
                 <ModalPortal>
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 modal-backdrop-animate"
+                    onClick={onConfirmBackdropClick}
+                >
+                    <div className="relative w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4 modal-content-animate">
                         {/* Header */}
                         <div className="text-center space-y-1">
                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F3E5] text-[#246B38] text-xs font-bold uppercase tracking-wider">
@@ -1809,11 +1837,18 @@ export function OpenSessionForm({
                                 <span className="text-[#66716A]">Khách hàng:</span>
                                 <div className="text-right">
                                     <span className="font-bold text-[#17201A]">
-                                        {selectedCustomer?.name || "Khách lẻ"}
+                                        {selectedCustomer?.name ||
+                                            (guestName.trim().length >= 2 ? guestName.trim() : null) ||
+                                            "Khách lẻ"}
                                     </span>
                                     {selectedCustomer?.phoneNormalized && (
                                         <p className="text-[11px] font-mono text-[#66716A]">
                                             {selectedCustomer.phoneNormalized}
+                                        </p>
+                                    )}
+                                    {!selectedCustomer && guestName.trim().length >= 2 && guestPhone.trim() && (
+                                        <p className="text-[11px] font-mono text-[#66716A]">
+                                            {guestPhone.trim()}
                                         </p>
                                     )}
                                 </div>
@@ -1835,6 +1870,48 @@ export function OpenSessionForm({
                                     {selectedPackage?.name} ({formatDuration(selectedPackage?.durationMinutes || 0)})
                                 </span>
                             </div>
+
+                            {/* Giờ vào & Giờ ra dự kiến */}
+                            <div className="flex justify-between">
+                                <span className="text-[#66716A]">Giờ vào:</span>
+                                <span className="font-semibold text-[#17201A] text-right">
+                                    {checkInState?.startDate
+                                        ? `${checkInState.startDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })} · ${checkInState.startDate.toLocaleDateString("vi-VN")}`
+                                        : "Tự động chốt khi tạo vé"}
+                                    {checkInState?.isCustom && " (Tùy chỉnh)"}
+                                </span>
+                            </div>
+
+                            <div className="flex justify-between">
+                                <span className="text-[#66716A]">Giờ ra dự kiến:</span>
+                                <span className="font-bold text-[#246B38] text-right">
+                                    {checkInState?.plannedEndDate
+                                        ? `${checkInState.plannedEndDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })} · ${checkInState.plannedEndDate.toLocaleDateString("vi-VN")}`
+                                        : "—"}
+                                </span>
+                            </div>
+
+                            {/* Cảnh báo và xác nhận nếu vé đã quá giờ */}
+                            {checkInState?.isOvertime && (
+                                <div className="rounded-xl border border-rose-300 bg-rose-50 p-3 space-y-2 text-rose-900">
+                                    <div className="flex items-center gap-1.5 font-bold text-rose-800 text-xs">
+                                        <span>⚠️</span>
+                                        <span>Vé tạo ở trạng thái ĐÃ QUÁ GIỜ (+{checkInState.overtimeMinutes} phút)</span>
+                                    </div>
+                                    <p className="text-[11px] text-rose-800 leading-relaxed">
+                                        Giờ ra dự kiến đã trôi qua. Khi tạo thành công, vé sẽ được ghi nhận đã quá giờ và tự động tính phụ thu khi chốt ca.
+                                    </p>
+                                    <label className="flex items-center gap-2 cursor-pointer pt-1 border-t border-rose-200 text-xs font-bold">
+                                        <input
+                                            type="checkbox"
+                                            checked={acknowledgedOvertime}
+                                            onChange={(e) => setAcknowledgedOvertime(e.target.checked)}
+                                            className="h-4 w-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500"
+                                        />
+                                        <span>Tôi xác nhận khách đã vào câu và đã quá giờ</span>
+                                    </label>
+                                </div>
+                            )}
 
                             {selectedItems.length > 0 && (
                                 <div className="border-t border-dashed border-[#E3E8E3] pt-1.5 space-y-1">
@@ -1940,11 +2017,12 @@ export function OpenSessionForm({
                                     type="button"
                                     size="lg"
                                     variant="primary"
+                                    disabled={isSubmitting || (checkInState?.isOvertime && !acknowledgedOvertime)}
                                     onClick={() => {
                                         setIsConfirmModalOpen(false);
                                         setIsCheckoutModalOpen(true);
                                     }}
-                                    className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white"
+                                    className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white disabled:opacity-50"
                                 >
                                     💳 Thanh toán &amp; Bắt đầu câu
                                 </Button>
@@ -1955,11 +2033,18 @@ export function OpenSessionForm({
                                     variant="primary"
                                     isLoading={isSubmitting}
                                     loadingText="Đang mở ô &amp; bắt đầu…"
+                                    disabled={isSubmitting || (checkInState?.isOvertime && !acknowledgedOvertime)}
                                     onClick={handleStartPostpaidSession}
-                                    className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white"
+                                    className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white disabled:opacity-50"
                                 >
                                     🎣 Bắt đầu câu
                                 </Button>
+                            )}
+
+                            {checkInState?.isOvertime && !acknowledgedOvertime && (
+                                <p className="text-[11px] text-center text-rose-600 font-semibold">
+                                    Vui lòng tích chọn xác nhận vé quá giờ ở trên để tiếp tục.
+                                </p>
                             )}
 
                             <Button
@@ -1983,8 +2068,11 @@ export function OpenSessionForm({
             {/* ========================================================================= */}
             {isCheckoutModalOpen && (
                 <ModalPortal>
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-lg rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 modal-backdrop-animate"
+                    onClick={onCheckoutBackdropClick}
+                >
+                    <div className="relative w-full max-w-lg rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4 modal-content-animate">
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
                             <div className="flex items-center gap-2.5">
@@ -1996,7 +2084,7 @@ export function OpenSessionForm({
                                         Thanh toán vé câu (Thu trước)
                                     </h3>
                                     <p className="text-xs text-[#66716A]">
-                                        Ô câu: {hutList.filter((h) => selectedHutIds.includes(h.id)).map((h) => h.name).join(", ")} · {selectedCustomer?.name || "Khách lẻ"}
+                                        Ô câu: {hutList.filter((h) => selectedHutIds.includes(h.id)).map((h) => h.name).join(", ")} · {selectedCustomer?.name || (guestName.trim().length >= 2 ? guestName.trim() : null) || "Khách lẻ"}
                                     </p>
                                 </div>
                             </div>

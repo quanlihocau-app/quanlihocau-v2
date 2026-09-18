@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { GuideStep, ONBOARDING_STEPS } from "@/lib/guides/onboarding-data";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 interface OnboardingModalProps {
     isOpen?: boolean;
@@ -19,6 +20,7 @@ export function OnboardingModal({
     initialStepId = 1,
 }: OnboardingModalProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const filteredSteps: GuideStep[] = ONBOARDING_STEPS.filter((step) =>
         step.roles.includes(userRole),
     );
@@ -35,20 +37,26 @@ export function OnboardingModal({
     const totalSteps = filteredSteps.length;
     const progressPercent = Math.round(((currentStepIndex + 1) / totalSteps) * 100);
 
-    // Check auto-show on initial login if not seen before
+    // Check auto-show on initial login if not seen/dismissed before
     useEffect(() => {
         if (typeof window === "undefined") return;
 
-        const hasSeenOnboarding = localStorage.getItem("quanlihocau_onboarding_completed_v1");
-        if (!hasSeenOnboarding && controlledIsOpen === undefined) {
+        const hasCompleted = localStorage.getItem("quanlihocau_onboarding_completed_v1");
+        const hasDismissed = localStorage.getItem("quanlihocau_onboarding_dismissed_v1");
+        const isSensitivePosRoute =
+            pathname?.includes("/sessions/new") ||
+            pathname?.startsWith("/invoices") ||
+            pathname?.includes("/printer");
+
+        if (!hasCompleted && !hasDismissed && controlledIsOpen === undefined && !isSensitivePosRoute) {
             const timer = setTimeout(() => {
                 setInternalIsOpen(true);
             }, 800);
             return () => clearTimeout(timer);
         }
-    }, [controlledIsOpen]);
+    }, [controlledIsOpen, pathname]);
 
-    // Listen for custom trigger event (e.g. from header '?' button)
+    // Listen for custom trigger event (e.g. from header '?' button or /settings/guide)
     useEffect(() => {
         function handleOpenEvent(e: Event) {
             const customEvent = e as CustomEvent<{ stepId?: number }>;
@@ -66,6 +74,10 @@ export function OnboardingModal({
     }, [filteredSteps]);
 
     function handleClose() {
+        if (typeof window !== "undefined") {
+            // Persist dismissal so navigating between pages never re-triggers auto popup
+            localStorage.setItem("quanlihocau_onboarding_dismissed_v1", "true");
+        }
         setInternalIsOpen(false);
         if (controlledOnClose) controlledOnClose();
     }
@@ -73,6 +85,7 @@ export function OnboardingModal({
     function handleDismiss() {
         if (typeof window !== "undefined") {
             localStorage.setItem("quanlihocau_onboarding_completed_v1", "true");
+            localStorage.setItem("quanlihocau_onboarding_dismissed_v1", "true");
         }
         handleClose();
     }
@@ -102,16 +115,22 @@ export function OnboardingModal({
         }
     }
 
+    const { onBackdropClick } = useModalDismiss({
+        isOpen: isModalOpen,
+        onClose: handleClose,
+    });
+
     if (!isModalOpen || !activeStep) return null;
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs modal-backdrop-animate"
             role="dialog"
             aria-modal="true"
             aria-labelledby="guide-modal-title"
+            onClick={onBackdropClick}
         >
-            <div className="w-full max-w-lg rounded-2xl border border-[#E3E8E3] bg-white shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-page-enter">
+            <div className="w-full max-w-lg rounded-2xl border border-[#E3E8E3] bg-white shadow-2xl flex flex-col max-h-[92vh] overflow-hidden modal-content-animate">
                 {/* Modal Top Bar */}
                 <div className="border-b border-[#E3E8E3] bg-[#F7F9F5] px-5 py-3.5 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">

@@ -403,6 +403,40 @@ Có ba chế độ loại trừ nhau:
 - Hiển thị giờ vào/ra đến phút; dữ liệu gốc vẫn giữ độ chính xác timestamp, không âm thầm làm tròn để tính tiền.
 - Sửa giờ bắt đầu chỉ OWNER/CASHIER được cấp quyền, cần lý do và audit; server tính lại endTime theo quy tắc đã snapshot.
 
+#### 7.4.1 Giờ vào tùy chọn & Đồng hồ thời gian thực (Custom Check-in Time & Realtime Header Clock)
+
+1. **Mục giờ vào tại màn hình Tạo vé câu**:
+   - Giao diện: `[HH:mm] [Ngày vào] [⚡ Lấy giờ hiện tại]` và nút chuyển đổi chế độ `[↺ Chốt lúc tạo vé] / [✏️ Khách vào trước đó]`.
+   - **Mặc định**: Tự động chốt giờ bắt đầu khi nhân viên bấm tạo vé thành công; không lấy thời điểm mở form để tránh thiệt giờ của khách khi nhân viên mở form treo máy.
+   - **Nhập giờ tùy chọn**: Nhân viên được phép nhập giờ bắt đầu sớm hơn thời điểm hiện tại để ghi nhận chính xác trường hợp khách đã vào chòi câu trước rồi mới ra quầy làm vé.
+   - **Ngày vào**: Mặc định là ngày hôm nay. Cho phép chọn ngày trong quá khứ để xử lý trọn vẹn các ca câu qua đêm (ví dụ vào 22:30 hôm qua, làm vé lúc 01:00 hôm nay). Hệ thống tuyệt đối không tự đoán "hôm qua" khi giờ nhập lớn hơn giờ hiện tại mà phải căn cứ tường minh theo trường ngày nhân viên chọn.
+   - **Chặn giờ tương lai**: Không cho phép giờ vào nằm trong tương lai (cả phía giao diện và kiểm tra `VALIDATION_ERROR` phía máy chủ với dung sai 60 giây lệch đồng hồ).
+   - **Phân quyền**: Việc nhân viên nhập giờ vào lúc tạo vé mới **tuyệt đối không tự cấp quyền** sửa lại giờ của vé sau khi vé đã tạo xong.
+
+2. **Bản xem trước trực quan thời gian thực (Live Preview Box)**:
+   - Tự động hiển thị và cập nhật từng giây qua centralized ticker ngay khi nhân viên chọn gói câu:
+     - `Giờ vào: HH:mm — ngày DD/MM/YYYY`
+     - `Thời lượng: X giờ`
+     - `Giờ ra dự kiến: HH:mm — ngày DD/MM/YYYY` (luôn hiển thị rõ ngày ra, đặc biệt khi kết thúc sang ngày hôm sau kèm nhãn "· Hôm sau").
+     - `Đã câu: X giờ Y phút` (tính từ giờ vào đến hiện tại).
+     - `Còn lại: X giờ Y phút` (tính từ hiện tại đến giờ ra dự kiến).
+   - **Vé tạo khi đã quá giờ (Instant Overtime Ticket)**:
+     - Nếu nhân viên nhập giờ vào dẫn đến `Giờ ra dự kiến < Hiện tại`:
+       - Dòng Còn lại chuyển thành: `Quá giờ: +X giờ Y phút` (màu đỏ).
+       - Hiển thị hộp cảnh báo màu vàng/đỏ nêu rõ vé sẽ được ghi nhận ĐÃ QUÁ GIỜ ngay khi tạo kèm ước tính phụ thu theo đơn giá của hồ.
+       - Modal xác nhận vé bắt buộc nhân viên phải tích chọn xác nhận riêng: *"Tôi xác nhận khách đã vào câu và đã quá giờ"* mới cho phép gửi yêu cầu tạo vé.
+
+3. **Đồng hồ thời gian thực tại Header (`HeaderClock`)**:
+   - Định dạng hiển thị: `HH:mm:ss · DD/MM/YYYY` kèm nhãn `Giờ Việt Nam` (GMT+7, múi giờ `Asia/Ho_Chi_Minh`).
+   - Thiết kế tinh gọn, font số monospace tabular-nums, không che khuất tên hồ câu, nút kết nối mạng hay huy hiệu vai trò.
+   - Dùng chung nhịp đập 1.000ms từ `sessionTicker` (đã bù trừ `serverOffsetMs` từ `/api/ping`), tự động hiệu chỉnh ngay lập tức khi thiết bị mở lại sau khi ngủ/chạy ngầm (0 drift).
+   - Khoanh vùng render cô lập: Chỉ `HeaderClock` re-render mỗi giây, không gây re-render toàn bộ header, form tạo vé hay danh sách phiên câu.
+
+4. **Bảo tồn tài chính & Tính nhất quán**:
+   - Tái sử dụng trường `startAt` và `plannedEndAt` trên model `FishingSession`. Tuyệt đối không thay đổi `createdAt` (thời điểm bản ghi vật lý sinh ra trên DB).
+   - Ghi nhận kiểm toán: Lưu đầy đủ `isCustomStart`, `startAt`, `createdAt` vào `AuditEvent`.
+   - Đồng nhất tuyệt đối giữa: Danh sách đang câu, Chi tiết vé, Đồng hồ đếm ngược, Giờ ra dự kiến, Gia hạn, Tính phụ thu quá giờ, In vé và Hóa đơn quyết toán.
+
 ### 7.5 Bước 4 — Thu trước/Thu sau
 
 - `PREPAID`: cho nhập một hoặc nhiều payment đầu kỳ, tổng không âm và không vượt quy tắc hồ.

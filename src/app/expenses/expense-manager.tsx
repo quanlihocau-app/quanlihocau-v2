@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { InlineAlert } from "@/components/ui/inline-alert";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 export interface ExpenseItem {
     id: string;
@@ -77,6 +78,14 @@ export function ExpenseManager({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    const { onBackdropClick } = useModalDismiss({
+        isOpen: isModalOpen,
+        onClose: () => {
+            if (!isSubmitting) setIsModalOpen(false);
+        },
+        closeOnEscape: !isSubmitting,
+    });
 
     const numericAmount = parseInt(amountStr.replace(/\D/g, ""), 10) || 0;
 
@@ -285,8 +294,11 @@ export function ExpenseManager({
 
             {/* Add Expense Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 modal-backdrop-animate"
+                    onClick={onBackdropClick}
+                >
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-4 modal-content-animate">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between border-b border-[#E2DDD2] pb-3">
                             <div className="flex items-center gap-2">

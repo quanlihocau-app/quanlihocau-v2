@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 interface SubscriptionModalProps {
     isOpen: boolean;
@@ -28,6 +29,12 @@ function SubscriptionModalContent({
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [copiedField, setCopiedField] = useState<string | null>(null);
+
+    const { onBackdropClick } = useModalDismiss({
+        isOpen: true,
+        onClose,
+        closeOnEscape: !isLoading,
+    });
 
     // Order state
     const [orderData, setOrderData] = useState<{
@@ -146,8 +153,11 @@ function SubscriptionModalContent({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-            <div className="relative w-full max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border border-[#D9D2C8] my-8 animate-in fade-in zoom-in-95 duration-200">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto modal-backdrop-animate"
+            onClick={onBackdropClick}
+        >
+            <div className="relative w-full max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border border-[#D9D2C8] my-8 modal-content-animate">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-[#EBE6DF] pb-3.5 mb-4">
                     <div>

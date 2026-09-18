@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
@@ -5,11 +6,17 @@ import { InvoiceStatus, Role, SessionStatus } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
+import { privateRouteMetadata } from "@/lib/metadata";
 
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 // Import main client controller for session POS grid
 import { SessionsClient, type SerializableSession, type SerializablePackage } from "./sessions-client";
+
+export const metadata: Metadata = {
+    ...privateRouteMetadata,
+    title: "Sơ đồ hồ & Phiên câu",
+};
 
 export default async function SessionsPage() {
     const session = await getServerSession(authOptions);

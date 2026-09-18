@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 interface ProductItem {
     id: string;
@@ -73,6 +74,12 @@ export function ProductList({ products, canManage }: ProductListProps) {
             setEditError(null);
         }
     }
+
+    const { onBackdropClick: onEditBackdropClick } = useModalDismiss({
+        isOpen: Boolean(editingProduct),
+        onClose: closeEditModal,
+        closeOnEscape: !editLoading,
+    });
 
     async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -337,8 +344,11 @@ export function ProductList({ products, canManage }: ProductListProps) {
 
             {/* Edit Product Modal */}
             {editingProduct && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 modal-backdrop-animate"
+                    onClick={onEditBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4 modal-content-animate">
                         <div className="flex items-center justify-between border-b border-[#E2DDD2] pb-3">
                             <h3 className="text-base font-bold text-[#102A43]">
                                 Chỉnh sửa sản phẩm

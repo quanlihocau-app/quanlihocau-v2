@@ -12,6 +12,7 @@ import { InlineAlert } from "@/components/ui/inline-alert";
 import { usePrinter } from "@/lib/printing/use-printer";
 import { PaymentReceiptData } from "@/lib/printing/types";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 export interface RetailCustomer {
     id: string;
@@ -99,6 +100,12 @@ export function RetailPosForm({
     const [completedReceipt, setCompletedReceipt] =
         useState<PaymentReceiptData | null>(null);
     const [isPrinting, setIsPrinting] = useState(false);
+
+    const { onBackdropClick: onReceiptBackdropClick } = useModalDismiss({
+        isOpen: Boolean(completedReceipt),
+        onClose: resetForNewSale,
+        closeOnEscape: !isPrinting,
+    });
 
     const selectedCustomer = customerList.find(
         (c) => c.id === selectedCustomerId,
@@ -768,8 +775,11 @@ export function RetailPosForm({
 
             {/* BILL RECEIPT MODAL */}
             {completedReceipt && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-                    <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl border border-[#E3E8E3] space-y-4 max-h-[90vh] overflow-y-auto">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onReceiptBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl border border-[#E3E8E3] space-y-4 max-h-[90vh] overflow-y-auto modal-content-animate">
                         <div className="text-center space-y-1">
                             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EBF6ED] text-[#3E9B4F]">
                                 <svg

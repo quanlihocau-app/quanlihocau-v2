@@ -1,16 +1,23 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
+import type { Metadata } from "next";
 import { Role } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
+import { privateRouteMetadata } from "@/lib/metadata";
 
 import { CreateProductForm } from "./create-product-form";
 import { ProductList } from "./product-list";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+export const metadata: Metadata = {
+    ...privateRouteMetadata,
+    title: "Danh mục hàng hóa & Dịch vụ",
+};
 
 export default async function ProductsPage() {
     const session = await getServerSession(authOptions);

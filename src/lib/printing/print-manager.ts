@@ -161,27 +161,62 @@ class PrintManager {
 
     public async scanBluetooth(): Promise<PrinterDevice[]> {
         const plugin = getNativePlugin();
-        if (!plugin) {
-            if (!this.isNative()) {
-                throw new Error("Trình duyệt web chưa hỗ trợ quét Bluetooth trực tiếp. Vui lòng mở trên ứng dụng Android.");
+        if (plugin) {
+            this.status = "scanning";
+            this.notify();
+            try {
+                const res = await plugin.scanBluetooth();
+                this.status = "disconnected";
+                this.notify();
+                return res.devices || [];
+            } catch (err: unknown) {
+                this.status = "error";
+                this.notify();
+                const msg = err instanceof Error ? err.message : "Lỗi khi quét Bluetooth.";
+                throw new Error(msg);
             }
-            throw new Error("Không tìm thấy native plugin ThermalPrinter.");
         }
 
-        this.status = "scanning";
-        this.notify();
-
-        try {
-            const res = await plugin.scanBluetooth();
-            this.status = "disconnected";
+        // Web Bluetooth API Fallback (Chrome on Android / Windows / Mac)
+        if (typeof navigator !== "undefined" && "bluetooth" in navigator) {
+            this.status = "scanning";
             this.notify();
-            return res.devices || [];
-        } catch (err: unknown) {
-            this.status = "error";
-            this.notify();
-            const msg = err instanceof Error ? err.message : "Lỗi khi quét Bluetooth.";
-            throw new Error(msg);
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const navBt = (navigator as any).bluetooth;
+                const device = await navBt.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: [
+                        "000018f0-0000-1000-8000-00805f9b34fb",
+                        "e7810a71-73ae-499d-8c15-faa9aef0c3f2",
+                        "49535343-fe7d-4ae5-8fa9-9fafd205e455",
+                    ],
+                });
+                this.status = "disconnected";
+                this.notify();
+                if (device) {
+                    return [
+                        {
+                            id: device.id,
+                            name: device.name || "Máy in Bluetooth (RPP02N/MP210)",
+                            connectionType: "BLUETOOTH",
+                            address: device.id,
+                        },
+                    ];
+                }
+                return [];
+            } catch (err: unknown) {
+                this.status = "disconnected";
+                this.notify();
+                if (err instanceof Error && (err.name === "NotFoundError" || err.message.includes("User cancelled"))) {
+                    return [];
+                }
+                // Don't crash if browser restricts Bluetooth; let manual input handle it
+                return [];
+            }
         }
+
+        return [];
     }
 
     public async connectBluetooth(device: PrinterDevice): Promise<boolean> {

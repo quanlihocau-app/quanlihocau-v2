@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/tenant";
 import { OrdersAdminClient, OrderItem } from "./orders-admin-client";
+import { privateRouteMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+    ...privateRouteMetadata,
+    title: "Quản trị đơn thuê bao",
+};
 
 export default async function AdminOrdersPage() {
     await requireSuperAdmin();

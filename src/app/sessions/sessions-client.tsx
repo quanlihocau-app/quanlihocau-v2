@@ -15,6 +15,7 @@ import {
     formatOvertimeDuration,
 } from "./session-grid-card";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 import type { ActionPackage } from "./session-actions";
 
 const SettlementCheckoutModal = dynamic(
@@ -139,6 +140,11 @@ export function SessionsClient({
 
     // Modal Chi tiết phiên câu khi nhấn giữ
     const [detailSession, setDetailSession] = useState<SerializableSession | null>(null);
+
+    const { onBackdropClick: onDetailBackdropClick } = useModalDismiss({
+        isOpen: Boolean(detailSession),
+        onClose: () => setDetailSession(null),
+    });
 
     // ── Đồng hồ thời gian thực đồng bộ máy chủ để tính phụ thu quá giờ ───────
     const { isOnline, serverOffsetMs } = useNetworkStatus();
@@ -440,12 +446,13 @@ export function SessionsClient({
             {/* ── Modal Chi Tiết Phiên Câu Khi Nhấn Giữ (Long-Press Modal) ──────── */}
             {detailSession && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs modal-backdrop-animate"
                     role="dialog"
                     aria-modal="true"
                     aria-label="Chi tiết phiên câu"
+                    onClick={onDetailBackdropClick}
                 >
-                    <div className="w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] modal-content-animate">
                         {/* Header Modal */}
                         <div className="flex items-center justify-between border-b border-[#E3E8E3] bg-white px-4 py-3 shrink-0">
                             <div>

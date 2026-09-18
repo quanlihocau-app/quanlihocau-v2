@@ -148,7 +148,7 @@ export default function RegisterPage() {
                         Tạo hồ câu mới
                     </h1>
                     <p className="mt-1 text-xs text-[#66716A]">
-                        Tài khoản đăng ký sẽ là Chủ hồ (OWNER) có toàn quyền quản trị.
+                        Tài khoản đăng ký là Chủ hồ có toàn quyền quản lý hồ câu và phân quyền nhân viên.
                     </p>
                     <p className="mt-1.5 text-[11px] leading-relaxed text-[#66716A]">
                         Vui lòng nhập đúng họ tên và số điện thoại đang sử dụng để được hỗ trợ khi cần. Không đăng ký thông tin giả hoặc tạo nhiều tài khoản.
@@ -239,6 +239,18 @@ export default function RegisterPage() {
                         minLength={2}
                         disabled={isSubmitting}
                     />
+
+                    <p className="text-[11px] leading-relaxed text-[#766F67] text-center pt-1">
+                        Bằng việc bấm Tạo hồ câu, bạn đồng ý với{" "}
+                        <Link href="/dieu-khoan" target="_blank" className="font-semibold text-[#246B38] underline">
+                            Điều khoản dịch vụ
+                        </Link>{" "}
+                        và{" "}
+                        <Link href="/chinh-sach-bao-mat" target="_blank" className="font-semibold text-[#246B38] underline">
+                            Chính sách bảo mật
+                        </Link>{" "}
+                        của chúng tôi.
+                    </p>
 
                     <Button
                         type="submit"

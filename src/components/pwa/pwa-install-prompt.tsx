@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 
 interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>;
@@ -8,6 +9,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PwaInstallPrompt() {
+    const pathname = usePathname();
     const isStandalone = useSyncExternalStore(
         (callback) => {
             const mql = window.matchMedia("(display-mode: standalone)");
@@ -34,18 +36,27 @@ export function PwaInstallPrompt() {
     const [isOpen, setIsOpen] = useState(false);
     const [showDetailGuide, setShowDetailGuide] = useState(false);
 
+    // Routes where bottom banner must never obstruct action buttons or technical setup
+    const isOperationalRoute =
+        pathname?.includes("/settings/printer") ||
+        pathname?.includes("/sessions/new") ||
+        pathname?.startsWith("/invoices");
+
     useEffect(() => {
         // 1. If already running in standalone mode (installed), do not show prompt
         if (isStandalone) {
             return;
         }
 
-        // 2. Check dismissal in localStorage (show once per 7 days if dismissed)
+        // 2. Check dismissal in localStorage (remember user choice)
         const dismissedAt = localStorage.getItem("pwa_install_dismissed_at");
-        const sevenDays = 7 * 24 * 60 * 60 * 1000;
-        const recentlyDismissed = dismissedAt && Date.now() - Number(dismissedAt) < sevenDays;
+        const dismissedForever = localStorage.getItem("pwa_install_dismissed_permanently");
+        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+        const recentlyDismissed =
+            dismissedForever === "true" ||
+            (dismissedAt && Date.now() - Number(dismissedAt) < thirtyDays);
 
-        if (!recentlyDismissed) {
+        if (!recentlyDismissed && !isOperationalRoute) {
             // Give user 3 seconds on the page before gently presenting the install banner
             const timer = setTimeout(() => {
                 setIsOpen(true);
@@ -57,7 +68,7 @@ export function PwaInstallPrompt() {
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e as BeforeInstallPromptEvent);
-            if (!recentlyDismissed) {
+            if (!recentlyDismissed && !isOperationalRoute) {
                 setIsOpen(true);
             }
         };
@@ -72,10 +83,11 @@ export function PwaInstallPrompt() {
             window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
             window.removeEventListener("open-pwa-install-guide", handleOpenGuide);
         };
-    }, []);
+    }, [isOperationalRoute, isStandalone]);
 
     const handleDismiss = () => {
         localStorage.setItem("pwa_install_dismissed_at", String(Date.now()));
+        localStorage.setItem("pwa_install_dismissed_permanently", "true");
         setIsOpen(false);
         setShowDetailGuide(false);
     };
@@ -94,7 +106,7 @@ export function PwaInstallPrompt() {
     };
 
     // If already installed or banner not open, render nothing (unless user manually opened guide via event)
-    if (isStandalone || (!isOpen && !showDetailGuide)) return null;
+    if (isStandalone || (!isOpen && !showDetailGuide) || (isOperationalRoute && !showDetailGuide)) return null;
 
     return (
         <>
@@ -150,11 +162,11 @@ export function PwaInstallPrompt() {
             {/* Detailed Guide Modal (especially useful for iOS or manual trigger) */}
             {showDetailGuide && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 modal-backdrop-animate"
                     onClick={() => setShowDetailGuide(false)}
                 >
                     <div
-                        className="relative w-full max-w-sm rounded-3xl border border-emerald-900/40 bg-[#082618] p-5 text-white shadow-2xl space-y-4"
+                        className="relative w-full max-w-sm rounded-3xl border border-emerald-900/40 bg-[#082618] p-5 text-white shadow-2xl space-y-4 modal-content-animate"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}

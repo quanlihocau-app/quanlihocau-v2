@@ -72,6 +72,12 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                         ) : (
                             <>
                                 <Link
+                                    href="/bang-gia"
+                                    className="hidden sm:inline-flex min-h-9.5 items-center justify-center rounded-xl px-2.5 text-xs font-bold text-[#D5E5D1] hover:text-white transition-all"
+                                >
+                                    Bảng giá
+                                </Link>
+                                <Link
                                     href="/login"
                                     className="inline-flex min-h-9.5 items-center justify-center rounded-xl border border-[#246B38] bg-[#0A2A1A] px-3 sm:px-3.5 text-xs font-bold text-[#D5E5D1] hover:text-white hover:bg-[#123E27] transition-all"
                                 >
@@ -82,7 +88,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                     className="inline-flex min-h-9.5 items-center justify-center gap-1.5 rounded-xl bg-[#4F9D5A] px-3.5 sm:px-4 text-xs font-black text-white hover:bg-[#3D8547] transition-all shadow-md shadow-[#4F9D5A]/25"
                                 >
                                     <span>Dùng miễn phí</span>
-                                    <span className="hidden sm:inline">30 ngày</span>
+                                    <span className="hidden sm:inline">7 ngày</span>
                                     <span>→</span>
                                 </Link>
                             </>
@@ -131,7 +137,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                         href={isLoggedIn ? "/sessions" : "/register"}
                                         className="inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-7 py-3.5 text-sm sm:text-base font-black text-white hover:bg-[#3D8547] shadow-xl shadow-[#4F9D5A]/35 active:scale-95 transition-all text-center"
                                     >
-                                        <span>{isLoggedIn ? "Vào ứng dụng ngay" : "Bắt đầu dùng thử miễn phí 30 ngày"}</span>
+                                        <span>{isLoggedIn ? "Vào ứng dụng ngay" : "Bắt đầu dùng thử miễn phí 7 ngày"}</span>
                                         <span>→</span>
                                     </Link>
                                     <Link
@@ -144,7 +150,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
 
                                 {/* Reassurance Tagline */}
                                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-3 gap-y-1 text-xs text-[#52D879] font-semibold pt-0.5">
-                                    <span>🎁 Miễn phí 30 ngày</span>
+                                    <span>🎁 Miễn phí 7 ngày</span>
                                     <span>•</span>
                                     <span>⚡ Kích hoạt 30 giây</span>
                                     <span>•</span>
@@ -451,7 +457,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                         vận hành nhàn và rõ ràng hơn?
                                     </h2>
                                     <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
-                                        Đăng ký ngay tài khoản Chủ hồ để trải nghiệm 30 ngày đầy đủ tính năng: tạo vé câu, sơ đồ chòi, đếm giờ tự động, bán hàng quầy và xem báo cáo doanh thu từ xa.
+                                        Đăng ký ngay tài khoản Chủ hồ để trải nghiệm 7 ngày đầy đủ tính năng: tạo vé câu, sơ đồ chòi, đếm giờ tự động, bán hàng quầy và xem báo cáo doanh thu từ xa.
                                     </p>
                                     <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 pt-1 text-xs text-[#A8C9B4]">
                                         <span className="flex items-center gap-1.5">
@@ -474,7 +480,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                         href={isLoggedIn ? "/sessions" : "/register"}
                                         className="inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-7 py-3.5 text-sm sm:text-base font-black text-white hover:bg-[#3D8547] shadow-xl shadow-[#4F9D5A]/40 active:scale-95 transition-all text-center"
                                     >
-                                        <span>{isLoggedIn ? "Vào ứng dụng ngay →" : "Đăng ký dùng miễn phí 30 ngày →"}</span>
+                                        <span>{isLoggedIn ? "Vào ứng dụng ngay →" : "Đăng ký dùng miễn phí 7 ngày →"}</span>
                                     </Link>
                                     <Link
                                         href={isLoggedIn ? "/sessions" : "/login"}
@@ -633,7 +639,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                         href={isLoggedIn ? "/sessions" : "/register"}
                                         className="w-full sm:w-auto inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-8 py-3.5 text-sm sm:text-base font-black text-white hover:bg-[#3D8547] shadow-xl shadow-[#4F9D5A]/35 active:scale-95 transition-all text-center"
                                     >
-                                        <span>{isLoggedIn ? "Vào ứng dụng ngay →" : "Đăng ký dùng thử miễn phí 30 ngày →"}</span>
+                                        <span>{isLoggedIn ? "Vào ứng dụng ngay →" : "Đăng ký dùng thử miễn phí 7 ngày →"}</span>
                                     </Link>
 
                                     <Link
@@ -685,9 +691,25 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                         <span>•</span>
                         <span>Hồ đông vẫn nhàn, tiền hàng vẫn rõ</span>
                     </div>
-                    <div className="flex flex-wrap items-center justify-center gap-4">
+                    <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-4">
                         <Link href="/register" className="text-[#52D879] font-bold hover:underline">
-                            Dùng thử miễn phí
+                            Dùng thử 7 ngày
+                        </Link>
+                        <span>•</span>
+                        <Link href="/bang-gia" className="hover:text-white transition-colors font-semibold">
+                            Bảng giá
+                        </Link>
+                        <span>•</span>
+                        <Link href="/thiet-bi-may-in" className="hover:text-white transition-colors font-semibold">
+                            Máy in & Thiết bị
+                        </Link>
+                        <span>•</span>
+                        <Link href="/dieu-khoan" className="hover:text-white transition-colors">
+                            Điều khoản
+                        </Link>
+                        <span>•</span>
+                        <Link href="/chinh-sach-bao-mat" className="hover:text-white transition-colors">
+                            Bảo mật
                         </Link>
                         <span>•</span>
                         <Link href="/login" className="hover:text-white transition-colors font-semibold">
@@ -695,16 +717,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                         </Link>
                         <span>•</span>
                         <a href="tel:0855550813" className="hover:text-[#52D879] transition-colors">
-                            Hotline: 0855 550 813
-                        </a>
-                        <span>•</span>
-                        <a
-                            href="https://zalo.me/0855550813"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-[#52D879] transition-colors"
-                        >
-                            Zalo
+                            0855 550 813
                         </a>
                     </div>
                 </div>

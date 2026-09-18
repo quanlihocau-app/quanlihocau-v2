@@ -1,11 +1,18 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireSuperAdmin } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { SubscriptionStatus } from "@/generated/prisma/client";
 import { UserListItem, UserAdminStats } from "./types";
 import { UsersAdminClient } from "./users-admin-client";
+import { privateRouteMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+    ...privateRouteMetadata,
+    title: "Quản trị người dùng",
+};
 
 export default async function AdminUsersPage() {
     try {

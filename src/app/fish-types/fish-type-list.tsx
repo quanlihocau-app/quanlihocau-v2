@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 export interface FishTypeItem {
     id: string;
@@ -79,6 +80,18 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
             setDeactivateError(null);
         }
     }
+
+    const { onBackdropClick: onEditBackdropClick } = useModalDismiss({
+        isOpen: Boolean(editingItem),
+        onClose: closeEditModal,
+        closeOnEscape: !editLoading,
+    });
+
+    const { onBackdropClick: onDeactivateBackdropClick } = useModalDismiss({
+        isOpen: Boolean(deactivatingItem),
+        onClose: closeDeactivateModal,
+        closeOnEscape: !deactivateLoading,
+    });
 
     async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -325,8 +338,11 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
 
             {/* Edit Modal (Flat Navy/Blue styling, 44px buttons, 6px radius) */}
             {editingItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-                    <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-4 animate-in zoom-in-95 duration-150">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 modal-backdrop-animate"
+                    onClick={onEditBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-4 modal-content-animate">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <h3 className="text-base font-bold text-[#0f172a]">
                                 Chỉnh sửa loại cá
@@ -424,8 +440,11 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
 
             {/* Deactivate Confirm Modal (Flat, Clean, Confirmation) */}
             {deactivatingItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-                    <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-4 animate-in zoom-in-95 duration-150">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 modal-backdrop-animate"
+                    onClick={onDeactivateBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-4 modal-content-animate">
                         <div className="flex items-start gap-3">
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-rose-50 text-rose-600 border border-rose-200">
                                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

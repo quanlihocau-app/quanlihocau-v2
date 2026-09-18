@@ -33,7 +33,7 @@ function calculateEstimatedTotalVnd(
         return null;
     }
 
-    const str = String(weightInput).trim();
+    const str = String(weightInput).trim().replace(",", ".");
     if (!/^\d+(\.\d+)?$/.test(str)) {
         return null;
     }
@@ -79,7 +79,10 @@ export function CreateBuybackForm({ fishTypes }: CreateBuybackFormProps) {
 
     const selectedFishType = fishTypes.find((ft) => ft.id === fishTypeId);
 
-    const numWeight = typeof weight === "string" ? Number(weight) : weight;
+    const numWeight =
+        typeof weight === "string"
+            ? Number(weight.trim().replace(",", "."))
+            : weight;
     const estimatedTotal = selectedFishType
         ? calculateEstimatedTotalVnd(weight, selectedFishType.pricePerKg)
         : null;

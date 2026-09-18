@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 export interface CustomerItem {
     id: string;
@@ -186,6 +187,12 @@ export function CustomerManager({
         setEditPhone("");
         setEditError("");
     }
+
+    const { onBackdropClick: onEditBackdropClick } = useModalDismiss({
+        isOpen: Boolean(editingCustomer),
+        onClose: closeEditModal,
+        closeOnEscape: !isEditing,
+    });
 
     async function handleEdit(e: FormEvent) {
         e.preventDefault();
@@ -467,8 +474,11 @@ export function CustomerManager({
 
             {/* Edit Modal */}
             {editingCustomer ? (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 modal-backdrop-animate"
+                    onClick={onEditBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4 modal-content-animate">
                         <div className="flex items-center justify-between border-b border-[#E2DDD2] pb-3">
                             <h3 className="text-base font-bold text-[#102A43]">
                                 Sửa thông tin khách hàng
@@ -521,7 +531,7 @@ export function CustomerManager({
                                     variant="primary"
                                     isLoading={isEditing}
                                     loadingText="Đang lưu…"
-                                    className="flex-[2]"
+                                    className="flex-2"
                                 >
                                     Lưu thay đổi
                                 </Button>

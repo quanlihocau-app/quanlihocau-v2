@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 export interface Product {
     id: string;
@@ -60,6 +61,12 @@ export function AddProductModal({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [submitSuccess, setSubmitSuccess] = useState("");
+
+    const { onBackdropClick } = useModalDismiss({
+        isOpen: true,
+        onClose,
+        disabled: isSubmitting,
+    });
 
     const searchRef = useRef<HTMLInputElement>(null);
 
@@ -163,12 +170,10 @@ export function AddProductModal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center"
-            onClick={(e) => {
-                if (e.target === e.currentTarget && !isSubmitting) onClose();
-            }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center modal-backdrop-animate"
+            onClick={onBackdropClick}
         >
-            <div className="add-product-sheet">
+            <div className="add-product-sheet modal-content-animate">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
                     <div className="flex items-center gap-2">

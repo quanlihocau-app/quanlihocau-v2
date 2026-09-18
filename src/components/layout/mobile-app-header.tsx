@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { OnboardingModal, openGuideModal } from "@/components/guide/onboarding-modal";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
+import { HeaderClock } from "./header-clock";
 
 interface MobileAppHeaderProps {
     lakeName: string;
@@ -16,15 +17,6 @@ interface MobileAppHeaderProps {
     isSupportMode?: boolean;
 }
 
-function formatViDate(date: Date): string {
-    const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-    const dow = days[date.getDay()];
-    const d = String(date.getDate()).padStart(2, "0");
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const y = date.getFullYear();
-    return `${dow}, ${d}/${m}/${y}`;
-}
-
 export function MobileAppHeader({
     lakeName,
     roleBadge,
@@ -32,41 +24,27 @@ export function MobileAppHeader({
     isSupportMode,
 }: MobileAppHeaderProps) {
     const router = useRouter();
-    const [dateStr, setDateStr] = useState<string>(() => formatViDate(new Date()));
     const { isOnline: autoOnline, isReconnecting } = useNetworkStatus();
     const effectiveOnline = isOnlineProp !== undefined ? isOnlineProp : autoOnline;
-
-    // update midnight
-    useEffect(() => {
-        const tick = () => setDateStr(formatViDate(new Date()));
-        tick();
-        const now = new Date();
-        const msToMidnight =
-            new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime();
-        const t = setTimeout(() => {
-            tick();
-        }, msToMidnight);
-        return () => clearTimeout(t);
-    }, []);
 
     return (
         <>
             <header
                 style={{ paddingTop: "max(12px, env(safe-area-inset-top, 12px))" }}
-                className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E3E8E3] bg-white/95 px-4 pb-3 backdrop-blur-md shrink-0"
+                className="sticky top-0 z-30 flex items-center justify-between border-b border-[#E3E8E3] bg-white/95 px-4 pb-3 backdrop-blur-md shrink-0 gap-3"
             >
-                {/* Lake name & Avatar */}
-                <div className="flex items-center gap-3 min-w-0">
+                {/* Lake name & Avatar & Realtime Clock */}
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#E8F3E5] font-bold text-[#246B38] border border-[#D5E5D1] shadow-2xs">
                         {lakeName ? lakeName.slice(0, 2).toUpperCase() : "HC"}
                     </div>
-                    <div className="min-w-0">
-                        <h2 className="text-[15px] font-bold text-[#17201A] leading-tight truncate">
+                    <div className="min-w-0 flex-1">
+                        <h2 className="text-[14px] sm:text-[15px] font-bold text-[#17201A] leading-tight truncate">
                             {lakeName}
                         </h2>
-                        <p className="text-[11px] font-medium text-[#66716A] leading-tight mt-0.5">
-                            {dateStr}
-                        </p>
+                        <div className="mt-0.5">
+                            <HeaderClock />
+                        </div>
                     </div>
                 </div>
 

@@ -55,7 +55,7 @@ export function BottomSheet({
 
     const modalContent = (
         <div
-            className={`fixed inset-0 z-100 flex justify-center bg-black/60 backdrop-blur-xs transition-opacity duration-200 ${
+            className={`fixed inset-0 z-100 flex justify-center bg-black/60 backdrop-blur-xs modal-backdrop-animate ${
                 isCenter ? "items-center p-3 sm:p-4" : "items-end"
             }`}
             onClick={(e) => {
@@ -65,9 +65,9 @@ export function BottomSheet({
             role="dialog"
         >
             <div
-                className={`relative flex max-h-[90dvh] w-full max-w-md flex-col bg-white shadow-2xl transition-all duration-200 ${
+                className={`relative flex max-h-[90dvh] w-full max-w-md flex-col bg-white shadow-2xl ${
                     isCenter
-                        ? "rounded-3xl border border-[#E3E8E3] animate-in fade-in zoom-in-95"
+                        ? "rounded-3xl border border-[#E3E8E3] modal-content-animate"
                         : "rounded-t-[28px] border-t border-[#E3E8E3] shadow-sheet animate-page-enter"
                 } ${className}`}
                 onClick={(e) => e.stopPropagation()}

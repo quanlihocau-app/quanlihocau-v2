@@ -11,6 +11,9 @@
   --ring: #4F9D5A;
   --radius: 1rem;
 
+  /* Typography: Be Vietnam Pro với fallback tiếng Việt an toàn */
+  --font-sans: var(--font-be-vietnam-pro), "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+
   /* Modern Clean Google / M3 Semantic Palette */
   --color-primary: #4F9D5A;
   --color-primary-dark: #246B38;
@@ -34,7 +37,7 @@
 /* Material 3 / Modern Clean POS Shell styling */
 .luxury-pos {
   background: #F0F4EF !important;
-  font-family: var(--font-be-vietnam-pro), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   color: #17201A;
   padding: 16px 8px;
 }
@@ -142,12 +145,18 @@ body {
   background-size: cover;
   background-attachment: fixed;
   color: var(--foreground);
-  font-family: var(--font-be-vietnam-pro), "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Phân cấp tiêu đề: weight đậm nổi bật, không thay đổi size/layout */
+h1 { font-weight: 800; }
+h2 { font-weight: 700; }
+h3 { font-weight: 700; }
+h4, h5, h6 { font-weight: 600; }
 
 /* Touch targets: 48px minimum height */
 .min-touch-target {
@@ -396,9 +405,37 @@ body {
   will-change: transform, opacity;
 }
 
-/* Instant active tactile feel for all interactive links and buttons */
-a, button, [role="button"] {
+/* Instant active tactile feel & eliminate 300ms mobile tap delay */
+a, button, [role="button"], input, select, textarea {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Snappy, GPU-accelerated Modal & Popup Animations */
+.modal-backdrop-animate {
+  animation: modal-backdrop-in 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity;
+}
+
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content-animate {
+  animation: modal-scale-in 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes modal-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* -------------------------------------------------------------------------- */

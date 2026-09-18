@@ -4,13 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-interface Product {
-    id: string;
-    sku: string | null;
-    name: string;
-    priceVnd: number;
-}
+import { useProducts, type CachedProduct as Product } from "@/hooks/use-products";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 export interface ActiveSession {
     id: string;
@@ -70,9 +65,10 @@ function SessionDropdownItem({ session }: { session: ActiveSession }) {
 export function SalesPos({ activeSessions }: SalesPosProps) {
     const router = useRouter();
 
-    const [products, setProducts] = useState<Product[]>([]);
-    const [isLoadingProducts, setIsLoadingProducts] = useState(true);
-    const [loadError, setLoadError] = useState("");
+    const { data: cachedProducts, isLoading: isQueryLoading, error: queryError } = useProducts();
+    const products = cachedProducts ?? [];
+    const isLoadingProducts = isQueryLoading && products.length === 0;
+    const loadError = queryError ? (queryError instanceof Error ? queryError.message : "Không thể kết nối đến máy chủ.") : "";
     const [search, setSearch] = useState("");
 
     // POS Modes: "SESSION" (Vé đang câu) or "RETAIL" (Phiếu tạm)
@@ -94,29 +90,10 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
         invoiceId?: string;
     } | null>(null);
 
-    // Fetch products
-    useEffect(() => {
-        let cancelled = false;
-        fetch("/api/products")
-            .then((r) => r.json())
-            .then((data: { products?: Product[]; error?: string }) => {
-                if (cancelled) return;
-                if (data.error) {
-                    setLoadError(data.error);
-                } else {
-                    setProducts(data.products ?? []);
-                }
-            })
-            .catch(() => {
-                if (!cancelled) setLoadError("Không thể kết nối đến máy chủ.");
-            })
-            .finally(() => {
-                if (!cancelled) setIsLoadingProducts(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    const { onBackdropClick: onSuccessModalBackdropClick } = useModalDismiss({
+        isOpen: Boolean(successModal?.isOpen),
+        onClose: () => setSuccessModal(null),
+    });
 
     // Filter products
     const filteredProducts = products.filter((p) =>
@@ -632,8 +609,11 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
 
             {/* Success Modal */}
             {successModal?.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-                    <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-[#E3E8E3] space-y-4 text-center">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onSuccessModalBackdropClick}
+                >
+                    <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-[#E3E8E3] space-y-4 text-center modal-content-animate">
                         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EBF6ED] text-[#3E9B4F]">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
