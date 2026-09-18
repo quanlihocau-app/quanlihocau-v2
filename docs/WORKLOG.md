@@ -47,7 +47,7 @@
 - **Unit Test Suite (`tests/test-account-classification.test.mjs`)**:
   - Kiểm thử 2 ca test chuyên sâu cho `isTestLake` và `isTestUser`, đạt 100% PASS.
 
-### Nhóm 5: Pháp Lý, Bảo Mật Dữ Liệu & Hướng Dẫn Thiết Bị Máy In (MỚI HOÀN THÀNH)
+### Nhóm 5: Pháp Lý, Bảo Mật Dữ Liệu & Hướng Dẫn Thiết Bị Máy In (HOÀN THÀNH)
 - **Trang Điều khoản dịch vụ (`src/app/dieu-khoan/page.tsx`)**:
   - Xuất bản trang tĩnh chuẩn SEO, nêu rõ chu kỳ 30 ngày, 7 ngày dùng thử miễn phí, thanh toán VietQR Techcombank không tự trừ tiền, và chính sách bảo lưu dữ liệu tối thiểu 30 ngày sau khi hết hạn để không mất lịch sử.
 - **Trang Chính sách bảo mật (`src/app/chinh-sach-bao-mat/page.tsx`)**:
@@ -60,6 +60,21 @@
 - **Cập nhật Sitemap & Footer (`sitemap.ts`, `official-landing-page.tsx`)**:
   - Bổ sung 3 URL công khai vào sitemap (`/thiet-bi-may-in`, `/dieu-khoan`, `/chinh-sach-bao-mat`).
   - Thêm link điều hướng đến các trang mới vào chân trang Landing Page.
+
+### Nhóm 6: Tối Ưu & Mở Rộng Kết Nối Máy In Nhiệt Bluetooth (MỚI HOÀN THÀNH)
+- **Hỗ trợ thực tế dòng máy in MP210 / RPP02N (58mm Thermal Printer)**:
+  - Khách hàng cung cấp tờ Self-Test thực tế từ máy in nhiệt di động (`58mm Thermal Printer`, Model: `MP210`, Bluetooth NAME: `RPP02N`, PIN: `0000`, MAC: `86-67-7A-E1-7F-87`, CMD Type: `ESC`).
+- **Nâng cấp `src/lib/printing/print-manager.ts`**:
+  - Bổ sung Web Bluetooth API fallback (`navigator.bluetooth.requestDevice`) cho trình duyệt Chrome trên máy tính/Android với bộ lọc dịch vụ in nhiệt ESC/POS.
+  - Tự động fallback mượt mà không văng lỗi khi chạy trên trình duyệt web, cho phép người dùng lưu cấu hình thiết bị để in trên app hoặc quầy.
+- **Nâng cấp giao diện cài đặt máy in (`src/app/settings/printer-settings.tsx`)**:
+  - Thiết kế lại hộp thoại kết nối Bluetooth với 3 tab trực quan:
+    1. **🔍 Quét tự động**: Quét thiết bị ghép đôi trên Android / Web Bluetooth.
+    2. **⚡ Mẫu sẵn & Nhập tay**: Cung cấp nút chọn nhanh 1-chạm mẫu **MP210 / RPP02N (58mm)**, tự động điền Tên (`RPP02N`), Địa chỉ MAC (`86-67-7A-E1-7F-87`), Khổ giấy `58mm`, và lưu kết nối ngay. Hỗ trợ thêm mẫu XP-58IIH và PT-210.
+    3. **📋 Đọc tờ Self-Test**: Mô phỏng trực quan tờ in kiểm tra thông số máy in, hướng dẫn cách bấm giữ nút **FEED** + **POWER** để in tờ thông số, đọc dòng `NAME: RPP02N`, mã PIN `0000` và địa chỉ MAC.
+- **Cập nhật tài liệu thiết bị (`src/app/thiet-bi-may-in/page.tsx`)**:
+  - Bổ sung dòng `MP210 / RPP02N (58mm Thermal Printer)` vào danh mục máy in đã kiểm chứng.
+  - Bổ sung Phần 3: Hướng dẫn chi tiết từng bước kết nối máy in Bluetooth mini cầm tay cho nhân viên đi quanh hồ.
 
 ---
 
@@ -78,3 +93,4 @@
 ## 4. Kế Hoạch Bước Kế Tiếp
 - Rà soát các thông điệp cảnh báo nghiệp vụ và tối ưu UX quầy khi in bill POS nhiều liên.
 - Giữ nguyên toàn bộ mã nguồn trên nhánh `feature/saas-hardening-seo-ux` để Ban Quản trị nghiệm thu trước khi merge.
+

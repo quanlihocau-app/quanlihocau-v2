@@ -119,7 +119,13 @@ export default function PrinterDevicesPage() {
                                         <td className="p-3 text-blue-700 font-bold">Tương thích tốt</td>
                                     </tr>
                                     <tr className="hover:bg-[#FDF9F0]/60">
-                                        <td className="p-3 font-bold text-[#102A43]">Máy in mini Bluetooth K58 (XP-58IIH)</td>
+                                        <td className="p-3 font-bold text-[#102A43]">MP210 / RPP02N (58mm Thermal Printer)</td>
+                                        <td className="p-3">K58 (58mm, 32 ký tự)</td>
+                                        <td className="p-3">Bluetooth &amp; USB (Baud 115200)</td>
+                                        <td className="p-3 text-emerald-700 font-bold">Rất khuyên dùng (Cầm tay di động, PIN: 0000, lệnh ESC)</td>
+                                    </tr>
+                                    <tr className="hover:bg-[#FDF9F0]/60">
+                                        <td className="p-3 font-bold text-[#102A43]">Máy in mini Bluetooth K58 (XP-58IIH / PT-210)</td>
                                         <td className="p-3">K58 (58mm)</td>
                                         <td className="p-3">Bluetooth / USB</td>
                                         <td className="p-3 text-amber-700 font-bold">Phù hợp hồ nhỏ / nhân viên đi quanh hồ</td>
@@ -129,7 +135,7 @@ export default function PrinterDevicesPage() {
                         </div>
                     </section>
 
-                    {/* Hướng dẫn kết nối 3 bước */}
+                    {/* Hướng dẫn kết nối 3 bước mạng LAN/Wi-Fi */}
                     <section className="rounded-2xl border border-[#D9D2C8] bg-white p-6 shadow-xs space-y-4">
                         <h2 className="text-base font-bold text-[#102A43] flex items-center gap-2">
                             <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#F0ECE4] text-xs font-bold text-[#8A5A20]">2</span>
@@ -162,6 +168,70 @@ export default function PrinterDevicesPage() {
                                 <p className="text-[#5A524A]">
                                     Vào <strong>Cài đặt -&gt; Máy in</strong>, điền địa chỉ IP và bấm <strong>In thử phiếu kiểm tra</strong>.
                                 </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Hướng dẫn kết nối Bluetooth máy mini MP210 / RPP02N */}
+                    <section className="rounded-2xl border border-[#D9D2C8] bg-white p-6 shadow-xs space-y-4">
+                        <h2 className="text-base font-bold text-[#102A43] flex items-center gap-2">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#F0ECE4] text-xs font-bold text-[#8A5A20]">3</span>
+                            Quy Trình Kết Nối Máy In Bluetooth Bỏ Túi (MP210 / RPP02N / PT210)
+                        </h2>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            {/* Mô phỏng tờ in Self-Test */}
+                            <div className="rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] p-4 font-mono text-xs space-y-2">
+                                <div className="text-center font-bold text-xs pb-1 border-b border-[#D9D2C8] text-[#102A43]">
+                                    *** Tờ In Kiểm Tra Thông Số (Self-Test) ***
+                                </div>
+                                <div className="space-y-1 text-[11px] text-[#27231F]">
+                                    <div>Model: <strong>MP210</strong> (hoặc PT-210)</div>
+                                    <div>CMD Type: <strong>ESC</strong> (Lệnh ESC/POS tiêu chuẩn)</div>
+                                    <div>Interface: <strong>USB &amp; BT</strong></div>
+                                    <div className="border-t border-dashed border-[#D9D2C8] pt-1 text-[#8A5A20] font-bold">
+                                        BT Info (Thông tin Bluetooth):
+                                    </div>
+                                    <div className="bg-emerald-100/70 p-1.5 rounded text-emerald-900 font-semibold space-y-0.5">
+                                        <div>👉 NAME: <strong>RPP02N</strong> (Tên xuất hiện khi dò Bluetooth)</div>
+                                        <div>👉 PIN: <strong>0000</strong> (Mã ghép đôi mặc định)</div>
+                                        <div>👉 MAC: <strong>86-67-7A-E1-7F-87</strong></div>
+                                    </div>
+                                    <div className="text-[10px] text-[#766F67] pt-1">Khổ giấy: 58mm (In được 32 ký tự một hàng)</div>
+                                </div>
+                            </div>
+
+                            {/* Các bước kết nối */}
+                            <div className="space-y-3 text-xs">
+                                <div className="rounded-xl border border-[#D9D2C8] bg-[#FBF9F5] p-3 space-y-1">
+                                    <div className="font-bold text-[#102A43] flex items-center gap-1.5">
+                                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#8A5A20] text-[10px] text-white font-bold">1</span>
+                                        Cách in tờ giấy test:
+                                    </div>
+                                    <p className="text-[#5A524A] text-[11px] leading-relaxed">
+                                        Tắt nguồn máy in. Nhấn và giữ nút <strong>FEED</strong>, sau đó bật nút <strong>POWER</strong> và giữ 2-3 giây cho đến khi máy chạy giấy thì buông tay. Máy sẽ in ra tờ thông số như mẫu bên cạnh.
+                                    </p>
+                                </div>
+
+                                <div className="rounded-xl border border-[#D9D2C8] bg-[#FBF9F5] p-3 space-y-1">
+                                    <div className="font-bold text-[#102A43] flex items-center gap-1.5">
+                                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#8A5A20] text-[10px] text-white font-bold">2</span>
+                                        Ghép đôi trên điện thoại:
+                                    </div>
+                                    <p className="text-[#5A524A] text-[11px] leading-relaxed">
+                                        Mở <strong>Cài đặt điện thoại &gt; Bluetooth</strong>, chọn tên máy in <strong>RPP02N</strong> và nhập mã PIN là <strong>0000</strong> (hoặc 1234).
+                                    </p>
+                                </div>
+
+                                <div className="rounded-xl border border-[#D9D2C8] bg-[#FBF9F5] p-3 space-y-1">
+                                    <div className="font-bold text-[#102A43] flex items-center gap-1.5">
+                                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#8A5A20] text-[10px] text-white font-bold">3</span>
+                                        Chọn trong ứng dụng hồ câu:
+                                    </div>
+                                    <p className="text-[#5A524A] text-[11px] leading-relaxed">
+                                        Vào <strong>Cài đặt &gt; Máy in &amp; Mẫu vé</strong>, chọn <strong>Quét Bluetooth</strong> hoặc chọn mẫu nhanh <strong>⚡ MP210 / RPP02N (58mm)</strong> rồi bấm <strong>In phiếu test</strong>.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </section>

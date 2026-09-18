@@ -45,6 +45,10 @@ export function PrinterSettingsSection() {
     const [btDevices, setBtDevices] = useState<PrinterDevice[]>([]);
     const [scanningBt, setScanningBt] = useState(false);
     const [connectingBtAddress, setConnectingBtAddress] = useState<string | null>(null);
+    const [btSubTab, setBtSubTab] = useState<"scan" | "manual" | "guide">("scan");
+    const [manualBtName, setManualBtName] = useState("RPP02N");
+    const [manualBtAddress, setManualBtAddress] = useState("86-67-7A-E1-7F-87");
+    const [manualBtPaper, setManualBtPaper] = useState<58 | 80>(58);
 
     // USB states
     const [usbDevicesList, setUsbDevicesList] = useState<PrinterDevice[]>([]);
@@ -122,6 +126,30 @@ export function PrinterSettingsSection() {
         } finally {
             setConnectingBtAddress(null);
         }
+    }
+
+    async function handleSaveManualBluetooth(e?: React.FormEvent) {
+        if (e) e.preventDefault();
+        const trimmedName = manualBtName.trim() || "Máy in Bluetooth (RPP02N)";
+        const trimmedAddress = manualBtAddress.trim() || trimmedName;
+
+        setPaperWidthMm(manualBtPaper);
+        updateTemplate({ paperWidthMm: manualBtPaper });
+
+        await handleConnectBluetooth({
+            id: trimmedAddress,
+            name: trimmedName,
+            address: trimmedAddress,
+            connectionType: "BLUETOOTH",
+            isConnected: true,
+        });
+    }
+
+    function applyPreset(name: string, address: string, paper: 58 | 80) {
+        setManualBtName(name);
+        setManualBtAddress(address);
+        setManualBtPaper(paper);
+        setPaperWidthMm(paper);
     }
 
     // 2. USB Scan & Connect
@@ -696,69 +724,332 @@ export function PrinterSettingsSection() {
             {/* Modal: Bluetooth Connection */}
             {activeTab === "BLUETOOTH" && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-                        <div className="flex items-center justify-between border-b border-[#D9D2C8] pb-3">
-                            <h3 className="text-base font-bold text-[#27231F]">
-                                Quét máy in Bluetooth
-                            </h3>
+                    <div className="w-full max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+                        <div className="flex items-center justify-between border-b border-[#D9D2C8] pb-3 shrink-0">
+                            <div>
+                                <h3 className="text-base font-bold text-[#27231F] flex items-center gap-2">
+                                    <span>📶</span> Kết nối máy in Bluetooth
+                                </h3>
+                                <p className="text-xs text-[#766F67]">
+                                    Máy in nhiệt 58mm (MP210, RPP02N, PT-210) & 80mm
+                                </p>
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => setActiveTab(null)}
-                                className="text-[#766F67] hover:text-[#27231F] p-1 cursor-pointer"
+                                className="text-[#766F67] hover:text-[#27231F] p-1.5 rounded-lg hover:bg-stone-100 cursor-pointer text-sm"
                             >
                                 ✕
                             </button>
                         </div>
 
-                        <p className="text-xs text-[#766F67]">
-                            Chọn máy in đã ghép đôi từ danh sách bên dưới để kết nối:
-                        </p>
+                        {/* Sub-tab selection */}
+                        <div className="flex rounded-xl bg-[#F4F2EE] p-1 text-xs font-semibold shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setBtSubTab("scan")}
+                                className={`flex-1 py-1.5 rounded-lg transition-all text-center cursor-pointer ${
+                                    btSubTab === "scan"
+                                        ? "bg-white text-[#102A43] shadow-xs font-bold"
+                                        : "text-[#766F67] hover:text-[#27231F]"
+                                }`}
+                            >
+                                🔍 Quét tự động
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setBtSubTab("manual")}
+                                className={`flex-1 py-1.5 rounded-lg transition-all text-center cursor-pointer ${
+                                    btSubTab === "manual"
+                                        ? "bg-white text-[#102A43] shadow-xs font-bold"
+                                        : "text-[#766F67] hover:text-[#27231F]"
+                                }`}
+                            >
+                                ⚡ Mẫu sẵn & Nhập tay
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setBtSubTab("guide")}
+                                className={`flex-1 py-1.5 rounded-lg transition-all text-center cursor-pointer ${
+                                    btSubTab === "guide"
+                                        ? "bg-white text-[#102A43] shadow-xs font-bold"
+                                        : "text-[#766F67] hover:text-[#27231F]"
+                                }`}
+                            >
+                                📋 Đọc tờ Self-Test
+                            </button>
+                        </div>
 
-                        <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-                            {scanningBt ? (
-                                <p className="text-center py-6 text-xs text-[#766F67]">
-                                    Đang quét thiết bị Bluetooth…
-                                </p>
-                            ) : btDevices.length === 0 ? (
-                                <div className="text-center py-6 text-xs text-[#766F67] space-y-2">
-                                    <p>Chưa có máy in Bluetooth nào trong danh sách ghép đôi.</p>
-                                    <p className="text-[11px] text-[#766F67]">Vui lòng ghép đôi máy in trong Cài đặt Bluetooth của Android trước.</p>
-                                </div>
-                            ) : (
-                                btDevices.map((d) => (
-                                    <div
-                                        key={d.address}
-                                        className="flex items-center justify-between p-3 rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] hover:bg-[#EFE4CF]/40 transition-colors"
-                                    >
-                                        <div>
-                                            <p className="text-xs font-semibold text-[#27231F]">{d.name}</p>
-                                            <p className="text-[11px] font-mono text-[#766F67]">{d.address}</p>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="primary"
-                                            isLoading={connectingBtAddress === d.address}
-                                            loadingText="Đang nối…"
-                                            onClick={() => handleConnectBluetooth(d)}
-                                        >
-                                            Kết nối
-                                        </Button>
+                        {/* Modal Body with scroll */}
+                        <div className="overflow-y-auto space-y-4 pr-1 flex-1">
+                            {/* SUB-TAB 1: SCAN */}
+                            {btSubTab === "scan" && (
+                                <div className="space-y-3">
+                                    <p className="text-xs text-[#766F67]">
+                                        Dò tìm thiết bị Bluetooth đã ghép đôi trên điện thoại hoặc trình duyệt Web Bluetooth:
+                                    </p>
+
+                                    <div className="space-y-2">
+                                        {scanningBt ? (
+                                            <div className="text-center py-8 text-xs text-[#766F67] space-y-2">
+                                                <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-[#8A5A20] border-t-transparent" />
+                                                <p>Đang dò quét máy in Bluetooth…</p>
+                                            </div>
+                                        ) : btDevices.length === 0 ? (
+                                            <div className="text-center py-6 px-4 rounded-xl border border-dashed border-[#D9D2C8] bg-[#FBF9F5] text-xs text-[#766F67] space-y-3">
+                                                <p className="font-semibold text-[#27231F]">Chưa thấy thiết bị nào trong danh sách quét</p>
+                                                <p className="text-[11px] leading-relaxed">
+                                                    Nếu bạn dùng trình duyệt web hoặc máy in bỏ túi như <strong>MP210 / RPP02N</strong>, hãy chuyển sang tab <strong>&ldquo;Mẫu sẵn & Nhập tay&rdquo;</strong> để lưu cấu hình nhanh chóng mà không cần quét lại.
+                                                </p>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => setBtSubTab("manual")}
+                                                >
+                                                    👉 Sang tab Mẫu sẵn & Nhập tay
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            btDevices.map((d) => (
+                                                <div
+                                                    key={d.address}
+                                                    className="flex items-center justify-between p-3 rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] hover:bg-[#EFE4CF]/40 transition-colors"
+                                                >
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-[#27231F]">{d.name}</p>
+                                                        <p className="text-[11px] font-mono text-[#766F67]">{d.address}</p>
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="primary"
+                                                        isLoading={connectingBtAddress === d.address}
+                                                        loadingText="Đang nối…"
+                                                        onClick={() => handleConnectBluetooth(d)}
+                                                    >
+                                                        Kết nối
+                                                    </Button>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
-                                ))
+                                </div>
+                            )}
+
+                            {/* SUB-TAB 2: MANUAL & PRESETS */}
+                            {btSubTab === "manual" && (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <p className="text-xs font-semibold text-[#27231F]">
+                                            Chọn nhanh mẫu máy in thông dụng:
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => applyPreset("RPP02N (MP210)", "86-67-7A-E1-7F-87", 58)}
+                                                className="rounded-xl border border-[#4F9D5A]/40 bg-[#E8F3ED] px-3 py-1.5 text-xs font-bold text-[#2D6A4F] hover:bg-[#D8EFE2] transition-colors cursor-pointer text-left"
+                                            >
+                                                ⚡ MP210 / RPP02N (58mm)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => applyPreset("XP-58IIH", "XP-58", 58)}
+                                                className="rounded-xl border border-[#D9D2C8] bg-white px-3 py-1.5 text-xs font-semibold text-[#27231F] hover:bg-[#F4F2EE] transition-colors cursor-pointer text-left"
+                                            >
+                                                ⚡ XP-58IIH (58mm)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => applyPreset("PT-210 / MTP-II", "PT-210", 58)}
+                                                className="rounded-xl border border-[#D9D2C8] bg-white px-3 py-1.5 text-xs font-semibold text-[#27231F] hover:bg-[#F4F2EE] transition-colors cursor-pointer text-left"
+                                            >
+                                                ⚡ PT-210 (58mm)
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <form onSubmit={handleSaveManualBluetooth} className="space-y-3 pt-1">
+                                        <div>
+                                            <label className="text-xs font-semibold text-[#27231F] block mb-1">
+                                                Tên máy in Bluetooth
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={manualBtName}
+                                                onChange={(e) => setManualBtName(e.target.value)}
+                                                placeholder="Ví dụ: RPP02N hoặc MP210"
+                                                className="h-10 w-full rounded-xl border border-[#E3E8E3] bg-[#F7F9F5] px-3 text-xs font-medium text-[#17201A] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
+                                            />
+                                            <p className="text-[11px] text-[#766F67] mt-0.5">
+                                                Tên xuất hiện khi bật Bluetooth (xem dòng <strong>NAME: RPP02N</strong> trên giấy in test).
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs font-semibold text-[#27231F] block mb-1">
+                                                Địa chỉ MAC máy in
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={manualBtAddress}
+                                                onChange={(e) => setManualBtAddress(e.target.value)}
+                                                placeholder="Ví dụ: 86-67-7A-E1-7F-87 hoặc 86:67:7A:E1:7F:87"
+                                                className="h-10 w-full rounded-xl border border-[#E3E8E3] bg-[#F7F9F5] px-3 font-mono text-xs font-medium text-[#17201A] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
+                                            />
+                                            <p className="text-[11px] text-[#766F67] mt-0.5">
+                                                Xem dòng <strong>MAC: 86-67-7A-E1-7F-87</strong> trên phiếu kiểm tra máy in.
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs font-semibold text-[#27231F] block mb-1">
+                                                Khổ giấy in
+                                            </label>
+                                            <select
+                                                value={manualBtPaper.toString()}
+                                                onChange={(e) => setManualBtPaper(Number(e.target.value) as 58 | 80)}
+                                                className="h-10 w-full rounded-xl border border-[#E3E8E3] bg-[#F7F9F5] px-3 text-xs font-medium text-[#17201A] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
+                                            >
+                                                <option value="58">58 mm (Khuyên dùng cho máy in di động MP210/RPP02N)</option>
+                                                <option value="80">80 mm (Máy in để bàn)</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 space-y-1">
+                                            <p className="font-bold flex items-center gap-1.5">
+                                                <span>🔑</span> Mã PIN ghép đôi Bluetooth:
+                                            </p>
+                                            <p className="text-[11px] leading-relaxed">
+                                                Mã PIN mặc định là <strong>0000</strong> (hoặc <strong>1234</strong>). Bạn cần ghép đôi thiết bị trong Cài đặt Bluetooth của điện thoại trước khi in.
+                                            </p>
+                                        </div>
+
+                                        <Button
+                                            type="submit"
+                                            size="lg"
+                                            variant="primary"
+                                            className="w-full"
+                                            isLoading={connectingBtAddress === manualBtAddress}
+                                            loadingText="Đang lưu & kết nối…"
+                                        >
+                                            Lưu & Kết nối máy in này
+                                        </Button>
+                                    </form>
+                                </div>
+                            )}
+
+                            {/* SUB-TAB 3: SELF-TEST GUIDE */}
+                            {btSubTab === "guide" && (
+                                <div className="space-y-4">
+                                    {/* Mock receipt view */}
+                                    <div className="rounded-xl border border-[#D9D2C8] bg-[#F4F2EE] p-4 text-xs font-mono space-y-2">
+                                        <div className="text-center font-bold pb-2 border-b border-[#D9D2C8] text-xs">
+                                            *** 58mm Thermal Printer ***
+                                        </div>
+                                        <div className="space-y-1 text-[11px] text-[#27231F]">
+                                            <div className="flex justify-between">
+                                                <span className="text-[#766F67]">Model:</span>
+                                                <span className="font-bold">MP210</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-[#766F67]">CMD Type:</span>
+                                                <span className="font-bold">ESC (ESC/POS)</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-[#766F67]">Interface:</span>
+                                                <span className="font-bold">USB & BT</span>
+                                            </div>
+                                            <div className="border-t border-dashed border-[#D9D2C8] pt-1 mt-1 font-bold text-[#8A5A20]">
+                                                BT Info:
+                                            </div>
+                                            <div className="flex justify-between pl-2 bg-emerald-100/60 p-1 rounded">
+                                                <span>NAME:</span>
+                                                <span className="font-bold text-emerald-800">RPP02N 👈 Tên trên ĐT</span>
+                                            </div>
+                                            <div className="flex justify-between pl-2 bg-emerald-100/60 p-1 rounded">
+                                                <span>PIN:</span>
+                                                <span className="font-bold text-emerald-800">0000 👈 Mã ghép đôi</span>
+                                            </div>
+                                            <div className="flex justify-between pl-2 bg-emerald-100/60 p-1 rounded">
+                                                <span>MAC:</span>
+                                                <span className="font-bold text-emerald-800">86-67-7A-E1-7F-87</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-center text-[10px] text-[#766F67] pt-2 border-t border-[#D9D2C8]">
+                                            Completed
+                                        </div>
+                                    </div>
+
+                                    {/* Steps */}
+                                    <div className="space-y-2 text-xs">
+                                        <div className="rounded-xl border border-[#D9D2C8] bg-white p-3 space-y-1">
+                                            <p className="font-bold text-[#102A43]">
+                                                Bước 1: In tờ thông số trên máy in
+                                            </p>
+                                            <p className="text-[#5A524A] text-[11px] leading-relaxed">
+                                                Tắt máy in. Nhấn giữ nút <strong>FEED</strong>, đồng thời bật nút <strong>POWER</strong> giữ 2-3 giây cho đến khi máy bắt đầu in giấy thì nhả tay.
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-xl border border-[#D9D2C8] bg-white p-3 space-y-1">
+                                            <p className="font-bold text-[#102A43]">
+                                                Bước 2: Ghép đôi trên điện thoại
+                                            </p>
+                                            <p className="text-[#5A524A] text-[11px] leading-relaxed">
+                                                Mở <strong>Cài đặt điện thoại &gt; Bluetooth</strong>, bật Bluetooth và bấm chọn thiết bị <strong>RPP02N</strong>. Khi điện thoại hỏi mã PIN, nhập <strong>0000</strong>.
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-xl border border-[#D9D2C8] bg-white p-3 space-y-1">
+                                            <p className="font-bold text-[#102A43]">
+                                                Bước 3: Chọn mẫu sẵn trên ứng dụng
+                                            </p>
+                                            <p className="text-[#5A524A] text-[11px] leading-relaxed">
+                                                Bấm nút bên dưới để điền tự động cấu hình MP210 / RPP02N và lưu lại:
+                                            </p>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    applyPreset("RPP02N (MP210)", "86-67-7A-E1-7F-87", 58);
+                                                    setBtSubTab("manual");
+                                                }}
+                                                className="mt-1 w-full"
+                                            >
+                                                ⚡ Điền mẫu MP210 / RPP02N ngay
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
                         </div>
 
-                        <div className="flex justify-between items-center border-t border-[#D9D2C8] pt-3">
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                isLoading={scanningBt}
-                                onClick={handleScanBluetooth}
-                            >
-                                Quét lại
-                            </Button>
+                        {/* Footer actions */}
+                        <div className="flex justify-between items-center border-t border-[#D9D2C8] pt-3 shrink-0">
+                            {btSubTab === "scan" ? (
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    isLoading={scanningBt}
+                                    onClick={handleScanBluetooth}
+                                >
+                                    Quét lại
+                                </Button>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setBtSubTab("scan")}
+                                >
+                                    Quay lại quét
+                                </Button>
+                            )}
                             <Button
                                 type="button"
                                 size="sm"
