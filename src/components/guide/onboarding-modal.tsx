@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { GuideStep, ONBOARDING_STEPS } from "@/lib/guides/onboarding-data";
 
@@ -19,6 +19,7 @@ export function OnboardingModal({
     initialStepId = 1,
 }: OnboardingModalProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const filteredSteps: GuideStep[] = ONBOARDING_STEPS.filter((step) =>
         step.roles.includes(userRole),
     );
@@ -35,20 +36,26 @@ export function OnboardingModal({
     const totalSteps = filteredSteps.length;
     const progressPercent = Math.round(((currentStepIndex + 1) / totalSteps) * 100);
 
-    // Check auto-show on initial login if not seen before
+    // Check auto-show on initial login if not seen/dismissed before
     useEffect(() => {
         if (typeof window === "undefined") return;
 
-        const hasSeenOnboarding = localStorage.getItem("quanlihocau_onboarding_completed_v1");
-        if (!hasSeenOnboarding && controlledIsOpen === undefined) {
+        const hasCompleted = localStorage.getItem("quanlihocau_onboarding_completed_v1");
+        const hasDismissed = localStorage.getItem("quanlihocau_onboarding_dismissed_v1");
+        const isSensitivePosRoute =
+            pathname?.includes("/sessions/new") ||
+            pathname?.startsWith("/invoices") ||
+            pathname?.includes("/printer");
+
+        if (!hasCompleted && !hasDismissed && controlledIsOpen === undefined && !isSensitivePosRoute) {
             const timer = setTimeout(() => {
                 setInternalIsOpen(true);
             }, 800);
             return () => clearTimeout(timer);
         }
-    }, [controlledIsOpen]);
+    }, [controlledIsOpen, pathname]);
 
-    // Listen for custom trigger event (e.g. from header '?' button)
+    // Listen for custom trigger event (e.g. from header '?' button or /settings/guide)
     useEffect(() => {
         function handleOpenEvent(e: Event) {
             const customEvent = e as CustomEvent<{ stepId?: number }>;
@@ -66,6 +73,10 @@ export function OnboardingModal({
     }, [filteredSteps]);
 
     function handleClose() {
+        if (typeof window !== "undefined") {
+            // Persist dismissal so navigating between pages never re-triggers auto popup
+            localStorage.setItem("quanlihocau_onboarding_dismissed_v1", "true");
+        }
         setInternalIsOpen(false);
         if (controlledOnClose) controlledOnClose();
     }
@@ -73,6 +84,7 @@ export function OnboardingModal({
     function handleDismiss() {
         if (typeof window !== "undefined") {
             localStorage.setItem("quanlihocau_onboarding_completed_v1", "true");
+            localStorage.setItem("quanlihocau_onboarding_dismissed_v1", "true");
         }
         handleClose();
     }

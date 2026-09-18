@@ -1,14 +1,21 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
+import type { Metadata } from "next";
 import { Role } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
+import { privateRouteMetadata } from "@/lib/metadata";
 
 import { PackageManager } from "./package-manager";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
+
+export const metadata: Metadata = {
+    ...privateRouteMetadata,
+    title: "Cài đặt gói cước hồ",
+};
 
 export default async function PricingPage() {
     const session = await getServerSession(authOptions);

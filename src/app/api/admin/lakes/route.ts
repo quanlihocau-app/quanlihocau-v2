@@ -110,9 +110,23 @@ export async function GET(request: NextRequest) {
             prisma.lake.count({ where: { deletedAt: null, subscriptionStatus: SubscriptionStatus.SUSPENDED } }),
         ]);
 
+        function isTestLake(name: string, email: string): boolean {
+            const n = name.toLowerCase();
+            const e = email.toLowerCase();
+            return (
+                n.includes("test") ||
+                n.includes("demo") ||
+                n.includes("thử nghiệm") ||
+                e.includes("test") ||
+                e.includes("example.com") ||
+                e.includes("demo")
+            );
+        }
+
         return NextResponse.json({
             data: lakes.map((lake) => {
                 const owner = lake.memberships[0]?.user || null;
+                const isTest = isTestLake(lake.name, owner?.email || "");
                 return {
                     id: lake.id,
                     lakeName: lake.name,
@@ -125,6 +139,7 @@ export async function GET(request: NextRequest) {
                     currentMonthSessionsCount: lake._count.fishingSessions,
                     currentMonthInvoicesCount: lake._count.invoices,
                     createdAt: lake.createdAt,
+                    isTestAccount: isTest,
                 };
             }),
             pagination: {

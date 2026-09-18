@@ -45,12 +45,21 @@ export const metadata: Metadata = {
         title: "Quản Lí Hồ Câu | Phần mềm quản lý hồ câu",
         description:
             "Hồ câu vận hành gọn. Khách vui, chủ yên tâm. Gom phiên câu, ô câu, hóa đơn, kho, chi phí và chốt ca vào một luồng trực quan.",
+        images: [
+            {
+                url: "https://quanlihocau.com/icons/icon-512x512.png",
+                width: 512,
+                height: 512,
+                alt: "Quản Lí Hồ Câu - Phần mềm quản lý hồ câu chuyên nghiệp",
+            },
+        ],
     },
     twitter: {
         card: "summary_large_image",
         title: "Quản Lí Hồ Câu | Phần mềm quản lý hồ câu",
         description:
             "Phần mềm vận hành hồ câu: quản lý ô câu, phiên câu, hóa đơn và chốt ca nhanh chóng, chính xác.",
+        images: ["https://quanlihocau.com/icons/icon-512x512.png"],
     },
     alternates: {
         canonical: "https://quanlihocau.com",
@@ -85,8 +94,7 @@ export const viewport: Viewport = {
     ],
     width: "device-width",
     initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
+    userScalable: true,
     viewportFit: "cover",
 };
 
@@ -101,12 +109,37 @@ const jsonLdSchema = {
             "applicationCategory": "BusinessApplication",
             "description": "Phần mềm quản lý hồ câu dịch vụ chuyên nghiệp: tính tiền phiên câu theo giờ, tự động tính phụ thu quá giờ, bán lẻ đồ câu, kiểm soát thất thoát và báo cáo doanh thu.",
             "url": "https://quanlihocau.com",
-            "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "VND",
-                "availability": "https://schema.org/InStock",
-            },
+            "offers": [
+                {
+                    "@type": "Offer",
+                    "name": "Dùng thử miễn phí",
+                    "price": "0",
+                    "priceCurrency": "VND",
+                    "priceValidUntil": "2027-12-31",
+                    "availability": "https://schema.org/InStock",
+                    "url": "https://quanlihocau.com/register",
+                },
+                {
+                    "@type": "Offer",
+                    "name": "Gói Bạc (Silver)",
+                    "price": "99000",
+                    "priceCurrency": "VND",
+                    "priceValidUntil": "2027-12-31",
+                    "availability": "https://schema.org/InStock",
+                    "url": "https://quanlihocau.com/bang-gia",
+                    "description": "99.000đ / 30 ngày: tối đa 30 ô câu, 1 nhân viên",
+                },
+                {
+                    "@type": "Offer",
+                    "name": "Gói Vàng (Gold)",
+                    "price": "179000",
+                    "priceCurrency": "VND",
+                    "priceValidUntil": "2027-12-31",
+                    "availability": "https://schema.org/InStock",
+                    "url": "https://quanlihocau.com/bang-gia",
+                    "description": "179.000đ / 30 ngày: không giới hạn ô câu, không giới hạn nhân viên",
+                },
+            ],
         },
         {
             "@type": "Organization",

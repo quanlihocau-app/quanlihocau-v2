@@ -14,6 +14,14 @@ export const metadata = {
         siteName: "Quản Lý Hồ Câu",
         locale: "vi_VN",
         type: "website",
+        images: [
+            {
+                url: "https://quanlihocau.com/icons/icon-512x512.png",
+                width: 512,
+                height: 512,
+                alt: "Quản Lí Hồ Câu - Phần mềm quản lý hồ câu chuyên nghiệp",
+            },
+        ],
     },
     alternates: {
         canonical: "https://quanlihocau.com",

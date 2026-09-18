@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -6,12 +7,18 @@ import { Role } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
+import { privateRouteMetadata } from "@/lib/metadata";
 
 import { NegativeInventoryToggle } from "./negative-inventory-toggle";
 import { SubscriptionBanner } from "./subscription-banner";
 import { PwaInstallSettingRow } from "./pwa-install-button";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
+
+export const metadata: Metadata = {
+    ...privateRouteMetadata,
+    title: "Cài đặt hồ & Dịch vụ",
+};
 
 // Arrow icon for menu rows
 function ChevronRight({ className }: { className?: string }) {

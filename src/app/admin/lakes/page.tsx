@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
 import { Role, SubscriptionStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/tenant";
 import { LakesAdminClient, LakeItem, StatsOverview } from "./lakes-admin-client";
+import { privateRouteMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+    ...privateRouteMetadata,
+    title: "Quản trị hệ thống hồ",
+};
 
 export default async function AdminLakesPage() {
     await requireSuperAdmin();

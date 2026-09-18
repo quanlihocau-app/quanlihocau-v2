@@ -1,16 +1,23 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
+import type { Metadata } from "next";
 import { Role } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
+import { privateRouteMetadata } from "@/lib/metadata";
 
 import { InventoryMovementForm } from "./inventory-movement-form";
 import { InventoryMovementList } from "./inventory-movement-list";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+export const metadata: Metadata = {
+    ...privateRouteMetadata,
+    title: "Quản lý kho",
+};
 
 export default async function InventoryPage() {
     const session = await getServerSession(authOptions);
