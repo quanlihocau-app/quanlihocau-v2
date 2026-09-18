@@ -32,7 +32,7 @@
 - **Thẻ Metadata Chặn Index (`metadata.ts`)**: Tạo helper `privateRouteMetadata` (`robots: noindex, nofollow, noarchive, nocache`) áp dụng cho 15 trang nội bộ, xóa thẻ `canonical` trỏ sai về trang chủ.
 - **Social Sharing (`page.tsx`, `layout.tsx`)**: Bổ sung `og:image` và `twitter:image` trỏ tới `/icons/icon-512x512.png`.
 
-### Nhóm 4: Đo Lường Khách Thật & Phân Loại Hồ Thử Nghiệm (MỚI HOÀN THÀNH)
+### Nhóm 4: Đo Lường Khách Thật & Phân Loại Hồ Thử Nghiệm
 - **Module phân loại (`src/lib/test-account.ts`)**:
   - `isTestLake(name, email)`: Phân loại dựa trên bằng chứng rõ ràng (tên chứa test, demo, thử nghiệm, sample; email chứa test, demo, example.com, @quanlihocau.internal).
   - `isTestUser(name, email, phone)`: Phân loại người dùng thử nghiệm nội bộ.
@@ -47,6 +47,20 @@
 - **Unit Test Suite (`tests/test-account-classification.test.mjs`)**:
   - Kiểm thử 2 ca test chuyên sâu cho `isTestLake` và `isTestUser`, đạt 100% PASS.
 
+### Nhóm 5: Pháp Lý, Bảo Mật Dữ Liệu & Hướng Dẫn Thiết Bị Máy In (MỚI HOÀN THÀNH)
+- **Trang Điều khoản dịch vụ (`src/app/dieu-khoan/page.tsx`)**:
+  - Xuất bản trang tĩnh chuẩn SEO, nêu rõ chu kỳ 30 ngày, 7 ngày dùng thử miễn phí, thanh toán VietQR Techcombank không tự trừ tiền, và chính sách bảo lưu dữ liệu tối thiểu 30 ngày sau khi hết hạn để không mất lịch sử.
+- **Trang Chính sách bảo mật (`src/app/chinh-sach-bao-mat/page.tsx`)**:
+  - Khẳng định cam kết bảo vệ dữ liệu kinh doanh hồ câu: Cách ly dữ liệu theo `lakeId`, mã hóa mật khẩu một chiều, không bán/chia sẻ cho bên thứ ba, không ghi dữ liệu giao dịch vào analytics.
+- **Trang Máy in & Thiết bị kiểm chứng (`src/app/thiet-bi-may-in/page.tsx`)**:
+  - Cung cấp danh sách máy in nhiệt tương thích (Xprinter K80, HPRT, Zywell, máy in mini Bluetooth K58), hướng dẫn kết nối mạng LAN/Wi-Fi tại quầy hồ, và cam kết in lại hóa đơn không bao giờ ghi nhận giao dịch tài chính lần hai.
+- **Tối ưu form đăng ký (`src/app/register/page.tsx`)**:
+  - Bỏ thuật ngữ kỹ thuật `(OWNER)` sang tiếng Việt thân thiện: "Chủ hồ có toàn quyền quản lý hồ câu và phân quyền nhân viên".
+  - Bổ sung liên kết Điều khoản dịch vụ & Chính sách bảo mật ngay trước nút Đăng ký.
+- **Cập nhật Sitemap & Footer (`sitemap.ts`, `official-landing-page.tsx`)**:
+  - Bổ sung 3 URL công khai vào sitemap (`/thiet-bi-may-in`, `/dieu-khoan`, `/chinh-sach-bao-mat`).
+  - Thêm link điều hướng đến các trang mới vào chân trang Landing Page.
+
 ---
 
 ## 3. Báo Cáo Đo Lường & Kiểm Thử Mới Nhất
@@ -54,7 +68,7 @@
 | Hạng mục kiểm tra | Lệnh thực thi | Kết quả |
 | :--- | :--- | :--- |
 | **TypeScript Typecheck** | `npx tsc --noEmit` | **0 lỗi (Exit Code 0)** |
-| **Turbopack Build** | `npm run build` | **62 routes Compiled successfully trong 2.7s (Exit Code 0)** |
+| **Turbopack Build** | `npm run build` | **65 routes Compiled successfully (Exit Code 0)** |
 | **Unit Test Phân loại hồ** | `node --test tests/test-account-classification.test.mjs` | **2/2 PASS (100%)** |
 | **Nghiệp vụ cốt lõi (POS & Billing)** | `node --test tests/session-flow.test.mjs ...` | **47/47 PASS (100%)** |
 | **Truy vấn DB Waterfall** | `node tests/benchmark-sessions-queries.mjs` | **p50: 66.69ms (Nhanh hơn 67%)** |

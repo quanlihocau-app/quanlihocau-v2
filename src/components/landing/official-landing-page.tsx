@@ -691,13 +691,25 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                         <span>•</span>
                         <span>Hồ đông vẫn nhàn, tiền hàng vẫn rõ</span>
                     </div>
-                    <div className="flex flex-wrap items-center justify-center gap-4">
+                    <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-4">
                         <Link href="/register" className="text-[#52D879] font-bold hover:underline">
-                            Dùng thử miễn phí
+                            Dùng thử 7 ngày
                         </Link>
                         <span>•</span>
                         <Link href="/bang-gia" className="hover:text-white transition-colors font-semibold">
                             Bảng giá
+                        </Link>
+                        <span>•</span>
+                        <Link href="/thiet-bi-may-in" className="hover:text-white transition-colors font-semibold">
+                            Máy in & Thiết bị
+                        </Link>
+                        <span>•</span>
+                        <Link href="/dieu-khoan" className="hover:text-white transition-colors">
+                            Điều khoản
+                        </Link>
+                        <span>•</span>
+                        <Link href="/chinh-sach-bao-mat" className="hover:text-white transition-colors">
+                            Bảo mật
                         </Link>
                         <span>•</span>
                         <Link href="/login" className="hover:text-white transition-colors font-semibold">
@@ -705,16 +717,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                         </Link>
                         <span>•</span>
                         <a href="tel:0855550813" className="hover:text-[#52D879] transition-colors">
-                            Hotline: 0855 550 813
-                        </a>
-                        <span>•</span>
-                        <a
-                            href="https://zalo.me/0855550813"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-[#52D879] transition-colors"
-                        >
-                            Zalo
+                            0855 550 813
                         </a>
                     </div>
                 </div>
