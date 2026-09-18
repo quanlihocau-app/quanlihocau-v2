@@ -25,6 +25,7 @@ import {
 } from "../quick-create-actions";
 import { RetailProduct } from "./retail-pos-form";
 import { BANK_CONFIG, generateVietQrUrl } from "@/lib/vietqr";
+import { CheckInTimeSection, type CheckInTimeState } from "./check-in-time-section";
 
 export interface SelectCustomer {
     id: string;
@@ -195,6 +196,10 @@ export function OpenSessionForm({
     const [splitBankAmount, setSplitBankAmount] = useState<number | "">("");
     const [transferConfirmed, setTransferConfirmed] = useState(false);
     const [tempOrderCode, setTempOrderCode] = useState("");
+
+    // Custom check-in time & overtime acknowledgment
+    const [checkInState, setCheckInState] = useState<CheckInTimeState | null>(null);
+    const [acknowledgedOvertime, setAcknowledgedOvertime] = useState(false);
 
     const handleCloseConfirmModal = useCallback(() => {
         if (!isSubmitting) setIsConfirmModalOpen(false);
@@ -519,8 +524,13 @@ export function OpenSessionForm({
             return;
         }
 
-        if (selectedHutIds.length === 0) {
+        if (!selectedHutIds.length) {
             setFormError("Vui lòng chọn ít nhất một ô câu.");
+            return;
+        }
+
+        if (checkInState && !checkInState.isValid) {
+            setFormError(checkInState.errorMessage || "Giờ vào không hợp lệ. Vui lòng kiểm tra lại.");
             return;
         }
 
@@ -530,6 +540,7 @@ export function OpenSessionForm({
         setSplitCashAmount("");
         setSplitBankAmount("");
         setTransferConfirmed(false);
+        setAcknowledgedOvertime(false);
         setIsConfirmModalOpen(true);
     }
 
@@ -552,6 +563,10 @@ export function OpenSessionForm({
                     hutIds: selectedHutIds,
                     paymentTiming: "POSTPAID",
                     paymentMode: "POSTPAID",
+                    customStartAt:
+                        checkInState?.isCustom && checkInState?.customStartAt
+                            ? checkInState.customStartAt
+                            : undefined,
                     items:
                         selectedItems.length > 0
                             ? selectedItems.map((it) => ({
@@ -791,6 +806,10 @@ export function OpenSessionForm({
                     hutIds: selectedHutIds,
                     paymentTiming: "PREPAID",
                     paymentMode: "PREPAID",
+                    customStartAt:
+                        checkInState?.isCustom && checkInState?.customStartAt
+                            ? checkInState.customStartAt
+                            : undefined,
                     payments: paymentsPayload,
                     items:
                         selectedItems.length > 0
@@ -1327,10 +1346,23 @@ export function OpenSessionForm({
                 )}
             </Card>
 
-            {/* 4. GHI CHÚ VÉ CÂU */}
+            {/* 4. GIỜ VÀO TÙY CHỌN & XEM TRƯỚC THỜI GIAN CA CÂU */}
+            <CheckInTimeSection
+                durationMinutes={selectedPackage?.durationMinutes || 0}
+                packageName={selectedPackage?.name}
+                overtimeHourlyVnd={
+                    selectedPackage && "overtimeHourlyVnd" in selectedPackage
+                        ? Number((selectedPackage as { overtimeHourlyVnd?: number }).overtimeHourlyVnd) || 50000
+                        : 50000
+                }
+                hutCount={selectedHutIds.length || 1}
+                onStateChange={setCheckInState}
+            />
+
+            {/* 5. GHI CHÚ VÉ CÂU */}
             <Card className="space-y-2 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
                 <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                    4. Ghi chú vé câu (tùy chọn)
+                    5. Ghi chú vé câu (tùy chọn)
                 </label>
                 <Input
                     placeholder="Ví dụ: Khách quen, mượn cần câu số 2, cọc trước…"
@@ -1635,10 +1667,19 @@ export function OpenSessionForm({
                 variant="primary"
                 isLoading={isSubmitting}
                 loadingText="Đang tạo vé…"
-                disabled={isSubmitting || !isOnline || availableHuts.length === 0}
+                disabled={
+                    isSubmitting ||
+                    !isOnline ||
+                    availableHuts.length === 0 ||
+                    (checkInState ? !checkInState.isValid : false)
+                }
                 className="w-full shadow-md font-bold"
             >
-                {!isOnline ? "Mất mạng — Không thể mở vé" : "Tạo vé và mở ô"}
+                {!isOnline
+                    ? "Mất mạng — Không thể mở vé"
+                    : checkInState && !checkInState.isValid
+                    ? "Giờ vào không hợp lệ"
+                    : "Tạo vé và mở ô"}
             </Button>
         </form>
 
@@ -1775,6 +1816,48 @@ export function OpenSessionForm({
                                 </span>
                             </div>
 
+                            {/* Giờ vào & Giờ ra dự kiến */}
+                            <div className="flex justify-between">
+                                <span className="text-[#66716A]">Giờ vào:</span>
+                                <span className="font-semibold text-[#17201A] text-right">
+                                    {checkInState?.startDate
+                                        ? `${checkInState.startDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })} · ${checkInState.startDate.toLocaleDateString("vi-VN")}`
+                                        : "Tự động chốt khi tạo vé"}
+                                    {checkInState?.isCustom && " (Tùy chỉnh)"}
+                                </span>
+                            </div>
+
+                            <div className="flex justify-between">
+                                <span className="text-[#66716A]">Giờ ra dự kiến:</span>
+                                <span className="font-bold text-[#246B38] text-right">
+                                    {checkInState?.plannedEndDate
+                                        ? `${checkInState.plannedEndDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false })} · ${checkInState.plannedEndDate.toLocaleDateString("vi-VN")}`
+                                        : "—"}
+                                </span>
+                            </div>
+
+                            {/* Cảnh báo và xác nhận nếu vé đã quá giờ */}
+                            {checkInState?.isOvertime && (
+                                <div className="rounded-xl border border-rose-300 bg-rose-50 p-3 space-y-2 text-rose-900">
+                                    <div className="flex items-center gap-1.5 font-bold text-rose-800 text-xs">
+                                        <span>⚠️</span>
+                                        <span>Vé tạo ở trạng thái ĐÃ QUÁ GIỜ (+{checkInState.overtimeMinutes} phút)</span>
+                                    </div>
+                                    <p className="text-[11px] text-rose-800 leading-relaxed">
+                                        Giờ ra dự kiến đã trôi qua. Khi tạo thành công, vé sẽ được ghi nhận đã quá giờ và tự động tính phụ thu khi chốt ca.
+                                    </p>
+                                    <label className="flex items-center gap-2 cursor-pointer pt-1 border-t border-rose-200 text-xs font-bold">
+                                        <input
+                                            type="checkbox"
+                                            checked={acknowledgedOvertime}
+                                            onChange={(e) => setAcknowledgedOvertime(e.target.checked)}
+                                            className="h-4 w-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500"
+                                        />
+                                        <span>Tôi xác nhận khách đã vào câu và đã quá giờ</span>
+                                    </label>
+                                </div>
+                            )}
+
                             {selectedItems.length > 0 && (
                                 <div className="border-t border-dashed border-[#E3E8E3] pt-1.5 space-y-1">
                                     <span className="text-[#66716A] font-semibold block">Sản phẩm kèm:</span>
@@ -1879,11 +1962,12 @@ export function OpenSessionForm({
                                     type="button"
                                     size="lg"
                                     variant="primary"
+                                    disabled={isSubmitting || (checkInState?.isOvertime && !acknowledgedOvertime)}
                                     onClick={() => {
                                         setIsConfirmModalOpen(false);
                                         setIsCheckoutModalOpen(true);
                                     }}
-                                    className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white"
+                                    className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white disabled:opacity-50"
                                 >
                                     💳 Thanh toán &amp; Bắt đầu câu
                                 </Button>
@@ -1894,11 +1978,18 @@ export function OpenSessionForm({
                                     variant="primary"
                                     isLoading={isSubmitting}
                                     loadingText="Đang mở ô &amp; bắt đầu…"
+                                    disabled={isSubmitting || (checkInState?.isOvertime && !acknowledgedOvertime)}
                                     onClick={handleStartPostpaidSession}
-                                    className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white"
+                                    className="w-full shadow-md font-bold text-sm bg-emerald-700 hover:bg-emerald-800 text-white disabled:opacity-50"
                                 >
                                     🎣 Bắt đầu câu
                                 </Button>
+                            )}
+
+                            {checkInState?.isOvertime && !acknowledgedOvertime && (
+                                <p className="text-[11px] text-center text-rose-600 font-semibold">
+                                    Vui lòng tích chọn xác nhận vé quá giờ ở trên để tiếp tục.
+                                </p>
                             )}
 
                             <Button

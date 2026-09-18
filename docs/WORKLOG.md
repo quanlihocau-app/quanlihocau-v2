@@ -114,6 +114,35 @@
   16. Gói cước SaaS (`subscription-modal.tsx`): Modal bảng giá gia hạn và mã VietQR.
   17. Bảng điều khiển quản trị viên (`users-admin-client.tsx`): Drawer chi tiết và 5 modal khóa, gia hạn, chuyển gói, đăng xuất phiên.
 
+### Nhóm 8: Giờ Vào Tùy Chọn & Đồng Hồ Thời Gian Thực (HOÀN THÀNH)
+
+- **Đồng hồ thời gian thực độc lập tại Header (`src/components/layout/header-clock.tsx`)**:
+  - Hiển thị: `HH:mm:ss · DD/MM/YYYY` kèm nhãn `Giờ Việt Nam` (GMT+7, `Asia/Ho_Chi_Minh`) chuẩn 24 giờ.
+  - Tích hợp trực tiếp vào `sessionTicker` singleton engine (được bù trừ `serverOffsetMs` từ `/api/ping`), tự động hiệu chỉnh tức thì khi tab/thiết bị ngủ mở lại mà không trôi giây (0 drift).
+  - Khoanh vùng render cô lập: Chỉ `HeaderClock` re-render mỗi 1.000ms, không kích hoạt re-render header cha (`MobileAppHeader`) hay danh sách ô câu.
+- **Section Giờ vào tùy chọn tại quầy POS (`src/app/sessions/new/check-in-time-section.tsx`)**:
+  - Giao diện: `[HH:mm]` (24h), `[Ngày vào]` (mặc định hôm nay), `[⚡ Lấy giờ hiện tại]`, nút `[↺ Chốt lúc tạo vé]` và `[✏️ Khách vào trước đó]`.
+  - Mặc định: Giờ bắt đầu được tự động chốt theo thời điểm server tạo vé thành công (không lấy thời điểm mở form).
+  - Cho phép chọn ngày trong quá khứ để xử lý trọn vẹn ca câu qua đêm; không tự đoán "hôm qua" mà tuân theo ngày nhân viên chọn.
+  - Chặn tuyệt đối giờ vào ở tương lai trên cả giao diện (báo lỗi tức thì màu đỏ, vô hiệu hóa nút submit) và phía máy chủ.
+  - Không tự cấp quyền sửa lại giờ trên vé đã tạo (bảo toàn phân quyền và an toàn dữ liệu).
+- **Bản xem trước trực quan thời gian thực (Live Preview)**:
+  - Cập nhật từng giây qua `sessionTicker`:
+    - `Giờ vào: HH:mm — ngày DD/MM/YYYY`
+    - `Thời lượng: X giờ`
+    - `Giờ ra dự kiến: HH:mm — ngày DD/MM/YYYY` (luôn hiển thị rõ ngày ra, gắn nhãn "· Hôm sau" nếu qua đêm).
+    - `Đã câu: X giờ Y phút` (từ giờ vào đến hiện tại).
+    - `Còn lại: X giờ Y phút` / `Quá giờ: +X giờ Y phút`.
+- **Cảnh báo và xác nhận bắt buộc đối với vé tạo khi đã quá giờ**:
+  - Khi `plannedEndAt < serverNow`, Live Preview hiển thị banner cảnh báo và phụ thu ước tính theo đơn giá của hồ.
+  - Modal xác nhận vé yêu cầu nhân viên tích chọn: *"Tôi xác nhận khách đã vào câu và đã quá giờ"* mới cho phép tiếp tục.
+- **Bảo tồn nghiệp vụ tài chính & Tính nhất quán**:
+  - Tái sử dụng `startAt` và `plannedEndAt` của `FishingSession`. Không sửa `createdAt`.
+  - Lưu snapshot `isCustomStart`, `startAt`, `createdAt` vào `AuditEvent`.
+  - Đồng nhất tuyệt đối: Danh sách đang câu, Countdown, Chi tiết vé, Gia hạn, Tính quá giờ, In vé và Quyết toán.
+- **Bộ kiểm thử tự động chuyên sâu (`tests/custom-start-time.test.mjs`)**:
+  - Thực thi toàn bộ 11 ca kiểm thử A -> K theo yêu cầu nghiệp vụ: **11/11 PASS (100%)**.
+
 ---
 
 ## 3. Báo Cáo Đo Lường & Kiểm Thử Mới Nhất
@@ -121,10 +150,10 @@
 | Hạng mục kiểm tra | Lệnh thực thi | Kết quả |
 | :--- | :--- | :--- |
 | **TypeScript Typecheck** | `npx tsc --noEmit` | **0 lỗi (Exit Code 0)** |
-| **Turbopack Build** | `npm run build` | **65 routes Compiled successfully (Exit Code 0)** |
+| **Bộ test Giờ vào & Realtime Clock (Ca A -> K)** | `node --test tests/custom-start-time.test.mjs` | **11/11 PASS (100%)** |
+| **Unit Test Timer & Chống Resource Leak** | `node --test tests/verification-timer-comprehensive.mjs` | **3/3 PASS (100%)** |
 | **Unit Test Phân loại hồ** | `node --test tests/test-account-classification.test.mjs` | **2/2 PASS (100%)** |
-| **Nghiệp vụ cốt lõi (POS & Billing)** | `node --test tests/session-flow.test.mjs ...` | **47/47 PASS (100%)** |
-| **Truy vấn DB Waterfall** | `node tests/benchmark-sessions-queries.mjs` | **p50: 66.69ms (Nhanh hơn 67%)** |
+| **Turbopack Build** | `npm run build` | **Compiled successfully (Exit Code 0)** |
 
 ---
 
@@ -132,4 +161,5 @@
 
 - Duy trì kiểm tra định kỳ phản hồi của thu ngân tại quầy khi thao tác trên các máy POS cảm ứng và điện thoại cầm tay.
 - Giữ nguyên toàn bộ mã nguồn trên nhánh `feature/saas-hardening-seo-ux` để Ban Quản trị nghiệm thu trước khi merge.
+
 

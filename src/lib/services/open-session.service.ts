@@ -59,6 +59,13 @@ export const openSessionSchema = z.object({
             }),
         )
         .optional(),
+    customStartAt: z
+        .string()
+        .refine((val) => !val || !val.trim() || !isNaN(new Date(val).getTime()), {
+            message: "Giờ vào tùy chọn không đúng định dạng ngày giờ.",
+        })
+        .nullable()
+        .optional(),
 });
 
 export type OpenSessionInput = z.infer<typeof openSessionSchema>;
@@ -242,8 +249,28 @@ export async function openSession(
 
                     // 4. Calculate Server-Authoritative Times
                     const now = new Date();
+                    let effectiveStartAt = now;
+                    let isCustomStart = false;
+
+                    const customStartStr = input.customStartAt?.trim();
+                    if (customStartStr) {
+                        const parsedCustomStart = new Date(customStartStr);
+                        if (isNaN(parsedCustomStart.getTime())) {
+                            throw new Error("VALIDATION_ERROR: Giờ vào không đúng định dạng hợp lệ.");
+                        }
+
+                        // Chặn giờ vào nằm trong tương lai (cho phép dung sai lệch đồng hồ client/server tối đa 60 giây)
+                        const maxAllowedFutureMs = now.getTime() + 60_000;
+                        if (parsedCustomStart.getTime() > maxAllowedFutureMs) {
+                            throw new Error("VALIDATION_ERROR: Giờ vào không được nằm trong tương lai.");
+                        }
+
+                        effectiveStartAt = parsedCustomStart;
+                        isCustomStart = true;
+                    }
+
                     const plannedEndAt = new Date(
-                        now.getTime() + pkg.durationMinutes * 60 * 1000,
+                        effectiveStartAt.getTime() + pkg.durationMinutes * 60 * 1000,
                     );
 
                     // 5. Create FishingSession
@@ -255,7 +282,7 @@ export async function openSession(
                             lakeId: tenantContext.lakeId,
                             customerId: resolvedCustomerId,
                             packageId: pkg.id,
-                            startAt: now,
+                            startAt: effectiveStartAt,
                             plannedEndAt,
                             status: SessionStatus.ACTIVE,
                             packageNameSnapshot: pkg.name,
@@ -423,8 +450,10 @@ export async function openSession(
                                 hutIds: input.hutIds,
                                 customerId: resolvedCustomerId,
                                 paymentTiming: session.paymentTiming,
-                                startAt: now.toISOString(),
+                                startAt: effectiveStartAt.toISOString(),
                                 plannedEndAt: plannedEndAt.toISOString(),
+                                createdAt: now.toISOString(),
+                                isCustomStart,
                             }),
                             createdBy: tenantContext.userId,
                         },
@@ -460,8 +489,8 @@ export async function openSession(
                             session: {
                                 id: session.id,
                                 status: session.status,
-                                startTime: now.toISOString(),
-                                endTime: plannedEndAt.toISOString(),
+                                startTime: session.startAt.toISOString(),
+                                endTime: session.plannedEndAt.toISOString(),
                                 paymentTiming: session.paymentTiming,
                             },
                             invoice: {
@@ -475,10 +504,10 @@ export async function openSession(
                         },
                         // Direct root fields for backward compatibility
                         id: session.id,
-                        startTime: now.toISOString(),
-                        endTime: plannedEndAt.toISOString(),
-                        startAt: now.toISOString(),
-                        plannedEndAt: plannedEndAt.toISOString(),
+                        startTime: session.startAt.toISOString(),
+                        endTime: session.plannedEndAt.toISOString(),
+                        startAt: session.startAt.toISOString(),
+                        plannedEndAt: session.plannedEndAt.toISOString(),
                         invoiceId: invoice.id,
                         totalAmountVnd: totalGrossAmountVnd,
                         paymentTiming: session.paymentTiming,
