@@ -143,6 +143,21 @@
 - **Bộ kiểm thử tự động chuyên sâu (`tests/custom-start-time.test.mjs`)**:
   - Thực thi toàn bộ 11 ca kiểm thử A -> K theo yêu cầu nghiệp vụ: **11/11 PASS (100%)**.
 
+### Nhóm 9: Thu Mua Cá & Khối Lượng Thập Phân Linh Hoạt (HOÀN THÀNH)
+
+- **Chuẩn hóa nhập số kg linh hoạt (`src/app/sessions/fish-buyback-modal.tsx`, `create-buyback-form.tsx`)**:
+  - Hỗ trợ nhập liệu tự nhiên bằng cả dấu phẩy (`,`) chuẩn tiếng Việt và dấu chấm (`.`) chuẩn quốc tế (ví dụ: `3,4` kg, `12,5` kg, `0,5` kg, `1,25` kg).
+  - Tự động thêm tiền tố `0` khi người dùng gõ `,5` hoặc `.5` thành `0,5` / `0.5`.
+  - Tự động giới hạn tối đa 2 chữ số thập phân, lọc sạch các ký tự không hợp lệ hoặc dấu âm.
+  - Sử dụng `inputMode="decimal"` hiển thị bàn phím số có dấu chấm/phẩy tối ưu trên Android và iOS.
+- **Tính toán tiền đền bù & Bù trừ hóa đơn thời gian thực**:
+  - Tự động cập nhật thành tiền thu cá ngay khi gõ số kg (`kg * đơn vị giá/kg`).
+  - Tự động khấu trừ vào tổng tiền hóa đơn quyết toán ca câu hoặc hoàn tiền thối lại cho cần thủ nếu tiền thu cá lớn hơn tiền giờ.
+- **Đồng bộ hóa Backend API (`src/app/api/fish-buybacks/route.ts`)**:
+  - Nâng cấp schema Zod nhận `weight: z.number().positive()` cho phép lưu trữ số thập phân chuẩn xác trong database.
+- **Bộ kiểm thử tự động chuyên sâu (`tests/test-fish-buyback.mjs`)**:
+  - 20 ca kiểm thử bao phủ toàn diện: số nguyên, số thập phân lẻ, dấu phẩy, dấu chấm, sửa xóa số, chặn số âm, loại bỏ ký tự lạ, tính tiền theo nhiều đơn giá, bù trừ hóa đơn và thối tiền: **20/20 PASS (100%)**.
+
 ---
 
 ## 3. Báo Cáo Đo Lường & Kiểm Thử Mới Nhất
@@ -150,15 +165,18 @@
 | Hạng mục kiểm tra | Lệnh thực thi | Kết quả |
 | :--- | :--- | :--- |
 | **TypeScript Typecheck** | `npx tsc --noEmit` | **0 lỗi (Exit Code 0)** |
+| **Bộ test Thu mua cá thập phân (20 ca)** | `node tests/test-fish-buyback.mjs` | **20/20 PASS (100%)** |
 | **Bộ test Giờ vào & Realtime Clock (Ca A -> K)** | `node --test tests/custom-start-time.test.mjs` | **11/11 PASS (100%)** |
 | **Unit Test Timer & Chống Resource Leak** | `node --test tests/verification-timer-comprehensive.mjs` | **3/3 PASS (100%)** |
 | **Unit Test Phân loại hồ** | `node --test tests/test-account-classification.test.mjs` | **2/2 PASS (100%)** |
-| **Turbopack Build** | `npm run build` | **Compiled successfully (Exit Code 0)** |
+| **Turbopack Build** | `npm run build` | **Compiled successfully 65 routes (Exit Code 0)** |
 | **Production Deployment (Vercel)** | `npx vercel --prod --yes` | **Aliased: [quanlihocau.com](https://quanlihocau.com) (HTTP 200 Ready)** |
 
 ---
 
 ## 4. Kế Hoạch Bước Kế Tiếp
 
+- Triển khai bản cập nhật mới nhất (Nhóm 9) lên production Vercel.
+- Hợp nhất nhánh `feature/saas-hardening-seo-ux` vào nhánh chính `main`.
 - Theo dõi thực tế vận hành tại quầy trên domain production [quanlihocau.com](https://quanlihocau.com).
-- Hỗ trợ giải đáp các ca câu qua đêm và thu ngân ghi nhận giờ vào tùy chọn.
+
