@@ -154,12 +154,13 @@
 | **Unit Test Timer & Chống Resource Leak** | `node --test tests/verification-timer-comprehensive.mjs` | **3/3 PASS (100%)** |
 | **Unit Test Phân loại hồ** | `node --test tests/test-account-classification.test.mjs` | **2/2 PASS (100%)** |
 | **Turbopack Build** | `npm run build` | **Compiled successfully (Exit Code 0)** |
+| **Production Deployment (Vercel)** | `npx vercel --prod --yes` | **Aliased: https://quanlihocau.com (HTTP 200 Ready)** |
 
 ---
 
 ## 4. Kế Hoạch Bước Kế Tiếp
 
-- Duy trì kiểm tra định kỳ phản hồi của thu ngân tại quầy khi thao tác trên các máy POS cảm ứng và điện thoại cầm tay.
-- Giữ nguyên toàn bộ mã nguồn trên nhánh `feature/saas-hardening-seo-ux` để Ban Quản trị nghiệm thu trước khi merge.
+- Theo dõi thực tế vận hành tại quầy trên domain production `https://quanlihocau.com`.
+- Hỗ trợ giải đáp các ca câu qua đêm và thu ngân ghi nhận giờ vào tùy chọn.
 
 
