@@ -8,6 +8,7 @@ import { InlineAlert } from "@/components/ui/inline-alert";
 import { usePrinter } from "@/lib/printing/use-printer";
 import { PaymentReceiptData } from "@/lib/printing/types";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 interface SettlementPreviewData {
     session: {
@@ -92,6 +93,13 @@ export function SettlementCheckoutModal({
     // Success & printing state
     const [completedReceipt, setCompletedReceipt] = useState<PaymentReceiptData | null>(null);
     const [isPrinting, setIsPrinting] = useState(false);
+
+    // Fast escape key & backdrop dismiss
+    const { onBackdropClick } = useModalDismiss({
+        isOpen,
+        onClose,
+        disabled: isSubmitting,
+    });
 
     // Fetch live figures on open
     useEffect(() => {
@@ -247,8 +255,11 @@ export function SettlementCheckoutModal({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-[#FFFFFF] border border-[#E3E8E3] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs modal-backdrop-animate"
+            onClick={onBackdropClick}
+        >
+            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-[#FFFFFF] border border-[#E3E8E3] shadow-2xl modal-content-animate">
                 {/* Header */}
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#E3E8E3] bg-white px-5 py-4">
                     <div className="flex items-center gap-3">

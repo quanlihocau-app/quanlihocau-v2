@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { usePrinter } from "@/lib/printing/use-printer";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 import { getCachedProducts, type Product } from "./add-product-modal";
 
 export interface ActionPackage {
@@ -98,6 +99,12 @@ export function SessionActions({
     const [isExtending, setIsExtending] = useState(false);
     const [extensionError, setExtensionError] = useState("");
     const [extensionSuccess, setExtensionSuccess] = useState("");
+
+    const { onBackdropClick: onExtensionBackdropClick } = useModalDismiss({
+        isOpen: isExtensionModalOpen,
+        onClose: () => setIsExtensionModalOpen(false),
+        disabled: isExtending,
+    });
 
     // Fish Buyback modal states
     const [isFishBuybackOpen, setIsFishBuybackOpen] = useState(false);
@@ -479,8 +486,11 @@ export function SessionActions({
 
             {/* ── Extension Modal ────────────────────────────────────────────────── */}
             {isExtensionModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-                    <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 modal-backdrop-animate"
+                    onClick={onExtensionBackdropClick}
+                >
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl space-y-4 modal-content-animate">
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-[#EAE4D7] pb-3">
                             <div className="flex items-center gap-2">

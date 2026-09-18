@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
@@ -110,6 +111,14 @@ export function DailyReportView({
     const [note, setNote] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const { onBackdropClick } = useModalDismiss({
+        isOpen: isModalOpen,
+        onClose: () => {
+            if (!isSubmitting) setIsModalOpen(false);
+        },
+        closeOnEscape: !isSubmitting,
+    });
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     async function handleConfirmClose() {
@@ -409,8 +418,11 @@ export function DailyReportView({
 
                 {/* Shift Close Modal */}
                 {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-                        <div className="w-full max-w-sm rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl overflow-hidden flex flex-col space-y-4 p-5 animate-in fade-in zoom-in-95 duration-150">
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 modal-backdrop-animate"
+                        onClick={onBackdropClick}
+                    >
+                        <div className="w-full max-w-sm rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl overflow-hidden flex flex-col space-y-4 p-5 modal-content-animate">
                             {/* Header */}
                             <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
                                 <div className="flex items-center gap-2">

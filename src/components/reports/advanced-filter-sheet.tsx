@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 export interface AdvancedFilterValues {
     areaId?: string;
@@ -61,8 +62,13 @@ function AdvancedFilterSheetContent({
 
     const activeCount = Object.values(localFilters).filter(Boolean).length;
 
+    useModalDismiss({
+        isOpen: true,
+        onClose,
+    });
+
     return (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs modal-backdrop-animate">
             {/* Backdrop click to close */}
             <div className="absolute inset-0" onClick={onClose} />
 

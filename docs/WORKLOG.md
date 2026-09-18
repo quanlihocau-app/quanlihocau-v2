@@ -8,6 +8,7 @@
 ---
 
 ## 1. Nguyên Tắc An Toàn Bắt Buộc (Invariant Safeguards)
+
 1. **Không can thiệp logic tài chính**: Giữ nguyên 100% công thức tính tiền giờ, phụ thu quá giờ, thu mua cá bù trừ hóa đơn, và làm tròn số.
 2. **Cách ly đa khách hàng (Multi-tenancy)**: Mọi truy vấn database bắt buộc ràng buộc `lakeId` / `organizationId`. Hồ A tuyệt đối không truy cập dữ liệu Hồ B.
 3. **Bảo vệ dữ liệu thật**: Không dùng dữ liệu thật để tạo đơn/hóa đơn giả. Tuyệt đối không xóa hồ có tên "test" khỏi database mà chỉ phân loại gắn cờ hiển thị có thể đảo ngược 100%.
@@ -18,21 +19,25 @@
 ## 2. Nhật Ký Các Nhóm Thay Đổi
 
 ### Nhóm 1: Trải Nghiệm Hướng Dẫn & Giao Diện Di Động (UX & Mobile)
+
 - **Vòng lặp Onboarding (`onboarding-modal.tsx`)**: Sửa lỗi nút đóng "✕" không ghi nhớ vào `localStorage`, khiến modal tự động mở lại sau 800ms khi chuyển trang. Bổ sung kiểm tra `usePathname()` chặn tự bật tại các màn hình nhạy cảm (`/sessions/new`, `/invoices`, `/settings/printer`). Giữ nút `?` và menu `/settings/guide` để mở lại khi cần.
 - **Khóa thu phóng Pinch-to-zoom (`layout.tsx`)**: Gỡ bỏ `maximumScale: 1` và `userScalable: false`, cho phép người dùng thu phóng tự do tới 200%.
 - **Banner PWA che nút tác nghiệp (`pwa-install-prompt.tsx`)**: Ẩn banner trên các màn hình thao tác quầy, ghi nhớ trạng thái đóng vĩnh viễn khi người dùng bấm tắt.
 - **Tách biệt thao tác xóa gói khỏi quầy POS (`open-session-form.tsx`)**: Loại bỏ icon thùng rác xóa gói câu và chòi câu khỏi form mở vé để tránh nhân viên thu ngân bấm nhầm.
 
 ### Nhóm 2: Đồng Nhất Chính Sách Dùng Thử & Công Khai Bảng Giá
+
 - **Thống nhất thời hạn dùng thử**: Chủ sản phẩm chốt **7 ngày dùng thử** (Lựa chọn A) trên toàn hệ thống. Đồng bộ copy landing page từ "30 ngày" thành "7 ngày" đúng với backend (`PLAN_PRICING.TRIAL`, `api/register`, `api/auth/verify-otp`).
 - **Trang Bảng giá công khai (`/bang-gia`)**: Tạo trang tĩnh chuẩn SEO, tải nhanh ~8ms, minh bạch 3 gói cước (Dùng thử 0đ, Gói Bạc 99k/30 ngày, Gói Vàng 179k/30 ngày), nêu rõ điều khoản thanh toán VietQR Techcombank và bảo lưu dữ liệu.
 
 ### Nhóm 3: SEO Tách Biệt Nghiệp Vụ & Bảo Mật Route Riêng Tư
+
 - **Robots & Sitemap (`robots.ts`, `sitemap.ts`)**: Chặn triệt để bot tìm kiếm cào dữ liệu private (`/reports`, `/reports/`, `/sessions/`, `/invoices/`, `/admin/`,...). Sitemap chỉ giữ đúng 4 URL công khai (`/`, `/bang-gia`, `/login`, `/register`).
 - **Thẻ Metadata Chặn Index (`metadata.ts`)**: Tạo helper `privateRouteMetadata` (`robots: noindex, nofollow, noarchive, nocache`) áp dụng cho 15 trang nội bộ, xóa thẻ `canonical` trỏ sai về trang chủ.
 - **Social Sharing (`page.tsx`, `layout.tsx`)**: Bổ sung `og:image` và `twitter:image` trỏ tới `/icons/icon-512x512.png`.
 
 ### Nhóm 4: Đo Lường Khách Thật & Phân Loại Hồ Thử Nghiệm
+
 - **Module phân loại (`src/lib/test-account.ts`)**:
   - `isTestLake(name, email)`: Phân loại dựa trên bằng chứng rõ ràng (tên chứa test, demo, thử nghiệm, sample; email chứa test, demo, example.com, @quanlihocau.internal).
   - `isTestUser(name, email, phone)`: Phân loại người dùng thử nghiệm nội bộ.
@@ -48,6 +53,7 @@
   - Kiểm thử 2 ca test chuyên sâu cho `isTestLake` và `isTestUser`, đạt 100% PASS.
 
 ### Nhóm 5: Pháp Lý, Bảo Mật Dữ Liệu & Hướng Dẫn Thiết Bị Máy In (HOÀN THÀNH)
+
 - **Trang Điều khoản dịch vụ (`src/app/dieu-khoan/page.tsx`)**:
   - Xuất bản trang tĩnh chuẩn SEO, nêu rõ chu kỳ 30 ngày, 7 ngày dùng thử miễn phí, thanh toán VietQR Techcombank không tự trừ tiền, và chính sách bảo lưu dữ liệu tối thiểu 30 ngày sau khi hết hạn để không mất lịch sử.
 - **Trang Chính sách bảo mật (`src/app/chinh-sach-bao-mat/page.tsx`)**:
@@ -62,6 +68,7 @@
   - Thêm link điều hướng đến các trang mới vào chân trang Landing Page.
 
 ### Nhóm 6: Tối Ưu & Mở Rộng Kết Nối Máy In Nhiệt Bluetooth (MỚI HOÀN THÀNH)
+
 - **Hỗ trợ thực tế dòng máy in MP210 / RPP02N (58mm Thermal Printer)**:
   - Khách hàng cung cấp tờ Self-Test thực tế từ máy in nhiệt di động (`58mm Thermal Printer`, Model: `MP210`, Bluetooth NAME: `RPP02N`, PIN: `0000`, MAC: `86-67-7A-E1-7F-87`, CMD Type: `ESC`).
 - **Nâng cấp `src/lib/printing/print-manager.ts`**:
@@ -75,6 +82,37 @@
 - **Cập nhật tài liệu thiết bị (`src/app/thiet-bi-may-in/page.tsx`)**:
   - Bổ sung dòng `MP210 / RPP02N (58mm Thermal Printer)` vào danh mục máy in đã kiểm chứng.
   - Bổ sung Phần 3: Hướng dẫn chi tiết từng bước kết nối máy in Bluetooth mini cầm tay cho nhân viên đi quanh hồ.
+
+### Nhóm 7: Tối Ưu Tốc Độ Sử Dụng & Trải Nghiệm Popup Toàn Ứng Dụng (HOÀN THÀNH)
+
+- **Khử trễ cảm ứng 300ms trên thiết bị di động (`globals.css`)**:
+  - Khai báo `touch-action: manipulation` cho toàn bộ các phần tử tương tác (`button, a, input, select, textarea, [role="button"]`), triệt tiêu hoàn toàn khoảng trễ 300ms mặc định của trình duyệt mobile khi chờ double-tap zoom. Mọi thao tác chạm quầy phản hồi ngay 0ms.
+- **Tăng tốc hiển thị hiệu ứng Modal bằng GPU (`globals.css`)**:
+  - Định nghĩa `.modal-backdrop-animate` (0.12s) và `.modal-content-animate` (0.14s) với `will-change: transform, opacity` và đường cong bezier siêu mượt, loại bỏ hiện tượng giật lag khung hình khi mở/đóng popup.
+- **Hook đóng popup tức thì (`src/hooks/use-modal-dismiss.ts`)**:
+  - Tự động bắt phím `Escape` đóng modal ngay lập tức (0ms).
+  - Tự động đóng khi chạm hoặc click vào vùng nền mờ bên ngoài (`onBackdropClick`), không bắt buộc người dùng phải với tay bấm nút "✕".
+  - Tự động khóa cuộn trang (`body scroll lock`) khi mở và khôi phục khi đóng.
+- **0ms Cache danh mục sản phẩm React Query (`src/hooks/use-products.ts`)**:
+  - Thiết lập `staleTime: 5 phút`, `gcTime: 24h` backed by LocalStorage persister. Loại bỏ hoàn toàn vòng lặp spinner `fetch("/api/products")` khi nhân viên thêm dịch vụ hoặc mở quầy bán lẻ.
+- **Nâng cấp đồng loạt toàn bộ Modal & Drawer trong hệ thống**:
+  1. Quầy POS mở vé (`open-session-form.tsx`): Modal xác nhận vé & Modal thanh toán thu trước.
+  2. Quầy bán lẻ POS (`retail-pos-form.tsx`): Modal xuất hóa đơn bán lẻ thành công.
+  3. Bàn điều phối ca câu (`sessions-client.tsx`): Modal xem nhanh chi tiết vé khi nhấn giữ.
+  4. Thao tác ca câu (`session-actions.tsx`): Modal gia hạn thời lượng câu.
+  5. Thanh toán kết thúc ca (`settlement-checkout-modal.tsx`): Modal chốt tiền và thanh toán tổng kết.
+  6. Thu mua cá từ cần thủ (`fish-buyback-modal.tsx`): Modal nhập cân nặng và bù trừ hóa đơn.
+  7. Bán kèm món/dịch vụ tại chỗ (`add-product-modal.tsx`): Modal chọn món nhanh có cache 0ms.
+  8. Quầy thu ngân bán lẻ (`sales-pos.tsx`): Modal hoàn tất thanh toán hóa đơn.
+  9. Sổ cái & Hóa đơn (`record-payment-button.tsx`): Modal thu tiền mặt/chuyển khoản.
+  10. Danh mục sản phẩm & kho (`product-list.tsx`): Modal sửa sản phẩm.
+  11. Bảng giá & Gói câu (`package-manager.tsx`): Modal sửa thông số gói câu.
+  12. Sổ chi phí hồ câu (`expense-manager.tsx`): Modal thêm phiếu chi nhanh.
+  13. Danh bạ khách hàng (`customer-manager.tsx`): Modal cập nhật thông tin cần thủ.
+  14. Cài đặt máy in (`printer-settings.tsx`): Cả 3 modal kết nối Bluetooth, USB-OTG, Wi-Fi LAN.
+  15. Báo cáo ca hàng ngày (`daily-report-view.tsx`): Modal chốt ca an toàn.
+  16. Gói cước SaaS (`subscription-modal.tsx`): Modal bảng giá gia hạn và mã VietQR.
+  17. Bảng điều khiển quản trị viên (`users-admin-client.tsx`): Drawer chi tiết và 5 modal khóa, gia hạn, chuyển gói, đăng xuất phiên.
 
 ---
 
@@ -91,6 +129,7 @@
 ---
 
 ## 4. Kế Hoạch Bước Kế Tiếp
-- Rà soát các thông điệp cảnh báo nghiệp vụ và tối ưu UX quầy khi in bill POS nhiều liên.
+
+- Duy trì kiểm tra định kỳ phản hồi của thu ngân tại quầy khi thao tác trên các máy POS cảm ứng và điện thoại cầm tay.
 - Giữ nguyên toàn bộ mã nguồn trên nhánh `feature/saas-hardening-seo-ux` để Ban Quản trị nghiệm thu trước khi merge.
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 
 import { formatVnd } from "@/lib/reports/date-utils";
 import { DrilldownItem } from "@/app/api/reports/drilldown/route";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 interface DrilldownDrawerProps {
     isOpen: boolean;
@@ -111,6 +112,11 @@ export function DrilldownDrawer({
         };
     }, [isOpen, metric, filterState.preset, filterState.from, filterState.to, filterState.fromTime, filterState.toTime]);
 
+    useModalDismiss({
+        isOpen,
+        onClose,
+    });
+
     if (!isOpen) return null;
 
     const filteredItems = (data?.items || []).filter((item) => {
@@ -125,7 +131,7 @@ export function DrilldownDrawer({
     });
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs modal-backdrop-animate">
             {/* Backdrop */}
             <div className="absolute inset-0" onClick={onClose} />
 

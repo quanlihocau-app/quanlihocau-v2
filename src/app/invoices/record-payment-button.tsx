@@ -9,6 +9,7 @@ import { Input, Select } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { usePrinter } from "@/lib/printing/use-printer";
 import { PaymentReceiptData } from "@/lib/printing/types";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 interface RecordPaymentButtonProps {
     invoiceId: string;
@@ -63,6 +64,12 @@ export function RecordPaymentButton({
             setLastReceiptData(null);
         }
     };
+
+    const { onBackdropClick } = useModalDismiss({
+        isOpen,
+        onClose: handleClose,
+        closeOnEscape: !loading,
+    });
 
     const handleRetryPrint = async () => {
         if (!lastReceiptData) return;
@@ -208,8 +215,11 @@ export function RecordPaymentButton({
                     Thu tiền
                 </Button>
             ) : (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-                    <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-[#E3E8E3] space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onBackdropClick}
+                >
+                    <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-[#E3E8E3] space-y-4 modal-content-animate">
                         <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
                             <div className="flex items-center gap-2">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8F3E5] text-[#246B38]">

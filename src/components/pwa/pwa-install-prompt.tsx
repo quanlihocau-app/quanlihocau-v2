@@ -162,11 +162,11 @@ export function PwaInstallPrompt() {
             {/* Detailed Guide Modal (especially useful for iOS or manual trigger) */}
             {showDetailGuide && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 modal-backdrop-animate"
                     onClick={() => setShowDetailGuide(false)}
                 >
                     <div
-                        className="relative w-full max-w-sm rounded-3xl border border-emerald-900/40 bg-[#082618] p-5 text-white shadow-2xl space-y-4"
+                        className="relative w-full max-w-sm rounded-3xl border border-emerald-900/40 bg-[#082618] p-5 text-white shadow-2xl space-y-4 modal-content-animate"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}

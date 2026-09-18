@@ -15,6 +15,7 @@ import { Input, Select } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { openGuideModal } from "@/components/guide/onboarding-modal";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 export function PrinterSettingsSection() {
     const {
@@ -40,6 +41,11 @@ export function PrinterSettingsSection() {
 
     // Active connection modal
     const [activeTab, setActiveTab] = useState<PrinterConnectionType | null>(null);
+
+    const { onBackdropClick: onModalBackdropClick } = useModalDismiss({
+        isOpen: activeTab !== null,
+        onClose: () => setActiveTab(null),
+    });
 
     // Bluetooth states
     const [btDevices, setBtDevices] = useState<PrinterDevice[]>([]);
@@ -723,8 +729,11 @@ export function PrinterSettingsSection() {
 
             {/* Modal: Bluetooth Connection */}
             {activeTab === "BLUETOOTH" && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onModalBackdropClick}
+                >
+                    <div className="w-full max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col modal-content-animate">
                         <div className="flex items-center justify-between border-b border-[#D9D2C8] pb-3 shrink-0">
                             <div>
                                 <h3 className="text-base font-bold text-[#27231F] flex items-center gap-2">
@@ -1065,8 +1074,11 @@ export function PrinterSettingsSection() {
 
             {/* Modal: USB-OTG Connection */}
             {activeTab === "USB" && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onModalBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4 max-h-[90vh] modal-content-animate">
                         <div className="flex items-center justify-between border-b border-[#D9D2C8] pb-3">
                             <h3 className="text-base font-bold text-[#27231F]">
                                 Kết nối qua cáp USB-OTG
@@ -1144,8 +1156,11 @@ export function PrinterSettingsSection() {
 
             {/* Modal: Wi-Fi/LAN Connection */}
             {activeTab === "WIFI" && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onModalBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-4 max-h-[90vh] modal-content-animate">
                         <div className="flex items-center justify-between border-b border-[#D9D2C8] pb-3">
                             <h3 className="text-base font-bold text-[#27231F]">
                                 Thiết lập máy in Wi-Fi / LAN

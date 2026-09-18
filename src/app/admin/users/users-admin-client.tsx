@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 import type {
     UserListItem,
     UserAdminStats,
@@ -137,6 +138,22 @@ export function UsersAdminClient({
     const [planChangeDays, setPlanChangeDays] = useState<number>(30);
     const [planChangeReason, setPlanChangeReason] = useState("");
     const [revokeReason, setRevokeReason] = useState("");
+
+    const { onBackdropClick: onDrawerBackdropClick } = useModalDismiss({
+        isOpen: Boolean(selectedUserId),
+        onClose: () => setSelectedUserId(null),
+    });
+
+    const { onBackdropClick: onActionModalBackdropClick } = useModalDismiss({
+        isOpen: Boolean(activeActionModal),
+        onClose: () => {
+            if (!actionSubmitting) {
+                setActiveActionModal(null);
+                setTargetUser(null);
+            }
+        },
+        closeOnEscape: !actionSubmitting,
+    });
 
     // Debounce timer for fast responsive search
     const debounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -909,7 +926,10 @@ export function UsersAdminClient({
             {/* USER DETAIL DRAWER / MODAL */}
             {/* ========================================================================= */}
             {selectedUserId && (
-                <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs">
+                <div
+                    className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onDrawerBackdropClick}
+                >
                     <div
                         className="relative flex h-full w-full max-w-xl flex-col bg-white shadow-2xl border-l border-[#D9D2C8] overflow-y-auto animate-in slide-in-from-right duration-200"
                         role="dialog"
@@ -1228,8 +1248,11 @@ export function UsersAdminClient({
             {/* ACTION MODAL: LOCK / UNLOCK */}
             {/* ========================================================================= */}
             {activeActionModal === "LOCK" && targetUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-                    <div className="w-full max-w-md rounded-2xl border border-[#D9D2C8] bg-white p-5 shadow-2xl space-y-4">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onActionModalBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-2xl border border-[#D9D2C8] bg-white p-5 shadow-2xl space-y-4 modal-content-animate">
                         <div className="flex items-center gap-3">
                             <div
                                 className={`flex h-10 w-10 items-center justify-center rounded-xl text-lg ${
@@ -1306,8 +1329,11 @@ export function UsersAdminClient({
             {/* ACTION MODAL: EXTEND TRIAL */}
             {/* ========================================================================= */}
             {activeActionModal === "EXTEND_TRIAL" && targetUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-                    <div className="w-full max-w-md rounded-2xl border border-[#D9D2C8] bg-white p-5 shadow-2xl space-y-4">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onActionModalBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-2xl border border-[#D9D2C8] bg-white p-5 shadow-2xl space-y-4 modal-content-animate">
                         <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-800 text-lg">
                                 ⏳
@@ -1419,8 +1445,11 @@ export function UsersAdminClient({
             {/* ACTION MODAL: CHANGE PLAN */}
             {/* ========================================================================= */}
             {activeActionModal === "CHANGE_PLAN" && targetUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-                    <div className="w-full max-w-md rounded-2xl border border-[#D9D2C8] bg-white p-5 shadow-2xl space-y-4">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onActionModalBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-2xl border border-[#D9D2C8] bg-white p-5 shadow-2xl space-y-4 modal-content-animate">
                         <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 text-purple-800 text-lg">
                                 🔄
@@ -1523,8 +1552,11 @@ export function UsersAdminClient({
             {/* ACTION MODAL: EXTEND SUBSCRIPTION */}
             {/* ========================================================================= */}
             {activeActionModal === "EXTEND_SUB" && targetUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-                    <div className="w-full max-w-md rounded-2xl border border-[#D9D2C8] bg-white p-5 shadow-2xl space-y-4">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onActionModalBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-2xl border border-[#D9D2C8] bg-white p-5 shadow-2xl space-y-4 modal-content-animate">
                         <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 text-lg">
                                 ➕
@@ -1636,8 +1668,11 @@ export function UsersAdminClient({
             {/* ACTION MODAL: REVOKE ALL SESSIONS */}
             {/* ========================================================================= */}
             {activeActionModal === "REVOKE_SESSIONS" && targetUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-                    <div className="w-full max-w-md rounded-2xl border border-[#D9D2C8] bg-white p-5 shadow-2xl space-y-4">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs modal-backdrop-animate"
+                    onClick={onActionModalBackdropClick}
+                >
+                    <div className="w-full max-w-md rounded-2xl border border-[#D9D2C8] bg-white p-5 shadow-2xl space-y-4 modal-content-animate">
                         <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800 text-lg">
                                 🚪

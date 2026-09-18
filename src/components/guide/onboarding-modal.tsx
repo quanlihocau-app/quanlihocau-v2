@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { GuideStep, ONBOARDING_STEPS } from "@/lib/guides/onboarding-data";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 interface OnboardingModalProps {
     isOpen?: boolean;
@@ -114,16 +115,22 @@ export function OnboardingModal({
         }
     }
 
+    const { onBackdropClick } = useModalDismiss({
+        isOpen: isModalOpen,
+        onClose: handleClose,
+    });
+
     if (!isModalOpen || !activeStep) return null;
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs modal-backdrop-animate"
             role="dialog"
             aria-modal="true"
             aria-labelledby="guide-modal-title"
+            onClick={onBackdropClick}
         >
-            <div className="w-full max-w-lg rounded-2xl border border-[#E3E8E3] bg-white shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-page-enter">
+            <div className="w-full max-w-lg rounded-2xl border border-[#E3E8E3] bg-white shadow-2xl flex flex-col max-h-[92vh] overflow-hidden modal-content-animate">
                 {/* Modal Top Bar */}
                 <div className="border-b border-[#E3E8E3] bg-[#F7F9F5] px-5 py-3.5 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">

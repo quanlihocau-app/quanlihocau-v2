@@ -16,6 +16,7 @@ import { useNetworkStatus } from "@/lib/network/use-network-status";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useToast } from "@/components/ui/toast";
 import { useFishingSpots, useFishingPackages } from "@/hooks/use-fishing-catalog";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 import {
     addQuickHutAction,
     addQuickPackageAction,
@@ -194,6 +195,29 @@ export function OpenSessionForm({
     const [splitBankAmount, setSplitBankAmount] = useState<number | "">("");
     const [transferConfirmed, setTransferConfirmed] = useState(false);
     const [tempOrderCode, setTempOrderCode] = useState("");
+
+    const handleCloseConfirmModal = useCallback(() => {
+        if (!isSubmitting) setIsConfirmModalOpen(false);
+    }, [isSubmitting]);
+
+    const { onBackdropClick: onConfirmBackdropClick } = useModalDismiss({
+        isOpen: isConfirmModalOpen,
+        onClose: handleCloseConfirmModal,
+        closeOnEscape: !isSubmitting,
+    });
+
+    const handleCloseCheckoutModal = useCallback(() => {
+        if (!isSubmitting) {
+            setIsCheckoutModalOpen(false);
+            setIsConfirmModalOpen(true);
+        }
+    }, [isSubmitting]);
+
+    const { onBackdropClick: onCheckoutBackdropClick } = useModalDismiss({
+        isOpen: isCheckoutModalOpen,
+        onClose: handleCloseCheckoutModal,
+        closeOnEscape: !isSubmitting,
+    });
 
     // ── Offline & Network Synchronization State ──────────────────────────────
     const { isOnline } = useNetworkStatus();
@@ -1697,8 +1721,11 @@ export function OpenSessionForm({
             {/* ========================================================================= */}
             {isConfirmModalOpen && (
                 <ModalPortal>
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 modal-backdrop-animate"
+                    onClick={onConfirmBackdropClick}
+                >
+                    <div className="relative w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4 modal-content-animate">
                         {/* Header */}
                         <div className="text-center space-y-1">
                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F3E5] text-[#246B38] text-xs font-bold uppercase tracking-wider">
@@ -1895,8 +1922,11 @@ export function OpenSessionForm({
             {/* ========================================================================= */}
             {isCheckoutModalOpen && (
                 <ModalPortal>
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-lg rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 modal-backdrop-animate"
+                    onClick={onCheckoutBackdropClick}
+                >
+                    <div className="relative w-full max-w-lg rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4 modal-content-animate">
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
                             <div className="flex items-center gap-2.5">

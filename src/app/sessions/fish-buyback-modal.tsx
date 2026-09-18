@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 function formatPrice(vnd: number): string {
     return new Intl.NumberFormat("vi-VN").format(vnd) + "đ";
@@ -34,6 +35,12 @@ export function FishBuybackModal({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [submitSuccess, setSubmitSuccess] = useState("");
+
+    const { onBackdropClick } = useModalDismiss({
+        isOpen: true,
+        onClose,
+        disabled: isSubmitting,
+    });
 
     useEffect(() => {
         if (types.length === 0) {
@@ -103,8 +110,11 @@ export function FishBuybackModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl space-y-4 animate-in fade-in duration-150">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 modal-backdrop-animate"
+            onClick={onBackdropClick}
+        >
+            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl space-y-4 modal-content-animate">
                 <div className="flex items-center justify-between border-b border-[#EAE4D7] pb-3">
                     <div className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAECEC] text-[#8B1E1E]">
