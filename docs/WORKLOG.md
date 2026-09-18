@@ -154,13 +154,11 @@
 | **Unit Test Timer & Chống Resource Leak** | `node --test tests/verification-timer-comprehensive.mjs` | **3/3 PASS (100%)** |
 | **Unit Test Phân loại hồ** | `node --test tests/test-account-classification.test.mjs` | **2/2 PASS (100%)** |
 | **Turbopack Build** | `npm run build` | **Compiled successfully (Exit Code 0)** |
-| **Production Deployment (Vercel)** | `npx vercel --prod --yes` | **Aliased: https://quanlihocau.com (HTTP 200 Ready)** |
+| **Production Deployment (Vercel)** | `npx vercel --prod --yes` | **Aliased: [quanlihocau.com](https://quanlihocau.com) (HTTP 200 Ready)** |
 
 ---
 
 ## 4. Kế Hoạch Bước Kế Tiếp
 
-- Theo dõi thực tế vận hành tại quầy trên domain production `https://quanlihocau.com`.
+- Theo dõi thực tế vận hành tại quầy trên domain production [quanlihocau.com](https://quanlihocau.com).
 - Hỗ trợ giải đáp các ca câu qua đêm và thu ngân ghi nhận giờ vào tùy chọn.
-
-

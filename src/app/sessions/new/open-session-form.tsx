@@ -135,7 +135,6 @@ export function OpenSessionForm({
 }: OpenSessionFormProps) {
     const router = useRouter();
     const toast = useToast();
-    const queryClient = useQueryClient();
     const { isConnected, printSessionTicket } = usePrinter();
 
     // Customer state
@@ -150,6 +149,9 @@ export function OpenSessionForm({
     const [newCustomerPhone, setNewCustomerPhone] = useState("");
     const [customerError, setCustomerError] = useState("");
     const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+    // Tên & SĐT khách vãng lai nhanh (khi không tạo bản ghi khách hàng riêng)
+    const [guestName, setGuestName] = useState("");
+    const [guestPhone, setGuestPhone] = useState("");
 
     // SWR / TanStack Query Caching with LocalStorage Persistence
     useFishingSpots(initialHuts as unknown as import("@/hooks/use-fishing-catalog").FishingHut[]);
@@ -373,6 +375,8 @@ export function OpenSessionForm({
         clearDraft();
         setSelectedHutIds([]);
         setSelectedCustomerId(null);
+        setGuestName("");
+        setGuestPhone("");
         setSelectedItems([]);
         setSelectedFishTypeId("");
         setNote("");
@@ -559,6 +563,13 @@ export function OpenSessionForm({
                 },
                 body: JSON.stringify({
                     customerId: selectedCustomerId || null,
+                    ...((!selectedCustomerId && guestName.trim().length >= 2) ? {
+                        customer: {
+                            mode: "NEW",
+                            name: guestName.trim(),
+                            phone: guestPhone.trim() || null,
+                        },
+                    } : {}),
                     packageId: selectedPackageId,
                     hutIds: selectedHutIds,
                     paymentTiming: "POSTPAID",
@@ -662,6 +673,7 @@ export function OpenSessionForm({
                 customerName:
                     selectedCustomer?.name ||
                     result.customer?.name ||
+                    (guestName.trim().length >= 2 ? guestName.trim() : null) ||
                     "Khách lẻ",
                 customerPhone:
                     selectedCustomer?.phoneNormalized ||
@@ -674,6 +686,8 @@ export function OpenSessionForm({
             };
 
             clearDraft();
+            setGuestName("");
+            setGuestPhone("");
             setIsConfirmModalOpen(false);
             setIsSubmitting(false);
             toast.dismiss(loadingId);
@@ -802,6 +816,13 @@ export function OpenSessionForm({
                 },
                 body: JSON.stringify({
                     customerId: selectedCustomerId || null,
+                    ...((!selectedCustomerId && guestName.trim().length >= 2) ? {
+                        customer: {
+                            mode: "NEW",
+                            name: guestName.trim(),
+                            phone: guestPhone.trim() || null,
+                        },
+                    } : {}),
                     packageId: selectedPackageId,
                     hutIds: selectedHutIds,
                     paymentTiming: "PREPAID",
@@ -908,6 +929,7 @@ export function OpenSessionForm({
                 customerName:
                     selectedCustomer?.name ||
                     result.customer?.name ||
+                    (guestName.trim().length >= 2 ? guestName.trim() : null) ||
                     "Khách lẻ",
                 customerPhone:
                     selectedCustomer?.phoneNormalized ||
@@ -920,6 +942,8 @@ export function OpenSessionForm({
             };
 
             clearDraft();
+            setGuestName("");
+            setGuestPhone("");
             setIsCheckoutModalOpen(false);
             setIsConfirmModalOpen(false);
             setIsSubmitting(false);
@@ -1120,6 +1144,28 @@ export function OpenSessionForm({
                     </div>
                 ) : (
                     <div className="space-y-2">
+                        {/* Ô nhập tên khách nhanh khi chọn Khách lẻ */}
+                        {!showQuickAddCustomer && (
+                            <div className="space-y-1.5">
+                                <Input
+                                    placeholder="Tên khách (nếu có)…"
+                                    value={guestName}
+                                    onChange={(e) => setGuestName(e.target.value)}
+                                />
+                                {guestName.trim().length > 0 && (
+                                    <Input
+                                        placeholder="Số điện thoại (tùy chọn)…"
+                                        value={guestPhone}
+                                        onChange={(e) => setGuestPhone(e.target.value)}
+                                        type="tel"
+                                        inputMode="tel"
+                                    />
+                                )}
+                                {guestName.trim().length > 0 && guestName.trim().length < 2 && (
+                                    <p className="text-[11px] text-amber-700">Tên khách phải có ít nhất 2 ký tự để lưu vào vé.</p>
+                                )}
+                            </div>
+                        )}
                         <Input
                             placeholder="Tìm theo tên hoặc số điện thoại..."
                             value={customerSearch}
@@ -1133,6 +1179,8 @@ export function OpenSessionForm({
                                         onClick={() => {
                                             setSelectedCustomerId(c.id);
                                             setCustomerSearch("");
+                                            setGuestName("");
+                                            setGuestPhone("");
                                         }}
                                         className="cursor-pointer p-3 text-xs hover:bg-[#F7F9F5] flex items-center justify-between transition-colors"
                                     >
@@ -1789,11 +1837,18 @@ export function OpenSessionForm({
                                 <span className="text-[#66716A]">Khách hàng:</span>
                                 <div className="text-right">
                                     <span className="font-bold text-[#17201A]">
-                                        {selectedCustomer?.name || "Khách lẻ"}
+                                        {selectedCustomer?.name ||
+                                            (guestName.trim().length >= 2 ? guestName.trim() : null) ||
+                                            "Khách lẻ"}
                                     </span>
                                     {selectedCustomer?.phoneNormalized && (
                                         <p className="text-[11px] font-mono text-[#66716A]">
                                             {selectedCustomer.phoneNormalized}
+                                        </p>
+                                    )}
+                                    {!selectedCustomer && guestName.trim().length >= 2 && guestPhone.trim() && (
+                                        <p className="text-[11px] font-mono text-[#66716A]">
+                                            {guestPhone.trim()}
                                         </p>
                                     )}
                                 </div>
@@ -2029,7 +2084,7 @@ export function OpenSessionForm({
                                         Thanh toán vé câu (Thu trước)
                                     </h3>
                                     <p className="text-xs text-[#66716A]">
-                                        Ô câu: {hutList.filter((h) => selectedHutIds.includes(h.id)).map((h) => h.name).join(", ")} · {selectedCustomer?.name || "Khách lẻ"}
+                                        Ô câu: {hutList.filter((h) => selectedHutIds.includes(h.id)).map((h) => h.name).join(", ")} · {selectedCustomer?.name || (guestName.trim().length >= 2 ? guestName.trim() : null) || "Khách lẻ"}
                                     </p>
                                 </div>
                             </div>

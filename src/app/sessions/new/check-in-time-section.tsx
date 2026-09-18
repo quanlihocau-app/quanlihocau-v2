@@ -136,7 +136,6 @@ export const CheckInTimeSection = memo(function CheckInTimeSection({
 
     // Calculate effective timestamps & validation
     const computed = useMemo(() => {
-        const currentServerNow = new Date(nowMs);
         let startTimestamp: number;
         let isValid = true;
         let errorMessage: string | null = null;
@@ -318,7 +317,7 @@ export const CheckInTimeSection = memo(function CheckInTimeSection({
                         <button
                             type="button"
                             onClick={handleSetCurrentTime}
-                            className="w-full h-[42px] inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#D5E5D1] bg-[#E8F3E5] px-2 text-xs font-bold text-[#246B38] hover:bg-[#DDF0D8] transition-colors cursor-pointer"
+                            className="w-full h-10.5 inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#D5E5D1] bg-[#E8F3E5] px-2 text-xs font-bold text-[#246B38] hover:bg-[#DDF0D8] transition-colors cursor-pointer"
                         >
                             <span>⚡</span>
                             <span>Lấy giờ hiện tại</span>

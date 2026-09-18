@@ -60,7 +60,7 @@ export const shadows = {
 } as const;
 
 export const typography = {
-  fontFamily: "var(--font-be-vietnam-pro), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  fontFamily: "var(--font-sans)",
   display: "text-2xl font-bold tracking-tight",
   screenTitle: "text-xl font-bold tracking-tight",
   sectionTitle: "text-base font-semibold tracking-tight",

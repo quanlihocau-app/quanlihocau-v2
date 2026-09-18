@@ -531,7 +531,7 @@ export function CustomerManager({
                                     variant="primary"
                                     isLoading={isEditing}
                                     loadingText="Đang lưu…"
-                                    className="flex-[2]"
+                                    className="flex-2"
                                 >
                                     Lưu thay đổi
                                 </Button>

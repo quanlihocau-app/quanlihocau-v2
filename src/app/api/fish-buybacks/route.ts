@@ -14,11 +14,18 @@ const createBuybackSchema = z
         fishTypeId: z.string().uuid({
             message: "ID loại cá không đúng định dạng UUID.",
         }),
-        weight: z
+        weight: z.preprocess((val) => {
+            if (typeof val === "string") {
+                const normalized = val.trim().replace(",", ".");
+                const num = parseFloat(normalized);
+                return isNaN(num) ? val : num;
+            }
+            return val;
+        }, z
             .number({
                 message: "Trọng lượng cá phải là số.",
             })
-            .positive("Trọng lượng cá phải lớn hơn 0."),
+            .positive("Trọng lượng cá phải lớn hơn 0.")),
         sessionId: z.string().uuid().optional(),
         invoiceId: z.string().uuid().optional(),
     })
