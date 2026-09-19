@@ -171,12 +171,13 @@
 | **Unit Test Phân loại hồ** | `node --test tests/test-account-classification.test.mjs` | **2/2 PASS (100%)** |
 | **Turbopack Build** | `npm run build` | **Compiled successfully 65 routes (Exit Code 0)** |
 | **Production Deployment (Vercel)** | `npx vercel --prod --yes` | **Aliased: [quanlihocau.com](https://quanlihocau.com) (HTTP 200 Ready)** |
+| **Giao diện Mới Mobile & POS Shell** | Deployment `dpl_6VeVLgzim92D12qqC22JxQePua7x` | **Đã deploy thành công lên production** |
 
 ---
 
 ## 4. Kế Hoạch Bước Kế Tiếp
 
-- Triển khai bản cập nhật mới nhất (Nhóm 9) lên production Vercel.
-- Hợp nhất nhánh `feature/saas-hardening-seo-ux` vào nhánh chính `main`.
-- Theo dõi thực tế vận hành tại quầy trên domain production [quanlihocau.com](https://quanlihocau.com).
+- Giám sát trải nghiệm người dùng trên thiết bị di động thực tế tại quầy trên domain [quanlihocau.com](https://quanlihocau.com).
+- Thu thập phản hồi về giao diện Dark/Light mode và trải nghiệm thao tác cảm ứng của thu ngân.
+
 
