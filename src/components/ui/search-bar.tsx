@@ -25,11 +25,11 @@ export function SearchBar({
     };
 
     return (
-        <div className={`relative flex items-center w-full ${className}`}>
+        <div className={`relative flex items-center w-full font-serif ${className}`}>
             {/* Search Icon */}
-            <span className="absolute left-4 pointer-events-none text-[#66716A]">
+            <span className="absolute left-3.5 pointer-events-none text-[#555555]">
                 <svg
-                    className="h-5 w-5"
+                    className="h-4.5 w-4.5"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth={2}
@@ -48,7 +48,7 @@ export function SearchBar({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                className="h-12 w-full rounded-full border border-[#E3E8E3] bg-[#F7F9F5] pl-11 pr-11 text-sm font-normal text-[#17201A] placeholder:text-[#66716A] transition-colors focus:bg-white focus:border-[#4F9D5A] focus:outline-none focus:ring-2 focus:ring-[#4F9D5A]/20"
+                className="h-10 w-full rounded-xs border border-[#CCCCCC] bg-white pl-10 pr-9 text-xs font-normal text-[#1A1A1A] placeholder:text-[#777777] transition-colors focus:bg-white focus:border-[#2C4C3B] focus:outline-none focus:ring-1 focus:ring-[#2C4C3B] font-serif shadow-none"
                 {...props}
             />
 
@@ -58,10 +58,10 @@ export function SearchBar({
                     type="button"
                     onClick={handleClear}
                     aria-label="Xóa tìm kiếm"
-                    className="absolute right-3.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#E3E8E3] text-[#66716A] hover:bg-[#D0D8CF] hover:text-[#17201A] transition-colors"
+                    className="absolute right-2.5 flex h-5 w-5 items-center justify-center rounded-xs bg-[#F2F2F0] text-[#1A1A1A] hover:bg-[#EAEAE6] transition-colors cursor-pointer"
                 >
                     <svg
-                        className="h-3.5 w-3.5"
+                        className="h-3 w-3"
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2.5}

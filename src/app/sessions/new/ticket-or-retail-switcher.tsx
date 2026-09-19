@@ -47,18 +47,18 @@ export function TicketOrRetailSwitcher({
     return (
         <div className="space-y-4">
             {/* Segmented Control Bar */}
-            <div className="rounded-2xl bg-[#EEF3EB] p-1.5 flex gap-1 shadow-2xs">
+            <div className="flex border-b border-[#CCCCCC] bg-white font-serif">
                 <button
                     type="button"
                     onClick={() => setActiveTab("ticket")}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`flex-1 py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer border-b-2 ${
                         activeTab === "ticket"
-                            ? "bg-white text-[#17201A] shadow-xs"
-                            : "text-[#66716A] hover:text-[#17201A]"
+                            ? "border-[#2C4C3B] text-[#2C4C3B] bg-[#FAFAF7]"
+                            : "border-transparent text-[#666666] hover:text-[#1A1A1A]"
                     }`}
                 >
                     <svg
-                        className={`h-4 w-4 ${activeTab === "ticket" ? "text-[#246B38]" : "text-[#66716A]"}`}
+                        className={`h-4 w-4 ${activeTab === "ticket" ? "text-[#2C4C3B]" : "text-[#777777]"}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2}
@@ -70,20 +70,20 @@ export function TicketOrRetailSwitcher({
                             d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"
                         />
                     </svg>
-                    Tạo vé câu
+                    MỞ VÉ CÂU
                 </button>
 
                 <button
                     type="button"
                     onClick={() => setActiveTab("retail")}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`flex-1 py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer border-b-2 ${
                         activeTab === "retail"
-                            ? "bg-white text-[#17201A] shadow-xs"
-                            : "text-[#66716A] hover:text-[#17201A]"
+                            ? "border-[#2C4C3B] text-[#2C4C3B] bg-[#FAFAF7]"
+                            : "border-transparent text-[#666666] hover:text-[#1A1A1A]"
                     }`}
                 >
                     <svg
-                        className={`h-4 w-4 ${activeTab === "retail" ? "text-[#246B38]" : "text-[#66716A]"}`}
+                        className={`h-4 w-4 ${activeTab === "retail" ? "text-[#2C4C3B]" : "text-[#777777]"}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2}
@@ -95,7 +95,7 @@ export function TicketOrRetailSwitcher({
                             d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
                         />
                     </svg>
-                    Bán lẻ hàng hóa
+                    BÁN LẺ SẢN PHẨM
                 </button>
             </div>
 

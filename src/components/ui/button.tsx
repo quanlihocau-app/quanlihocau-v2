@@ -33,31 +33,30 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         },
         ref,
     ) => {
-        // Base classes: minimum 48px on mobile for size 'lg', rounded-2xl (16px), font-semibold (600)
         const baseClasses =
-            "inline-flex items-center justify-center font-semibold text-center transition-all duration-120 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.97] select-none cursor-pointer border border-transparent shadow-2xs";
+            "inline-flex items-center justify-center font-bold font-serif text-center transition-colors duration-100 ease-out focus:outline-none focus-visible:ring-1 focus-visible:ring-[#2C4C3B] disabled:opacity-40 disabled:pointer-events-none active:translate-y-px select-none cursor-pointer rounded-xs";
 
         const sizeClasses = {
-            sm: "h-9 px-3.5 text-xs rounded-xl min-w-9",
-            md: "h-11 px-4 text-xs rounded-xl min-w-10",
-            lg: "h-12 px-5 text-sm rounded-2xl min-w-12", // 48px standard touch target
+            sm: "h-8 px-3 text-xs min-w-8",
+            md: "h-10 px-3.5 text-xs min-w-10",
+            lg: "h-11 px-4 text-sm min-w-11", // Standard editorial mobile touch target
         }[size];
 
         const variantClasses = {
             primary:
-                "bg-[#4F9D5A] text-white hover:bg-[#3D8547] active:bg-[#246B38] focus-visible:ring-[#4F9D5A]",
+                "bg-[#2C4C3B] text-white hover:bg-[#233D2F] active:bg-[#1B3224] border border-[#1B3224]",
             success:
-                "bg-[#3E9B4F] text-white hover:bg-[#348643] active:bg-[#2B7038] focus-visible:ring-[#3E9B4F]",
+                "bg-[#2C4C3B] text-white hover:bg-[#233D2F] active:bg-[#1B3224] border border-[#1B3224]",
             warning:
-                "bg-[#D99A32] text-white hover:bg-[#C08526] active:bg-[#A8721D] focus-visible:ring-[#D99A32]",
+                "bg-[#8C5C00] text-white hover:bg-[#734B00] active:bg-[#5A3B00] border border-[#734B00]",
             danger:
-                "bg-[#D9534F] text-white hover:bg-[#C3433F] active:bg-[#AC3430] focus-visible:ring-[#D9534F]",
+                "bg-[#9E2A2B] text-white hover:bg-[#832324] active:bg-[#681C1D] border border-[#832324]",
             secondary:
-                "bg-[#E8F3E5] text-[#246B38] border-[#D1E5CE] hover:bg-[#DDF0D8] active:bg-[#CDE8C7] focus-visible:ring-[#4F9D5A]",
+                "bg-[#F2F2F0] text-[#2C4C3B] border border-[#CCCCCC] hover:bg-[#EAEAE6] active:bg-[#DFDFD9]",
             outline:
-                "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5] active:bg-[#EEF3EB] focus-visible:ring-[#4F9D5A]",
+                "border border-[#CCCCCC] bg-white text-[#1A1A1A] hover:bg-[#F2F2F0] active:bg-[#EAEAE6]",
             ghost:
-                "bg-transparent text-[#17201A] hover:bg-[#F7F9F5] active:bg-[#EEF3EB] focus-visible:ring-[#4F9D5A]",
+                "bg-transparent text-[#1A1A1A] hover:bg-[#F2F2F0] active:bg-[#EAEAE6]",
         }[variant];
 
         return (

@@ -170,14 +170,14 @@ export function AddProductModal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center modal-backdrop-animate"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center modal-backdrop-animate font-serif"
             onClick={onBackdropClick}
         >
             <div className="add-product-sheet modal-content-animate">
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
+                <div className="flex items-center justify-between border-b border-[#E0E0E0] pb-2.5">
                     <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8F3E5] text-[#246B38]">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-xs bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]">
                             <svg
                                 className="h-4 w-4"
                                 fill="none"
@@ -192,17 +192,17 @@ export function AddProductModal({
                                 />
                             </svg>
                         </div>
-                        <h3 className="text-base font-bold text-[#17201A]">
-                            Thêm hàng
+                        <h3 className="text-sm font-bold text-[#1A1A1A] uppercase tracking-wide">
+                            Thêm sản phẩm & đồ uống
                         </h3>
                     </div>
                     <button
                         type="button"
                         disabled={isSubmitting}
                         onClick={onClose}
-                        className="rounded-lg p-1.5 text-[#66716A] hover:bg-[#EEF3EB] hover:text-[#17201A] transition-colors"
+                        className="h-7 w-7 rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] flex items-center justify-center text-[#1A1A1A] hover:bg-[#EAEAE6] transition-colors cursor-pointer"
                     >
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
@@ -210,12 +210,12 @@ export function AddProductModal({
 
                 {/* Feedback */}
                 {submitError && (
-                    <div className="rounded-xl border border-[#D9534F]/30 bg-[#FCEEED] p-3 text-xs font-semibold text-[#D9534F]">
+                    <div className="rounded-xs border border-[#FFCCC7] bg-[#FFF1F0] p-2.5 text-xs font-semibold text-[#A8071A]">
                         {submitError}
                     </div>
                 )}
                 {submitSuccess && (
-                    <div className="rounded-xl border border-[#3E9B4F]/30 bg-[#EBF6ED] p-3 text-xs font-semibold text-[#246B38]">
+                    <div className="rounded-xs border border-[#B7EB8F] bg-[#F6FFED] p-2.5 text-xs font-semibold text-[#2C4C3B]">
                         {submitSuccess}
                     </div>
                 )}
@@ -223,7 +223,7 @@ export function AddProductModal({
                 {/* Search */}
                 <div className="relative">
                     <svg
-                        className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A938D]"
+                        className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#777777]"
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2}
@@ -234,10 +234,10 @@ export function AddProductModal({
                     <input
                         ref={searchRef}
                         type="search"
-                        placeholder="Tìm sản phẩm..."
+                        placeholder="Tìm kiếm theo tên sản phẩm, mã..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="h-10 w-full rounded-xl border border-[#E3E8E3] bg-[#F7F9F5] pl-9 pr-3 text-[13px] text-[#17201A] placeholder:text-[#8A938D] focus:border-[#4F9D5A] focus:outline-none focus:ring-1 focus:ring-[#4F9D5A]/30 transition-colors"
+                        className="h-9 w-full rounded-xs border border-[#CCCCCC] bg-white pl-8 pr-3 text-xs text-[#1A1A1A] placeholder:text-[#888888] focus:border-[#2C4C3B] focus:outline-none transition-colors font-serif"
                     />
                 </div>
 
@@ -245,17 +245,17 @@ export function AddProductModal({
                 <div className="product-scroll-area">
                     {isLoadingProducts ? (
                         <div className="flex items-center justify-center py-8">
-                            <svg className="h-5 w-5 animate-spin text-[#4F9D5A]" fill="none" viewBox="0 0 24 24">
+                            <svg className="h-5 w-5 animate-spin text-[#2C4C3B]" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                             </svg>
                         </div>
                     ) : loadError ? (
-                        <div className="rounded-xl border border-[#D9534F]/30 bg-[#FCEEED] p-3 text-center text-xs text-[#D9534F]">
+                        <div className="rounded-xs border border-[#FFCCC7] bg-[#FFF1F0] p-3 text-center text-xs text-[#A8071A]">
                             {loadError}
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div className="rounded-xl border border-[#E3E8E3] bg-[#F7F9F5] p-4 text-center text-xs text-[#66716A]">
+                        <div className="rounded-xs border border-[#CCCCCC] bg-[#FAFAF7] p-4 text-center text-xs text-[#666666]">
                             {search ? "Không tìm thấy sản phẩm phù hợp." : "Chưa có sản phẩm nào."}
                         </div>
                     ) : (
@@ -291,46 +291,46 @@ export function AddProductModal({
 
                 {/* Quantity + subtotal */}
                 {selectedProduct && (
-                    <div className="rounded-xl border border-[#E3E8E3] bg-[#F7F9F5] p-3">
+                    <div className="rounded-xs border border-[#CCCCCC] bg-[#FAFAF7] p-2.5 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                             <div className="min-w-0">
-                                <p className="text-[13px] font-bold text-[#17201A] truncate">
+                                <p className="text-xs font-bold text-[#1A1A1A] truncate">
                                     {selectedProduct.name}
                                 </p>
-                                <p className="text-[11px] text-[#66716A]">
-                                    {formatPrice(selectedProduct.priceVnd)} / sản phẩm
+                                <p className="text-[11px] text-[#555555]">
+                                    {formatPrice(selectedProduct.priceVnd)} / đơn vị
                                 </p>
                             </div>
                             {/* Quantity stepper */}
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-1 shrink-0">
                                 <button
                                     type="button"
                                     disabled={quantity <= 1 || isSubmitting}
                                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E8E3] bg-white text-[#17201A] disabled:opacity-40 hover:bg-[#EEF3EB] transition-colors"
+                                    className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#CCCCCC] bg-white text-[#1A1A1A] disabled:opacity-40 hover:bg-[#F2F2F0] transition-colors cursor-pointer"
                                 >
-                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
                                     </svg>
                                 </button>
-                                <span className="w-7 text-center text-sm font-bold tabular-nums text-[#17201A]">
+                                <span className="w-6 text-center text-xs font-bold tabular-nums text-[#1A1A1A]">
                                     {quantity}
                                 </span>
                                 <button
                                     type="button"
                                     disabled={isSubmitting}
                                     onClick={() => setQuantity((q) => Math.min(99, q + 1))}
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E3E8E3] bg-white text-[#17201A] disabled:opacity-40 hover:bg-[#EEF3EB] transition-colors"
+                                    className="flex h-7 w-7 items-center justify-center rounded-xs border border-[#CCCCCC] bg-white text-[#1A1A1A] disabled:opacity-40 hover:bg-[#F2F2F0] transition-colors cursor-pointer"
                                 >
-                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                     </svg>
                                 </button>
                             </div>
                         </div>
-                        <div className="mt-2.5 flex items-center justify-between border-t border-[#E3E8E3] pt-2.5">
-                            <span className="text-[12px] text-[#66716A]">Tạm tính</span>
-                            <span className="text-[14px] font-bold tabular-nums text-[#246B38]">
+                        <div className="flex items-center justify-between border-t border-[#E0E0E0] pt-1.5">
+                            <span className="text-xs text-[#555555]">Thành tiền món:</span>
+                            <span className="text-sm font-bold tabular-nums text-[#2C4C3B] font-serif">
                                 {formatPrice(subtotal)}
                             </span>
                         </div>
@@ -341,7 +341,7 @@ export function AddProductModal({
                 <div className="flex items-center gap-2 pt-1">
                     <Button
                         type="button"
-                        size="lg"
+                        size="md"
                         variant="outline"
                         disabled={isSubmitting}
                         onClick={onClose}
@@ -351,15 +351,15 @@ export function AddProductModal({
                     </Button>
                     <Button
                         type="button"
-                        size="lg"
+                        size="md"
                         variant="primary"
                         isLoading={isSubmitting}
-                        loadingText="Đang thêm…"
+                        loadingText="Đang ghi sổ…"
                         disabled={!selectedProductId || isSubmitting || !!submitSuccess}
                         onClick={handleConfirm}
                         className="flex-2"
                     >
-                        Xác nhận thêm hàng
+                        Ghi vào đơn
                     </Button>
                 </div>
 
@@ -369,19 +369,20 @@ export function AddProductModal({
                         width: 100%;
                         max-width: 480px;
                         background: white;
-                        border-radius: 20px 20px 0 0;
-                        padding: 20px 16px;
+                        border-radius: 2px 2px 0 0;
+                        border: 1px solid #CCCCCC;
+                        padding: 16px;
                         padding-bottom: calc(16px + env(safe-area-inset-bottom));
                         display: flex;
                         flex-direction: column;
-                        gap: 14px;
+                        gap: 12px;
                         max-height: 90dvh;
                         overflow: hidden;
                     }
 
                     @media (min-width: 640px) {
                         .add-product-sheet {
-                            border-radius: 20px;
+                            border-radius: 2px;
                             max-height: 85vh;
                         }
                     }
@@ -396,50 +397,51 @@ export function AddProductModal({
                     .product-grid {
                         display: grid;
                         grid-template-columns: repeat(2, minmax(0, 1fr));
-                        gap: 8px;
+                        gap: 6px;
                     }
 
                     .product-item {
                         display: flex;
                         flex-direction: column;
-                        gap: 3px;
+                        gap: 2px;
                         min-width: 0;
                         text-align: left;
-                        padding: 10px 12px;
-                        border-radius: 12px;
-                        border: 1.5px solid #E3E8E3;
+                        padding: 8px 10px;
+                        border-radius: 2px;
+                        border: 1px solid #CCCCCC;
                         background: white;
                         cursor: pointer;
                         transition: border-color 0.12s, background 0.12s;
                         -webkit-tap-highlight-color: transparent;
+                        font-family: inherit;
                     }
 
                     .product-item:hover {
-                        border-color: rgba(79, 157, 90, 0.4);
-                        background: #F7F9F5;
+                        border-color: #2C4C3B;
+                        background: #FAFAF7;
                     }
 
                     .product-item--selected {
-                        border-color: #4F9D5A;
-                        background: #E8F3E5;
+                        border-color: #2C4C3B;
+                        background: #EAEFEA;
                     }
 
                     .product-item__name {
                         font-size: 12px;
-                        font-weight: 600;
-                        color: #17201A;
+                        font-weight: 700;
+                        color: #1A1A1A;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         display: -webkit-box;
                         -webkit-line-clamp: 2;
                         -webkit-box-orient: vertical;
-                        line-height: 1.4;
+                        line-height: 1.3;
                     }
 
                     .product-item__price {
                         font-size: 12px;
                         font-weight: 700;
-                        color: #246B38;
+                        color: #2C4C3B;
                         font-variant-numeric: tabular-nums;
                         white-space: nowrap;
                         overflow: hidden;
@@ -448,7 +450,7 @@ export function AddProductModal({
 
                     .product-item__sku {
                         font-size: 10px;
-                        color: #66716A;
+                        color: #777777;
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;

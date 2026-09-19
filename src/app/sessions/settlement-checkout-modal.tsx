@@ -256,24 +256,24 @@ export function SettlementCheckoutModal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs modal-backdrop-animate"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4 modal-backdrop-animate font-serif"
             onClick={onBackdropClick}
         >
-            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-[#FFFFFF] border border-[#E3E8E3] shadow-2xl modal-content-animate">
+            <div className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-xs bg-[#FFFFFF] border border-[#CCCCCC] modal-content-animate font-serif">
                 {/* Header */}
-                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#E3E8E3] bg-white px-5 py-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E8F3E5] text-[#246B38]">
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#E0E0E0] bg-white px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xs bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]">
+                            <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6H2.25m0 0H3m-1.5 0h1.5m0 0v10.5m0 0h1.5m-1.5 0H2.25m0 0a.75.75 0 0 0 .75.75h.75m10.5-12v.75a.75.75 0 0 1-.75.75h-.75m0 0h.75m-1.5 0h1.5m0 0v10.5m0 0h1.5m-1.5 0h-.75m0 0a.75.75 0 0 0 .75.75h.75M6 10.5h12m-12 3h12" />
                             </svg>
                         </div>
                         <div>
-                            <h3 className="text-base font-bold text-[#17201A]">
-                                Thanh toán & Kết thúc phiên
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-[#1A1A1A] font-serif">
+                                QUYẾT TOÁN &amp; ĐÓNG PHIÊN
                             </h3>
                             {preview && (
-                                <p className="text-xs text-[#66716A]">
+                                <p className="text-xs text-[#555555] font-serif">
                                     {preview.session.huts.map((h) => h.name).join(", ")} · {preview.session.customerName}
                                 </p>
                             )}
@@ -283,9 +283,9 @@ export function SettlementCheckoutModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="rounded-full p-1.5 text-[#66716A] hover:bg-[#F7F9F5] hover:text-[#17201A] transition-colors"
+                            className="flex h-6 w-6 items-center justify-center rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] text-[#1A1A1A] hover:bg-[#EAEAE6] cursor-pointer"
                         >
-                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
@@ -293,51 +293,51 @@ export function SettlementCheckoutModal({
                 </div>
 
                 {/* Content Body */}
-                <div className="p-5 space-y-4">
+                <div className="p-4 space-y-3 font-serif">
                     {/* SUCCESS STATE */}
                     {completedReceipt ? (
-                        <div className="space-y-4 py-2 text-center">
-                            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EBF6ED] text-[#246B38]">
-                                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                        <div className="space-y-3 py-2 text-center font-serif">
+                            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xs bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]">
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                                 </svg>
                             </div>
                             <div>
-                                <h4 className="text-lg font-bold text-[#17201A]">
+                                <h4 className="text-base font-bold text-[#1A1A1A] font-serif">
                                     Phiên câu đã kết thúc thành công!
                                 </h4>
-                                <p className="text-xs text-[#66716A] mt-1">
+                                <p className="text-xs text-[#555555] font-serif mt-0.5">
                                     Hóa đơn đã được quyết toán và chòi câu đã được giải phóng.
                                 </p>
                             </div>
 
-                            <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-4 text-left text-xs space-y-1.5">
-                                <div className="flex justify-between font-medium text-[#66716A]">
+                            <div className="rounded-xs border border-[#CCCCCC] bg-[#FAFAF7] p-3 text-left text-xs space-y-1 font-serif">
+                                <div className="flex justify-between font-normal text-[#555555]">
                                     <span>Tổng thanh toán:</span>
-                                    <span className="font-bold text-[#17201A]">{formatVnd(completedReceipt.totalAmountVnd)}</span>
+                                    <span className="font-bold text-[#1A1A1A] font-serif">{formatVnd(completedReceipt.totalAmountVnd)}</span>
                                 </div>
-                                <div className="flex justify-between font-medium text-[#66716A]">
+                                <div className="flex justify-between font-normal text-[#555555]">
                                     <span>Đã thanh toán:</span>
-                                    <span className="font-bold text-[#246B38]">{formatVnd(completedReceipt.paidAmountVnd)}</span>
+                                    <span className="font-bold text-[#2C4C3B] font-serif">{formatVnd(completedReceipt.paidAmountVnd)}</span>
                                 </div>
                                 {completedReceipt.refundAmountVnd && completedReceipt.refundAmountVnd > 0 ? (
-                                    <div className="flex justify-between font-bold text-amber-800 border-t border-[#E3E8E3] pt-1">
+                                    <div className="flex justify-between font-bold text-[#9E2A2B] border-t border-[#E0E0E0] pt-1">
                                         <span>Đã hoàn khách:</span>
-                                        <span>{formatVnd(completedReceipt.refundAmountVnd)}</span>
+                                        <span className="font-serif">{formatVnd(completedReceipt.refundAmountVnd)}</span>
                                     </div>
                                 ) : (
-                                    <div className="flex justify-between font-bold text-[#17201A] border-t border-[#E3E8E3] pt-1">
+                                    <div className="flex justify-between font-bold text-[#1A1A1A] border-t border-[#E0E0E0] pt-1">
                                         <span>Còn lại:</span>
-                                        <span>{formatVnd(completedReceipt.remainingVnd)}</span>
+                                        <span className="font-serif">{formatVnd(completedReceipt.remainingVnd)}</span>
                                     </div>
                                 )}
                             </div>
 
                             {/* Action Buttons after complete */}
-                            <div className="grid grid-cols-2 gap-3 pt-2">
+                            <div className="grid grid-cols-2 gap-2 pt-1 font-serif">
                                 <Button
                                     type="button"
-                                    size="lg"
+                                    size="md"
                                     variant="outline"
                                     isLoading={isPrinting}
                                     onClick={() => handlePrint(true)}
@@ -347,7 +347,7 @@ export function SettlementCheckoutModal({
                                 </Button>
                                 <Button
                                     type="button"
-                                    size="lg"
+                                    size="md"
                                     variant="primary"
                                     onClick={() => {
                                         if (onCompleted) onCompleted(sessionId);
@@ -355,19 +355,19 @@ export function SettlementCheckoutModal({
                                     }}
                                     className="w-full"
                                 >
-                                    Hoàn tất & Đóng
+                                    Hoàn tất &amp; Đóng
                                 </Button>
                             </div>
                         </div>
                     ) : loading ? (
-                        <div className="flex flex-col items-center justify-center py-12 space-y-3">
-                            <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#4F9D5A] border-t-transparent" />
-                            <p className="text-xs font-semibold text-[#66716A]">
+                        <div className="flex flex-col items-center justify-center py-10 space-y-2 font-serif">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#2C4C3B] border-t-transparent" />
+                            <p className="text-xs font-semibold text-[#555555]">
                                 Đang tải số liệu quyết toán từ máy chủ…
                             </p>
                         </div>
                     ) : loadError ? (
-                        <div className="space-y-4 py-6">
+                        <div className="space-y-3 py-4 font-serif">
                             <InlineAlert type="error" message={loadError} />
                             <Button
                                 type="button"
@@ -380,108 +380,108 @@ export function SettlementCheckoutModal({
                             </Button>
                         </div>
                     ) : preview ? (
-                        <div className="space-y-4">
+                        <div className="space-y-3 font-serif">
                             {submitError && (
                                 <InlineAlert type="error" message={submitError} />
                             )}
 
                             {/* Authoritative Financial Breakdown Card */}
-                            <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-4 space-y-2.5 text-xs">
-                                <div className="border-b border-[#E3E8E3] pb-2">
-                                    <span className="font-bold text-[#17201A] uppercase tracking-wider text-[11px]">
-                                        Chi tiết các khoản phí
+                            <div className="rounded-xs border border-[#CCCCCC] bg-[#FAFAF7] p-3 space-y-2 text-xs font-serif">
+                                <div className="border-b border-[#E0E0E0] pb-1.5">
+                                    <span className="font-bold text-[#1A1A1A] uppercase tracking-wider text-[11px]">
+                                        BẢNG KÊ CHI PHÍ &amp; QUYẾT TOÁN
                                     </span>
                                 </div>
 
-                                <div className="flex justify-between text-[#17201A]">
+                                <div className="flex justify-between text-[#1A1A1A]">
                                     <span>Tiền gói ({preview.session.packageName}):</span>
-                                    <span className="font-semibold">{formatVnd(preview.financials.packageTotalVnd)}</span>
+                                    <span className="font-bold font-serif">{formatVnd(preview.financials.packageTotalVnd)}</span>
                                 </div>
 
                                 {preview.financials.itemsTotalVnd > 0 && (
-                                    <div className="flex justify-between text-[#27231F]">
+                                    <div className="flex justify-between text-[#1A1A1A]">
                                         <span>Hàng hóa / Nước / Mồi câu:</span>
-                                        <span className="font-semibold">{formatVnd(preview.financials.itemsTotalVnd)}</span>
+                                        <span className="font-bold font-serif">{formatVnd(preview.financials.itemsTotalVnd)}</span>
                                     </div>
                                 )}
 
                                 {preview.financials.extensionsTotalVnd > 0 && (
-                                    <div className="flex justify-between text-[#27231F]">
+                                    <div className="flex justify-between text-[#1A1A1A]">
                                         <span>Phí gia hạn thêm giờ:</span>
-                                        <span className="font-semibold">{formatVnd(preview.financials.extensionsTotalVnd)}</span>
+                                        <span className="font-bold font-serif">{formatVnd(preview.financials.extensionsTotalVnd)}</span>
                                     </div>
                                 )}
 
                                 {(preview.financials.overtimeTotalVnd ?? 0) > 0 && (
-                                    <div className="flex justify-between text-rose-600 font-semibold">
+                                    <div className="flex justify-between text-[#8C5C00] font-semibold">
                                         <span>⏱️ Phụ thu quá giờ {preview.financials.overtimeMinutes ? `(+${preview.financials.overtimeMinutes}p)` : ""}:</span>
-                                        <span className="font-mono font-bold">+{formatVnd(preview.financials.overtimeTotalVnd!)}</span>
+                                        <span className="font-serif font-bold">+{formatVnd(preview.financials.overtimeTotalVnd!)}</span>
                                     </div>
                                 )}
 
                                 {preview.financials.otherTotalVnd > 0 && (
-                                    <div className="flex justify-between text-[#27231F]">
+                                    <div className="flex justify-between text-[#1A1A1A]">
                                         <span>Phụ thu / Khoản khác:</span>
-                                        <span className="font-semibold">{formatVnd(preview.financials.otherTotalVnd)}</span>
+                                        <span className="font-bold font-serif">{formatVnd(preview.financials.otherTotalVnd)}</span>
                                     </div>
                                 )}
 
-                                <div className="border-t border-[#E3E8E3] pt-2 flex justify-between font-bold text-xs text-[#17201A]">
+                                <div className="border-t border-[#E0E0E0] pt-1.5 flex justify-between font-bold text-xs text-[#1A1A1A]">
                                     <span>Tổng tiền dịch vụ:</span>
-                                    <span className="text-[#246B38] font-mono">{formatVnd(preview.financials.grossChargeVnd)}</span>
+                                    <span className="text-[#2C4C3B] font-serif font-bold">{formatVnd(preview.financials.grossChargeVnd)}</span>
                                 </div>
 
                                 {/* Các khoản giảm trừ / Đã thu trước */}
-                                <div className="border-t border-[#E3E8E3] pt-2 pb-1">
-                                    <span className="font-bold text-[#17201A] uppercase tracking-wider text-[11px]">
+                                <div className="border-t border-[#E0E0E0] pt-1.5 pb-0.5">
+                                    <span className="font-bold text-[#1A1A1A] uppercase tracking-wider text-[11px]">
                                         Các khoản cấn trừ &amp; Tạm tính
                                     </span>
                                 </div>
 
                                 {preview.financials.totalPaidVnd > 0 && (
-                                    <div className="flex justify-between text-[#66716A]">
+                                    <div className="flex justify-between text-[#555555]">
                                         <span>Đã thu trước (Tạm tính / Cọc):</span>
-                                        <span className="font-bold text-[#246B38] font-mono">- {formatVnd(preview.financials.totalPaidVnd)}</span>
+                                        <span className="font-bold text-[#2C4C3B] font-serif">- {formatVnd(preview.financials.totalPaidVnd)}</span>
                                     </div>
                                 )}
 
                                 {(preview.financials.fishBuybackTotalVnd ?? 0) > 0 && (
-                                    <div className="flex justify-between text-[#D9534F]">
+                                    <div className="flex justify-between text-[#9E2A2B]">
                                         <span>Tiền cá thu lại từ khách:</span>
-                                        <span className="font-bold text-[#D9534F] font-mono">- {formatVnd(preview.financials.fishBuybackTotalVnd!)}</span>
+                                        <span className="font-bold text-[#9E2A2B] font-serif">- {formatVnd(preview.financials.fishBuybackTotalVnd!)}</span>
                                     </div>
                                 )}
 
                                 {/* Outstanding Balance Display */}
-                                <div className="border-t border-dashed border-[#E3E8E3] pt-2.5">
+                                <div className="border-t border-[#E0E0E0] pt-2">
                                     {preview.financials.netDueVnd > 0 ? (
-                                        <div className="rounded-2xl bg-amber-50 border border-amber-300 p-3 text-amber-900 space-y-1">
+                                        <div className="rounded-xs bg-[#FDF7EB] border border-[#E8D1A3] p-2.5 text-[#8C5C00] space-y-0.5">
                                             <div className="flex items-center justify-between">
                                                 <span className="font-bold text-xs">CẦN THU THÊM CỦA KHÁCH:</span>
-                                                <span className="text-base font-extrabold text-amber-950 font-mono tabular-nums">
+                                                <span className="text-base font-bold text-[#8C5C00] font-serif tabular-nums">
                                                     +{formatVnd(preview.financials.netDueVnd)}
                                                 </span>
                                             </div>
-                                            <p className="text-[10px] text-amber-800">
+                                            <p className="text-[10px] text-[#8C5C00]/80">
                                                 Tổng tiền dịch vụ ({formatVnd(preview.financials.grossChargeVnd)}) lớn hơn tiền tạm tính &amp; thu cá ({formatVnd((preview.financials.totalPaidVnd || 0) + (preview.financials.fishBuybackTotalVnd || 0))})
                                             </p>
                                         </div>
                                     ) : preview.financials.refundVnd > 0 ? (
-                                        <div className="rounded-2xl bg-[#FCEEED] border-2 border-[#D9534F]/30 p-3 text-[#AC3430] space-y-1">
+                                        <div className="rounded-xs bg-[#FBEBEB] border border-[#E9B6B7] p-2.5 text-[#9E2A2B] space-y-0.5">
                                             <div className="flex items-center justify-between">
                                                 <span className="font-bold text-xs uppercase tracking-wide">HỒ THỐI LẠI TIỀN CHO KHÁCH:</span>
-                                                <span className="text-base font-extrabold text-[#D9534F] font-mono tabular-nums">
+                                                <span className="text-base font-bold text-[#9E2A2B] font-serif tabular-nums">
                                                     -{formatVnd(preview.financials.refundVnd)}
                                                 </span>
                                             </div>
-                                            <p className="text-[10px] text-[#66716A]">
+                                            <p className="text-[10px] text-[#555555]">
                                                 Tiền cá thu lại &amp; tạm tính ({formatVnd((preview.financials.totalPaidVnd || 0) + (preview.financials.fishBuybackTotalVnd || 0))}) lớn hơn tiền dịch vụ ({formatVnd(preview.financials.grossChargeVnd)})
                                             </p>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center justify-between rounded-2xl bg-[#EBF6ED] border border-[#CDE8C7] p-2.5 text-[#246B38]">
+                                        <div className="flex items-center justify-between rounded-xs bg-[#EAEFEA] border border-[#B8CEB8] p-2 text-[#2C4C3B]">
                                             <span className="font-bold text-xs">Trạng thái số dư:</span>
-                                            <span className="font-bold font-mono">Đã thanh toán đủ (0 đ)</span>
+                                            <span className="font-bold font-serif">Đã thanh toán đủ (0 đ)</span>
                                         </div>
                                     )}
                                 </div>
@@ -489,7 +489,7 @@ export function SettlementCheckoutModal({
 
                             {/* Cashier inputs if payment needed */}
                             {preview.financials.netDueVnd > 0 && (
-                                <div className="space-y-3 rounded-2xl border border-[#E3E8E3] bg-white p-4">
+                                <div className="space-y-2.5 rounded-xs border border-[#CCCCCC] bg-white p-3 font-serif">
                                     <Input
                                         label="Số tiền thu nốt *"
                                         type="number"
@@ -501,17 +501,17 @@ export function SettlementCheckoutModal({
                                     />
 
                                     <div>
-                                        <label className="text-xs font-bold text-[#17201A] uppercase tracking-wider block mb-1.5">
+                                        <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider block mb-1">
                                             Phương thức thanh toán *
                                         </label>
                                         <div className="grid grid-cols-2 gap-2">
                                             <button
                                                 type="button"
                                                 onClick={() => setPaymentMethod("CASH")}
-                                                className={`h-11 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                                                className={`h-10 rounded-xs border text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer font-serif ${
                                                     paymentMethod === "CASH"
-                                                        ? "border-[#4F9D5A] bg-[#4F9D5A] text-white shadow-2xs"
-                                                        : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
+                                                        ? "border-[#1B3224] bg-[#2C4C3B] text-white"
+                                                        : "border-[#CCCCCC] bg-white text-[#1A1A1A] hover:bg-[#FAFAF7]"
                                                 }`}
                                             >
                                                 💵 Tiền mặt
@@ -519,10 +519,10 @@ export function SettlementCheckoutModal({
                                             <button
                                                 type="button"
                                                 onClick={() => setPaymentMethod("BANK_TRANSFER")}
-                                                className={`h-11 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                                                className={`h-10 rounded-xs border text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer font-serif ${
                                                     paymentMethod === "BANK_TRANSFER"
-                                                        ? "border-[#4F9D5A] bg-[#4F9D5A] text-white shadow-2xs"
-                                                        : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
+                                                        ? "border-[#1B3224] bg-[#2C4C3B] text-white"
+                                                        : "border-[#CCCCCC] bg-white text-[#1A1A1A] hover:bg-[#FAFAF7]"
                                                 }`}
                                             >
                                                 🏦 Chuyển khoản
@@ -533,18 +533,18 @@ export function SettlementCheckoutModal({
                             )}
 
                             {preview.financials.refundVnd > 0 && (
-                                <div className="space-y-2 rounded-xl border border-blue-200 bg-blue-50/50 p-4">
-                                    <label className="text-xs font-bold text-blue-950 uppercase tracking-wider block">
+                                <div className="space-y-2 rounded-xs border border-[#CCCCCC] bg-[#FAFAF7] p-3 font-serif">
+                                    <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider block">
                                         Hình thức hoàn tiền cho khách *
                                     </label>
                                     <div className="grid grid-cols-2 gap-2">
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod("CASH")}
-                                            className={`h-11 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                            className={`h-10 rounded-xs border text-xs font-bold transition-colors flex items-center justify-center gap-1.5 font-serif ${
                                                 paymentMethod === "CASH"
-                                                    ? "border-blue-700 bg-blue-700 text-white shadow-2xs"
-                                                    : "border-blue-200 bg-white text-blue-900 hover:bg-blue-50"
+                                                    ? "border-[#1B3224] bg-[#2C4C3B] text-white"
+                                                    : "border-[#CCCCCC] bg-white text-[#1A1A1A] hover:bg-[#EAEAE6]"
                                             }`}
                                         >
                                             💵 Tiền mặt
@@ -552,10 +552,10 @@ export function SettlementCheckoutModal({
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod("BANK_TRANSFER")}
-                                            className={`h-11 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                                            className={`h-10 rounded-xs border text-xs font-bold transition-colors flex items-center justify-center gap-1.5 font-serif ${
                                                 paymentMethod === "BANK_TRANSFER"
-                                                    ? "border-blue-700 bg-blue-700 text-white shadow-2xs"
-                                                    : "border-blue-200 bg-white text-blue-900 hover:bg-blue-50"
+                                                    ? "border-[#1B3224] bg-[#2C4C3B] text-white"
+                                                    : "border-[#CCCCCC] bg-white text-[#1A1A1A] hover:bg-[#EAEAE6]"
                                             }`}
                                         >
                                             🏦 Chuyển khoản
@@ -574,8 +574,8 @@ export function SettlementCheckoutModal({
 
                             {/* Offline Alert */}
                             {!isOnline && (
-                                <div className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-xs text-rose-800 flex items-start gap-2 shadow-2xs">
-                                    <span className="text-base leading-none">⚠️</span>
+                                <div className="rounded-xs border border-[#9E2A2B]/40 bg-[#FBEBEB] p-2.5 text-xs text-[#9E2A2B] flex items-start gap-2 font-serif">
+                                    <span className="text-sm leading-none">⚠️</span>
                                     <div>
                                         <span className="font-bold">Đang mất mạng:</span> Không thể đóng phiên hoặc thu tiền khi offline để tránh sai lệch tài chính. Vui lòng kết nối mạng để hoàn tất.
                                     </div>
@@ -583,10 +583,10 @@ export function SettlementCheckoutModal({
                             )}
 
                             {/* Modal Action Buttons */}
-                            <div className="flex gap-3 pt-2">
+                            <div className="flex gap-2 pt-1 font-serif">
                                 <Button
                                     type="button"
-                                    size="lg"
+                                    size="md"
                                     variant="outline"
                                     disabled={isSubmitting}
                                     onClick={onClose}
@@ -596,7 +596,7 @@ export function SettlementCheckoutModal({
                                 </Button>
                                 <Button
                                     type="button"
-                                    size="lg"
+                                    size="md"
                                     variant="primary"
                                     isLoading={isSubmitting}
                                     loadingText="Đang xử lý & in bill…"
@@ -604,18 +604,16 @@ export function SettlementCheckoutModal({
                                     onClick={handleConfirmCheckout}
                                     className={`flex-2 font-bold ${
                                         preview.financials.refundVnd > 0
-                                            ? "bg-[#C84B31] hover:bg-[#A33820] text-white border-none shadow-sm"
-                                            : preview.financials.netDueVnd === 0
-                                            ? "bg-emerald-700 hover:bg-emerald-800 text-white border-none shadow-sm"
+                                            ? "bg-[#9E2A2B] hover:bg-[#832324] text-white border border-[#681C1D]"
                                             : ""
                                     }`}
                                 >
                                     {!isOnline
-                                        ? "Mất mạng — Không thể đóng phiên"
+                                        ? "Mất mạng — Không thể đóng"
                                         : preview.financials.refundVnd > 0
-                                        ? `Thối tiền ${formatVnd(preview.financials.refundVnd)} & In bill`
+                                        ? `Thối ${formatVnd(preview.financials.refundVnd)} & In`
                                         : preview.financials.netDueVnd > 0
-                                        ? `Thu thêm ${formatVnd(preview.financials.netDueVnd)} & In bill`
+                                        ? `Thu ${formatVnd(preview.financials.netDueVnd)} & In`
                                         : "Kết thúc & In bill"}
                                 </Button>
                             </div>

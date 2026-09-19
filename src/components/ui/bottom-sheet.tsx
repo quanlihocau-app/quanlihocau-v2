@@ -55,7 +55,7 @@ export function BottomSheet({
 
     const modalContent = (
         <div
-            className={`fixed inset-0 z-100 flex justify-center bg-black/60 backdrop-blur-xs modal-backdrop-animate ${
+            className={`fixed inset-0 z-100 flex justify-center bg-black/40 backdrop-blur-none modal-backdrop-animate font-serif ${
                 isCenter ? "items-center p-3 sm:p-4" : "items-end"
             }`}
             onClick={(e) => {
@@ -65,35 +65,28 @@ export function BottomSheet({
             role="dialog"
         >
             <div
-                className={`relative flex max-h-[90dvh] w-full max-w-md flex-col bg-white shadow-2xl ${
+                className={`relative flex max-h-[92dvh] w-full max-w-md flex-col bg-white border border-[#CCCCCC] ${
                     isCenter
-                        ? "rounded-3xl border border-[#E3E8E3] modal-content-animate"
-                        : "rounded-t-[28px] border-t border-[#E3E8E3] shadow-sheet animate-page-enter"
+                        ? "rounded-xs modal-content-animate"
+                        : "rounded-t-xs border-b-0 animate-page-enter"
                 } ${className}`}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Drag handle bar only for bottom drawer mode */}
-                {!isCenter && (
-                    <div className="flex items-center justify-center pt-3 pb-1">
-                        <div className="h-1.25 w-10 rounded-full bg-[#D0D8CF]" />
-                    </div>
-                )}
-
                 {/* Header */}
                 {(title || description) && (
                     <div
-                        className={`flex items-start justify-between border-b border-[#E3E8E3] ${
-                            isCenter ? "px-6 pt-5 pb-4" : "px-5 pt-2 pb-3"
+                        className={`flex items-start justify-between border-b border-[#E0E0E0] bg-[#FFFFFF] ${
+                            isCenter ? "px-5 py-3.5" : "px-4 py-3"
                         }`}
                     >
                         <div>
                             {title && (
-                                <h3 className="text-base font-bold text-[#17201A]">
+                                <h3 className="text-base font-bold text-[#1A1A1A] font-serif">
                                     {title}
                                 </h3>
                             )}
                             {description && (
-                                <p className="mt-0.5 text-xs text-[#66716A]">
+                                <p className="mt-0.5 text-xs text-[#555555] font-serif">
                                     {description}
                                 </p>
                             )}
@@ -102,10 +95,10 @@ export function BottomSheet({
                             type="button"
                             onClick={onClose}
                             aria-label="Đóng"
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F7F9F5] text-[#66716A] hover:bg-[#EEF3EB] hover:text-[#17201A] transition-colors cursor-pointer"
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] text-[#1A1A1A] hover:bg-[#EAEAE6] transition-colors cursor-pointer"
                         >
                             <svg
-                                className="h-4 w-4"
+                                className="h-3.5 w-3.5"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 strokeWidth={2}
@@ -124,7 +117,7 @@ export function BottomSheet({
                 {/* Content */}
                 <div
                     className={`flex-1 overflow-y-auto overscroll-contain ${
-                        isCenter ? "px-6 py-4" : "px-5 py-4"
+                        isCenter ? "px-5 py-4" : "px-4 py-3.5"
                     }`}
                 >
                     {children}
@@ -133,10 +126,10 @@ export function BottomSheet({
                 {/* Optional Footer */}
                 {footer && (
                     <div
-                        className={`border-t border-[#E3E8E3] bg-[#F7F9F5] ${
+                        className={`border-t border-[#E0E0E0] bg-[#FAFAF7] ${
                             isCenter
-                                ? "px-6 py-3.5 rounded-b-3xl"
-                                : "px-5 py-3.5 rounded-b-none"
+                                ? "px-5 py-3"
+                                : "px-4 py-3"
                         }`}
                     >
                         {footer}

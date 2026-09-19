@@ -235,38 +235,38 @@ function SessionGridCardComponent({
                     onSelect(s.id);
                 }
             }}
-            className={`flex flex-col justify-between rounded-2xl bg-white p-3.5 sm:p-4 text-left transition-all duration-120 select-none cursor-pointer border shadow-2xs ${
+            className={`flex flex-col justify-between rounded-xs bg-white p-3 text-left transition-colors select-none cursor-pointer border font-serif ${
                 isSelected
-                    ? "border-2 border-[#4F9D5A] ring-2 ring-[#4F9D5A]/20 bg-[#F7FAF6]"
-                    : "border-[#E3E8E3] hover:border-[#4F9D5A]/50"
+                    ? "border-2 border-[#2C4C3B] bg-[#EAEFEA]"
+                    : "border-[#CCCCCC] hover:border-[#2C4C3B]"
             }`}
         >
             {/* Hàng 1: Mã ô & Thời lượng & Trạng thái thu tiền */}
             <div>
                 <div className="flex items-start justify-between gap-1 mb-1">
-                    <span className="text-sm font-bold text-[#17201A] leading-tight truncate">
+                    <span className="text-sm font-bold text-[#1A1A1A] leading-tight truncate font-serif">
                         {hutLabel}
                     </span>
                     <div className="flex items-center gap-1 shrink-0">
                         {s.paymentTiming === "PREPAID" ? (
-                            <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 border border-emerald-200/80">
+                            <span className="rounded-xs bg-[#EAEFEA] px-1.5 py-0.2 text-[9px] font-bold text-[#2C4C3B] border border-[#B8CEB8]">
                                 Đã thu trước
                             </span>
                         ) : (
-                            <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-800 border border-amber-200/80">
+                            <span className="rounded-xs bg-[#FDF7EB] px-1.5 py-0.2 text-[9px] font-bold text-[#8C5C00] border border-[#E8D1A3]">
                                 Thu sau
                             </span>
                         )}
-                        <span className="text-[11px] font-medium text-[#66716A]">
+                        <span className="text-[11px] font-semibold text-[#555555]">
                             {formatDuration(s.package.durationMinutes)}
                         </span>
                     </div>
                 </div>
 
                 {/* Hàng 2: Tên khách hàng */}
-                <p className="text-xs font-semibold text-[#17201A] truncate mb-2">
+                <p className="text-xs font-bold text-[#1A1A1A] truncate mb-1.5 font-serif">
                     {s.customer?.name ?? (
-                        <span className="font-normal text-[#66716A]">
+                        <span className="font-normal text-[#555555]">
                             Khách lẻ
                         </span>
                     )}
@@ -279,63 +279,63 @@ function SessionGridCardComponent({
             </div>
 
             {/* Hàng 4: Chi tiết bill & Kết quả */}
-            <div className="mt-2 pt-2 border-t border-[#E3E8E3]">
+            <div className="mt-1.5 pt-1.5 border-t border-[#E0E0E0] font-serif">
                 {fishBuybackTotal > 0 || totalPaid > 0 || liveOvertimeVnd > 0 ? (
-                    <div className="space-y-0.5 text-[10px] text-[#66716A] mb-1.5 bg-[#F7F9F5] p-1.5 rounded-xl border border-[#E3E8E3]">
+                    <div className="space-y-0.5 text-[10px] text-[#555555] mb-1 bg-[#FAFAF7] p-1.5 rounded-xs border border-[#E0E0E0] font-serif">
                         <div className="flex items-center justify-between">
-                            <span className="text-[#66716A]">Tổng chi phí:</span>
-                            <span className="font-mono text-[#17201A] font-medium">+{formatVnd(totalCharges)}</span>
+                            <span className="text-[#555555]">Tổng chi phí:</span>
+                            <span className="font-serif text-[#1A1A1A] font-bold">+{formatVnd(totalCharges)}</span>
                         </div>
                         {liveOvertimeVnd > 0 && (
-                            <div className="flex items-center justify-between text-rose-600 font-bold animate-pulse">
+                            <div className="flex items-center justify-between text-[#8C5C00] font-bold">
                                 <span>⏱️ Quá giờ {liveOvertimeMinutes > 0 ? `(+${formatOvertimeDuration(liveOvertimeMinutes)})` : ""}:</span>
-                                <span className="font-mono">+{formatVnd(liveOvertimeVnd)}</span>
+                                <span className="font-serif">+{formatVnd(liveOvertimeVnd)}</span>
                             </div>
                         )}
                         {totalPaid > 0 && (
-                            <div className="flex items-center justify-between text-[#246B38]">
+                            <div className="flex items-center justify-between text-[#2C4C3B]">
                                 <span>Đã thu trước:</span>
-                                <span className="font-mono font-medium">-{formatVnd(totalPaid)}</span>
+                                <span className="font-serif font-medium">-{formatVnd(totalPaid)}</span>
                             </div>
                         )}
                         {fishBuybackTotal > 0 && (
-                            <div className="flex items-center justify-between text-[#D9534F]">
+                            <div className="flex items-center justify-between text-[#9E2A2B]">
                                 <span className="font-semibold">Tiền thu cá:</span>
-                                <span className="font-mono font-bold">-{formatVnd(fishBuybackTotal)}</span>
+                                <span className="font-serif font-bold">-{formatVnd(fishBuybackTotal)}</span>
                             </div>
                         )}
                     </div>
                 ) : (
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-[#66716A] font-medium">Tiền gói câu:</span>
-                        <span className="font-mono font-bold text-[#17201A]">+{formatVnd(totalCharges)}</span>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-[#555555] font-normal">Tiền gói:</span>
+                        <span className="font-serif font-bold text-[#1A1A1A]">+{formatVnd(totalCharges)}</span>
                     </div>
                 )}
 
                 {/* Kết quả quyết toán */}
                 <div
-                    className={`rounded-xl px-2 py-1 border flex items-center justify-between transition-colors ${
+                    className={`rounded-xs px-2 py-0.5 border flex items-center justify-between font-serif ${
                         netBalance < 0
-                            ? "bg-[#FCEEED] border-[#D9534F]/30 text-[#AC3430]"
+                            ? "bg-[#FBEBEB] border-[#E9B6B7] text-[#9E2A2B]"
                             : netBalance === 0
-                            ? "bg-[#EBF6ED] border-[#CDE8C7] text-[#246B38]"
-                            : "bg-[#FDF6E9] border-[#F6E1B6] text-[#9A600B]"
+                            ? "bg-[#EAEFEA] border-[#B8CEB8] text-[#2C4C3B]"
+                            : "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
                     }`}
                 >
                     <span className="text-[11px] font-bold">
                         {netBalance < 0
-                            ? "💸 Thối lại:"
+                            ? "Thối lại:"
                             : netBalance === 0
-                            ? "⚖️ Đã đủ:"
-                            : "⚖️ Cần thu:"}
+                            ? "Đã đủ:"
+                            : "Cần thu:"}
                     </span>
                     <span
-                        className={`font-mono font-extrabold text-[11px] sm:text-xs ${
+                        className={`font-serif font-bold text-[11px] sm:text-xs ${
                             netBalance < 0
-                                ? "text-[#8B1E1E]"
+                                ? "text-[#9E2A2B]"
                                 : netBalance === 0
-                                ? "text-emerald-700"
-                                : "text-slate-900"
+                                ? "text-[#2C4C3B]"
+                                : "text-[#8C5C00]"
                         }`}
                     >
                         {netBalance < 0
@@ -348,19 +348,19 @@ function SessionGridCardComponent({
 
                 {/* Badges tóm tắt món / gia hạn / quá giờ */}
                 {(productCount > 0 || extensionHours > 0 || liveOvertimeVnd > 0) && (
-                    <div className="flex flex-wrap gap-1 mt-1.5">
+                    <div className="flex flex-wrap gap-1 mt-1">
                         {liveOvertimeVnd > 0 && (
-                            <span className="inline-flex items-center rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[10px] font-bold text-rose-700 animate-pulse">
+                            <span className="inline-flex items-center rounded-xs bg-[#FDF7EB] border border-[#E8D1A3] px-1.5 py-0.2 text-[10px] font-bold text-[#8C5C00]">
                                 ⏱️ +{formatOvertimeDuration(liveOvertimeMinutes)} quá giờ
                             </span>
                         )}
                         {productCount > 0 && (
-                            <span className="inline-flex items-center rounded-full bg-[#EEF3EB] px-2 py-0.5 text-[10px] font-semibold text-[#17201A]">
+                            <span className="inline-flex items-center rounded-xs bg-[#F2F2F0] border border-[#CCCCCC] px-1.5 py-0.2 text-[10px] font-bold text-[#1A1A1A]">
                                 +{productCount} món
                             </span>
                         )}
                         {extensionHours > 0 && (
-                            <span className="inline-flex items-center rounded-full bg-[#EBF6ED] px-2 py-0.5 text-[10px] font-semibold text-[#246B38]">
+                            <span className="inline-flex items-center rounded-xs bg-[#EAEFEA] border border-[#B8CEB8] px-1.5 py-0.2 text-[10px] font-bold text-[#2C4C3B]">
                                 +{extensionHours} gia hạn
                             </span>
                         )}
@@ -369,7 +369,7 @@ function SessionGridCardComponent({
 
                 {/* Tên món mới nhất */}
                 {productLines.length > 0 && (
-                    <p className="text-[11px] text-[#66716A] truncate mt-1">
+                    <p className="text-[11px] text-[#555555] truncate mt-1 font-serif">
                         {productLines[0].name}
                         {productLines.length > 1 ? ` +${productLines.length - 1}` : ""}
                     </p>
@@ -383,12 +383,12 @@ function SessionGridCardComponent({
                             e.stopPropagation();
                             onSettlement(s.id);
                         }}
-                        className={`mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-[11px] sm:text-xs font-bold text-white shadow-2xs active:scale-95 transition-all cursor-pointer ${
+                        className={`mt-2 flex w-full items-center justify-center gap-1.5 rounded-xs py-2 px-2 text-[11px] sm:text-xs font-bold text-white transition-colors cursor-pointer font-serif active:translate-y-px ${
                             netBalance < 0
-                                ? "bg-[#D9534F] hover:bg-[#C3433F]"
+                                ? "bg-[#9E2A2B] hover:bg-[#832324]"
                                 : netBalance === 0
-                                ? "bg-[#3E9B4F] hover:bg-[#348643]"
-                                : "bg-[#4F9D5A] hover:bg-[#3D8547]"
+                                ? "bg-[#2C4C3B] hover:bg-[#233D2F]"
+                                : "bg-[#2C4C3B] hover:bg-[#233D2F]"
                         }`}
                     >
                         <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

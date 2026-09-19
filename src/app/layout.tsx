@@ -1,18 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro } from "next/font/google";
 import { Suspense } from "react";
 
 import { PageProgressBar } from "@/components/ui/page-progress-bar";
 import { PwaInstallPrompt } from "@/components/pwa/pwa-install-prompt";
 import { Providers } from "./providers";
 import "./globals.css";
-
-const beVietnamPro = Be_Vietnam_Pro({
-    subsets: ["vietnamese", "latin"],
-    weight: ["400", "500", "600", "700", "800"],
-    variable: "--font-be-vietnam-pro",
-    display: "swap",
-});
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://quanlihocau.com"),
@@ -89,8 +81,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
     themeColor: [
-        { media: "(prefers-color-scheme: dark)", color: "#082618" },
-        { media: "(prefers-color-scheme: light)", color: "#082618" },
+        { media: "(prefers-color-scheme: dark)", color: "#FAFAF7" },
+        { media: "(prefers-color-scheme: light)", color: "#FAFAF7" },
     ],
     width: "device-width",
     initialScale: 1,
@@ -157,13 +149,13 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="vi" className={`h-full antialiased ${beVietnamPro.variable}`}>
+        <html lang="vi" className="h-full antialiased font-serif">
             <head>
                 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
                 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
                 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
                 <meta name="apple-mobile-web-app-capable" content="yes" />
-                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="default" />
                 <meta name="apple-mobile-web-app-title" content="Hồ Câu POS" />
                 <meta name="mobile-web-app-capable" content="yes" />
                 <script
@@ -171,7 +163,7 @@ export default function RootLayout({
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}
                 />
             </head>
-            <body className="min-h-full flex flex-col bg-[#061F13] text-[#17201A] selection:bg-[#E8F3E5] selection:text-[#246B38]">
+            <body className="min-h-full flex flex-col bg-[#FAFAF7] text-[#1A1A1A] selection:bg-[#EAEFEA] selection:text-[#2C4C3B]">
                 <Providers>
                     <Suspense fallback={null}>
                         <PageProgressBar />

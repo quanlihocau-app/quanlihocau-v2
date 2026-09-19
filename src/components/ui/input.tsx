@@ -12,11 +12,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
 
         return (
-            <div className="space-y-1.5 w-full">
+            <div className="space-y-1 w-full font-serif">
                 {label && (
                     <label
                         htmlFor={inputId}
-                        className="block text-xs font-semibold text-[#17201A] uppercase tracking-wide"
+                        className="block text-xs font-bold text-[#1A1A1A] uppercase tracking-wide font-serif"
                     >
                         {label}
                     </label>
@@ -24,16 +24,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 <input
                     id={inputId}
                     ref={ref}
-                    className={`h-12 w-full rounded-2xl border bg-white px-4 text-sm font-normal text-[#17201A] placeholder:text-[#66716A]/60 focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] focus:border-transparent transition-colors shadow-2xs ${
+                    className={`h-11 w-full rounded-xs border bg-white px-3 text-sm font-normal text-[#1A1A1A] placeholder:text-[#777777] focus:outline-none focus:border-[#2C4C3B] focus:ring-1 focus:ring-[#2C4C3B] transition-colors font-serif shadow-none ${
                         error
-                            ? "border-[#D9534F] focus:ring-[#D9534F] bg-[#FCEEED]/30"
-                            : "border-[#E3E8E3]"
+                            ? "border-[#9E2A2B] focus:border-[#9E2A2B] focus:ring-[#9E2A2B] bg-[#FBEBEB]/40"
+                            : "border-[#CCCCCC]"
                     } ${className}`}
                     {...props}
                 />
-                {error && <p className="text-xs font-medium text-[#D9534F]">{error}</p>}
+                {error && <p className="text-xs font-semibold text-[#9E2A2B] font-serif">{error}</p>}
                 {helperText && !error && (
-                    <p className="text-xs text-[#66716A]">{helperText}</p>
+                    <p className="text-xs text-[#555555] font-serif">{helperText}</p>
                 )}
             </div>
         );
@@ -54,11 +54,11 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
 
         return (
-            <div className="space-y-1.5 w-full">
+            <div className="space-y-1 w-full font-serif">
                 {label && (
                     <label
                         htmlFor={selectId}
-                        className="block text-xs font-semibold text-[#17201A] uppercase tracking-wide"
+                        className="block text-xs font-bold text-[#1A1A1A] uppercase tracking-wide font-serif"
                     >
                         {label}
                     </label>
@@ -66,18 +66,18 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 <select
                     id={selectId}
                     ref={ref}
-                    className={`h-12 w-full rounded-2xl border bg-white px-4 text-sm font-normal text-[#17201A] focus:outline-none focus:ring-2 focus:ring-[#4F9D5A] focus:border-transparent transition-colors cursor-pointer shadow-2xs ${
+                    className={`h-11 w-full rounded-xs border bg-white px-3 text-sm font-normal text-[#1A1A1A] focus:outline-none focus:border-[#2C4C3B] focus:ring-1 focus:ring-[#2C4C3B] transition-colors cursor-pointer font-serif shadow-none ${
                         error
-                            ? "border-[#D9534F] focus:ring-[#D9534F] bg-[#FCEEED]/30"
-                            : "border-[#E3E8E3]"
+                            ? "border-[#9E2A2B] focus:border-[#9E2A2B] focus:ring-[#9E2A2B] bg-[#FBEBEB]/40"
+                            : "border-[#CCCCCC]"
                     } ${className}`}
                     {...props}
                 >
                     {children}
                 </select>
-                {error && <p className="text-xs font-medium text-[#D9534F]">{error}</p>}
+                {error && <p className="text-xs font-semibold text-[#9E2A2B] font-serif">{error}</p>}
                 {helperText && !error && (
-                    <p className="text-xs text-[#66716A]">{helperText}</p>
+                    <p className="text-xs text-[#555555] font-serif">{helperText}</p>
                 )}
             </div>
         );

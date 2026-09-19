@@ -19,7 +19,7 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname === "/home",
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
+                className="h-5 w-5"
                 fill={isActive ? "currentColor" : "none"}
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2 : 1.75}
@@ -41,7 +41,7 @@ const NAV_ITEMS: NavItem[] = [
             (pathname.startsWith("/sessions/") && pathname !== "/sessions/new"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
+                className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -61,7 +61,7 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname === "/sessions/new",
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
+                className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -81,7 +81,7 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname.startsWith("/reports"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
+                className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -101,7 +101,7 @@ const NAV_ITEMS: NavItem[] = [
         isActive: (pathname: string) => pathname.startsWith("/settings"),
         icon: (isActive: boolean) => (
             <svg
-                className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
+                className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={isActive ? 2.5 : 1.75}
@@ -123,7 +123,7 @@ const ADMIN_NAV_ITEM: NavItem = {
     isActive: (pathname: string) => pathname.startsWith("/admin"),
     icon: (isActive: boolean) => (
         <svg
-            className={`h-5 w-5 transition-transform duration-120 ${isActive ? "scale-105" : ""}`}
+            className="h-5 w-5"
             fill={isActive ? "currentColor" : "none"}
             viewBox="0 0 24 24"
             strokeWidth={isActive ? 2 : 1.75}
@@ -165,9 +165,9 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
         <nav
             aria-label="Mobile Navigation"
             style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 border-t border-[#E3E8E3] bg-white/95 backdrop-blur-md print:hidden shadow-sm"
+            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 border-t border-[#E0E0E0] bg-[#FFFFFF] print:hidden shadow-none font-serif"
         >
-            <div className="flex h-16 items-center justify-around px-1 sm:px-2 relative">
+            <div className="flex h-14 items-center justify-around px-1 relative">
                 {navItems.map((item) => {
                     const active = item.isActive(pathname);
                     const isPending = pendingHref === item.href && !active;
@@ -182,25 +182,25 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
                                     setPendingHref(item.href);
                                 }
                             }}
-                            className={`flex min-h-12 flex-1 flex-col items-center justify-center gap-1 py-1 text-center transition-all duration-120 select-none cursor-pointer active:scale-95 ${
+                            className={`flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-center select-none cursor-pointer font-serif transition-colors ${
                                 active
-                                    ? "text-[#246B38]"
+                                    ? "text-[#2C4C3B]"
                                     : isPending
-                                      ? "text-[#4F9D5A]"
-                                      : "text-[#66716A] hover:text-[#17201A]"
+                                      ? "text-[#2C4C3B]"
+                                      : "text-[#555555] hover:text-[#1A1A1A]"
                             }`}
                         >
-                            {/* M3 Active pill container */}
+                            {/* Sharp ledger active indicator container */}
                             <div
-                                className={`flex h-8 w-11 sm:w-13 items-center justify-center rounded-full transition-all duration-150 ${
+                                className={`flex h-7 w-9 items-center justify-center rounded-xs transition-colors ${
                                     active
-                                        ? "bg-[#E8F3E5] text-[#246B38]"
-                                        : "bg-transparent text-[#66716A]"
+                                        ? "bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]"
+                                        : "bg-transparent text-[#555555]"
                                 }`}
                             >
                                 {isPending ? (
                                     <svg
-                                        className="h-4.5 w-4.5 animate-spin text-[#4F9D5A]"
+                                        className="h-4 w-4 animate-spin text-[#2C4C3B]"
                                         fill="none"
                                         viewBox="0 0 24 24"
                                     >
@@ -224,13 +224,13 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
                             </div>
 
                             <span
-                                className={`text-[10.5px] leading-none tracking-tight ${
+                                className={`text-[11px] leading-tight tracking-normal font-serif ${
                                     active
-                                        ? "font-bold text-[#246B38]"
-                                        : "font-medium text-[#66716A]"
+                                        ? "font-bold text-[#2C4C3B]"
+                                        : "font-normal text-[#555555]"
                                 }`}
                             >
-                                {isPending ? "Đang mở..." : item.label}
+                                {isPending ? "Đang mở…" : item.label}
                             </span>
                         </Link>
                     );

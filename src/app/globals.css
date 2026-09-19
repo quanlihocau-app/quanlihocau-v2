@@ -1,120 +1,125 @@
 @import "tailwindcss";
 
 :root {
-  --background: #061F13;
-  --foreground: #17201A;
-  --muted-foreground: #66716A;
+  --background: #FAFAF7;
+  --foreground: #1A1A1A;
+  --muted-foreground: #555555;
   --card: #FFFFFF;
-  --card-foreground: #17201A;
-  --border: #E3E8E3;
-  --input: #E3E8E3;
-  --ring: #4F9D5A;
-  --radius: 1rem;
+  --card-foreground: #1A1A1A;
+  --border: #E0E0E0;
+  --input: #CCCCCC;
+  --ring: #2C4C3B;
+  --radius: 2px;
 
-  /* Typography: Be Vietnam Pro với fallback tiếng Việt an toàn */
-  --font-sans: var(--font-be-vietnam-pro), "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Typography: Times New Roman editorial stack */
+  --font-serif: "Times New Roman", Times, "Liberation Serif", serif;
+  --font-sans: "Times New Roman", Times, "Liberation Serif", serif;
 
-  /* Modern Clean Google / M3 Semantic Palette */
-  --color-primary: #4F9D5A;
-  --color-primary-dark: #246B38;
-  --color-primary-hover: #3D8547;
-  --color-selected: #E8F3E5;
-  --color-surface: #F7F9F5;
-  --color-surface-secondary: #EEF3EB;
-  --color-text-main: #17201A;
-  --color-text-muted: #66716A;
-  --color-text-subtle: #8A938D;
-  --color-border-main: #E3E8E3;
+  /* Classic Editorial / Safe Stack Semantic Palette */
+  --color-primary: #2C4C3B;
+  --color-primary-dark: #1B3224;
+  --color-primary-hover: #233D2F;
+  --color-selected: #EAEFEA;
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #F2F2F0;
+  --color-text-main: #1A1A1A;
+  --color-text-muted: #555555;
+  --color-text-subtle: #777777;
+  --color-border-main: #E0E0E0;
+  --color-border-strong: #CCCCCC;
 
-  --color-success: #3E9B4F;
-  --color-success-bg: #EBF6ED;
-  --color-warning: #D99A32;
-  --color-warning-bg: #FDF6E9;
-  --color-danger: #D9534F;
-  --color-danger-bg: #FCEEED;
+  --color-success: #2C4C3B;
+  --color-success-bg: #EAEFEA;
+  --color-warning: #8C5C00;
+  --color-warning-bg: #FDF7EB;
+  --color-danger: #9E2A2B;
+  --color-danger-bg: #FBEBEB;
 }
 
-/* Material 3 / Modern Clean POS Shell styling */
+/* Classic Editorial Ledger Shell */
 .luxury-pos {
-  background: #F0F4EF !important;
-  font-family: var(--font-sans);
-  color: #17201A;
+  background: #FAFAF7 !important;
+  font-family: var(--font-serif);
+  color: #1A1A1A;
   padding: 16px 8px;
 }
 
 .luxury-pos > div {
   min-height: calc(100dvh - 32px) !important;
   overflow: hidden;
-  border: 1px solid #E3E8E3;
-  border-radius: 24px;
+  border: 1px solid #CCCCCC;
+  border-radius: 2px;
   background: #FFFFFF !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: none !important;
 }
 
 .luxury-pos header {
   background: #FFFFFF !important;
-  border-bottom: 1px solid #E3E8E3 !important;
+  border-bottom: 1px solid #E0E0E0 !important;
 }
 
 .luxury-pos header h2 {
-  color: #17201A !important;
+  color: #1A1A1A !important;
+  font-family: var(--font-serif);
 }
 
 .luxury-pos header p {
-  color: #66716A !important;
+  color: #555555 !important;
 }
 
 .luxury-pos header span {
-  border-radius: 9999px !important;
-  background: #E8F3E5 !important;
-  color: #246B38 !important;
+  border-radius: 2px !important;
+  background: #F2F2F0 !important;
+  color: #2C4C3B !important;
+  border: 1px solid #CCCCCC !important;
 }
 
 .luxury-pos main {
-  background: #F7F9F5 !important;
+  background: #FAFAF7 !important;
 }
 
 .luxury-pos h1,
 .luxury-pos h2,
 .luxury-pos h3 {
-  color: #17201A !important;
-  letter-spacing: -0.01em;
+  color: #1A1A1A !important;
+  letter-spacing: 0;
+  font-family: var(--font-serif);
 }
 
 .luxury-pos main button,
 .luxury-pos main [role="button"] {
-  border-radius: 14px !important;
-  transition: all 130ms ease-out !important;
+  border-radius: 2px !important;
+  transition: background-color 100ms ease-out !important;
 }
 
 .luxury-pos main input,
 .luxury-pos main select {
-  border: 1px solid #E3E8E3 !important;
-  border-radius: 12px !important;
+  border: 1px solid #CCCCCC !important;
+  border-radius: 2px !important;
   background: #FFFFFF !important;
-  color: #17201A !important;
+  color: #1A1A1A !important;
+  font-family: var(--font-serif);
 }
 
 .luxury-pos nav {
   left: 50% !important;
   transform: translateX(-50%);
-  border-top: 1px solid #E3E8E3 !important;
-  border-radius: 0 0 24px 24px;
+  border-top: 1px solid #E0E0E0 !important;
+  border-radius: 0;
   background: #FFFFFF !important;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: none !important;
 }
 
 .luxury-pos nav button {
-  min-height: 56px;
-  color: #66716A !important;
+  min-height: 52px;
+  color: #555555 !important;
   background: transparent !important;
 }
 
-.luxury-pos nav button.text-\[\#9E6B05\],
 .luxury-pos nav button[aria-current="page"] {
-  color: #246B38 !important;
-  background: #E8F3E5 !important;
-  border-radius: 16px !important;
+  color: #2C4C3B !important;
+  background: #EAEFEA !important;
+  border-radius: 2px !important;
 }
 
 @media (max-width: 520px) {
@@ -135,33 +140,31 @@
   }
 }
 
-body {
-  background-color: #061F13;
-  background-image: 
-    radial-gradient(circle at 50% 10%, rgba(16, 74, 47, 0.45) 0%, rgba(3, 16, 10, 0.88) 100%),
-    url('/images/bg-emerald.webp');
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
-  background-attachment: fixed;
-  color: var(--foreground);
-  font-family: var(--font-sans);
+html, body {
+  background-color: #FAFAF7;
+  color: #1A1A1A;
+  font-family: "Times New Roman", Times, "Liberation Serif", serif;
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Phân cấp tiêu đề: weight đậm nổi bật, không thay đổi size/layout */
-h1 { font-weight: 800; }
-h2 { font-weight: 700; }
-h3 { font-weight: 700; }
-h4, h5, h6 { font-weight: 600; }
+/* Enforce Times New Roman on all typography */
+h1, h2, h3, h4, h5, h6, p, span, a, button, input, select, textarea, table, th, td, label {
+  font-family: "Times New Roman", Times, "Liberation Serif", serif;
+}
 
-/* Touch targets: 48px minimum height */
+/* Headings scale */
+h1 { font-weight: 700; font-size: 1.5rem; line-height: 1.25; }
+h2 { font-weight: 700; font-size: 1.25rem; line-height: 1.3; }
+h3 { font-weight: 700; font-size: 1.1rem; line-height: 1.35; }
+h4, h5, h6 { font-weight: 700; }
+
+/* Touch targets: 44px standard mobile minimum */
 .min-touch-target {
-  min-height: 48px;
-  min-width: 48px;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 /* Tabular numbers for financial and clock values */
@@ -170,23 +173,24 @@ h4, h5, h6 { font-weight: 600; }
   font-feature-settings: "tnum";
 }
 
-/* App shell: clean white card container */
+/* App shell: crisp editorial container */
 .app-card {
   background: #FFFFFF;
-  border-radius: 1.25rem;
-  border: 1px solid #E3E8E3;
+  border-radius: 2px;
+  border: 1px solid #E0E0E0;
 }
 
-/* Menu item row */
-.menu-row {
+/* Linear ledger list row */
+.menu-row,
+.mobile-ledger-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 12px 16px;
   background: #FFFFFF;
-  border-radius: 1rem;
-  border: 1px solid #E3E8E3;
-  transition: all 0.12s ease-out;
+  border-radius: 0;
+  border-bottom: 1px solid #E0E0E0;
+  transition: background-color 0.1s ease-out;
   cursor: pointer;
   text-decoration: none;
   color: inherit;
@@ -194,80 +198,77 @@ h4, h5, h6 { font-weight: 600; }
   user-select: none;
 }
 
-.menu-row:hover {
-  background-color: #F7F9F5;
-  border-color: #D5DDD4;
+.menu-row:hover,
+.mobile-ledger-row:hover {
+  background-color: #F2F2F0;
 }
 
-.menu-row:active {
-  background-color: #EEF3EB;
-  transform: scale(0.985);
+.menu-row:active,
+.mobile-ledger-row:active {
+  background-color: #EAEAE6;
 }
 
-/* Badge pill (small label in header) */
+/* Editorial tag badge */
 .badge-pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 600;
-  background: #E8F3E5;
-  color: #246B38;
-  border: 1px solid #D5E5D1;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #F2F2F0;
+  color: #2C4C3B;
+  border: 1px solid #CCCCCC;
 }
 
 /* Online badge */
 .badge-online {
-  background: #EBF6ED;
-  color: #3E9B4F;
-  border-color: rgba(62, 155, 79, 0.25);
+  background: #EAEFEA;
+  color: #2C4C3B;
+  border: 1px solid #B8CEB8;
 }
 
 /* -------------------------------------------------------------------------- */
-/* Mobile POS Shared Styles (Google / Material 3 Clean Modern)                 */
+/* Mobile Ledger POS Shell                                                    */
 /* -------------------------------------------------------------------------- */
 
 .mobile-pos-shell {
   min-height: 100dvh;
-  background-color: transparent;
+  background-color: #FAFAF7;
   display: flex;
   justify-content: center;
-  color: #17201A;
+  color: #1A1A1A;
 }
 
 .mobile-pos-frame {
   width: 100%;
   max-width: 28rem; /* 448px */
   min-height: 100dvh;
-  background-color: #082618;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(20, 85, 54, 0.45) 0%, rgba(4, 20, 13, 0.92) 100%),
-    url('/images/bg-emerald.webp');
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
-  background-attachment: fixed;
+  background-color: #FFFFFF;
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  border-left: 1px solid #E0E0E0;
+  border-right: 1px solid #E0E0E0;
+  box-shadow: none;
 }
 
 @media (max-width: 520px) {
   .mobile-pos-shell {
-    background-color: transparent;
+    background-color: #FFFFFF;
   }
   .mobile-pos-frame {
     max-width: 100%;
+    border-left-width: 0;
+    border-right-width: 0;
     box-shadow: none;
   }
 }
 
 .mobile-pos-header-bar {
   background: #FFFFFF;
-  border-bottom: 1px solid #E3E8E3;
-  padding: 14px 20px 12px 20px;
+  border-bottom: 1px solid #E0E0E0;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -276,39 +277,39 @@ h4, h5, h6 { font-weight: 600; }
 .mobile-pos-header-title {
   font-size: 16px;
   font-weight: 700;
-  color: #17201A;
-  letter-spacing: -0.01em;
+  color: #1A1A1A;
   line-height: 1.2;
 }
 
 .mobile-pos-header-date {
   font-size: 12px;
-  color: #66716A;
+  color: #555555;
   margin-top: 2px;
 }
 
 .mobile-pos-header-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 600;
-  background: #E8F3E5;
-  color: #246B38;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #F2F2F0;
+  color: #2C4C3B;
+  border: 1px solid #CCCCCC;
 }
 
 .mobile-pos-btn {
-  min-height: 48px;
-  border-radius: 14px;
-  border: 1px solid #E3E8E3;
+  min-height: 44px;
+  border-radius: 2px;
+  border: 1px solid #CCCCCC;
   background-color: #FFFFFF;
-  font-size: 14px;
-  font-weight: 600;
-  color: #17201A;
-  box-shadow: 0 1px 3px rgba(23, 32, 26, 0.04);
-  transition: all 120ms ease-out;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1A1A1A;
+  box-shadow: none;
+  transition: background-color 100ms ease-out;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -318,32 +319,30 @@ h4, h5, h6 { font-weight: 600; }
 }
 
 .mobile-pos-btn:hover {
-  background-color: #F7F9F5;
-  color: #17201A;
-  border-color: #D5DDD4;
+  background-color: #F2F2F0;
+  color: #1A1A1A;
+  border-color: #1A1A1A;
 }
 
 .mobile-pos-btn:active {
-  background-color: #EEF3EB !important;
-  color: #17201A !important;
-  transform: translateY(1px) scale(0.985) !important;
+  background-color: #EAEAE6 !important;
+  color: #1A1A1A !important;
 }
 
 .mobile-pos-btn-primary {
-  background: #4F9D5A;
+  background: #2C4C3B;
   color: #FFFFFF;
-  border: none;
+  border: 1px solid #1B3224;
 }
 
 .mobile-pos-btn-primary:hover {
-  background: #3D8547;
+  background: #233D2F;
   color: #FFFFFF;
 }
 
 .mobile-pos-btn-primary:active {
-  background-color: #246B38 !important;
+  background-color: #1B3224 !important;
   color: #FFFFFF !important;
-  transform: translateY(1px) scale(0.985) !important;
 }
 
 .mobile-pos-nav {
@@ -355,8 +354,8 @@ h4, h5, h6 { font-weight: 600; }
   max-width: 28rem;
   z-index: 40;
   background: #FFFFFF;
-  border-top: 1px solid #E3E8E3;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.03);
+  border-top: 1px solid #E0E0E0;
+  box-shadow: none;
 }
 
 @media (max-width: 520px) {
@@ -365,56 +364,35 @@ h4, h5, h6 { font-weight: 600; }
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* Page Transitions & Performance Animations                                  */
-/* -------------------------------------------------------------------------- */
-
+/* Page Transitions & Skeletons */
 @keyframes skeleton-shimmer {
   0% {
-    opacity: 0.55;
-    background-position: -200% 0;
+    opacity: 0.6;
+    background-color: #EEEEEE;
   }
   50% {
-    opacity: 0.95;
-    background-position: 200% 0;
+    opacity: 0.9;
+    background-color: #E0E0E0;
   }
   100% {
-    opacity: 0.55;
-    background-position: -200% 0;
+    opacity: 0.6;
+    background-color: #EEEEEE;
   }
 }
 
 .skeleton-shimmer {
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
-  background-size: 200% 100%;
 }
 
-@keyframes page-enter {
-  0% {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-page-enter {
-  animation: page-enter 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity;
-}
-
-/* Instant active tactile feel & eliminate 300ms mobile tap delay */
+/* Instant active tactile feel & eliminate mobile tap delay */
 a, button, [role="button"], input, select, textarea {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 
-/* Snappy, GPU-accelerated Modal & Popup Animations */
+/* Snappy Modal & Popup Animations without blur/shadow slop */
 .modal-backdrop-animate {
-  animation: modal-backdrop-in 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: opacity;
+  animation: modal-backdrop-in 0.1s ease-out forwards;
 }
 
 @keyframes modal-backdrop-in {
@@ -423,40 +401,33 @@ a, button, [role="button"], input, select, textarea {
 }
 
 .modal-content-animate {
-  animation: modal-scale-in 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity;
+  animation: modal-scale-in 0.1s ease-out forwards;
 }
 
 @keyframes modal-scale-in {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(4px);
+    transform: translateY(2px);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translateY(0);
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* PWA Standalone & Mobile App Mode Enhancements                              */
-/* -------------------------------------------------------------------------- */
 @media (display-mode: standalone) {
-  /* Prevent rubberband bouncy reload and accidental swipe navigation */
   html, body {
     overscroll-behavior-y: none;
     -webkit-user-select: none;
     user-select: none;
   }
 
-  /* Allow text selection in form fields and tables */
   input, textarea, [contenteditable="true"], table {
     -webkit-user-select: text;
     user-select: text;
   }
 }
 
-/* Ensure full screen height respects mobile dynamic viewports */
 html {
   height: -webkit-fill-available;
 }
@@ -466,50 +437,3 @@ body {
   min-height: -webkit-fill-available;
   min-height: 100dvh;
 }
-
-/* Smooth anchor scrolling for landing sections */
-html {
-  scroll-behavior: smooth;
-}
-
-@keyframes bounce-subtle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-}
-
-.animate-bounce-subtle {
-  animation: bounce-subtle 3s ease-in-out infinite;
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.25s ease-out forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto !important;
-  }
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-

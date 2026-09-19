@@ -33,12 +33,12 @@ export default async function SessionsPage() {
         }
 
         return (
-            <main className="mx-auto flex min-h-screen max-w-md items-center px-4 py-8">
-                <div className="w-full rounded-2xl border border-[#8B1E1E]/30 bg-[#FAECEC] p-6 text-center">
-                    <h1 className="text-lg font-bold text-[#8B1E1E]">
+            <main className="mx-auto flex min-h-screen max-w-md items-center px-4 py-8 font-serif">
+                <div className="w-full rounded-xs border border-[#9E2A2B]/40 bg-[#FBEBEB] p-5 text-center">
+                    <h1 className="text-base font-bold text-[#9E2A2B]">
                         Chưa có quyền truy cập
                     </h1>
-                    <p className="mt-2 text-xs text-[#8B1E1E]">
+                    <p className="mt-1.5 text-xs text-[#9E2A2B]">
                         Tài khoản ({session.user.email}) hiện chưa được
                         gán quyền hoặc hồ câu đã bị xóa. Vui lòng liên
                         hệ quản trị viên.
@@ -277,11 +277,11 @@ export default async function SessionsPage() {
                 {/* ── Main Content Area ───────────────────────────────────── */}
                 <main className="flex-1 px-4 sm:px-5 py-4 overflow-y-auto">
                     {/* ── Section header ──────────────────────────────────────── */}
-                    <div className="mb-4 flex items-center justify-between">
-                        <h1 className="text-xl font-black tracking-tight text-white drop-shadow-sm">
-                            Đang câu
+                    <div className="mb-3 flex items-center justify-between border-b border-[#E0E0E0] pb-2">
+                        <h1 className="text-sm font-bold uppercase tracking-wider text-[#1A1A1A] font-serif">
+                            PHIÊN CÂU ĐANG HOẠT ĐỘNG
                         </h1>
-                        <span className="inline-flex items-center rounded-full bg-black/30 px-3 py-1 text-xs font-bold text-emerald-200 border border-emerald-400/30 backdrop-blur-md shadow-xs">
+                        <span className="inline-flex items-center rounded-xs bg-[#F2F2F0] px-2 py-0.5 text-[11px] font-bold text-[#2C4C3B] border border-[#CCCCCC] font-serif">
                             {serializedSessions.length} vé · {activeHutCount} ô
                         </span>
                     </div>

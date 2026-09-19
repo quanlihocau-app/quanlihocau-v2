@@ -162,24 +162,29 @@ export function DailyReportView({
     }
 
     return (
-        <div className="mobile-pos-shell">
+        <div className="mobile-pos-shell font-serif">
             <div className="mobile-pos-frame">
                 {/* ── App Header ─────────────────────────────────────────── */}
                 <MobileAppHeader lakeName={lakeName} />
 
                 <div className="p-4 space-y-4 pb-28">
                     {/* ── Page title + shift badge ───────────────────────────── */}
-                    <div className="flex items-center justify-between">
-                        <h1 className="text-[22px] font-bold tracking-tight text-[#17201A]">
-                            Báo cáo ngày
-                        </h1>
+                    <div className="flex items-center justify-between border-b border-[#CCCCCC] pb-2">
+                        <div>
+                            <h1 className="text-base font-bold tracking-tight text-[#1A1A1A] uppercase">
+                                Báo cáo sổ ca ngày
+                            </h1>
+                            <p className="text-[11px] text-[#555555] mt-0.5">
+                                {formatDateTime(shift.startTime)} {shift.endTime ? `— ${formatDateTime(shift.endTime)}` : ""}
+                            </p>
+                        </div>
                         {shift.isClosed ? (
-                            <span className="rounded-full bg-[#EBF6ED] px-3 py-1 text-xs font-bold text-[#3E9B4F] border border-[#3E9B4F]/20">
-                                Đã chốt ca
+                            <span className="rounded-xs bg-[#F2F2F0] px-2.5 py-0.5 text-xs font-bold text-[#555555] border border-[#CCCCCC]">
+                                ĐÃ CHỐT CA
                             </span>
                         ) : (
-                            <span className="rounded-full bg-[#E8F3E5] px-3 py-1 text-xs font-bold text-[#246B38] border border-[#4F9D5A]/30">
-                                Đang mở ca
+                            <span className="rounded-xs bg-[#EAEFEA] px-2.5 py-0.5 text-xs font-bold text-[#2C4C3B] border border-[#2C4C3B]">
+                                ĐANG MỞ CA
                             </span>
                         )}
                     </div>
@@ -189,114 +194,116 @@ export function DailyReportView({
                         <InlineAlert type="success" message={successMessage} />
                     )}
 
-                    {/* Net Profit Card - Premium M3 Forest Gradient */}
-                    <div className="rounded-3xl bg-linear-to-br from-[#1B4D28] via-[#246B38] to-[#153B1E] p-5 text-white shadow-md border border-[#4F9D5A]/30 space-y-1">
-                        <p className="text-xs text-[#A8E2B5] font-semibold tracking-wide">
+                    {/* Net Profit Card - Classic Editorial Ledger Block */}
+                    <div className="rounded-xs bg-[#2C4C3B] p-4 text-white border border-[#2C4C3B] space-y-1">
+                        <p className="text-xs text-[#C8D6CF] font-bold uppercase tracking-wider">
                             Lợi nhuận thuần (Thực thu ròng)
                         </p>
-                        <p className="text-3xl font-black font-mono text-white tabular-nums tracking-tight">
+                        <p className="text-3xl font-bold font-serif text-white tabular-nums tracking-tight">
                             {formatVnd(summary.netProfitVnd)}
                         </p>
                     </div>
 
                     {/* Two Main Cards: Doanh thu & Chi phí */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2.5">
                         {/* Doanh thu Card */}
-                        <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 shadow-xs">
-                            <p className="text-xs font-semibold text-[#66716A]">
+                        <div className="rounded-xs border border-[#CCCCCC] bg-white p-3">
+                            <p className="text-xs font-bold text-[#555555] uppercase">
                                 Tổng Doanh Thu
                             </p>
-                            <p className="mt-1 text-lg font-bold font-mono text-[#246B38] tabular-nums">
+                            <p className="mt-1 text-base font-bold font-serif text-[#2C4C3B] tabular-nums">
                                 {formatVnd(summary.revenueVnd)}
                             </p>
                         </div>
 
                         {/* Chi phí Card */}
-                        <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 shadow-xs">
-                            <p className="text-xs font-semibold text-[#66716A]">
+                        <div className="rounded-xs border border-[#CCCCCC] bg-white p-3">
+                            <p className="text-xs font-bold text-[#555555] uppercase">
                                 Tổng Chi Phí
                             </p>
-                            <p className="mt-1 text-lg font-bold font-mono text-[#D9534F] tabular-nums">
+                            <p className="mt-1 text-base font-bold font-serif text-[#9E2A2B] tabular-nums">
                                 {formatVnd(summary.expenseVnd)}
                             </p>
                         </div>
                     </div>
 
-                    {/* Financial Breakdown List */}
-                    <div className="space-y-2">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#246B38] px-1">
-                            Chi tiết dòng tiền
+                    {/* Financial Breakdown Ledger Table */}
+                    <div className="space-y-1.5">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C4C3B] px-0.5">
+                            Chi tiết luồng tiền thu / chi
                         </p>
 
-                        {/* Tiền mặt */}
-                        <div className="flex items-center justify-between rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3 shadow-xs">
-                            <span className="text-xs font-medium text-[#17201A]">
-                                Tiền mặt
-                            </span>
-                            <span className="text-xs font-bold font-mono text-[#17201A] tabular-nums">
-                                {formatVnd(summary.cashVnd)}
-                            </span>
-                        </div>
+                        <div className="rounded-xs border border-[#CCCCCC] bg-white divide-y divide-[#E0E0E0]">
+                            {/* Tiền mặt */}
+                            <div className="flex items-center justify-between px-3.5 py-2.5 text-xs hover:bg-[#FAFAF7] transition-colors">
+                                <span className="font-medium text-[#1A1A1A]">
+                                    Tiền mặt tại két
+                                </span>
+                                <span className="font-bold font-serif text-[#1A1A1A] tabular-nums">
+                                    {formatVnd(summary.cashVnd)}
+                                </span>
+                            </div>
 
-                        {/* Chuyển khoản */}
-                        <div className="flex items-center justify-between rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3 shadow-xs">
-                            <span className="text-xs font-medium text-[#17201A]">
-                                Chuyển khoản (Ngân hàng)
-                            </span>
-                            <span className="text-xs font-bold font-mono text-[#17201A] tabular-nums">
-                                {formatVnd(summary.transferVnd)}
-                            </span>
-                        </div>
+                            {/* Chuyển khoản */}
+                            <div className="flex items-center justify-between px-3.5 py-2.5 text-xs hover:bg-[#FAFAF7] transition-colors">
+                                <span className="font-medium text-[#1A1A1A]">
+                                    Chuyển khoản ngân hàng
+                                </span>
+                                <span className="font-bold font-serif text-[#1A1A1A] tabular-nums">
+                                    {formatVnd(summary.transferVnd)}
+                                </span>
+                            </div>
 
-                        {/* Thu mua cá */}
-                        <div className="flex items-center justify-between rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3 shadow-xs">
-                            <span className="text-xs font-medium text-[#17201A]">
-                                Chi trả thu mua cá
-                            </span>
-                            <span className="text-xs font-bold font-mono text-[#D9534F] tabular-nums">
-                                {summary.fishBuybackVnd > 0 ? `−${formatVnd(summary.fishBuybackVnd)}` : formatVnd(summary.fishBuybackVnd)}
-                            </span>
-                        </div>
+                            {/* Thu mua cá */}
+                            <div className="flex items-center justify-between px-3.5 py-2.5 text-xs hover:bg-[#FAFAF7] transition-colors">
+                                <span className="font-medium text-[#1A1A1A]">
+                                    Chi trả thu mua cá
+                                </span>
+                                <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">
+                                    {summary.fishBuybackVnd > 0 ? `−${formatVnd(summary.fishBuybackVnd)}` : formatVnd(summary.fishBuybackVnd)}
+                                </span>
+                            </div>
 
-                        {/* Chi khác */}
-                        <div className="flex items-center justify-between rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3 shadow-xs">
-                            <span className="text-xs font-medium text-[#17201A]">
-                                Chi phí vận hành khác
-                            </span>
-                            <span className="text-xs font-bold font-mono text-[#D9534F] tabular-nums">
-                                {summary.otherExpenseVnd > 0 ? `−${formatVnd(summary.otherExpenseVnd)}` : formatVnd(summary.otherExpenseVnd)}
-                            </span>
+                            {/* Chi khác */}
+                            <div className="flex items-center justify-between px-3.5 py-2.5 text-xs hover:bg-[#FAFAF7] transition-colors">
+                                <span className="font-medium text-[#1A1A1A]">
+                                    Chi phí vận hành khác
+                                </span>
+                                <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">
+                                    {summary.otherExpenseVnd > 0 ? `−${formatVnd(summary.otherExpenseVnd)}` : formatVnd(summary.otherExpenseVnd)}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
                     {/* Detailed Breakdown Sections if available */}
                     {breakdown && (
-                        <div className="space-y-4">
+                        <div className="space-y-3.5">
                             {/* 1. Vé câu & Doanh thu theo gói */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between px-1">
-                                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between px-0.5">
+                                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C4C3B]">
                                         Vé câu & Gói dịch vụ
                                     </p>
-                                    <span className="text-xs font-semibold text-[#66716A]">
+                                    <span className="text-xs text-[#555555]">
                                         Tổng: {breakdown.sessions.total} vé ({breakdown.sessions.completed} xong, {breakdown.sessions.active} đang câu{breakdown.sessions.cancelled > 0 ? `, ${breakdown.sessions.cancelled} hủy` : ""})
                                     </span>
                                 </div>
-                                <div className="rounded-2xl border border-[#E3E8E3] bg-white divide-y divide-[#E3E8E3] shadow-xs overflow-hidden">
+                                <div className="rounded-xs border border-[#CCCCCC] bg-white divide-y divide-[#E0E0E0] overflow-hidden">
                                     {breakdown.sessions.packages.length > 0 ? (
                                         breakdown.sessions.packages.map((pkg) => (
-                                            <div key={pkg.packageName} className="flex items-center justify-between px-4 py-3 text-xs">
+                                            <div key={pkg.packageName} className="flex items-center justify-between px-3.5 py-2 text-xs hover:bg-[#FAFAF7] transition-colors">
                                                 <div>
-                                                    <span className="font-semibold text-[#17201A]">{pkg.packageName}</span>
-                                                    <span className="ml-2 text-[#66716A]">({pkg.count} vé)</span>
+                                                    <span className="font-bold text-[#1A1A1A]">{pkg.packageName}</span>
+                                                    <span className="ml-2 text-[#555555]">({pkg.count} vé)</span>
                                                 </div>
-                                                <span className="font-bold font-mono text-[#17201A] tabular-nums">
+                                                <span className="font-bold font-serif text-[#1A1A1A] tabular-nums">
                                                     {formatVnd(pkg.totalVnd)}
                                                 </span>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="p-4 text-center text-xs text-[#8A938D]">
+                                        <div className="p-3.5 text-center text-xs text-[#777777]">
                                             Chưa có vé câu nào trong ca này
                                         </div>
                                     )}
@@ -304,42 +311,42 @@ export function DailyReportView({
                             </div>
 
                             {/* 2. Sản phẩm & Gia hạn */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between px-1">
-                                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between px-0.5">
+                                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C4C3B]">
                                         Hàng hóa & Gia hạn
                                     </p>
-                                    <span className="text-xs font-semibold text-[#66716A]">
+                                    <span className="text-xs font-bold font-serif text-[#1A1A1A]">
                                         {formatVnd(breakdown.products.totalVnd + breakdown.services.extensionsTotalVnd)}
                                     </span>
                                 </div>
-                                <div className="rounded-2xl border border-[#E3E8E3] bg-white divide-y divide-[#E3E8E3] shadow-xs overflow-hidden">
+                                <div className="rounded-xs border border-[#CCCCCC] bg-white divide-y divide-[#E0E0E0] overflow-hidden">
                                     {breakdown.services.extensionsCount > 0 && (
-                                        <div className="flex items-center justify-between px-4 py-3 text-xs bg-[#FDF6E9]">
+                                        <div className="flex items-center justify-between px-3.5 py-2 text-xs bg-[#FFFBE6]">
                                             <div>
-                                                <span className="font-semibold text-[#D99A32]">Gia hạn thêm giờ</span>
-                                                <span className="ml-2 text-[#D99A32]/80">({breakdown.services.extensionsCount} lần)</span>
+                                                <span className="font-bold text-[#D48806]">Gia hạn thêm giờ</span>
+                                                <span className="ml-2 text-[#D48806]/80">({breakdown.services.extensionsCount} lần)</span>
                                             </div>
-                                            <span className="font-bold font-mono text-[#D99A32] tabular-nums">
+                                            <span className="font-bold font-serif text-[#D48806] tabular-nums">
                                                 {formatVnd(breakdown.services.extensionsTotalVnd)}
                                             </span>
                                         </div>
                                     )}
                                     {breakdown.products.items.length > 0 ? (
                                         breakdown.products.items.map((prod) => (
-                                            <div key={prod.name} className="flex items-center justify-between px-4 py-3 text-xs">
+                                            <div key={prod.name} className="flex items-center justify-between px-3.5 py-2 text-xs hover:bg-[#FAFAF7] transition-colors">
                                                 <div>
-                                                    <span className="font-semibold text-[#17201A]">{prod.name}</span>
-                                                    <span className="ml-2 text-[#66716A]">(SL: {prod.quantity})</span>
+                                                    <span className="font-semibold text-[#1A1A1A]">{prod.name}</span>
+                                                    <span className="ml-2 text-[#555555]">(SL: {prod.quantity})</span>
                                                 </div>
-                                                <span className="font-bold font-mono text-[#17201A] tabular-nums">
+                                                <span className="font-bold font-serif text-[#1A1A1A] tabular-nums">
                                                     {formatVnd(prod.totalVnd)}
                                                 </span>
                                             </div>
                                         ))
                                     ) : (
                                         breakdown.services.extensionsCount === 0 && (
-                                            <div className="p-4 text-center text-xs text-[#8A938D]">
+                                            <div className="p-3.5 text-center text-xs text-[#777777]">
                                                 Chưa có bán hàng kèm trong ca này
                                             </div>
                                         )
@@ -348,20 +355,20 @@ export function DailyReportView({
                             </div>
 
                             {/* 3. Xuất nhập kho trong ca */}
-                            <div className="space-y-2">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-[#246B38] px-1">
+                            <div className="space-y-1.5">
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C4C3B] px-0.5">
                                     Biến động kho hàng
                                 </p>
-                                <div className="grid grid-cols-2 gap-2.5">
-                                    <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 shadow-xs">
-                                        <span className="text-xs font-medium text-[#66716A]">Đã nhập kho</span>
-                                        <p className="mt-0.5 text-sm font-bold font-mono text-[#3E9B4F] tabular-nums">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="rounded-xs border border-[#CCCCCC] bg-white p-3">
+                                        <span className="text-xs font-medium text-[#555555]">Đã nhập kho</span>
+                                        <p className="mt-0.5 text-sm font-bold font-serif text-[#2C4C3B] tabular-nums">
                                             +{breakdown.inventory.inCount} đơn vị
                                         </p>
                                     </div>
-                                    <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 shadow-xs">
-                                        <span className="text-xs font-medium text-[#66716A]">Đã xuất bán</span>
-                                        <p className="mt-0.5 text-sm font-bold font-mono text-[#17201A] tabular-nums">
+                                    <div className="rounded-xs border border-[#CCCCCC] bg-white p-3">
+                                        <span className="text-xs font-medium text-[#555555]">Đã xuất bán</span>
+                                        <p className="mt-0.5 text-sm font-bold font-serif text-[#1A1A1A] tabular-nums">
                                             -{breakdown.inventory.outCount} đơn vị
                                         </p>
                                     </div>
@@ -372,23 +379,23 @@ export function DailyReportView({
 
                     {/* Shift Closed Details (if already closed) */}
                     {shift.isClosed && shiftClose && (
-                        <Card className="border-[#4F9D5A]/30 bg-[#E8F3E5] p-4 space-y-1.5 text-xs text-[#246B38] rounded-2xl">
+                        <div className="border border-[#CCCCCC] bg-[#FAFAF7] p-3 space-y-1 text-xs text-[#1A1A1A] rounded-xs">
                             <div className="flex items-center justify-between font-bold">
                                 <span>Thời gian chốt ca:</span>
-                                <span className="tabular-nums font-mono">{formatDateTime(shiftClose.closedAt)}</span>
+                                <span className="tabular-nums font-serif">{formatDateTime(shiftClose.closedAt)}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span className="text-[#66716A]">Người thực hiện:</span>
-                                <span className="font-semibold text-[#17201A]">
+                                <span className="text-[#555555]">Người thực hiện:</span>
+                                <span className="font-bold text-[#1A1A1A]">
                                     {shiftClose.closedBy || "Quản trị viên"}
                                 </span>
                             </div>
                             {shiftClose.note && (
-                                <div className="pt-1 text-xs text-[#66716A] border-t border-[#4F9D5A]/20 mt-1">
+                                <div className="pt-1 text-xs text-[#555555] border-t border-[#E0E0E0] mt-1">
                                     Ghi chú: {shiftClose.note}
                                 </div>
                             )}
-                        </Card>
+                        </div>
                     )}
 
                     {/* Main Action Button */}
@@ -403,12 +410,12 @@ export function DailyReportView({
                                         setError(null);
                                         setIsModalOpen(true);
                                     }}
-                                    className="w-full text-sm font-bold shadow-xs min-h-12 rounded-full cursor-pointer"
+                                    className="w-full text-sm font-bold cursor-pointer"
                                 >
                                     Xem và chốt ca
                                 </Button>
                             ) : (
-                                <div className="rounded-2xl border border-[#E3E8E3] bg-white px-4 py-3 text-center text-xs text-[#66716A]">
+                                <div className="rounded-xs border border-[#CCCCCC] bg-white px-3.5 py-2.5 text-center text-xs text-[#555555]">
                                     Chỉ Chủ hồ hoặc Quản lý mới có quyền chốt ca.
                                 </div>
                             )}
@@ -419,14 +426,14 @@ export function DailyReportView({
                 {/* Shift Close Modal */}
                 {isModalOpen && (
                     <div
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 modal-backdrop-animate"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 modal-backdrop-animate font-serif"
                         onClick={onBackdropClick}
                     >
-                        <div className="w-full max-w-sm rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl overflow-hidden flex flex-col space-y-4 p-5 modal-content-animate">
+                        <div className="w-full max-w-sm rounded-xs bg-white border border-[#CCCCCC] overflow-hidden flex flex-col space-y-3 p-4 modal-content-animate font-serif">
                             {/* Header */}
-                            <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
+                            <div className="flex items-center justify-between border-b border-[#E0E0E0] pb-2.5">
                                 <div className="flex items-center gap-2">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8F3E5] text-[#246B38]">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-xs bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]">
                                         <svg
                                             className="h-4 w-4"
                                             fill="none"
@@ -441,7 +448,7 @@ export function DailyReportView({
                                             />
                                         </svg>
                                     </div>
-                                    <h3 className="text-base font-bold text-[#17201A]">
+                                    <h3 className="text-sm font-bold text-[#1A1A1A] uppercase tracking-wide">
                                         Xác nhận chốt ca
                                     </h3>
                                 </div>
@@ -449,10 +456,10 @@ export function DailyReportView({
                                     type="button"
                                     disabled={isSubmitting}
                                     onClick={() => setIsModalOpen(false)}
-                                    className="rounded-full p-1.5 text-[#66716A] hover:text-[#17201A] hover:bg-[#F7F9F5] cursor-pointer"
+                                    className="h-7 w-7 rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] flex items-center justify-center text-[#1A1A1A] hover:bg-[#EAEAE6] transition-colors cursor-pointer"
                                 >
                                     <svg
-                                        className="h-5 w-5"
+                                        className="h-4 w-4"
                                         fill="none"
                                         viewBox="0 0 24 24"
                                         strokeWidth={2}
@@ -473,30 +480,30 @@ export function DailyReportView({
                             )}
 
                             {/* Summary Snapshot */}
-                            <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-3.5 space-y-2 text-xs">
+                            <div className="rounded-xs border border-[#CCCCCC] bg-[#FAFAF7] p-3 space-y-1.5 text-xs">
                                 <div className="flex justify-between">
-                                    <span className="text-[#66716A]">Doanh thu:</span>
-                                    <span className="font-bold font-mono text-[#246B38] tabular-nums">
+                                    <span className="text-[#555555]">Doanh thu:</span>
+                                    <span className="font-bold font-serif text-[#2C4C3B] tabular-nums">
                                         {formatVnd(summary.revenueVnd)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-[#66716A]">Chi phí:</span>
-                                    <span className="font-bold font-mono text-[#D9534F] tabular-nums">
+                                    <span className="text-[#555555]">Chi phí:</span>
+                                    <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">
                                         {formatVnd(summary.expenseVnd)}
                                     </span>
                                 </div>
-                                <div className="flex justify-between border-t border-[#E3E8E3] pt-1.5 font-bold text-[#17201A]">
+                                <div className="flex justify-between border-t border-[#CCCCCC] pt-1 font-bold text-[#1A1A1A]">
                                     <span>Thực thu ròng:</span>
-                                    <span className="text-[#246B38] font-bold font-mono tabular-nums">
+                                    <span className="text-[#2C4C3B] font-bold font-serif tabular-nums">
                                         {formatVnd(summary.netProfitVnd)}
                                     </span>
                                 </div>
                             </div>
 
                             {/* Note Input */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-[#17201A]">
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-[#1A1A1A]">
                                     Ghi chú (tùy chọn):
                                 </label>
                                 <textarea
@@ -505,36 +512,36 @@ export function DailyReportView({
                                     placeholder="Nhập ghi chú chốt ca nếu có..."
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
-                                    className="w-full rounded-2xl border border-[#E3E8E3] bg-white p-3 text-xs text-[#17201A] focus:border-[#4F9D5A] focus:ring-1 focus:ring-[#4F9D5A] focus:outline-none"
+                                    className="w-full rounded-xs border border-[#CCCCCC] bg-white p-2.5 text-xs text-[#1A1A1A] focus:border-[#2C4C3B] focus:outline-none font-serif"
                                 />
                             </div>
 
                             {/* Warning Alert */}
                             <InlineAlert
                                 type="warning"
-                                message="Số liệu tài chính sẽ được khóa vĩnh viễn sau khi chốt ca."
+                                message="Số liệu tài chính sẽ được khóa sau khi chốt ca."
                             />
 
                             {/* Actions */}
                             <div className="flex items-center gap-2 pt-1">
                                 <Button
                                     type="button"
-                                    size="lg"
+                                    size="md"
                                     variant="outline"
                                     disabled={isSubmitting}
                                     onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 rounded-full"
+                                    className="flex-1"
                                 >
                                     Hủy
                                 </Button>
                                 <Button
                                     type="button"
-                                    size="lg"
+                                    size="md"
                                     variant="primary"
                                     isLoading={isSubmitting}
                                     loadingText="Đang chốt ca…"
                                     onClick={handleConfirmClose}
-                                    className="flex-2 rounded-full"
+                                    className="flex-2"
                                 >
                                     Xác nhận chốt ca
                                 </Button>

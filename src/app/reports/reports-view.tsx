@@ -290,18 +290,18 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
     };
 
     return (
-        <div className="min-h-screen bg-[#F6F8F5] pb-24 text-slate-900">
+        <div className="min-h-screen bg-[#FAFAF7] pb-24 text-[#1A1A1A] font-serif">
             {/* App Header */}
             <MobileAppHeader lakeName={lakeName} roleBadge="Báo cáo" />
 
             {/* Page Title & Action Bar */}
-            <div className="border-b border-[#E3E8E3] bg-white px-4 py-2.5">
+            <div className="border-b border-[#CCCCCC] bg-white px-4 py-2.5 font-serif">
                 <div className="mx-auto flex max-w-5xl items-center justify-between gap-2">
                     <div>
-                        <h1 className="text-lg font-bold text-slate-900">
+                        <h1 className="text-base font-bold text-[#1A1A1A] uppercase tracking-wide">
                             Trung tâm Báo cáo
                         </h1>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-[11px] text-[#555555]">
                             Thống kê doanh thu, vận hành & tài chính đa kỳ
                         </p>
                     </div>
@@ -311,10 +311,10 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                         <button
                             type="button"
                             onClick={() => setIsFilterSheetOpen(true)}
-                            className="inline-flex min-h-12 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-all shadow-xs"
+                            className="inline-flex min-h-8 items-center justify-center rounded-xs border border-[#CCCCCC] bg-white px-2.5 py-1 text-xs font-bold text-[#1A1A1A] hover:bg-[#F2F2F0] transition-colors"
                             title="Bộ lọc nâng cao"
                         >
-                            <svg className="h-4 w-4 text-slate-600 mr-1" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <svg className="h-3.5 w-3.5 text-[#555555] mr-1" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
                             </svg>
                             Bộ lọc
@@ -324,7 +324,7 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                         <button
                             type="button"
                             onClick={() => handleExport("excel")}
-                            className="inline-flex min-h-12 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 active:scale-95 transition-all shadow-xs"
+                            className="inline-flex min-h-8 items-center justify-center rounded-xs border border-[#2C4C3B] bg-[#EAEFEA] px-2.5 py-1 text-xs font-bold text-[#2C4C3B] hover:bg-[#DCE6DC] transition-colors"
                             title="Xuất Excel"
                         >
                             Xuất Excel
@@ -332,7 +332,7 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                         <button
                             type="button"
                             onClick={() => window.print()}
-                            className="inline-flex min-h-12 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-all shadow-xs print:hidden"
+                            className="inline-flex min-h-8 items-center justify-center rounded-xs border border-[#CCCCCC] bg-white px-2.5 py-1 text-xs font-bold text-[#1A1A1A] hover:bg-[#F2F2F0] transition-colors print:hidden"
                             title="In hoặc lưu PDF"
                         >
                             🖨️ In
@@ -350,38 +350,38 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
             {/* Quick Shift Report Nav Notice */}
             <div className="mx-auto max-w-5xl px-3 pt-2">
-                <div className="flex items-center justify-between rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs text-slate-600 shadow-xs">
-                    <span>Cần chốt doanh thu ca trực hiện tại?</span>
+                <div className="flex items-center justify-between rounded-xs bg-white border border-[#CCCCCC] px-3 py-2 text-xs text-[#555555]">
+                    <span>Cần xem hoặc chốt sổ ca trực hiện tại?</span>
                     <button
                         type="button"
                         onClick={() => router.push("/reports/daily")}
-                        className="font-bold text-emerald-700 hover:underline inline-flex items-center gap-1"
+                        className="font-bold text-[#2C4C3B] hover:underline inline-flex items-center gap-1"
                     >
-                        Xem Báo cáo chốt ca →
+                        Sổ ca trực ngày →
                     </button>
                 </div>
             </div>
 
             {/* Main Content Area */}
-            <main className="mx-auto max-w-5xl px-3 pt-3 space-y-4">
+            <main className="mx-auto max-w-5xl px-3 pt-3 space-y-4 font-serif">
                 {error && (
-                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                    <div className="rounded-xs border border-[#FFA39E] bg-[#FFF1F0] p-3 text-xs text-[#A8071A]">
                         {error}
                     </div>
                 )}
 
                 {/* 1. EXECUTIVE KPI SUMMARY CARDS (Clickable for Drilldown) */}
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {/* Total Revenue */}
                     <div
                         onClick={() => setDrilldownMetric("totalRevenue")}
-                        className="cursor-pointer rounded-2xl border border-emerald-200 bg-linear-to-br from-emerald-500 to-emerald-700 p-3.5 text-white shadow-sm hover:shadow-md transition-all active:scale-98"
+                        className="cursor-pointer rounded-xs border border-[#2C4C3B] bg-[#2C4C3B] p-3 text-white transition-all active:scale-98"
                     >
-                        <div className="flex items-center justify-between text-[11px] font-medium text-emerald-100 uppercase tracking-wider">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-[#C8D6CF] uppercase tracking-wider">
                             <span>1. Doanh thu tổng</span>
                             <span>🔍</span>
                         </div>
-                        <div className="mt-1 text-lg font-extrabold sm:text-xl">
+                        <div className="mt-1 text-lg font-bold font-serif sm:text-xl tabular-nums">
                             {formatVnd(s?.totalRevenue ?? 0)}
                         </div>
                         {renderDelta(d?.totalRevenue)}
@@ -389,13 +389,13 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
                     {/* Net Profit */}
                     <div
-                        className="rounded-2xl border border-blue-200 bg-linear-to-br from-blue-600 to-indigo-700 p-3.5 text-white shadow-sm"
+                        className="rounded-xs border border-[#1A1A1A] bg-[#1A1A1A] p-3 text-white"
                     >
-                        <div className="flex items-center justify-between text-[11px] font-medium text-blue-100 uppercase tracking-wider">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-[#CCCCCC] uppercase tracking-wider">
                             <span>7. Lợi nhuận tạm tính</span>
                             <span>📊</span>
                         </div>
-                        <div className="mt-1 text-lg font-extrabold sm:text-xl">
+                        <div className="mt-1 text-lg font-bold font-serif sm:text-xl tabular-nums">
                             {formatVnd(s?.netProfit ?? 0)}
                         </div>
                         {renderDelta(d?.netProfit)}
@@ -404,13 +404,13 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {/* Ticket Revenue */}
                     <div
                         onClick={() => setDrilldownMetric("ticketRevenue")}
-                        className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs hover:border-emerald-300 hover:shadow-sm transition-all active:scale-98"
+                        className="cursor-pointer rounded-xs border border-[#CCCCCC] bg-white p-3 hover:border-[#2C4C3B] transition-all active:scale-98"
                     >
-                        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-[#555555] uppercase tracking-wider">
                             <span>2. Doanh thu vé</span>
                             <span>🔍</span>
                         </div>
-                        <div className="mt-1 text-base font-bold text-slate-800 sm:text-lg">
+                        <div className="mt-1 text-base font-bold font-serif text-[#1A1A1A] sm:text-lg tabular-nums">
                             {formatVnd(s?.ticketRevenue ?? 0)}
                         </div>
                         {renderDelta(d?.ticketRevenue)}
@@ -419,13 +419,13 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {/* Retail / Product Revenue */}
                     <div
                         onClick={() => setDrilldownMetric("productRevenue")}
-                        className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs hover:border-emerald-300 hover:shadow-sm transition-all active:scale-98"
+                        className="cursor-pointer rounded-xs border border-[#CCCCCC] bg-white p-3 hover:border-[#2C4C3B] transition-all active:scale-98"
                     >
-                        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-[#555555] uppercase tracking-wider">
                             <span>3. Tiền sản phẩm</span>
                             <span>🔍</span>
                         </div>
-                        <div className="mt-1 text-base font-bold text-slate-800 sm:text-lg">
+                        <div className="mt-1 text-base font-bold font-serif text-[#1A1A1A] sm:text-lg tabular-nums">
                             {formatVnd(s?.productRevenue ?? 0)}
                         </div>
                         {renderDelta(d?.productRevenue)}
@@ -434,13 +434,13 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {/* Overtime Revenue */}
                     <div
                         onClick={() => setDrilldownMetric("overtimeRevenue")}
-                        className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs hover:border-emerald-300 hover:shadow-sm transition-all active:scale-98"
+                        className="cursor-pointer rounded-xs border border-[#CCCCCC] bg-white p-3 hover:border-[#2C4C3B] transition-all active:scale-98"
                     >
-                        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-[#555555] uppercase tracking-wider">
                             <span>4. Tiền thêm giờ</span>
                             <span>🔍</span>
                         </div>
-                        <div className="mt-1 text-base font-bold text-amber-700 sm:text-lg">
+                        <div className="mt-1 text-base font-bold font-serif text-[#D48806] sm:text-lg tabular-nums">
                             {formatVnd(s?.overtimeRevenue ?? 0)}
                         </div>
                         {renderDelta(d?.overtimeRevenue)}
@@ -449,13 +449,13 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {/* Fish Buyback */}
                     <div
                         onClick={() => setDrilldownMetric("totalFishBuyback")}
-                        className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs hover:border-emerald-300 hover:shadow-sm transition-all active:scale-98"
+                        className="cursor-pointer rounded-xs border border-[#CCCCCC] bg-white p-3 hover:border-[#2C4C3B] transition-all active:scale-98"
                     >
-                        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-[#555555] uppercase tracking-wider">
                             <span>5. Tiền thu mua cá</span>
                             <span>🔍</span>
                         </div>
-                        <div className="mt-1 text-base font-bold text-slate-800 sm:text-lg">
+                        <div className="mt-1 text-base font-bold font-serif text-[#1A1A1A] sm:text-lg tabular-nums">
                             {formatVnd(s?.totalFishBuyback ?? 0)}
                         </div>
                         {renderDelta(d?.totalFishBuyback)}
@@ -464,13 +464,13 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {/* Total Expenses */}
                     <div
                         onClick={() => setDrilldownMetric("totalExpense")}
-                        className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs hover:border-emerald-300 hover:shadow-sm transition-all active:scale-98"
+                        className="cursor-pointer rounded-xs border border-[#CCCCCC] bg-white p-3 hover:border-[#2C4C3B] transition-all active:scale-98"
                     >
-                        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-[#555555] uppercase tracking-wider">
                             <span>6. Tổng phiếu chi</span>
                             <span>🔍</span>
                         </div>
-                        <div className="mt-1 text-base font-bold text-rose-700 sm:text-lg">
+                        <div className="mt-1 text-base font-bold font-serif text-[#9E2A2B] sm:text-lg tabular-nums">
                             {formatVnd(s?.totalExpense ?? 0)}
                         </div>
                         {renderDelta(d?.totalExpense)}

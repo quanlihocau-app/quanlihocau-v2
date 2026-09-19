@@ -117,49 +117,49 @@ const AUDIT_FILTER_OPTIONS: Array<{
     actions: string[];
     activeClass: string;
 }> = [
-    { key: "ALL", label: "Tất cả", actions: [], activeClass: "bg-[#4F9D5A] text-white" },
-    { key: "SESSION_OPEN", label: "Mở phiên", actions: ["FISHING_SESSION_OPENED", "SESSION_CREATED", "SESSION_OPENED", "INVOICE_CREATED"], activeClass: "bg-blue-700 text-white" },
-    { key: "SESSION_CLOSE", label: "Đóng phiên", actions: ["FISHING_SESSION_COMPLETED", "SESSION_COMPLETED", "FISHING_SESSION_CANCELLED"], activeClass: "bg-purple-700 text-white" },
-    { key: "PAYMENT", label: "Thu tiền", actions: ["PAYMENT_RECORDED", "PAYMENT_COLLECTED"], activeClass: "bg-teal-700 text-white" },
-    { key: "FISH_BUYBACK", label: "Thu cá", actions: ["FISH_BUYBACK_RECORDED", "FISH_BUYBACK_CREATED"], activeClass: "bg-rose-700 text-white" },
-    { key: "RETAIL", label: "Bán lẻ", actions: ["RETAIL_SALE_COMPLETED", "RETAIL_INVOICE_CREATED"], activeClass: "bg-emerald-700 text-white" },
+    { key: "ALL", label: "Tất cả", actions: [], activeClass: "bg-[#2C4C3B] text-white border-[#2C4C3B]" },
+    { key: "SESSION_OPEN", label: "Mở phiên", actions: ["FISHING_SESSION_OPENED", "SESSION_CREATED", "SESSION_OPENED", "INVOICE_CREATED"], activeClass: "bg-[#2C4C3B] text-white border-[#2C4C3B]" },
+    { key: "SESSION_CLOSE", label: "Đóng phiên", actions: ["FISHING_SESSION_COMPLETED", "SESSION_COMPLETED", "FISHING_SESSION_CANCELLED"], activeClass: "bg-[#2C4C3B] text-white border-[#2C4C3B]" },
+    { key: "PAYMENT", label: "Thu tiền", actions: ["PAYMENT_RECORDED", "PAYMENT_COLLECTED"], activeClass: "bg-[#2C4C3B] text-white border-[#2C4C3B]" },
+    { key: "FISH_BUYBACK", label: "Thu cá", actions: ["FISH_BUYBACK_RECORDED", "FISH_BUYBACK_CREATED"], activeClass: "bg-[#2C4C3B] text-white border-[#2C4C3B]" },
+    { key: "RETAIL", label: "Bán lẻ", actions: ["RETAIL_SALE_COMPLETED", "RETAIL_INVOICE_CREATED"], activeClass: "bg-[#2C4C3B] text-white border-[#2C4C3B]" },
 ];
 
 function getActionBadgeInfo(action: string): { label: string; colorClass: string } {
     switch (action) {
         case "RETAIL_SALE_COMPLETED":
         case "RETAIL_INVOICE_CREATED":
-            return { label: "Bán lẻ", colorClass: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+            return { label: "Bán lẻ", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
         case "SESSION_CREATED":
         case "SESSION_OPENED":
         case "FISHING_SESSION_OPENED":
-            return { label: "Mở phiên", colorClass: "bg-blue-100 text-blue-800 border-blue-300" };
+            return { label: "Mở phiên", colorClass: "bg-[#EAEFEA] text-[#2C4C3B] border-[#2C4C3B]" };
         case "SESSION_COMPLETED":
         case "FISHING_SESSION_COMPLETED":
-            return { label: "Kết thúc phiên", colorClass: "bg-purple-100 text-purple-800 border-purple-300" };
+            return { label: "Kết thúc", colorClass: "bg-[#F2F2F0] text-[#555555] border-[#CCCCCC]" };
         case "FISHING_SESSION_CANCELLED":
-            return { label: "Hủy phiên", colorClass: "bg-red-100 text-red-800 border-red-300" };
+            return { label: "Hủy phiên", colorClass: "bg-[#FFF1F0] text-[#A8071A] border-[#FFA39E]" };
         case "FISHING_SESSION_EXTENDED":
-            return { label: "Gia hạn giờ", colorClass: "bg-cyan-100 text-cyan-800 border-cyan-300" };
+            return { label: "Gia hạn", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
         case "PAYMENT_RECORDED":
         case "PAYMENT_COLLECTED":
-            return { label: "Thanh toán", colorClass: "bg-teal-100 text-teal-800 border-teal-300" };
+            return { label: "Thanh toán", colorClass: "bg-[#EAEFEA] text-[#2C4C3B] border-[#2C4C3B]" };
         case "FISH_BUYBACK_RECORDED":
         case "FISH_BUYBACK_CREATED":
-            return { label: "Thu cá", colorClass: "bg-rose-100 text-rose-800 border-rose-300" };
+            return { label: "Thu cá", colorClass: "bg-[#FFF7E6] text-[#D46B08] border-[#FFD591]" };
         case "INVOICE_CREATED":
-            return { label: "Tạo hóa đơn", colorClass: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+            return { label: "Tạo HĐ", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
         case "INVOICE_LINE_ADDED":
-            return { label: "Thêm món", colorClass: "bg-amber-100 text-amber-800 border-amber-300" };
+            return { label: "Thêm món", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
         case "PRODUCT_CREATED":
-            return { label: "Tạo SP", colorClass: "bg-indigo-100 text-indigo-800 border-indigo-300" };
+            return { label: "Tạo SP", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
         case "INVENTORY_ADJUSTED":
-            return { label: "Kho hàng", colorClass: "bg-orange-100 text-orange-800 border-orange-300" };
+            return { label: "Kho hàng", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
         case "INVOICE_REPAIRED_FROM_SESSION":
         case "INVOICE_AUTO_REPAIRED_ON_COMPLETE":
-            return { label: "Tự động bù hóa đơn", colorClass: "bg-amber-100 text-amber-800 border-amber-300" };
+            return { label: "Bù HĐ", colorClass: "bg-[#FFFBE6] text-[#D48806] border-[#FFE58F]" };
         default:
-            return { label: action.replace(/_/g, " "), colorClass: "bg-stone-100 text-stone-800 border-stone-300" };
+            return { label: action.replace(/_/g, " "), colorClass: "bg-[#F2F2F0] text-[#555555] border-[#CCCCCC]" };
     }
 }
 
@@ -457,18 +457,18 @@ export function HistoryView({
     return (
         <div className="space-y-4">
             {/* Top Navigation Bar: Dual Tabs */}
-            <div className="rounded-full bg-[#EEF3EB] p-1 flex gap-1 border border-[#E3E8E3]">
+            <div className="flex border-b border-[#CCCCCC] bg-white font-serif">
                 <button
                     type="button"
                     onClick={() => setActiveTab("orders")}
-                    className={`flex-1 py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`flex-1 py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border-b-2 ${
                         activeTab === "orders"
-                            ? "bg-[#4F9D5A] text-white shadow-xs"
-                            : "text-[#66716A] hover:text-[#17201A]"
+                            ? "border-[#2C4C3B] text-[#2C4C3B] bg-[#FAFAF7]"
+                            : "border-transparent text-[#666666] hover:text-[#1A1A1A]"
                     }`}
                 >
                     <svg
-                        className={`h-4 w-4 ${activeTab === "orders" ? "text-white" : "text-[#246B38]"}`}
+                        className={`h-4 w-4 ${activeTab === "orders" ? "text-[#2C4C3B]" : "text-[#777777]"}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2}
@@ -480,20 +480,20 @@ export function HistoryView({
                             d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
                         />
                     </svg>
-                    Lịch sử đơn ({invoices.length})
+                    SỔ HÓA ĐƠN ({invoices.length})
                 </button>
 
                 <button
                     type="button"
                     onClick={() => setActiveTab("audit")}
-                    className={`flex-1 py-2 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`flex-1 py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border-b-2 ${
                         activeTab === "audit"
-                            ? "bg-[#4F9D5A] text-white shadow-xs"
-                            : "text-[#66716A] hover:text-[#17201A]"
+                            ? "border-[#2C4C3B] text-[#2C4C3B] bg-[#FAFAF7]"
+                            : "border-transparent text-[#666666] hover:text-[#1A1A1A]"
                     }`}
                 >
                     <svg
-                        className={`h-4 w-4 ${activeTab === "audit" ? "text-white" : "text-[#246B38]"}`}
+                        className={`h-4 w-4 ${activeTab === "audit" ? "text-[#2C4C3B]" : "text-[#777777]"}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2}
@@ -505,7 +505,7 @@ export function HistoryView({
                             d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                         />
                     </svg>
-                    Nhật ký ({auditEvents.length})
+                    NHẬT KÝ ({auditEvents.length})
                 </button>
             </div>
 
@@ -513,7 +513,7 @@ export function HistoryView({
             {activeTab === "orders" && (
                 <div className="space-y-4">
                     {/* Filter Toolbar */}
-                    <Card className="p-3 space-y-2.5">
+                    <Card className="p-3 space-y-2.5 border-[#CCCCCC] bg-white rounded-xs">
                         <Input
                             placeholder="Tìm kiếm mã HĐ, khách hàng, số điện thoại, ô chòi..."
                             value={orderSearch}
@@ -521,15 +521,15 @@ export function HistoryView({
                         />
 
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                            {/* Type filter pills */}
+                            {/* Type filter buttons */}
                             <div className="flex gap-1">
                                 <button
                                     type="button"
                                     onClick={() => setOrderTypeFilter("ALL")}
-                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                                    className={`px-2.5 py-1 rounded-xs text-xs font-bold transition-colors cursor-pointer border ${
                                         orderTypeFilter === "ALL"
-                                            ? "bg-[#4F9D5A] text-white"
-                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
+                                            ? "bg-[#2C4C3B] text-white border-[#2C4C3B]"
+                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
                                     }`}
                                 >
                                     Tất cả
@@ -537,10 +537,10 @@ export function HistoryView({
                                 <button
                                     type="button"
                                     onClick={() => setOrderTypeFilter("TICKET")}
-                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                                    className={`px-2.5 py-1 rounded-xs text-xs font-bold transition-colors cursor-pointer border ${
                                         orderTypeFilter === "TICKET"
-                                            ? "bg-[#4F9D5A] text-white"
-                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
+                                            ? "bg-[#2C4C3B] text-white border-[#2C4C3B]"
+                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
                                     }`}
                                 >
                                     Vé câu
@@ -548,25 +548,25 @@ export function HistoryView({
                                 <button
                                     type="button"
                                     onClick={() => setOrderTypeFilter("RETAIL")}
-                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                                    className={`px-2.5 py-1 rounded-xs text-xs font-bold transition-colors cursor-pointer border ${
                                         orderTypeFilter === "RETAIL"
-                                            ? "bg-[#4F9D5A] text-white"
-                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
+                                            ? "bg-[#2C4C3B] text-white border-[#2C4C3B]"
+                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
                                     }`}
                                 >
                                     Bán lẻ
                                 </button>
                             </div>
 
-                            {/* Status filter pills */}
+                            {/* Status filter buttons */}
                             <div className="flex gap-1">
                                 <button
                                     type="button"
                                     onClick={() => setOrderStatusFilter("ALL")}
-                                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                                    className={`px-2 py-1 rounded-xs text-xs font-medium transition-colors cursor-pointer border ${
                                         orderStatusFilter === "ALL"
-                                            ? "bg-[#17201A] text-white"
-                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
+                                            ? "bg-[#1A1A1A] text-white border-[#1A1A1A]"
+                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
                                     }`}
                                 >
                                     Tất cả TT
@@ -574,10 +574,10 @@ export function HistoryView({
                                 <button
                                     type="button"
                                     onClick={() => setOrderStatusFilter("PAID")}
-                                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                                    className={`px-2 py-1 rounded-xs text-xs font-medium transition-colors cursor-pointer border ${
                                         orderStatusFilter === "PAID"
-                                            ? "bg-[#3E9B4F] text-white"
-                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
+                                            ? "bg-[#2C4C3B] text-white border-[#2C4C3B]"
+                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
                                     }`}
                                 >
                                     Đã xong
@@ -585,10 +585,10 @@ export function HistoryView({
                                 <button
                                     type="button"
                                     onClick={() => setOrderStatusFilter("UNPAID")}
-                                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                                    className={`px-2 py-1 rounded-xs text-xs font-medium transition-colors cursor-pointer border ${
                                         orderStatusFilter === "UNPAID"
-                                            ? "bg-[#D99A32] text-white"
-                                            : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
+                                            ? "bg-[#D48806] text-white border-[#D48806]"
+                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
                                     }`}
                                 >
                                     Còn thiếu
@@ -599,11 +599,11 @@ export function HistoryView({
 
                     {/* Orders List */}
                     {filteredInvoices.length === 0 ? (
-                        <Card className="p-8 text-center text-xs text-[#766F67]">
+                        <div className="p-8 text-center text-xs text-[#666666] border border-[#CCCCCC] bg-white rounded-xs">
                             Không tìm thấy hóa đơn hoặc đơn bán lẻ nào phù hợp.
-                        </Card>
+                        </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="border border-[#CCCCCC] bg-white rounded-xs divide-y divide-[#E0E0E0]">
                             {filteredInvoices.map((invoice) => {
                                 const isTicket = invoice.fishingSessionId !== null;
                                 const netPaid = invoice.payments.reduce(
@@ -620,36 +620,30 @@ export function HistoryView({
                                 );
 
                                 return (
-                                    <Card
+                                    <div
                                         key={invoice.id}
-                                        className="p-4 space-y-3 rounded-2xl border-[#E3E8E3] hover:border-[#4F9D5A] transition-colors shadow-xs"
+                                        className="p-3.5 space-y-2.5 hover:bg-[#FAFAF7] transition-colors"
                                     >
                                         {/* Card Header */}
                                         <div className="flex items-start justify-between">
                                             <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span
-                                                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                                                            isTicket
-                                                                ? "bg-blue-100 text-blue-800"
-                                                                : "bg-[#E8F3E5] text-[#246B38]"
-                                                        }`}
-                                                    >
-                                                        {isTicket ? "Vé câu" : "Bán lẻ"}
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="rounded-xs px-1.5 py-0.5 text-[10px] font-bold border border-[#CCCCCC] bg-[#F2F2F0] text-[#1A1A1A]">
+                                                        {isTicket ? "VÉ CÂU" : "BÁN LẺ"}
                                                     </span>
                                                     <Link
                                                         href={`/invoices/${invoice.id}`}
-                                                        className="text-xs font-bold text-[#246B38] hover:underline"
+                                                        className="text-xs font-bold text-[#2C4C3B] hover:underline"
                                                     >
                                                         HĐ #{invoice.id.slice(0, 8)}
                                                     </Link>
                                                 </div>
 
-                                                <p className="text-sm font-bold text-[#17201A] mt-1">
+                                                <p className="text-sm font-bold text-[#1A1A1A] mt-1">
                                                     {invoice.customer?.name ?? (isTicket ? "Khách vãng lai" : "Khách lẻ")}
                                                 </p>
                                                 {invoice.customer?.phoneNormalized && (
-                                                    <p className="text-[11px] text-[#766F67] font-mono">
+                                                    <p className="text-[11px] text-[#666666] font-mono">
                                                         {invoice.customer.phoneNormalized}
                                                     </p>
                                                 )}
@@ -657,18 +651,18 @@ export function HistoryView({
 
                                             <div className="text-right space-y-1">
                                                 <InvoiceStatusBadge status={invoice.status} />
-                                                <p className="text-[10px] text-[#766F67]">
+                                                <p className="text-[10px] text-[#666666]">
                                                     {formatTime(invoice.createdAt)} · {formatDateTime(invoice.createdAt).split(" ")[1]}
                                                 </p>
                                             </div>
                                         </div>
 
                                         {/* Content details */}
-                                        <div className="rounded-xl bg-[#F4F2EE] p-3 text-xs space-y-1.5">
+                                        <div className="border border-[#E0E0E0] bg-[#FAFAF7] p-2.5 rounded-xs text-xs space-y-1.5 font-serif">
                                             {isTicket ? (
-                                                <div className="flex justify-between text-[#766F67]">
+                                                <div className="flex justify-between text-[#666666]">
                                                     <span>Gói / Ô chòi:</span>
-                                                    <span className="font-bold text-[#27231F]">
+                                                    <span className="font-bold text-[#1A1A1A]">
                                                         {invoice.fishingSession?.packageNameSnapshot} (
                                                         {invoice.fishingSession?.hutLinks
                                                             ?.map((hl) => hl.hut.name)
@@ -677,30 +671,30 @@ export function HistoryView({
                                                     </span>
                                                 </div>
                                             ) : (
-                                                <div className="flex justify-between text-[#766F67]">
+                                                <div className="flex justify-between text-[#666666]">
                                                     <span>Mặt hàng:</span>
-                                                    <span className="font-medium text-[#27231F] max-w-50 truncate text-right">
+                                                    <span className="font-medium text-[#1A1A1A] max-w-50 truncate text-right">
                                                         {invoice.lines.map((l) => `${l.name} x${Number(l.quantity)}`).join(", ") || "—"}
                                                     </span>
                                                 </div>
                                             )}
 
                                             <div className="flex justify-between">
-                                                <span className="text-[#766F67]">Tổng tiền:</span>
-                                                <span className="font-bold text-[#27231F] tabular-nums">
+                                                <span className="text-[#666666]">Tổng tiền:</span>
+                                                <span className="font-bold text-[#1A1A1A] tabular-nums">
                                                     {formatVnd(invoice.totalAmountVnd)}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-[#766F67]">Đã thu:</span>
-                                                <span className="font-bold text-emerald-700 tabular-nums">
+                                                <span className="text-[#666666]">Đã thu:</span>
+                                                <span className="font-bold text-[#2C4C3B] tabular-nums">
                                                     {formatVnd(paidAmount)}
                                                 </span>
                                             </div>
                                             {remaining > 0 && (
-                                                <div className="flex justify-between border-t border-[#E3E8E3] pt-1 font-bold">
-                                                    <span className="text-[#D99A32]">Còn thiếu:</span>
-                                                    <span className="text-[#D99A32] tabular-nums">
+                                                <div className="flex justify-between border-t border-[#E0E0E0] pt-1 font-bold">
+                                                    <span className="text-[#D48806]">Còn thiếu:</span>
+                                                    <span className="text-[#D48806] tabular-nums">
                                                         {formatVnd(remaining)}
                                                     </span>
                                                 </div>
@@ -716,7 +710,7 @@ export function HistoryView({
                                                     variant="outline"
                                                     isLoading={reprintingId === invoice.id}
                                                     onClick={() => handleReprint(invoice)}
-                                                    className="h-8 px-3 rounded-full text-xs font-bold text-[#246B38] border-[#4F9D5A]/40 hover:bg-[#E8F3E5]"
+                                                    className="h-7 px-2.5 rounded-xs text-xs font-bold text-[#2C4C3B] border-[#2C4C3B] hover:bg-[#EAEFEA]"
                                                     icon={
                                                         <svg
                                                             className="h-3.5 w-3.5"
@@ -740,13 +734,13 @@ export function HistoryView({
                                             <div className="flex items-center gap-2">
                                                 <Link
                                                     href={`/invoices/${invoice.id}`}
-                                                    className="inline-flex h-8 items-center justify-center rounded-full border border-[#E3E8E3] bg-white px-3.5 text-xs font-semibold text-[#17201A] hover:bg-[#F7F9F5] transition-colors"
+                                                    className="inline-flex h-7 items-center justify-center rounded-xs border border-[#CCCCCC] bg-white px-3 text-xs font-semibold text-[#1A1A1A] hover:bg-[#F2F2F0] transition-colors"
                                                 >
                                                     Chi tiết
                                                 </Link>
                                             </div>
                                         </div>
-                                    </Card>
+                                    </div>
                                 );
                             })}
                         </div>
@@ -758,7 +752,7 @@ export function HistoryView({
             {activeTab === "audit" && (
                 <div className="space-y-4">
                     {/* Filter toolbar */}
-                    <Card className="p-3 space-y-2.5">
+                    <Card className="p-3 space-y-2.5 border-[#CCCCCC] bg-white rounded-xs">
                         <Input
                             placeholder="Tìm hành động, người dùng, mã tham chiếu..."
                             value={auditSearch}
@@ -773,10 +767,10 @@ export function HistoryView({
                                         key={opt.key}
                                         type="button"
                                         onClick={() => setAuditActionFilter(opt.key)}
-                                        className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                                        className={`px-2.5 py-1 rounded-xs text-xs font-bold transition-colors cursor-pointer border ${
                                             isSelected
                                                 ? opt.activeClass
-                                                : "bg-[#F7F9F5] text-[#66716A] hover:text-[#17201A]"
+                                                : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
                                         }`}
                                     >
                                         {opt.label}
@@ -788,11 +782,11 @@ export function HistoryView({
 
                     {/* Audit List */}
                     {filteredAuditEvents.length === 0 ? (
-                        <Card className="p-8 text-center text-xs text-[#766F67]">
+                        <div className="p-8 text-center text-xs text-[#666666] border border-[#CCCCCC] bg-white rounded-xs">
                             Không có nhật ký hoạt động nào.
-                        </Card>
+                        </div>
                     ) : (
-                        <div className="space-y-2.5">
+                        <div className="border border-[#CCCCCC] bg-white rounded-xs divide-y divide-[#E0E0E0]">
                             {filteredAuditEvents.map((ev) => {
                                 const badgeInfo = getActionBadgeInfo(ev.action);
                                 const isExpanded = !!expandedAuditIds[ev.id];
@@ -805,47 +799,47 @@ export function HistoryView({
                                 }
 
                                 return (
-                                    <Card
+                                    <div
                                         key={ev.id}
-                                        className="p-4 space-y-2.5 overflow-hidden rounded-2xl border-[#E3E8E3] hover:border-[#4F9D5A] transition-colors shadow-xs"
+                                        className="p-3.5 space-y-2 hover:bg-[#FAFAF7] transition-colors"
                                     >
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="space-y-1">
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1.5">
                                                     <span
-                                                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${badgeInfo.colorClass}`}
+                                                        className={`rounded-xs px-1.5 py-0.5 text-[10px] font-bold border ${badgeInfo.colorClass}`}
                                                     >
                                                         {badgeInfo.label}
                                                     </span>
-                                                    <span className="text-xs font-mono font-bold text-[#246B38]">
+                                                    <span className="text-xs font-mono font-bold text-[#2C4C3B]">
                                                         {ev.entityType} #{ev.entityId.slice(0, 8)}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-[#17201A] wrap-break-word">
+                                                <p className="text-xs text-[#1A1A1A] wrap-break-word">
                                                     Thực hiện bởi:{" "}
-                                                    <span className="font-semibold text-[#246B38]">
+                                                    <span className="font-semibold text-[#2C4C3B]">
                                                         {formatActor(ev.createdBy)}
                                                     </span>
                                                 </p>
                                             </div>
 
                                             <div className="text-right shrink-0">
-                                                <span className="text-[11px] text-[#66716A] font-mono">
+                                                <span className="text-[11px] text-[#666666] font-mono">
                                                     {formatDateTime(ev.createdAt)}
                                                 </span>
                                             </div>
                                         </div>
 
                                         {/* Payload summary or toggle */}
-                                        <div className="rounded-2xl bg-[#F7F9F5] p-3 text-xs border border-[#E3E8E3]">
+                                        <div className="rounded-xs bg-[#FAFAF7] p-2.5 text-xs border border-[#E0E0E0]">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-[11px] font-bold text-[#66716A]">
+                                                <span className="text-[11px] font-bold text-[#666666]">
                                                     Chi tiết tác vụ:
                                                 </span>
                                                 <button
                                                     type="button"
                                                     onClick={() => toggleAuditExpand(ev.id)}
-                                                    className="text-[11px] font-semibold text-[#246B38] hover:underline cursor-pointer"
+                                                    className="text-[11px] font-semibold text-[#2C4C3B] hover:underline cursor-pointer"
                                                 >
                                                     {isExpanded ? "Thu gọn" : "Xem thêm"}
                                                 </button>
@@ -854,41 +848,41 @@ export function HistoryView({
                                             {isExpanded ? (
                                                 <div className="mt-2 space-y-2">
                                                     {ev.action.includes("REPAIRED") && (
-                                                        <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px]">
-                                                             💡 <b>Hệ thống tự động:</b> Đã tạo bù hóa đơn nháp thành công cho phiên câu ô 01 lúc trước để đảm bảo số liệu thu chi chính xác.
+                                                        <div className="p-2 rounded-xs bg-[#FFFBE6] border border-[#FFE58F] text-[#D48806] text-[11px]">
+                                                            💡 <b>Hệ thống tự động:</b> Đã tạo bù hóa đơn nháp thành công cho phiên câu ô 01 lúc trước để đảm bảo số liệu thu chi chính xác.
                                                         </div>
                                                     )}
 
                                                     {/* Structured Key-Value Grid */}
                                                     {parsedPayload && Object.keys(parsedPayload).length > 0 ? (
-                                                        <div className="rounded-lg bg-white border border-[#D9D2C8] p-2.5 space-y-1 text-[11px]">
+                                                        <div className="rounded-xs bg-white border border-[#CCCCCC] p-2 space-y-1 text-[11px]">
                                                             {Object.entries(parsedPayload).map(([k, v]) => (
                                                                 <div
                                                                     key={k}
-                                                                    className="flex items-start justify-between gap-2 py-1 border-b border-[#F4F2EE] last:border-none"
+                                                                    className="flex items-start justify-between gap-2 py-1 border-b border-[#E0E0E0] last:border-none"
                                                                 >
-                                                                    <span className="text-slate-500 font-medium shrink-0">
+                                                                    <span className="text-[#666666] font-medium shrink-0">
                                                                         {formatPayloadKey(k)}:
                                                                     </span>
-                                                                    <span className="font-mono font-semibold text-slate-800 text-right wrap-break-word">
+                                                                    <span className="font-mono font-semibold text-[#1A1A1A] text-right wrap-break-word">
                                                                         {formatPayloadValue(k, v)}
                                                                     </span>
                                                                 </div>
                                                             ))}
                                                         </div>
                                                     ) : (
-                                                        <pre className="p-2 rounded-lg bg-white border border-[#D9D2C8] text-[11px] font-mono text-[#27231F] overflow-x-auto whitespace-pre-wrap">
+                                                        <pre className="p-2 rounded-xs bg-white border border-[#CCCCCC] text-[11px] font-mono text-[#1A1A1A] overflow-x-auto whitespace-pre-wrap">
                                                             {ev.payload}
                                                         </pre>
                                                     )}
                                                 </div>
                                             ) : (
-                                                <p className="text-[11px] text-[#27231F] truncate mt-1">
+                                                <p className="text-[11px] text-[#1A1A1A] truncate mt-1">
                                                     {getAuditHumanSummary(ev, parsedPayload)}
                                                 </p>
                                             )}
                                         </div>
-                                    </Card>
+                                    </div>
                                 );
                             })}
                         </div>

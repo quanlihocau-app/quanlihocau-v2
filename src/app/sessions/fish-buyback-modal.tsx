@@ -154,50 +154,50 @@ export function FishBuybackModal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 modal-backdrop-animate"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4 modal-backdrop-animate font-serif"
             onClick={onBackdropClick}
         >
-            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl space-y-4 modal-content-animate">
-                <div className="flex items-center justify-between border-b border-[#EAE4D7] pb-3">
+            <div className="w-full max-w-sm rounded-xs bg-white border border-[#CCCCCC] p-4 space-y-3.5 modal-content-animate font-serif">
+                <div className="flex items-center justify-between border-b border-[#E0E0E0] pb-2.5">
                     <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAECEC] text-[#8B1E1E]">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-xs bg-[#FBEBEB] text-[#9E2A2B] border border-[#E9B6B7]">
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                             </svg>
                         </div>
-                        <h3 className="text-base font-bold text-slate-900">
-                            Thu cá từ cần thủ
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-[#1A1A1A] font-serif">
+                            THU CÁ TỪ CẦN THỦ
                         </h3>
                     </div>
                     <button
                         type="button"
                         disabled={isSubmitting}
                         onClick={onClose}
-                        className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
+                        className="flex h-6 w-6 items-center justify-center rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] text-[#1A1A1A] hover:bg-[#EAEAE6] cursor-pointer"
                     >
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
                 {submitError && (
-                    <div className="rounded-xl border border-[#8B1E1E]/30 bg-[#FAECEC] p-3 text-xs text-[#8B1E1E] font-semibold">
+                    <div className="rounded-xs border border-[#9E2A2B]/40 bg-[#FBEBEB] p-2 text-xs text-[#9E2A2B] font-bold font-serif">
                         {submitError}
                     </div>
                 )}
                 {submitSuccess && (
-                    <div className="rounded-xl border border-[#2D6A4F]/30 bg-[#E8F3ED] p-3 text-xs text-[#2D6A4F] font-semibold">
+                    <div className="rounded-xs border border-[#2C4C3B]/40 bg-[#EAEFEA] p-2 text-xs text-[#2C4C3B] font-bold font-serif">
                         {submitSuccess}
                     </div>
                 )}
 
                 {/* Chọn loại cá */}
-                <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-600">
+                <div className="space-y-1.5 font-serif">
+                    <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide">
                         Chọn loại cá:
                     </label>
-                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+                    <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
                         {types.map((type) => {
                             const isSelected = selectedTypeId === type.id;
                             return (
@@ -205,14 +205,14 @@ export function FishBuybackModal({
                                     key={type.id}
                                     type="button"
                                     onClick={() => setSelectedTypeId(type.id)}
-                                    className={`p-2.5 rounded-lg border text-left text-xs transition-all ${
+                                    className={`p-2 rounded-xs border text-left text-xs transition-colors font-serif cursor-pointer ${
                                         isSelected
-                                            ? "border-[#9E6B05] bg-[#EAE2CE] font-bold text-slate-900 shadow-xs"
-                                            : "border-[#EAE4D7] bg-white text-slate-700 hover:bg-slate-50"
+                                            ? "border-2 border-[#2C4C3B] bg-[#EAEFEA] font-bold text-[#1A1A1A]"
+                                            : "border-[#CCCCCC] bg-white text-[#1A1A1A] hover:bg-[#FAFAF7]"
                                     }`}
                                 >
-                                    <p className="truncate">{type.name}</p>
-                                    <p className="font-mono text-[11px] text-[#8A5B00] mt-0.5">{formatPrice(type.pricePerKg)}/kg</p>
+                                    <p className="truncate font-bold">{type.name}</p>
+                                    <p className="font-serif text-[11px] text-[#2C4C3B] mt-0.5">{formatPrice(type.pricePerKg)}/kg</p>
                                 </button>
                             );
                         })}
@@ -220,8 +220,8 @@ export function FishBuybackModal({
                 </div>
 
                 {/* Nhập số kg */}
-                <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-600">
+                <div className="space-y-1.5 font-serif">
+                    <label className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wide">
                         Số lượng cá (Kg):
                     </label>
                     <div className="flex items-center gap-2">
@@ -232,7 +232,7 @@ export function FishBuybackModal({
                                 const sep = weightInput.includes(".") ? "." : ",";
                                 setWeightInput(String(newW).replace(".", sep));
                             }}
-                            className="h-10 w-10 rounded-lg border border-[#EAE4D7] bg-white font-bold text-slate-800 hover:bg-slate-50 cursor-pointer"
+                            className="h-10 w-10 rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] font-bold text-[#1A1A1A] hover:bg-[#EAEAE6] cursor-pointer text-lg font-serif"
                         >
                             -
                         </button>
@@ -252,7 +252,7 @@ export function FishBuybackModal({
                             onChange={(e) => {
                                 setWeightInput(cleanWeightInput(e.target.value));
                             }}
-                            className="h-10 flex-1 text-center font-mono font-bold text-slate-900 border border-[#EAE4D7] rounded-lg bg-[#FFFDF9]"
+                            className="h-10 flex-1 text-center font-serif font-bold text-base text-[#1A1A1A] border border-[#CCCCCC] rounded-xs bg-white focus:outline-none focus:border-[#2C4C3B] focus:ring-1 focus:ring-[#2C4C3B]"
                         />
                         <button
                             type="button"
@@ -261,7 +261,7 @@ export function FishBuybackModal({
                                 const sep = weightInput.includes(".") ? "." : ",";
                                 setWeightInput(String(newW).replace(".", sep));
                             }}
-                            className="h-10 w-10 rounded-lg border border-[#EAE4D7] bg-white font-bold text-slate-800 hover:bg-slate-50 cursor-pointer"
+                            className="h-10 w-10 rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] font-bold text-[#1A1A1A] hover:bg-[#EAEAE6] cursor-pointer text-lg font-serif"
                         >
                             +
                         </button>
@@ -270,19 +270,19 @@ export function FishBuybackModal({
 
                 {/* Tạm tính tiền cá */}
                 {selectedType && (
-                    <div className="rounded-xl bg-[#FFFDF9] border border-[#EAE4D7] p-3 text-xs flex items-center justify-between">
-                        <span className="text-slate-600">Tiền trả khách:</span>
-                        <span className="font-mono font-bold text-[#8B1E1E] text-sm">
+                    <div className="rounded-xs bg-[#FAFAF7] border border-[#CCCCCC] p-2.5 text-xs flex items-center justify-between font-serif">
+                        <span className="text-[#555555] font-normal">Tiền trả khách:</span>
+                        <span className="font-serif font-bold text-[#9E2A2B] text-sm">
                             -{formatPrice(totalPayout)}
                         </span>
                     </div>
                 )}
 
                 {/* Nút hành động */}
-                <div className="flex items-center gap-2 pt-2">
+                <div className="flex items-center gap-2 pt-1 font-serif">
                     <Button
                         type="button"
-                        size="lg"
+                        size="md"
                         variant="outline"
                         disabled={isSubmitting}
                         onClick={onClose}
@@ -292,7 +292,7 @@ export function FishBuybackModal({
                     </Button>
                     <Button
                         type="button"
-                        size="lg"
+                        size="md"
                         variant="primary"
                         isLoading={isSubmitting}
                         loadingText="Đang ghi nhận…"

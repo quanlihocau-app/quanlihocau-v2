@@ -352,13 +352,13 @@ export function SessionsClient({
     // ── Empty state ───────────────────────────────────────────────────────────
     if (sessions.length === 0) {
         return (
-            <div className="flex min-h-[calc(100vh-220px)] items-center justify-center">
+            <div className="flex min-h-[calc(100vh-220px)] items-center justify-center font-serif">
                 <div
-                    className="w-full rounded-3xl border border-[#E3E8E3] bg-[#F7F9F5] p-8 text-center shadow-xs"
+                    className="w-full rounded-xs border border-[#CCCCCC] bg-[#FFFFFF] p-6 text-center"
                 >
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8F3E5] text-[#246B38]">
+                    <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xs bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]">
                         <svg
-                            className="h-7 w-7"
+                            className="h-6 w-6"
                             fill="none"
                             viewBox="0 0 24 24"
                             strokeWidth={1.75}
@@ -371,16 +371,16 @@ export function SessionsClient({
                             />
                         </svg>
                     </div>
-                    <p className="text-base font-bold text-[#17201A]">
+                    <p className="text-base font-bold text-[#1A1A1A] font-serif">
                         Hiện không có phiên đang câu
                     </p>
-                    <p className="mt-1.5 text-xs text-[#66716A]">
+                    <p className="mt-1 text-xs text-[#555555] font-serif">
                         Bấm &quot;Tạo vé mới&quot; để bắt đầu một phiên câu cho khách.
                     </p>
                     {canOpenSession && (
                         <Link
                             href="/sessions/new"
-                            className="mobile-pos-btn mobile-pos-btn-primary mt-5 px-6"
+                            className="mobile-pos-btn mobile-pos-btn-primary mt-4 px-5 font-serif text-xs font-bold"
                         >
                             + Tạo vé mới
                         </Link>
@@ -391,9 +391,9 @@ export function SessionsClient({
     }
 
     return (
-        <>
+        <div className="font-serif">
             {/* Lưới thẻ phiên (2 cột) */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                 {sessions.map((s) => (
                     <SessionGridCard
                         key={s.id}
@@ -409,15 +409,15 @@ export function SessionsClient({
             </div>
 
             {/* Gợi ý nhấn giữ */}
-            <p className="text-center text-[11px] text-emerald-200 font-medium mt-3 drop-shadow-2xs">
+            <p className="text-center text-[11px] text-[#555555] font-medium mt-2.5 font-serif">
                 💡 Nhấn giữ 1 ô câu để xem chi tiết đầy đủ của phiên
             </p>
 
             {/* Thanh thao tác nhanh (Quick Action Toolbar) */}
             {selectedSession && (
-                <div className="mt-4 pt-3 border-t border-emerald-500/20">
-                    <div className="mb-3 text-center">
-                        <span className="inline-block text-xs font-bold text-emerald-100 bg-black/40 border border-emerald-400/30 rounded-full px-3.5 py-1 backdrop-blur-md shadow-xs">
+                <div className="mt-3 pt-2.5 border-t border-[#E0E0E0] font-serif">
+                    <div className="mb-2 text-center">
+                        <span className="inline-block text-xs font-bold text-[#2C4C3B] bg-[#EAEFEA] border border-[#CCCCCC] rounded-xs px-3 py-0.5 font-serif">
                             Đang chọn:{" "}
                             {selectedSession.hutLinks
                                 .map((hl) => hl.hut.name)
@@ -446,20 +446,20 @@ export function SessionsClient({
             {/* ── Modal Chi Tiết Phiên Câu Khi Nhấn Giữ (Long-Press Modal) ──────── */}
             {detailSession && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs modal-backdrop-animate"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 modal-backdrop-animate font-serif"
                     role="dialog"
                     aria-modal="true"
                     aria-label="Chi tiết phiên câu"
                     onClick={onDetailBackdropClick}
                 >
-                    <div className="w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] modal-content-animate">
+                    <div className="w-full max-w-md rounded-xs bg-white border border-[#CCCCCC] overflow-hidden flex flex-col max-h-[90vh] modal-content-animate">
                         {/* Header Modal */}
-                        <div className="flex items-center justify-between border-b border-[#E3E8E3] bg-white px-4 py-3 shrink-0">
+                        <div className="flex items-center justify-between border-b border-[#E0E0E0] bg-white px-4 py-2.5 shrink-0 font-serif">
                             <div>
-                                <h3 className="text-base font-bold text-[#17201A]">
-                                    Chi tiết phiên: {detailSession.hutLinks.map((hl) => hl.hut.name).join(" + ")}
+                                <h3 className="text-sm font-bold text-[#1A1A1A] font-serif uppercase">
+                                    CHI TIẾT: {detailSession.hutLinks.map((hl) => hl.hut.name).join(" + ")}
                                 </h3>
-                                <p className="text-xs text-[#66716A] mt-0.5">
+                                <p className="text-xs text-[#555555] font-serif mt-0.5">
                                     Khách: {detailSession.customer?.name ?? "Khách lẻ"}
                                     {detailSession.customer?.phoneNormalized ? ` (${detailSession.customer.phoneNormalized})` : ""}
                                 </p>
@@ -467,39 +467,39 @@ export function SessionsClient({
                             <button
                                 type="button"
                                 onClick={() => setDetailSession(null)}
-                                className="h-8 w-8 rounded-full flex items-center justify-center text-[#66716A] hover:text-[#17201A] hover:bg-[#F7F9F5] transition-colors"
+                                className="h-7 w-7 rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] flex items-center justify-center text-[#1A1A1A] hover:bg-[#EAEAE6] transition-colors cursor-pointer"
                             >
-                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
 
                         {/* Nội dung chi tiết */}
-                        <div className="p-4 overflow-y-auto space-y-3.5 text-xs text-[#17201A]">
+                        <div className="p-3.5 overflow-y-auto space-y-3 text-xs text-[#1A1A1A] font-serif">
                             {/* Card: Thông tin cơ bản */}
-                            <div className="rounded-2xl bg-[#F7F9F5] p-3.5 border border-[#E3E8E3] space-y-2">
+                            <div className="rounded-xs bg-[#FAFAF7] p-3 border border-[#E0E0E0] space-y-1.5 font-serif">
                                 <div className="flex justify-between">
-                                    <span className="text-[#66716A]">Gói câu áp dụng:</span>
-                                    <span className="font-semibold text-[#17201A]">
+                                    <span className="text-[#555555]">Gói câu áp dụng:</span>
+                                    <span className="font-bold text-[#1A1A1A]">
                                         {detailSession.package.name} ({formatDuration(detailSession.package.durationMinutes)})
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Giá gói snapshot:</span>
-                                    <span className="font-semibold font-mono text-slate-900">
+                                    <span className="text-[#555555]">Giá gói:</span>
+                                    <span className="font-bold font-serif text-[#1A1A1A]">
                                         {formatVnd(detailSession.packagePriceVndSnapshot ?? detailSession.package.priceVnd)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Giờ vào:</span>
-                                    <span className="font-medium text-slate-800">
+                                    <span className="text-[#555555]">Giờ vào:</span>
+                                    <span className="font-medium text-[#1A1A1A]">
                                         {formatDateTime(detailSession.startAt)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Dự kiến kết thúc:</span>
-                                    <span className="font-medium text-slate-800">
+                                    <span className="text-[#555555]">Dự kiến kết thúc:</span>
+                                    <span className="font-medium text-[#1A1A1A]">
                                         {formatDateTime(detailSession.plannedEndAt)}
                                     </span>
                                 </div>
@@ -528,49 +528,49 @@ export function SessionsClient({
                                     <>
                                         {/* Phụ thu quá giờ */}
                                         {liveOvertimeVnd > 0 && (
-                                            <div className="rounded-xl bg-rose-50 p-3.5 border border-rose-200 shadow-xs space-y-2">
-                                                <h4 className="font-bold text-rose-800 flex justify-between border-b border-rose-200 pb-1.5">
+                                            <div className="rounded-xs bg-[#FDF7EB] p-3 border border-[#E8D1A3] space-y-1 font-serif">
+                                                <h4 className="font-bold text-[#8C5C00] flex justify-between border-b border-[#E8D1A3] pb-1">
                                                     <span>⏱️ Phụ thu quá giờ {liveOvertimeMinutes > 0 ? `(+${formatOvertimeDuration(liveOvertimeMinutes)})` : ""}</span>
-                                                    <span className="font-mono text-rose-700 font-bold">+{formatVnd(liveOvertimeVnd)}</span>
+                                                    <span className="font-serif text-[#8C5C00] font-bold">+{formatVnd(liveOvertimeVnd)}</span>
                                                 </h4>
-                                                <div className="flex justify-between py-0.5 text-rose-700 text-[11px]">
+                                                <div className="flex justify-between py-0.5 text-[#8C5C00] text-[11px]">
                                                     <span>Đơn giá phụ thu:</span>
-                                                    <span className="font-mono">{formatVnd(overtimeRate)}/h {hutCount > 1 ? `× ${hutCount} ô` : ""}</span>
+                                                    <span className="font-serif">{formatVnd(overtimeRate)}/h {hutCount > 1 ? `× ${hutCount} ô` : ""}</span>
                                                 </div>
                                             </div>
                                         )}
 
                                         {/* Gia hạn */}
                                         {extensionLines.length > 0 && (
-                                            <div className="rounded-xl bg-white p-3.5 border border-[#EAE4D7] shadow-xs space-y-2">
-                                                <h4 className="font-bold text-slate-900 flex justify-between border-b border-[#F0ECE1] pb-1.5">
+                                            <div className="rounded-xs bg-white p-3 border border-[#E0E0E0] space-y-1.5 font-serif">
+                                                <h4 className="font-bold text-[#1A1A1A] flex justify-between border-b border-[#E0E0E0] pb-1">
                                                     <span>Gia hạn phiên</span>
-                                                    <span className="font-mono text-[#2D6A4F]">+{formatVnd(totalExtensionsVnd)}</span>
+                                                    <span className="font-serif text-[#2C4C3B] font-bold">+{formatVnd(totalExtensionsVnd)}</span>
                                                 </h4>
                                                 {extensionLines.map((l) => (
                                                     <div key={l.id} className="flex justify-between py-0.5">
                                                         <span>{l.name}</span>
-                                                        <span className="font-mono font-medium">{formatVnd(l.totalVnd)}</span>
+                                                        <span className="font-serif font-medium">{formatVnd(l.totalVnd)}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
 
                                         {/* Sản phẩm */}
-                                        <div className="rounded-xl bg-white p-3.5 border border-[#EAE4D7] shadow-xs space-y-2">
-                                            <h4 className="font-bold text-slate-900 flex justify-between border-b border-[#F0ECE1] pb-1.5">
+                                        <div className="rounded-xs bg-white p-3 border border-[#E0E0E0] space-y-1.5 font-serif">
+                                            <h4 className="font-bold text-[#1A1A1A] flex justify-between border-b border-[#E0E0E0] pb-1">
                                                 <span>Sản phẩm & Đồ uống</span>
-                                                <span className="font-mono">{formatVnd(totalProductsVnd)}</span>
+                                                <span className="font-serif font-bold text-[#1A1A1A]">+{formatVnd(totalProductsVnd)}</span>
                                             </h4>
                                             {productLines.length === 0 ? (
-                                                <p className="text-slate-400 italic py-1">Chưa có sản phẩm nào được thêm.</p>
+                                                <p className="text-[#777777] italic py-0.5">Chưa có sản phẩm nào được thêm.</p>
                                             ) : (
                                                 productLines.map((l) => (
                                                     <div key={l.id} className="flex justify-between py-0.5">
                                                         <span className="truncate pr-2">
-                                                            {l.name} <span className="text-slate-500 font-mono">× {l.quantity}</span>
+                                                            {l.name} <span className="text-[#555555]">× {l.quantity}</span>
                                                         </span>
-                                                        <span className="font-mono font-medium shrink-0">{formatVnd(l.totalVnd)}</span>
+                                                        <span className="font-serif font-medium shrink-0">{formatVnd(l.totalVnd)}</span>
                                                     </div>
                                                 ))
                                             )}
@@ -578,67 +578,67 @@ export function SessionsClient({
 
                                         {/* Tiền cọc / Đã thu trước */}
                                         {totalPaid > 0 && (
-                                            <div className="rounded-xl bg-white p-3.5 border border-[#EAE4D7] shadow-xs space-y-2">
-                                                <h4 className="font-bold text-[#8B1E1E] flex justify-between border-b border-[#F0ECE1] pb-1.5">
+                                            <div className="rounded-xs bg-white p-3 border border-[#E0E0E0] space-y-1 font-serif">
+                                                <h4 className="font-bold text-[#2C4C3B] flex justify-between border-b border-[#E0E0E0] pb-1">
                                                     <span>Tiền cọc / Đã thu trước</span>
-                                                    <span className="font-mono font-bold text-[#8B1E1E]">-{formatVnd(totalPaid)}</span>
+                                                    <span className="font-serif font-bold text-[#2C4C3B]">-{formatVnd(totalPaid)}</span>
                                                 </h4>
-                                                <div className="flex justify-between py-0.5 text-[#8B1E1E]">
+                                                <div className="flex justify-between py-0.5 text-[#2C4C3B]">
                                                     <span>Đã thanh toán lúc mở vé</span>
-                                                    <span className="font-mono font-medium">-{formatVnd(totalPaid)}</span>
+                                                    <span className="font-serif font-medium">-{formatVnd(totalPaid)}</span>
                                                 </div>
                                             </div>
                                         )}
 
                                         {/* Thu mua cá */}
                                         {fishBuybackLines.length > 0 && (
-                                            <div className="rounded-xl bg-white p-3.5 border border-[#EAE4D7] shadow-xs space-y-2">
-                                                <h4 className="font-bold text-[#8B1E1E] flex justify-between border-b border-[#F0ECE1] pb-1.5">
+                                            <div className="rounded-xs bg-white p-3 border border-[#E0E0E0] space-y-1 font-serif">
+                                                <h4 className="font-bold text-[#9E2A2B] flex justify-between border-b border-[#E0E0E0] pb-1">
                                                     <span>Thu cá từ cần thủ</span>
-                                                    <span className="font-mono">-{formatVnd(fishBuybackTotal)}</span>
+                                                    <span className="font-serif font-bold text-[#9E2A2B]">-{formatVnd(fishBuybackTotal)}</span>
                                                 </h4>
                                                 {fishBuybackLines.map((l) => (
-                                                    <div key={l.id} className="flex justify-between py-0.5 text-[#8B1E1E]">
+                                                    <div key={l.id} className="flex justify-between py-0.5 text-[#9E2A2B]">
                                                         <span>{l.name} {l.fishBuyback ? `(${l.fishBuyback.weight} kg)` : ""}</span>
-                                                        <span className="font-mono font-medium">-{formatVnd(Math.abs(l.totalVnd))}</span>
+                                                        <span className="font-serif font-medium">-{formatVnd(Math.abs(l.totalVnd))}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
 
-                                        {/* Tổng kết toàn bộ bill */}
-                                        <div className="rounded-xl bg-[#25130D] text-[#F4DFB7] p-3.5 shadow-md space-y-2">
-                                            <div className="flex justify-between text-xs text-[#BDA989]">
+                                        {/* Tổng kết toàn bộ bill dạng sổ cái */}
+                                        <div className="rounded-xs bg-[#FAFAF7] text-[#1A1A1A] p-3 border border-[#CCCCCC] space-y-1.5 font-serif">
+                                            <div className="flex justify-between text-xs text-[#555555]">
                                                 <span>Tổng chi phí (Gói + SP + Gia hạn + Quá giờ):</span>
-                                                <span className="font-mono font-medium text-white">{formatVnd(totalCharges)}</span>
+                                                <span className="font-serif font-bold text-[#1A1A1A]">+{formatVnd(totalCharges)}</span>
                                             </div>
                                             {totalPaid > 0 && (
-                                                <div className="flex justify-between text-xs text-[#BDA989]">
-                                                    <span className="text-[#FF8A80]">Tiền cọc / Đã thu trước:</span>
-                                                    <span className="font-mono font-medium text-[#FF8A80]">-{formatVnd(totalPaid)}</span>
+                                                <div className="flex justify-between text-xs text-[#2C4C3B]">
+                                                    <span>Tiền cọc / Đã thu trước:</span>
+                                                    <span className="font-serif font-medium">-{formatVnd(totalPaid)}</span>
                                                 </div>
                                             )}
                                             {fishBuybackTotal > 0 && (
-                                                <div className="flex justify-between text-xs text-[#BDA989]">
-                                                    <span className="text-[#FF8A80]">Tiền thu mua cá từ khách:</span>
-                                                    <span className="font-mono font-medium text-[#FF8A80]">-{formatVnd(fishBuybackTotal)}</span>
+                                                <div className="flex justify-between text-xs text-[#9E2A2B]">
+                                                    <span>Tiền thu mua cá từ khách:</span>
+                                                    <span className="font-serif font-medium">-{formatVnd(fishBuybackTotal)}</span>
                                                 </div>
                                             )}
-                                            <div className="border-t border-[#6F4723] pt-2 flex items-center justify-between">
+                                            <div className="border-t border-[#CCCCCC] pt-2 flex items-center justify-between">
                                                 <div>
-                                                    <p className="text-xs font-bold text-[#F4DFB7]">
+                                                    <p className="text-xs font-bold text-[#1A1A1A]">
                                                         {netBalance < 0
-                                                            ? "💸 HỒ THỐI LẠI TIỀN CHO KHÁCH"
+                                                            ? "HỒ THỐI LẠI TIỀN CHO KHÁCH"
                                                             : netBalance > 0
-                                                            ? "⚖️ CẦN THU THÊM CỦA KHÁCH"
-                                                            : "⚖️ ĐÃ THANH TOÁN ĐỦ"}
+                                                            ? "CẦN THU THÊM CỦA KHÁCH"
+                                                            : "ĐÃ THANH TOÁN ĐỦ"}
                                                     </p>
-                                                    <p className="text-[10px] text-[#BDA989]/80">
+                                                    <p className="text-[10px] text-[#777777]">
                                                         (Chi phí - Đã thu trước - Thu cá)
                                                     </p>
                                                 </div>
-                                                <span className={`text-lg font-bold font-mono ${
-                                                    netBalance < 0 ? "text-[#FF8A80]" : netBalance > 0 ? "text-[#F4DFB7]" : "text-emerald-400"
+                                                <span className={`text-base font-bold font-serif ${
+                                                    netBalance < 0 ? "text-[#9E2A2B]" : netBalance > 0 ? "text-[#8C5C00]" : "text-[#2C4C3B]"
                                                 }`}>
                                                     {netBalance < 0
                                                         ? `-${formatVnd(Math.abs(netBalance))}`
@@ -714,6 +714,6 @@ export function SessionsClient({
                     }}
                 />
             )}
-        </>
+        </div>
     );
 }
