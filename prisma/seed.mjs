@@ -13,7 +13,7 @@ async function main() {
     try {
         // 1. Seed Super Admin
         const superAdminEmail = 'huan.sysops@quanlihocau.com';
-        const passwordHash = '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjIQqiRQYq';
+        const passwordHash = '$2b$10$enV1qXf6R9aMTJ57OO9xTu60KRnY1v8WvxxLG3ShxAlp5Zw4MtlM6'; // wM9#kZ2$pL8xV!qT
         await client.query(`
             INSERT INTO "User" ("id", "email", "name", "passwordHash", "systemRole", "createdAt", "updatedAt")
             VALUES (gen_random_uuid()::text, $1, 'System Admin', $2, 'SUPER_ADMIN', NOW(), NOW())

@@ -44,12 +44,18 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                     </Link>
 
                     {/* Navigation Menu Desktop */}
-                    <nav className="hidden md:flex items-center gap-7 text-xs sm:text-sm font-semibold text-[#A8C9B4]">
+                    <nav className="hidden md:flex items-center gap-6 text-xs sm:text-sm font-semibold text-[#A8C9B4]">
                         <a href="#noi-dau" className="hover:text-white transition-colors">
                             Lợi ích
                         </a>
+                        <a href="#mo-hinh" className="hover:text-white transition-colors">
+                            Mô hình
+                        </a>
                         <a href="#tinh-nang" className="hover:text-white transition-colors">
                             Tính năng
+                        </a>
+                        <a href="#so-sanh" className="hover:text-white transition-colors">
+                            So sánh
                         </a>
                         <a href="#quy-trinh" className="hover:text-white transition-colors">
                             Cách dùng
@@ -117,18 +123,21 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                 {/* Small Badge */}
                                 <div className="inline-flex items-center gap-2 rounded-full border border-[#246B38] bg-[#0E3621] px-4 py-1.5 text-xs font-bold text-[#52D879] shadow-xs">
                                     <span className="flex h-2 w-2 rounded-full bg-[#4ADE80] animate-pulse" />
-                                    <span>PHIÊN BẢN V2 — DỄ DÙNG HƠN, NHANH HƠN</span>
+                                    <span>APP CHO CHỦ HỒ — PHIÊN BẢN V2 DỄ DÙNG, MƯỢT MÀ</span>
                                 </div>
 
                                 {/* Main Heading */}
                                 <h1 className="text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl leading-[1.15] text-white">
+                                    <span className="block text-xs sm:text-sm font-bold tracking-widest text-[#52D879] uppercase mb-2">
+                                        PHẦN MỀM QUẢN LÝ HỒ CÂU CHUYÊN NGHIỆP
+                                    </span>
                                     Hồ đông vẫn nhàn. <br />
                                     <span className="text-[#52D879]">Tiền hàng vẫn rõ.</span>
                                 </h1>
 
                                 {/* Description */}
                                 <p className="text-sm sm:text-base text-[#C4D9CC] max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-                                    Quản lý vé câu, nhân viên, hàng hóa và doanh thu ngay trên điện thoại. Dù đang ở nhà hay đi xa, chủ hồ vẫn biết hôm nay hồ có bao nhiêu khách, bán gì và thu bao nhiêu tiền.
+                                    App cho chủ hồ câu quản lý vé câu, nhân viên, hàng hóa và doanh thu ngay trên điện thoại. Dù đang ở nhà hay đi xa, chủ hồ vẫn biết hôm nay hồ có bao nhiêu khách, bán gì và thu bao nhiêu tiền.
                                 </p>
 
                                 {/* Action Buttons */}
@@ -262,6 +271,91 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                 <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
                                     Nhật ký hệ thống minh bạch giúp chủ hồ biết chính xác nhân viên nào tạo vé, thu tiền, bán hàng, sửa đổi hoặc hủy giao dịch, triệt tiêu tranh cãi giao ca.
                                 </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── 4.5. PHẦN CÁC MÔ HÌNH HỒ CÂU THỰC TẾ (SEO SEMANTIC TARGETING) ─ */}
+                <section id="mo-hinh" className="scroll-mt-16 py-16 sm:py-24 bg-[#061F13] text-white border-t border-[#123824]">
+                    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                        <div className="text-center max-w-3xl mx-auto space-y-3">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#246B38] bg-[#0E3621] px-3.5 py-1 text-xs font-bold text-[#52D879]">
+                                THIẾT KẾ CHO MỌI QUY MÔ HỒ
+                            </span>
+                            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-snug">
+                                Dù bạn vận hành mô hình hồ câu nào, <br />
+                                <span className="text-[#52D879]">chúng tôi đều có luồng quản lý tối ưu.</span>
+                            </h2>
+                            <p className="text-sm sm:text-base text-[#A3C7B0]">
+                                Không gò bó trong một khuôn mẫu. Phần mềm linh hoạt cấu hình theo đúng luật chơi và cách tính tiền của từng hồ.
+                            </p>
+                        </div>
+
+                        {/* 4 Models Grid */}
+                        <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                            {/* Model 1: Hồ câu đài & câu đơn */}
+                            <div className="rounded-3xl border border-[#1A452C] bg-[#0C2D1F] p-6 space-y-3 hover:border-[#4ADE80] transition-all flex flex-col justify-between">
+                                <div className="space-y-3">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#16432A] text-2xl">
+                                        🎣
+                                    </div>
+                                    <h3 className="text-lg font-black text-white">Hồ câu đài & câu đơn</h3>
+                                    <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
+                                        Đặc thù tính theo ca 3h, 4h, 5h hoặc tính giờ lẻ. Phần mềm tự động đếm ngược từng giây, báo chuông hết giờ và tự nhảy tiền phụ thu khi cần thủ câu lố thời gian.
+                                    </p>
+                                </div>
+                                <div className="pt-3 border-t border-[#1A452C] text-[11px] font-bold text-[#52D879]">
+                                    ✓ Đếm giờ • Phụ thu lố giờ tự động
+                                </div>
+                            </div>
+
+                            {/* Model 2: Hồ câu lure & cá thịt */}
+                            <div className="rounded-3xl border border-[#1A452C] bg-[#0C2D1F] p-6 space-y-3 hover:border-[#4ADE80] transition-all flex flex-col justify-between">
+                                <div className="space-y-3">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#16432A] text-2xl">
+                                        🐟
+                                    </div>
+                                    <h3 className="text-lg font-black text-white">Hồ câu lure & cá thịt</h3>
+                                    <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
+                                        Quản lý vé câu buổi, câu ngày hoặc giải câu mini. Hỗ trợ tính năng thu mua lại cá (cá chẽm, cá lóc, cá tra...) với đơn giá theo kg, tự động cấn trừ thẳng vào hóa đơn.
+                                    </p>
+                                </div>
+                                <div className="pt-3 border-t border-[#1A452C] text-[11px] font-bold text-[#52D879]">
+                                    ✓ Cân cá thu mua • Cấn trừ bill tức thì
+                                </div>
+                            </div>
+
+                            {/* Model 3: Hồ câu giải trí & câu tôm */}
+                            <div className="rounded-3xl border border-[#1A452C] bg-[#0C2D1F] p-6 space-y-3 hover:border-[#4ADE80] transition-all flex flex-col justify-between">
+                                <div className="space-y-3">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#16432A] text-2xl">
+                                        🦐
+                                    </div>
+                                    <h3 className="text-lg font-black text-white">Hồ câu giải trí & ẩm thực</h3>
+                                    <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
+                                        Khách vừa câu vừa gọi món ăn, đồ uống, bia bọt, mồi câu. Nhân viên gọi thêm món ngay trên điện thoại vào số chòi/ô, chốt tổng bill khi khách ra về không lo sót món.
+                                    </p>
+                                </div>
+                                <div className="pt-3 border-t border-[#1A452C] text-[11px] font-bold text-[#52D879]">
+                                    ✓ Bán mồi & bia nước • Chốt bàn/chòi
+                                </div>
+                            </div>
+
+                            {/* Model 4: Hồ sinh thái nhiều khu */}
+                            <div className="rounded-3xl border border-[#1A452C] bg-[#0C2D1F] p-6 space-y-3 hover:border-[#4ADE80] transition-all flex flex-col justify-between">
+                                <div className="space-y-3">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#16432A] text-2xl">
+                                        🏕️
+                                    </div>
+                                    <h3 className="text-lg font-black text-white">Hồ sinh thái quy mô lớn</h3>
+                                    <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
+                                        Chia nhiều phân khu (Hồ A, Hồ B, Chòi VIP, Bờ câu giải trí). Phân quyền nhiều nhân viên trực quầy và bờ, chủ hồ ngồi một chỗ giám sát toàn bộ hoạt động theo thời gian thực.
+                                    </p>
+                                </div>
+                                <div className="pt-3 border-t border-[#1A452C] text-[11px] font-bold text-[#52D879]">
+                                    ✓ Quản lý đa khu • Phân quyền nhân viên
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -439,6 +533,112 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                 {/* ── 7. PHẦN TRÌNH DIỄN ỨNG DỤNG TƯƠNG TÁC (4 TABS) ──────────────── */}
                 <InteractiveAppShowcase />
 
+                {/* ── 7.2. PHẦN BẢNG SO SÁNH CHUYÊN BIỆT (SEO COMPARISON TABLE) ──── */}
+                <section id="so-sanh" className="scroll-mt-16 py-16 sm:py-24 bg-[#082417] text-white border-t border-[#143B25]">
+                    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                        <div className="text-center max-w-3xl mx-auto space-y-3">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#246B38] bg-[#0E3621] px-3.5 py-1 text-xs font-bold text-[#52D879]">
+                                TẠI SAO CẦN PHẦN MỀM CHUYÊN BIỆT CHO HỒ CÂU?
+                            </span>
+                            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+                                So sánh với Sổ tay, Excel và Phần mềm bán hàng chung
+                            </h2>
+                            <p className="text-sm sm:text-base text-[#A3C7B0]">
+                                Phần mềm bán hàng thông thường (KiotViet, Sapo) thiết kế cho tạp hóa hoặc quán ăn, hoàn toàn thiếu các nghiệp vụ sống còn của một hồ câu dịch vụ.
+                            </p>
+                        </div>
+
+                        {/* Comparison Table */}
+                        <div className="mt-12 overflow-x-auto rounded-3xl border border-[#1E4D34] bg-[#0C2D1F] shadow-2xl">
+                            <table className="w-full text-left border-collapse min-w-160">
+                                <thead>
+                                    <tr className="border-b border-[#1A452C] bg-[#071F14]">
+                                        <th className="p-4 sm:p-5 text-xs sm:text-sm font-bold text-[#A8C9B4] uppercase tracking-wider w-[35%]">
+                                            Nghiệp vụ hồ câu thực tế
+                                        </th>
+                                        <th className="p-4 sm:p-5 text-xs sm:text-sm font-bold text-[#86AB94] text-center w-[20%]">
+                                            Sổ tay / Excel
+                                        </th>
+                                        <th className="p-4 sm:p-5 text-xs sm:text-sm font-bold text-[#86AB94] text-center w-[22%]">
+                                            KiotViet / Sapo chung
+                                        </th>
+                                        <th className="p-4 sm:p-5 text-xs sm:text-sm font-black text-[#52D879] text-center w-[23%] bg-[#103E26]">
+                                            ⭐ Quản Lý Hồ Câu
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#153D27] text-xs sm:text-sm">
+                                    {[
+                                        {
+                                            criteria: "Đồng hồ đếm ngược phiên câu theo từng ô/chòi",
+                                            manual: "❌ Dễ quên, khách cãi",
+                                            pos: "❌ Không hỗ trợ",
+                                            app: "✅ Chuẩn từng giây, chuông báo",
+                                        },
+                                        {
+                                            criteria: "Tự động tính phụ thu khi câu quá giờ",
+                                            manual: "❌ Phải tự nhẩm tính",
+                                            pos: "❌ Phải sửa giá bằng tay",
+                                            app: "✅ Tự động cộng chính xác theo phút",
+                                        },
+                                        {
+                                            criteria: "Sơ đồ trực quan bờ hồ & trạng thái ô câu",
+                                            manual: "❌ Không có",
+                                            pos: "❌ Chỉ có sơ đồ bàn ăn",
+                                            app: "✅ Sơ đồ trực quan chạm mở vé 3 giây",
+                                        },
+                                        {
+                                            criteria: "Bán mồi nước, đồ ăn cộng dồn vào vé đang câu",
+                                            manual: "❌ Hay ghi thiếu, sót món",
+                                            pos: "⚠️ Thao tác rườm rà nhiều bước",
+                                            app: "✅ Chạm cộng ngay vào vé chỉ 1 giây",
+                                        },
+                                        {
+                                            criteria: "Cân mua lại cá & tự cấn trừ vào hóa đơn",
+                                            manual: "❌ Tính nhẩm ngoài giấy",
+                                            pos: "❌ Không có tính năng mua lại cá",
+                                            app: "✅ Cân ký, chọn loại cá, cấn trừ tự động",
+                                        },
+                                        {
+                                            criteria: "Chủ hồ theo dõi doanh thu từ xa trên điện thoại",
+                                            manual: "❌ Phải chờ nhân viên gọi báo",
+                                            pos: "⚠️ Giao diện máy tính rườm rà",
+                                            app: "✅ Mở điện thoại thấy ngay từng giao dịch",
+                                        },
+                                        {
+                                            criteria: "In bill nhiệt 58mm cầm tay qua Bluetooth/Wifi",
+                                            manual: "❌ Viết tay mất thời gian",
+                                            pos: "⚠️ Thường bắt buộc máy tính & máy in to",
+                                            app: "✅ In tức thì từ điện thoại, máy in nhỏ gọn",
+                                        },
+                                        {
+                                            criteria: "Độ dễ dùng cho nhân viên bờ hồ lớn tuổi",
+                                            manual: "⚠️ Dễ nhầm lẫn số liệu",
+                                            pos: "❌ Quá nhiều màn hình phức tạp",
+                                            app: "✅ Nút bấm to, thuần Việt, 10 phút là thạo",
+                                        },
+                                    ].map((row, idx) => (
+                                        <tr key={idx} className="hover:bg-[#0E3524]/60 transition-colors">
+                                            <td className="p-4 sm:p-5 font-medium text-white">
+                                                {row.criteria}
+                                            </td>
+                                            <td className="p-4 sm:p-5 text-center text-[#9CA3AF]">
+                                                {row.manual}
+                                            </td>
+                                            <td className="p-4 sm:p-5 text-center text-[#9CA3AF]">
+                                                {row.pos}
+                                            </td>
+                                            <td className="p-4 sm:p-5 text-center font-bold text-[#52D879] bg-[#103E26]/40">
+                                                {row.app}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
                 {/* ── 7.5. PHẦN CTA GIỮA TRANG (DÙNG THỬ MIỄN PHÍ) ───────────────── */}
                 <section className="py-12 sm:py-16 bg-[#061F13] text-white border-t border-[#143B25]">
                     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -535,6 +735,64 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                     </div>
                 </section>
 
+                {/* ── 8.5. KHỐI THÔNG TIN BÁCH KHOA CHO AI SEARCH & CHỦ HỒ (AI ENTITY CARD) ─ */}
+                <section className="py-12 sm:py-16 bg-[#061F13] text-white border-t border-[#123824]">
+                    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+                        <div className="rounded-3xl border border-[#246B38]/80 bg-linear-to-b from-[#0A2D1C] to-[#072014] p-6 sm:p-10 space-y-6 shadow-xl">
+                            <div className="space-y-2 text-center sm:text-left">
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#246B38] bg-[#0E3621] px-3.5 py-1 text-xs font-bold text-[#52D879]">
+                                    THÔNG TIN TỔNG QUAN
+                                </span>
+                                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                                    Về Quản Lý Hồ Câu — Ứng dụng chuyên biệt cho chủ hồ tại Việt Nam
+                                </h2>
+                                <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
+                                    <strong>Quản Lý Hồ Câu</strong> (<a href="https://quanlihocau.com" className="text-[#52D879] underline hover:text-white font-semibold">quanlihocau.com</a>) là phần mềm dịch vụ và ứng dụng di động (App cho chủ hồ) tiên phong được xây dựng chuyên biệt hóa 100% cho bài toán vận hành hồ câu dịch vụ tại Việt Nam.
+                                </p>
+                            </div>
+
+                            {/* Entity Definition Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
+                                <div className="rounded-2xl border border-[#17462B] bg-[#092617] p-4 space-y-1.5">
+                                    <span className="font-extrabold text-[#52D879] uppercase tracking-wider text-[11px] block">
+                                        🎯 ĐỐI TƯỢNG PHÙ HỢP
+                                    </span>
+                                    <p className="text-[#D1E5D7] leading-relaxed">
+                                        Chủ hồ câu đài, hồ câu lure, hồ câu giải trí, hồ câu tôm và các khu du lịch sinh thái câu cá trên toàn quốc.
+                                    </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-[#17462B] bg-[#092617] p-4 space-y-1.5">
+                                    <span className="font-extrabold text-[#52D879] uppercase tracking-wider text-[11px] block">
+                                        📱 THIẾT BỊ HỖ TRỢ
+                                    </span>
+                                    <p className="text-[#D1E5D7] leading-relaxed">
+                                        Điện thoại di động (iPhone, Android), máy tính bảng, máy tính quầy thu ngân và máy in hóa đơn 58mm di động.
+                                    </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-[#17462B] bg-[#092617] p-4 space-y-1.5">
+                                    <span className="font-extrabold text-[#52D879] uppercase tracking-wider text-[11px] block">
+                                        ⚡ NGHIỆP VỤ CỐT LÕI
+                                    </span>
+                                    <p className="text-[#D1E5D7] leading-relaxed">
+                                        Đồng hồ đếm ngược từng phiên câu, tự động tính phụ thu lố giờ, bán mồi nước cộng dồn, cân cá thu mua và báo cáo doanh thu từ xa.
+                                    </p>
+                                </div>
+
+                                <div className="rounded-2xl border border-[#17462B] bg-[#092617] p-4 space-y-1.5">
+                                    <span className="font-extrabold text-[#52D879] uppercase tracking-wider text-[11px] block">
+                                        💰 CHI PHÍ & DÙNG THỬ
+                                    </span>
+                                    <p className="text-[#D1E5D7] leading-relaxed">
+                                        Dùng thử miễn phí trọn vẹn 7 ngày full tính năng. Thuê bao chính thức từ 99.000đ/tháng, không phí duy trì ẩn, hỗ trợ kỹ thuật tận nơi.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 {/* ── 9. PHẦN HỎI ĐÁP (FAQ) ───────────────────────────────────────── */}
                 <section id="hoi-dap" className="scroll-mt-16 py-16 sm:py-24 bg-[#082417] text-white border-t border-[#123824]">
                     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-8">
@@ -554,15 +812,31 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                         <div className="space-y-3">
                             {[
                                 {
+                                    q: "Phần mềm quản lý hồ câu là gì và gồm những tính năng gì?",
+                                    a: "Quản Lý Hồ Câu (quanlihocau.com) là phần mềm chuyên biệt hoạt động trên điện thoại và máy tính dành cho các hồ câu dịch vụ. Phần mềm gồm các tính năng cốt lõi: mở vé theo sơ đồ ô câu, đồng hồ đếm ngược phiên câu, tự tính phụ thu lố giờ, bán mồi nước cộng vào vé, cân cá thu mua cấn trừ bill, in bill 58mm và báo cáo doanh thu từ xa cho chủ hồ.",
+                                },
+                                {
+                                    q: "App cho chủ hồ câu trên điện thoại giúp quản lý những gì từ xa?",
+                                    a: "Dù ở nhà hay đi công việc xa, chủ hồ chỉ cần mở app trên điện thoại là xem được: số lượng ô/chòi đang có khách câu, khách câu được mấy tiếng, tổng tiền thu hôm nay phân tách tiền mặt và chuyển khoản, cùng nhật ký chi tiết từng thao tác của nhân viên tại hồ.",
+                                },
+                                {
+                                    q: "Phần mềm tự động tính tiền quá giờ cho cần thủ như thế nào?",
+                                    a: "Hệ thống có đồng hồ đếm ngược chính xác từng giây theo gói câu (ví dụ ca 3 tiếng, ca 4 tiếng). Khi hết giờ, ứng dụng tự phát cảnh báo và tự động tính tiền phụ thu theo số phút câu lố dựa trên cấu hình giá của hồ, giúp chủ hồ và nhân viên không phải tự nhẩm tính hay tranh cãi với khách.",
+                                },
+                                {
+                                    q: "Hồ câu đài và hồ câu lure có sử dụng được phần mềm này không?",
+                                    a: "Phần mềm được thiết kế tối ưu cho cả hồ câu đài (tính giờ, đếm giờ ca, phụ thu quá giờ), hồ câu lure và cá thịt (quản lý vé câu buổi/ngày, cân cá mua lại cấn trừ hóa đơn), hồ câu tôm và hồ câu sinh thái đa phân khu.",
+                                },
+                                {
+                                    q: "So sánh phần mềm Quản Lý Hồ Câu với Excel và KiotViet?",
+                                    a: "Excel và sổ tay dễ mất số liệu, không có đồng hồ đếm giờ và không thể theo dõi từ xa. KiotViet và Sapo thiết kế cho bán lẻ tạp hóa, thiếu hoàn toàn nghiệp vụ đếm giờ phiên câu theo ô, không tự tính phụ thu quá giờ và không có tính năng thu mua lại cá. Quản Lý Hồ Câu là giải pháp chuyên biệt bờ hồ duy nhất giải quyết trọn vẹn các bài toán này.",
+                                },
+                                {
                                     q: "Nhân viên lớn tuổi, ít dùng công nghệ có sử dụng được không?",
                                     a: "Hoàn toàn được. Giao diện được thiết kế với nút bấm to, chữ tiếng Việt rõ ràng, chỉ cần chạm chọn ô và chọn gói câu. Thực tế nhân viên tại các hồ chỉ mất khoảng 10 phút là quen tay.",
                                 },
                                 {
-                                    q: "Tôi không có mặt ở hồ thì xem được những gì?",
-                                    a: "Chủ hồ mở điện thoại là thấy ngay: bao nhiêu ô đang có khách, khách câu được mấy tiếng, tổng tiền thu được hôm nay và lịch sử từng lần nhân viên thu tiền.",
-                                },
-                                {
-                                    q: "Ứng dụng có quản lý hàng hóa không?",
+                                    q: "Ứng dụng có quản lý hàng hóa mồi câu và nước giải khát không?",
                                     a: "Có. Phần mềm cho phép nhập số lượng nước ngọt, bia, mồi câu và đồ ăn. Mỗi khi thêm vào vé của khách, kho sẽ tự trừ để cuối ngày dễ dàng đối chiếu số tồn.",
                                 },
                                 {
@@ -570,8 +844,8 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                     a: "Không gián đoạn các thao tác thiết yếu. Ứng dụng có bộ nhớ tạm trên máy giúp mở vé và ghi nhận thông tin, sau đó tự đồng bộ khi có kết nối trở lại.",
                                 },
                                 {
-                                    q: "Tư vấn ban đầu có mất phí không?",
-                                    a: "Hoàn toàn miễn phí. Chúng tôi sẽ lắng nghe quy mô hồ, số ô câu và cách tính tiền hiện tại của bạn để tư vấn cấu hình phù hợp nhất mà không ép mua.",
+                                    q: "Chi phí sử dụng app cho chủ hồ là bao nhiêu và cách dùng thử?",
+                                    a: "Mọi chủ hồ đều được kích hoạt dùng thử miễn phí 7 ngày đầy đủ tính năng ngay khi đăng ký tại quanlihocau.com mà không cần thẻ ngân hàng. Sau dùng thử, chi phí thuê bao chỉ từ 99.000đ/tháng (Gói Bạc) hoặc 179.000đ/tháng (Gói Vàng không giới hạn). Hotline hỗ trợ: 0855 550 813.",
                                 },
                             ].map((faq, idx) => {
                                 const isOpen = openFaq === idx;

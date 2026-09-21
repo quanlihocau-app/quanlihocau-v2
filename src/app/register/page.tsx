@@ -9,96 +9,94 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
+import { registerUser } from "@/app/actions/auth";
 
 export default function RegisterPage() {
     const router = useRouter();
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string>("");
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+    const [successMessage, setSuccessMessage] = useState<string>("");
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setError("");
-        setSuccess(false);
+        setFieldErrors({});
+        setSuccessMessage("");
         setIsSubmitting(true);
 
         const formData = new FormData(event.currentTarget);
-        const fullName = String(formData.get("fullName") || "").trim();
+        const name = String(formData.get("name") || "").trim();
         const phone = String(formData.get("phone") || "").trim();
         const email = String(formData.get("email") || "").trim();
         const password = String(formData.get("password") || "");
         const lakeName = String(formData.get("lakeName") || "").trim();
 
-        if (!fullName) {
+        // 1. Client pre-validation
+        if (!name) {
             setError("Họ và tên chủ hồ không được để trống.");
             setIsSubmitting(false);
             return;
         }
 
-        if (!phone) {
-            setError("Số điện thoại không được để trống.");
+        if (!email) {
+            setError("Địa chỉ email không được để trống.");
             setIsSubmitting(false);
             return;
         }
 
-        // Clean space/dots/hyphens/parentheses to validate VN mobile format
-        const cleanedPhone = phone.replace(/[\s.\-()]/g, "");
-        const vnPhoneRegex = /^(0|84|\+84)(3|5|7|8|9)([0-9]{8})$/;
-        if (!vnPhoneRegex.test(cleanedPhone)) {
-            setError("Số điện thoại không đúng định dạng di động Việt Nam (VD: 0901234567).");
+        if (password.length < 6) {
+            setError("Mật khẩu phải có tối thiểu 6 ký tự.");
             setIsSubmitting(false);
             return;
+        }
+
+        if (phone) {
+            const cleanedPhone = phone.replace(/[\s.\-()]/g, "");
+            const vnPhoneRegex = /^(0|84|\+84)(3|5|7|8|9)([0-9]{8})$/;
+            if (!vnPhoneRegex.test(cleanedPhone)) {
+                setError("Số điện thoại không đúng định dạng di động Việt Nam (VD: 0901234567).");
+                setIsSubmitting(false);
+                return;
+            }
         }
 
         try {
-            const response = await fetch("/api/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    fullName,
-                    phone,
-                    email,
-                    password,
-                    lakeName,
-                }),
+            // 2. Thực thi Server Action (Chuẩn ACID & Neon Connection Pooling)
+            const result = await registerUser({
+                name,
+                email,
+                password,
+                phone: phone || undefined,
+                lakeName: lakeName || undefined,
             });
 
-            const result = (await response.json()) as { error?: string };
-
-            if (!response.ok) {
-                setError(result.error ?? "Đăng ký chưa thành công. Vui lòng kiểm tra lại thông tin.");
+            if (!result.success) {
+                setError(result.message);
                 setIsSubmitting(false);
                 return;
             }
 
-            setSuccess(true);
+            setSuccessMessage(
+                "Đăng ký tài khoản thành công! Đang chuyển hướng vào bảng điều khiển...",
+            );
 
-            // Tự động đăng nhập vào ứng dụng ngay để trải nghiệm gói 7 ngày
+            // Đồng bộ thêm phiên đăng nhập NextAuth client-side nếu cần
             try {
-                const signInResult = await signIn("credentials", {
+                await signIn("credentials", {
                     redirect: false,
                     email,
                     password,
                 });
-                if (signInResult?.ok) {
-                    router.push("/sessions");
-                    router.refresh();
-                    return;
-                }
             } catch {
-                // Fallback nếu auto-login gặp sự cố
+                // Cookie qa_session từ Server Action đã được lưu tự động trên server
             }
 
-            setIsSubmitting(false);
-
-            // Chuyển hướng sang trang đăng nhập nếu chưa auto-login
-            setTimeout(() => {
-                router.push(`/login?registered=1&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`);
-            }, 600);
+            // Chuyển hướng trực tiếp vào /dashboard
+            router.push("/dashboard");
+            router.refresh();
         } catch {
-            setError("Lỗi kết nối mạng khi đăng ký. Vui lòng thử lại.");
+            setError("Lỗi kết nối máy chủ trong quá trình đăng ký. Vui lòng thử lại.");
             setIsSubmitting(false);
         }
     }
@@ -112,7 +110,7 @@ export default function RegisterPage() {
                     className="inline-flex items-center gap-2.5 group focus:outline-none"
                     aria-label="Quản Lí Hồ Câu"
                 >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4F9D5A] text-white shadow-md">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#246B38] text-white shadow-md">
                         <svg
                             className="h-5 w-5 text-white"
                             fill="none"
@@ -142,22 +140,19 @@ export default function RegisterPage() {
             <Card className="p-6 sm:p-7 space-y-5 border border-[#E3E8E3] shadow-xl rounded-2xl bg-white">
                 <div>
                     <span className="text-[11px] font-bold tracking-wider text-[#246B38] uppercase block mb-1">
-                        QUẢN LÝ HỒ CÂU
+                        QUẢN LÝ HỒ CÂU SAAS
                     </span>
                     <h1 className="text-xl font-bold text-[#17201A] sm:text-2xl">
-                        Tạo hồ câu mới
+                        Tạo tài khoản Chủ hồ
                     </h1>
                     <p className="mt-1 text-xs text-[#66716A]">
-                        Tài khoản đăng ký là Chủ hồ có toàn quyền quản lý hồ câu và phân quyền nhân viên.
-                    </p>
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-[#66716A]">
-                        Vui lòng nhập đúng họ tên và số điện thoại đang sử dụng để được hỗ trợ khi cần. Không đăng ký thông tin giả hoặc tạo nhiều tài khoản.
+                        Đăng ký tài khoản quản trị để trải nghiệm trọn gói 30 ngày dùng thử miễn phí, không giới hạn tính năng.
                     </p>
                 </div>
 
-                {/* Thông báo nhắc nhở khai báo thông tin thực tế */}
-                <div className="rounded-xl border border-[#9A4C16]/30 bg-[#F8ECE2] p-3.5 text-xs text-[#27231F] space-y-1">
-                    <div className="flex items-center gap-1.5 font-bold text-[#9A4C16]">
+                {/* Banner lưu ý quyền lợi & thông tin thực tế */}
+                <div className="rounded-xl border border-[#246B38]/30 bg-[#F2F8F4] p-3.5 text-xs text-[#17201A] space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-[#246B38]">
                         <svg
                             className="h-4 w-4 shrink-0"
                             fill="none"
@@ -168,55 +163,55 @@ export default function RegisterPage() {
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                                d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                             />
                         </svg>
-                        <span>Lưu ý thông tin đăng ký:</span>
+                        <span>Gói dùng thử 30 ngày tự động kích hoạt</span>
                     </div>
-                    <p className="text-[11px] leading-relaxed text-[#766F67]">
-                        Vui lòng nhập <strong className="text-[#27231F]">Email</strong>, <strong className="text-[#27231F]">Số điện thoại</strong> và <strong className="text-[#27231F]">Tên hồ câu chính xác</strong> để phục vụ đăng nhập, quản lý vận hành và nhận hỗ trợ tài khoản khi cần thiết.
+                    <p className="text-[11px] leading-relaxed text-[#4F5952]">
+                        Sau khi hoàn tất đăng ký, hệ thống tự động gán vai trò <strong>Chủ hồ (OWNER)</strong>, tạo ngay cơ sở hồ câu và mở đầy đủ tính năng tính giờ, bán đồ, in bill, báo cáo doanh thu.
                     </p>
                 </div>
 
                 {error && <InlineAlert type="error" message={error} />}
 
-                {success && (
-                    <InlineAlert
-                        type="success"
-                        message="Đăng ký thành công! Đã kích hoạt 7 ngày trải nghiệm miễn phí toàn bộ tính năng, đang vào ứng dụng…"
-                    />
+                {successMessage && (
+                    <InlineAlert type="success" message={successMessage} />
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <Input
-                        id="fullName"
-                        name="fullName"
+                        id="name"
+                        name="name"
                         label="Họ và tên chủ hồ *"
                         placeholder="Ví dụ: Nguyễn Văn A"
                         required
                         minLength={2}
                         disabled={isSubmitting}
-                    />
-
-                    <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        label="Số điện thoại chủ hồ *"
-                        placeholder="Ví dụ: 0912345678"
-                        required
-                        disabled={isSubmitting}
+                        error={fieldErrors.name?.[0]}
                     />
 
                     <Input
                         id="email"
                         name="email"
                         type="email"
-                        label="Địa chỉ Email chính xác *"
+                        label="Địa chỉ Email *"
                         placeholder="tenban@gmail.com"
                         required
                         disabled={isSubmitting}
-                        helperText="Dùng để đăng nhập và nhận thông tin tài khoản."
+                        helperText="Dùng để đăng nhập chính và nhận thông báo doanh thu."
+                        error={fieldErrors.email?.[0]}
+                    />
+
+                    <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        label="Số điện thoại di động"
+                        placeholder="Ví dụ: 0912345678 (tùy chọn)"
+                        disabled={isSubmitting}
+                        helperText="Dùng để đăng nhập nhanh qua SMS OTP hoặc khôi phục mật khẩu."
+                        error={fieldErrors.phone?.[0]}
                     />
 
                     <Input
@@ -224,24 +219,25 @@ export default function RegisterPage() {
                         name="password"
                         type="password"
                         label="Mật khẩu *"
-                        placeholder="Tối thiểu 8 ký tự"
+                        placeholder="Tối thiểu 6 ký tự"
                         required
-                        minLength={8}
+                        minLength={6}
                         disabled={isSubmitting}
+                        error={fieldErrors.password?.[0]}
                     />
 
                     <Input
                         id="lakeName"
                         name="lakeName"
-                        label="Tên hồ câu hoạt động *"
-                        placeholder="Ví dụ: Hồ Câu Đồng Quê Cơ Sở 1"
-                        required
-                        minLength={2}
+                        label="Tên hồ câu của bạn"
+                        placeholder="Ví dụ: Hồ Câu Cá Giải Trí Xanh (tùy chọn)"
                         disabled={isSubmitting}
+                        helperText="Nếu để trống, hệ thống sẽ tự động đặt theo họ tên của bạn."
+                        error={fieldErrors.lakeName?.[0]}
                     />
 
                     <p className="text-[11px] leading-relaxed text-[#766F67] text-center pt-1">
-                        Bằng việc bấm Tạo hồ câu, bạn đồng ý với{" "}
+                        Bằng việc bấm Tạo tài khoản, bạn đồng ý với{" "}
                         <Link href="/dieu-khoan" target="_blank" className="font-semibold text-[#246B38] underline">
                             Điều khoản dịch vụ
                         </Link>{" "}
@@ -249,7 +245,7 @@ export default function RegisterPage() {
                         <Link href="/chinh-sach-bao-mat" target="_blank" className="font-semibold text-[#246B38] underline">
                             Chính sách bảo mật
                         </Link>{" "}
-                        của chúng tôi.
+                        của Quản Lý Hồ Câu.
                     </p>
 
                     <Button
@@ -257,17 +253,17 @@ export default function RegisterPage() {
                         size="lg"
                         variant="primary"
                         isLoading={isSubmitting}
-                        loadingText="Đang tạo hồ câu…"
-                        className="w-full"
+                        loadingText="Đang khởi tạo tài khoản…"
+                        className="w-full bg-[#246B38] hover:bg-[#1E5A2F] text-white font-bold"
                     >
-                        Tạo hồ câu &amp; Bắt đầu
+                        Tạo tài khoản &amp; Bắt đầu dùng thử
                     </Button>
                 </form>
 
-                {/* Link sang trang Đăng nhập cho ai đã có tài khoản */}
+                {/* Link sang trang Đăng nhập */}
                 <div className="border-t border-[#E3E8E3] pt-4 text-center">
                     <p className="text-xs text-[#66716A]">
-                        Đã có tài khoản hồ câu từ trước?
+                        Đã có tài khoản từ trước?
                     </p>
                     <Link
                         href="/login"

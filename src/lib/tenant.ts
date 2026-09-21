@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import { Role } from "@/generated/prisma/client";
-import { authOptions } from "@/lib/auth";
+import { authOptions, getSessionCookie } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export interface TenantContext {
@@ -76,8 +76,10 @@ export async function getTenantContext(options?: {
     allowUnverifiedPhone?: boolean;
 }): Promise<TenantContext | null> {
     const session = await getServerSession(authOptions);
+    const sessionCookie = !session?.user?.email ? await getSessionCookie() : null;
+    const userEmail = session?.user?.email || sessionCookie?.email;
 
-    if (!session?.user?.email) {
+    if (!userEmail) {
         return null;
     }
 
@@ -88,7 +90,7 @@ export async function getTenantContext(options?: {
 
         if (supportLakeId) {
             const user = await prisma.user.findUnique({
-                where: { email: session.user.email.toLowerCase() },
+                where: { email: userEmail.toLowerCase() },
                 select: { id: true, name: true, email: true, phone: true, phoneVerified: true, systemRole: true },
             });
 
@@ -124,7 +126,7 @@ export async function getTenantContext(options?: {
     const membership = await prisma.membership.findFirst({
         where: {
             user: {
-                email: session.user.email,
+                email: userEmail.toLowerCase(),
             },
             deletedAt: null,
         },
@@ -147,7 +149,7 @@ export async function getTenantContext(options?: {
 
     if (!membership) {
         const user = await prisma.user.findUnique({
-            where: { email: session.user.email.toLowerCase() },
+            where: { email: userEmail.toLowerCase() },
             select: { id: true, name: true, email: true, phone: true, phoneVerified: true, systemRole: true, isLocked: true },
         });
 
@@ -209,8 +211,10 @@ export async function requireTenantContext(
     options?: { allowUnverifiedPhone?: boolean },
 ): Promise<TenantContext> {
     const session = await getServerSession(authOptions);
+    const sessionCookie = !session?.user?.email ? await getSessionCookie() : null;
+    const userEmail = session?.user?.email || sessionCookie?.email;
 
-    if (!session?.user?.email) {
+    if (!userEmail) {
         throw new AuthenticationError("Chưa đăng nhập.");
     }
 
@@ -221,7 +225,7 @@ export async function requireTenantContext(
         );
     }
 
-    const isSuperAdmin = session.user.systemRole === "SUPER_ADMIN";
+    const isSuperAdmin = (session?.user?.systemRole || sessionCookie?.role) === "SUPER_ADMIN";
 
     if (
         !isSuperAdmin &&

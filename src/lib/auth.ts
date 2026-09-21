@@ -1,3 +1,5 @@
+import crypto from "crypto";
+import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -136,14 +138,30 @@ export const authOptions: NextAuthOptions = {
                     normalizedPhone = null;
                 }
 
-                const user = await prisma.user.findFirst({
-                    where: {
-                        OR: [
-                            { email: identifier.toLowerCase() },
-                            ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
-                        ],
-                    },
-                });
+                let user;
+                try {
+                    user = await prisma.user.findFirst({
+                        where: {
+                            OR: [
+                                { email: identifier.toLowerCase() },
+                                ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
+                            ],
+                        },
+                    });
+                } catch (dbErr: unknown) {
+                    console.error("[auth] Database query error during authorize:", dbErr);
+                    const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+                    if (
+                        msg.includes("planLimitReached") ||
+                        msg.includes("Failed to identify your database") ||
+                        msg.includes("restriction")
+                    ) {
+                        throw new Error(
+                            "Cơ sở dữ liệu đang chạm hạn mức gói cước (planLimitReached). Vui lòng nâng cấp gói Prisma hoặc cấu hình lại DATABASE_URL.",
+                        );
+                    }
+                    throw new Error("Lỗi kết nối cơ sở dữ liệu. Vui lòng kiểm tra lại đường truyền mạng.");
+                }
 
                 if (!user) {
                     return null;
@@ -154,7 +172,7 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 if (!user.passwordHash) {
-                    return null;
+                    throw new Error("Tài khoản chưa được tạo mật khẩu. Vui lòng đăng nhập qua mã OTP hoặc liên hệ hỗ trợ.");
                 }
 
                 const passwordMatches = await bcrypt.compare(
@@ -188,4 +206,83 @@ export const authOptions: NextAuthOptions = {
             },
         }),
     ],
-};
+};
+
+// -----------------------------------------------------------------------------
+// LIGHTWEIGHT SESSION COOKIE UTILITIES (HMAC-SHA256)
+// -----------------------------------------------------------------------------
+const SESSION_SECRET =
+    process.env.SESSION_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    "quanlihocau-secret-key-change-in-prod-32chars!";
+export const COOKIE_NAME = "qa_session";
+
+export interface SessionPayload {
+    userId: string;
+    email: string;
+    role: string;
+    name: string;
+}
+
+export function signSession(payload: SessionPayload): string {
+    const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const signature = crypto
+        .createHmac("sha256", SESSION_SECRET)
+        .update(data)
+        .digest("base64url");
+    return `${data}.${signature}`;
+}
+
+export function verifySession(token: string): SessionPayload | null {
+    try {
+        const [data, signature] = token.split(".");
+        if (!data || !signature) return null;
+        const expectedSig = crypto
+            .createHmac("sha256", SESSION_SECRET)
+            .update(data)
+            .digest("base64url");
+        if (signature !== expectedSig) return null;
+        return JSON.parse(
+            Buffer.from(data, "base64url").toString("utf-8"),
+        ) as SessionPayload;
+    } catch {
+        return null;
+    }
+}
+
+export async function setSessionCookie(payload: SessionPayload) {
+    const token = signSession(payload);
+    const cookieStore = await cookies();
+    cookieStore.set(COOKIE_NAME, token, {
+        httpOnly: true,
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 7 ngày
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+    });
+}
+
+export async function getSessionCookie(): Promise<SessionPayload | null> {
+    try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get(COOKIE_NAME)?.value;
+        if (!token) return null;
+        return verifySession(token);
+    } catch {
+        return null;
+    }
+}
+
+export async function getSession(): Promise<SessionPayload | null> {
+    return getSessionCookie();
+}
+
+export async function clearSessionCookie() {
+    try {
+        const cookieStore = await cookies();
+        cookieStore.delete(COOKIE_NAME);
+    } catch {
+        // Safe ignore
+    }
+}
+
