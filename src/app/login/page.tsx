@@ -17,11 +17,6 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
-  const handleFillDemoAdmin = () => {
-    setEmail('huan.sysops@quanlihocau.com')
-    setPassword('wM9#kZ2$pL8xV!qT')
-    setErrorMsg('')
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,20 +76,6 @@ function LoginForm() {
           <p className="text-sm text-slate-500 mt-1">Đăng nhập vào hệ thống quản trị</p>
         </div>
 
-        {/* Quick Dev Hint */}
-        <div className="mb-6 p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/80 text-xs text-emerald-900 flex items-center justify-between gap-2">
-          <div>
-            <span className="font-bold block text-emerald-800">Tài khoản Super Admin mẫu:</span>
-            <span className="text-emerald-700 font-mono text-[11px]">huan.sysops@quanlihocau.com</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleFillDemoAdmin}
-            className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold rounded-lg shadow-xs transition shrink-0 cursor-pointer"
-          >
-            Điền nhanh
-          </button>
-        </div>
 
         {/* Thông báo lỗi nếu có */}
         {errorMsg && (
@@ -114,7 +95,7 @@ function LoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@quanlihocau.com"
+              placeholder="vidu@gmail.com"
               className="w-full h-11 px-4 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition"
             />
           </div>
