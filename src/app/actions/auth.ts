@@ -128,7 +128,7 @@ export async function registerUser(input: RegisterInput) {
         organizationId: newUser.organizationId,
       }
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Register error:', error)
     return {
       success: false,
