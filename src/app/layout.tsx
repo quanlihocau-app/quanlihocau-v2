@@ -42,7 +42,7 @@ export const metadata: Metadata = {
         },
     },
     verification: {
-        google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+        google: "nnj6c3yCZTS9Iiue3oQdVPBaxiUXLNFA9o8nv-giD4s",
     },
     openGraph: {
         type: "website",
@@ -205,6 +205,10 @@ export default function RootLayout({
                 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
                 <meta name="apple-mobile-web-app-title" content="Hồ Câu POS" />
                 <meta name="mobile-web-app-capable" content="yes" />
+                <meta
+                    name="google-site-verification"
+                    content="nnj6c3yCZTS9Iiue3oQdVPBaxiUXLNFA9o8nv-giD4s"
+                />
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}
