@@ -11,7 +11,7 @@ const pool = new Pool({ connectionString: databaseUrl });
 async function main() {
     const email = "huan.sysops@quanlihocau.com";
     const name = "System Admin";
-    const passwordHash = "$2b$10$eHBeDc20BuJ9aQ0EzVgaIu70yhOIhlrsxKSr8oQcJNxpypO6dHD7a"; // wM9#kZ2$pL8xV!qT
+    const passwordHash = "$2b$10$eHBeDc20BuJ9aQ0EzVgaIu70yhOIhlrsxKSr8oQcJNxpypO6dHD7a";
     const systemRole = "SUPER_ADMIN";
 
     const checkRes = await pool.query('SELECT id, email, "systemRole" FROM "User" WHERE email = $1', [email]);

@@ -18,7 +18,7 @@ async function main() {
     create: {
       email: 'huan.sysops@quanlihocau.com',
       name: 'System Admin',
-      passwordHash: '$2b$10$enV1qXf6R9aMTJ57OO9xTu60KRnY1v8WvxxLG3ShxAlp5Zw4MtlM6', // Mã hóa của wM9#kZ2$pL8xV!qT
+      passwordHash: '$2b$10$enV1qXf6R9aMTJ57OO9xTu60KRnY1v8WvxxLG3ShxAlp5Zw4MtlM6',
       systemRole: 'SUPER_ADMIN', // Chuẩn theo Prisma schema
     },
   })
