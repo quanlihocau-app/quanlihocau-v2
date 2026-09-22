@@ -2,9 +2,21 @@
 
 import Link from "next/link";
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { DualPhoneHeroMockup } from "./dual-phone-hero-mockup";
-import { InteractiveAppShowcase } from "./interactive-app-showcase";
 import { MobileContactBar } from "./mobile-contact-bar";
+
+const InteractiveAppShowcase = dynamic(
+    () => import("./interactive-app-showcase").then((mod) => mod.InteractiveAppShowcase),
+    {
+        ssr: true,
+        loading: () => (
+            <div className="py-20 text-center text-[#52D879] font-medium text-sm animate-pulse">
+                Đang tải tương tác trực quan...
+            </div>
+        ),
+    }
+);
 
 interface OfficialLandingPageProps {
     isLoggedIn?: boolean;
