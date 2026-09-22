@@ -47,6 +47,21 @@ export default function robots(): MetadataRoute.Robots {
                 disallow: disallowedPaths,
             },
             {
+                userAgent: "Googlebot",
+                allow: [
+                    "/",
+                    "/bang-gia",
+                    "/thiet-bi-may-in",
+                    "/dieu-khoan",
+                    "/chinh-sach-bao-mat",
+                    "/login",
+                    "/register",
+                    "/opengraph-image",
+                    "/icons/",
+                ],
+                disallow: disallowedPaths,
+            },
+            {
                 userAgent: [
                     "GPTBot",
                     "Google-Extended",
@@ -65,5 +80,6 @@ export default function robots(): MetadataRoute.Robots {
             },
         ],
         sitemap: "https://quanlihocau.com/sitemap.xml",
+        host: "https://quanlihocau.com",
     };
 }

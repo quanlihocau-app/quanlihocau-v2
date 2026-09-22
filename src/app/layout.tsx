@@ -27,36 +27,52 @@ export const metadata: Metadata = {
         "đồng hồ phiên câu",
         "báo cáo ca hồ câu",
     ],
-    authors: [{ name: "Quản Lí Hồ Câu" }],
-    creator: "Quản Lí Hồ Câu",
-    publisher: "Quản Lí Hồ Câu",
+    authors: [{ name: "Quản Lý Hồ Câu", url: "https://quanlihocau.com" }],
+    creator: "Quản Lý Hồ Câu",
+    publisher: "Quản Lý Hồ Câu",
     robots: {
         index: true,
         follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            "max-video-preview": -1,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+        },
+    },
+    verification: {
+        google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
     },
     openGraph: {
         type: "website",
         locale: "vi_VN",
         url: "https://quanlihocau.com",
-        siteName: "Quản Lí Hồ Câu",
-        title: "Quản Lí Hồ Câu | Phần mềm quản lý hồ câu",
+        siteName: "Quản Lý Hồ Câu",
+        title: "Quản Lý Hồ Câu — Phần Mềm & App Cho Chủ Hồ Câu Trên Điện Thoại",
         description:
-            "Hồ câu vận hành gọn. Khách vui, chủ yên tâm. Gom phiên câu, ô câu, hóa đơn, kho, chi phí và chốt ca vào một luồng trực quan.",
+            "Phần mềm quản lý hồ câu chuyên nghiệp: tính tiền phiên câu theo giờ, tự động tính phụ thu lố giờ, bán mồi nước, thu mua cá, kiểm soát nhân viên và báo cáo doanh thu từ xa.",
         images: [
+            {
+                url: "https://quanlihocau.com/opengraph-image",
+                width: 1200,
+                height: 630,
+                alt: "Quản Lý Hồ Câu - Phần mềm quản lý hồ câu chuyên nghiệp",
+            },
             {
                 url: "https://quanlihocau.com/icons/icon-512x512.png",
                 width: 512,
                 height: 512,
-                alt: "Quản Lí Hồ Câu - Phần mềm quản lý hồ câu chuyên nghiệp",
+                alt: "Quản Lý Hồ Câu App Icon",
             },
         ],
     },
     twitter: {
         card: "summary_large_image",
-        title: "Quản Lí Hồ Câu | Phần mềm quản lý hồ câu",
+        title: "Quản Lý Hồ Câu — Phần Mềm & App Cho Chủ Hồ Câu Trên Điện Thoại",
         description:
-            "Phần mềm vận hành hồ câu: quản lý ô câu, phiên câu, hóa đơn và chốt ca nhanh chóng, chính xác.",
-        images: ["https://quanlihocau.com/icons/icon-512x512.png"],
+            "Hồ câu vận hành gọn. Khách vui, chủ yên tâm. Quản lý phiên câu, ô câu, hóa đơn, kho, chi phí và chốt ca trên điện thoại.",
+        images: ["https://quanlihocau.com/opengraph-image"],
     },
     alternates: {
         canonical: "https://quanlihocau.com",
