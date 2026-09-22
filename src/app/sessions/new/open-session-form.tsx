@@ -1041,138 +1041,73 @@ export function OpenSessionForm({
             )}
 
             {/* 1. KHÁCH HÀNG */}
-            <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
+            <Card className="space-y-2.5 bg-white border-[#E3E8E3] rounded-2xl shadow-xs p-3.5">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
                         1. Khách hàng
                     </label>
-                    <div className="flex items-center gap-1.5">
+                </div>
+
+                {/* Customer Selection or Single-line Integrated Search */}
+                {selectedCustomerId ? (
+                    <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-[#F0FDF4] p-3 shadow-2xs">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#DCFCE7] text-[#16A34A] font-bold text-xs shrink-0">
+                                👤
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-xs font-bold text-[#0F172A] truncate">
+                                    {selectedCustomer?.name}
+                                </p>
+                                {selectedCustomer?.phoneNormalized && (
+                                    <p className="text-[11px] text-[#16A34A] font-mono">
+                                        {selectedCustomer.phoneNormalized}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                         <button
                             type="button"
                             onClick={() => {
                                 setSelectedCustomerId(null);
                                 setCustomerSearch("");
-                                setShowQuickAddCustomer(false);
-                                setNewCustomerName("");
-                                setNewCustomerPhone("");
-                                setCustomerError("");
+                                setGuestName("");
                             }}
-                            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                                selectedCustomerId === null
-                                    ? "bg-[#4F9D5A] text-white shadow-2xs"
-                                    : "bg-white text-[#17201A] border border-[#E3E8E3] hover:bg-[#F7F9F5]"
-                            }`}
-                        >
-                            Khách lẻ
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setShowQuickAddCustomer((prev) => !prev)
-                            }
-                            className="rounded-xl bg-[#E8F3E5] border border-[#D1E5CE] px-3 py-1.5 text-xs font-semibold text-[#246B38] hover:bg-[#DDF0D8] transition-colors cursor-pointer"
-                        >
-                            + Thêm khách
-                        </button>
-                    </div>
-                </div>
-
-                {/* Quick Add Form */}
-                {showQuickAddCustomer && (
-                    <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-3.5 space-y-3">
-                        <p className="text-xs font-bold text-[#17201A]">
-                            Thêm nhanh khách hàng mới
-                        </p>
-                        {customerError && (
-                            <InlineAlert type="error" message={customerError} />
-                        )}
-                        <div className="space-y-2">
-                            <Input
-                                placeholder="Họ và tên khách..."
-                                value={newCustomerName}
-                                onChange={(e) => setNewCustomerName(e.target.value)}
-                            />
-                            <Input
-                                placeholder="Số điện thoại (tùy chọn)..."
-                                value={newCustomerPhone}
-                                onChange={(e) => setNewCustomerPhone(e.target.value)}
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="primary"
-                                isLoading={isCreatingCustomer}
-                                loadingText="Đang lưu…"
-                                onClick={handleQuickCreateCustomer}
-                            >
-                                Lưu khách hàng
-                            </Button>
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setShowQuickAddCustomer(false)}
-                            >
-                                Hủy
-                            </Button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Customer Search & Selection */}
-                {selectedCustomerId ? (
-                    <div className="flex items-center justify-between rounded-xl border border-[#4F9D5A] bg-[#E8F3E5] p-3 shadow-2xs">
-                        <div>
-                            <p className="text-xs font-bold text-[#17201A]">
-                                {selectedCustomer?.name}
-                            </p>
-                            {selectedCustomer?.phoneNormalized && (
-                                <p className="text-xs text-[#66716A] font-mono">
-                                    {selectedCustomer.phoneNormalized}
-                                </p>
-                            )}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setSelectedCustomerId(null)}
-                            className="text-xs font-semibold text-rose-700 hover:underline cursor-pointer"
+                            className="text-xs font-semibold text-slate-500 hover:text-rose-600 transition-colors cursor-pointer px-2.5 py-1 rounded-lg hover:bg-white shrink-0 ml-2"
                         >
                             Đổi khách
                         </button>
                     </div>
                 ) : (
                     <div className="space-y-2">
-                        {/* Ô nhập tên khách nhanh khi chọn Khách lẻ */}
-                        {!showQuickAddCustomer && (
-                            <div className="space-y-1.5">
-                                <Input
-                                    placeholder="Tên khách (nếu có)…"
-                                    value={guestName}
-                                    onChange={(e) => setGuestName(e.target.value)}
-                                />
-                                {guestName.trim().length > 0 && (
-                                    <Input
-                                        placeholder="Số điện thoại (tùy chọn)…"
-                                        value={guestPhone}
-                                        onChange={(e) => setGuestPhone(e.target.value)}
-                                        type="tel"
-                                        inputMode="tel"
-                                    />
-                                )}
-                                {guestName.trim().length > 0 && guestName.trim().length < 2 && (
-                                    <p className="text-[11px] text-amber-700">Tên khách phải có ít nhất 2 ký tự để lưu vào vé.</p>
-                                )}
-                            </div>
-                        )}
-                        <Input
-                            placeholder="Tìm theo tên hoặc số điện thoại..."
-                            value={customerSearch}
-                            onChange={(e) => setCustomerSearch(e.target.value)}
-                        />
+                        <div className="relative">
+                            <Input
+                                placeholder="Nhập tên hoặc số điện thoại khách..."
+                                value={customerSearch}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setCustomerSearch(val);
+                                    setGuestName(val);
+                                }}
+                                className="pr-8"
+                            />
+                            {customerSearch && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setCustomerSearch("");
+                                        setGuestName("");
+                                    }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer text-xs"
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Autocomplete dropdown for existing customers */}
                         {filteredCustomers.length > 0 && (
-                            <div className="divide-y divide-[#E3E8E3] rounded-xl border border-[#E3E8E3] bg-white overflow-hidden shadow-2xs">
+                            <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-md">
                                 {filteredCustomers.map((c) => (
                                     <div
                                         key={c.id}
@@ -1180,18 +1115,78 @@ export function OpenSessionForm({
                                             setSelectedCustomerId(c.id);
                                             setCustomerSearch("");
                                             setGuestName("");
-                                            setGuestPhone("");
+                                            setShowQuickAddCustomer(false);
                                         }}
-                                        className="cursor-pointer p-3 text-xs hover:bg-[#F7F9F5] flex items-center justify-between transition-colors"
+                                        className="cursor-pointer p-2.5 text-xs hover:bg-[#F0FDF4] flex items-center justify-between transition-colors"
                                     >
-                                        <span className="font-semibold text-[#17201A]">
-                                            {c.name}
-                                        </span>
-                                        <span className="text-[#66716A] font-mono">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-slate-400">👤</span>
+                                            <span className="font-bold text-[#0F172A]">{c.name}</span>
+                                        </div>
+                                        <span className="text-[#16A34A] font-mono font-semibold">
                                             {c.phoneNormalized ?? "—"}
                                         </span>
                                     </div>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Underneath: quick add toggle */}
+                        {!showQuickAddCustomer ? (
+                            <div className="flex items-center justify-between pt-0.5 px-0.5">
+                                <span className="text-[11px] text-slate-400 italic">
+                                    {customerSearch.trim() ? "Tên sẽ được ghi nhận vào vé" : "Khách lẻ tự do"}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowQuickAddCustomer(true);
+                                        if (customerSearch.trim()) setNewCustomerName(customerSearch.trim());
+                                    }}
+                                    className="text-[11px] font-bold text-[#16A34A] hover:underline cursor-pointer inline-flex items-center gap-1"
+                                >
+                                    <span>＋</span>
+                                    <span>Thêm khách mới vào danh bạ</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border border-emerald-200 bg-[#F0FDF4] p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-[#16A34A]">Lưu vào danh bạ khách:</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowQuickAddCustomer(false)}
+                                        className="text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                                    >
+                                        Đóng ✕
+                                    </button>
+                                </div>
+                                {customerError && <InlineAlert type="error" message={customerError} />}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <Input
+                                        placeholder="Họ và tên khách *"
+                                        value={newCustomerName}
+                                        onChange={(e) => setNewCustomerName(e.target.value)}
+                                    />
+                                    <Input
+                                        placeholder="Số điện thoại..."
+                                        value={newCustomerPhone}
+                                        onChange={(e) => setNewCustomerPhone(e.target.value)}
+                                        type="tel"
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-2 pt-1">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="primary"
+                                        isLoading={isCreatingCustomer}
+                                        loadingText="Đang lưu…"
+                                        onClick={handleQuickCreateCustomer}
+                                    >
+                                        Lưu khách hàng
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -1278,7 +1273,7 @@ export function OpenSessionForm({
                                     <p className="text-[11px] font-semibold text-[#66716A] uppercase tracking-wide">
                                         {areaName}
                                     </p>
-                                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                                    <div className="grid grid-cols-5 gap-1.5">
                                         {areaHuts.map((h) => {
                                             const isOccupied =
                                                 h.currentSessionId !== null;
@@ -1293,18 +1288,18 @@ export function OpenSessionForm({
                                                     onClick={() =>
                                                         toggleHut(h.id)
                                                     }
-                                                    className={`h-12 min-w-12 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer ${
+                                                    className={`h-9.5 rounded-xl text-[11px] font-bold transition-all flex flex-col items-center justify-center cursor-pointer px-1 ${
                                                         isSelected
-                                                            ? "bg-[#4F9D5A] text-white border-2 border-[#246B38] shadow-xs"
+                                                            ? "bg-[#16A34A] text-white border-2 border-[#15803D] shadow-xs"
                                                             : isOccupied
                                                               ? "bg-slate-100 text-slate-400 border border-[#E3E8E3] opacity-60 cursor-not-allowed"
-                                                              : "bg-white border border-[#E3E8E3] text-[#17201A] hover:bg-[#F7F9F5]"
+                                                              : "bg-white border border-[#E3E8E3] text-[#17201A] hover:bg-[#F0FDF4] hover:border-[#16A34A]"
                                                     }`}
                                                 >
-                                                    <span>{h.name}</span>
+                                                    <span className="truncate w-full text-center leading-tight">{h.name}</span>
                                                     {isOccupied && (
-                                                        <span className="text-[9px] font-normal text-slate-400">
-                                                            Đang câu
+                                                        <span className="text-[8px] font-normal text-slate-400 leading-none">
+                                                            Có khách
                                                         </span>
                                                     )}
                                                 </button>
@@ -1318,21 +1313,21 @@ export function OpenSessionForm({
                 )}
             </Card>
 
-            {/* 3. GÓI / CA CÂU */}
-            <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
+            {/* 3. GÓI CÂU & THỜI GIAN VÀO (GỘP GỌN 1 Ô) */}
+            <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs p-3.5">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                        3. Gói câu / Ca câu <span className="text-rose-600">*</span>
+                        3. Gói câu &amp; Thời gian vào <span className="text-rose-600">*</span>
                     </label>
                     <button
                         type="button"
                         onClick={() => setIsPackageSheetOpen(true)}
-                        className="inline-flex items-center gap-1 rounded-xl bg-[#E8F3E5] px-2.5 py-1 text-xs font-bold text-[#246B38] border border-[#D1E5CE] hover:bg-[#DDF0D8] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-xl bg-[#DCFCE7] px-2.5 py-1 text-xs font-bold text-[#16A34A] border border-[#BBF7D0] hover:bg-emerald-100 transition-colors cursor-pointer"
                     >
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
-                        <span>Tạo nhanh gói câu</span>
+                        <span>Tạo nhanh gói</span>
                     </button>
                 </div>
 
@@ -1342,7 +1337,7 @@ export function OpenSessionForm({
                         <button
                             type="button"
                             onClick={() => setIsPackageSheetOpen(true)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#4F9D5A] px-3.5 py-2 text-xs font-bold text-white shadow-2xs cursor-pointer hover:bg-[#3E8047]"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#16A34A] px-3.5 py-2 text-xs font-bold text-white shadow-2xs cursor-pointer hover:bg-[#15803D]"
                         >
                             + Tạo nhanh gói câu
                         </button>
@@ -1355,17 +1350,17 @@ export function OpenSessionForm({
                                 <div
                                     key={p.id}
                                     onClick={() => setSelectedPackageId(p.id)}
-                                    className={`cursor-pointer rounded-2xl border p-3.5 flex items-center justify-between transition-colors ${
+                                    className={`cursor-pointer rounded-2xl border p-3 flex items-center justify-between transition-colors ${
                                         isSelected
-                                            ? "border-[#4F9D5A] bg-[#E8F3E5] shadow-xs"
+                                            ? "border-[#16A34A] bg-[#F0FDF4] shadow-xs"
                                             : "border-[#E3E8E3] bg-white hover:bg-[#F7F9F5]"
                                     }`}
                                 >
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2.5">
                                         <div
                                             className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
                                                 isSelected
-                                                    ? "border-[#4F9D5A] bg-[#4F9D5A]"
+                                                    ? "border-[#16A34A] bg-[#16A34A]"
                                                     : "border-[#E3E8E3] bg-white"
                                             }`}
                                         >
@@ -1374,56 +1369,45 @@ export function OpenSessionForm({
                                             )}
                                         </div>
                                         <div>
-                                            <p className="text-xs font-semibold text-[#17201A]">
+                                            <p className="text-xs font-bold text-[#17201A]">
                                                 {p.name}
                                             </p>
-                                            <p className="text-xs text-[#66716A]">
+                                            <p className="text-[11px] text-[#66716A]">
                                                 Thời lượng: <span className="font-semibold text-[#17201A]">{formatDuration(p.durationMinutes)}</span>
                                             </p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs font-bold font-mono text-[#246B38] tabular-nums">
+                                        <span className="text-xs font-bold font-mono text-[#16A34A] tabular-nums">
                                             {formatPrice(p.priceVnd)}
                                         </span>
                                     </div>
                                 </div>
                             );
                         })}
+
+                        {/* ── Thời gian vào & Kết thúc tự động mở khi đã chọn gói ── */}
+                        <CheckInTimeSection
+                            durationMinutes={selectedPackage?.durationMinutes || 0}
+                            packageName={selectedPackage?.name}
+                            overtimeHourlyVnd={
+                                selectedPackage && "overtimeHourlyVnd" in selectedPackage
+                                    ? Number((selectedPackage as { overtimeHourlyVnd?: number }).overtimeHourlyVnd) || 50000
+                                    : 50000
+                            }
+                            hutCount={selectedHutIds.length || 1}
+                            onStateChange={setCheckInState}
+                            embedded={true}
+                        />
                     </div>
                 )}
             </Card>
 
-            {/* 4. GIỜ VÀO TÙY CHỌN & XEM TRƯỚC THỜI GIAN CA CÂU */}
-            <CheckInTimeSection
-                durationMinutes={selectedPackage?.durationMinutes || 0}
-                packageName={selectedPackage?.name}
-                overtimeHourlyVnd={
-                    selectedPackage && "overtimeHourlyVnd" in selectedPackage
-                        ? Number((selectedPackage as { overtimeHourlyVnd?: number }).overtimeHourlyVnd) || 50000
-                        : 50000
-                }
-                hutCount={selectedHutIds.length || 1}
-                onStateChange={setCheckInState}
-            />
-
-            {/* 5. GHI CHÚ VÉ CÂU */}
-            <Card className="space-y-2 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
-                <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                    5. Ghi chú vé câu (tùy chọn)
-                </label>
-                <Input
-                    placeholder="Ví dụ: Khách quen, mượn cần câu số 2, cọc trước…"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                />
-            </Card>
-
-            {/* 5. SẢN PHẨM / DỊCH VỤ DÙNG KÈM */}
+            {/* 4. SẢN PHẨM / DỊCH VỤ DÙNG KÈM */}
             <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                        5. Sản phẩm / Dịch vụ bán kèm
+                        4. Sản phẩm / Dịch vụ bán kèm
                     </label>
                     <button
                         type="button"
@@ -1504,7 +1488,7 @@ export function OpenSessionForm({
                                                 type="button"
                                                 onClick={() => {
                                                     setSelectedItems((prev) =>
-                                                        prev.filter((it) => it.productId !== item.productId),
+                                                        prev.filter((it) => it.productId === item.productId),
                                                     );
                                                 }}
                                                 className="p-1 text-rose-600 hover:text-rose-800 ml-1 cursor-pointer"
@@ -1567,95 +1551,22 @@ export function OpenSessionForm({
                 )}
             </Card>
 
-            {/* 6. GIÁ THU LẠI CÁ */}
-            <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
-                <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                        6. Giá thu lại cá (Quy định hồ)
-                    </label>
-                    <button
-                        type="button"
-                        onClick={() => setIsFishTypeSheetOpen(true)}
-                        className="inline-flex items-center gap-1 rounded-xl bg-[#E8F3E5] px-2.5 py-1 text-xs font-bold text-[#246B38] border border-[#D1E5CE] hover:bg-[#DDF0D8] transition-colors cursor-pointer"
-                    >
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        <span>Thêm quy định thu lại</span>
-                    </button>
-                </div>
-
-                {fishTypeList.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[#CCD5CA] p-3 text-center space-y-1.5">
-                        <p className="text-xs text-[#66716A]">Hồ chưa thiết lập bảng giá thu lại cá.</p>
-                        <button
-                            type="button"
-                            onClick={() => setIsFishTypeSheetOpen(true)}
-                            className="text-xs font-bold text-[#246B38] underline cursor-pointer"
-                        >
-                            + Thiết lập giá thu lại (Cá Trắm, Chép, Rô phi...)
-                        </button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                        {fishTypeList.map((ft) => {
-                            const isSelected = selectedFishTypeId === ft.id;
-                            return (
-                                <div
-                                    key={ft.id}
-                                    onClick={() =>
-                                        setSelectedFishTypeId((prev) => (prev === ft.id ? "" : ft.id))
-                                    }
-                                    className={`cursor-pointer rounded-xl border p-2.5 text-xs transition-all ${
-                                        isSelected
-                                            ? "border-[#4F9D5A] bg-[#E8F3E5] shadow-xs"
-                                            : "border-[#E3E8E3] bg-white hover:bg-[#F7F9F5]"
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <p className="font-bold text-[#17201A]">{ft.name}</p>
-                                        {isSelected && (
-                                            <span className="text-[10px] font-bold text-[#246B38] bg-white px-1.5 py-0.5 rounded border border-[#D1E5CE]">
-                                                Đã lưu
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p className="text-[11px] font-mono text-[#246B38] mt-1">
-                                        Thu lại: {formatPrice(ft.pricePerKg)}/kg
-                                    </p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+            {/* 5. GHI CHÚ VÉ CÂU */}
+            <Card className="space-y-2 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
+                <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
+                    5. Ghi chú vé câu (tùy chọn)
+                </label>
+                <Input
+                    placeholder="Ví dụ: Khách quen, mượn cần câu số 2, cọc trước…"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                />
             </Card>
 
-            {/* 7. TỔNG DỰ KIẾN */}
-            <Card className="space-y-2 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
-                <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#66716A] flex items-center gap-1.5">
-                        <svg
-                            className="h-4 w-4 text-[#66716A]"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                            />
-                        </svg>
-                        Thời gian:
-                    </span>
-                    <span className="font-semibold text-[#17201A]">
-                        Tự động bắt đầu ngay khi tạo vé
-                    </span>
-                </div>
-
-                {selectedPackage && selectedHutIds.length > 0 && (
-                    <div className="border-t border-[#E3E8E3] pt-2 space-y-1.5">
+            {/* TỔNG DỰ KIẾN (Chỉ hiển thị khi đã chọn gói & ô) */}
+            {selectedPackage && selectedHutIds.length > 0 && (
+                <Card className="space-y-2 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
+                    <div className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-[#66716A]">
                                 Tiền gói ({selectedHutIds.length} ô x {formatPrice(selectedPackage.priceVnd)}):
@@ -1690,8 +1601,8 @@ export function OpenSessionForm({
                             </span>
                         </div>
                     </div>
-                )}
-            </Card>
+                </Card>
+            )}
 
             {/* Error Display */}
             {formError && (
@@ -1811,10 +1722,10 @@ export function OpenSessionForm({
             {isConfirmModalOpen && (
                 <ModalPortal>
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 modal-backdrop-animate"
+                    className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/60 backdrop-blur-xs modal-backdrop-animate"
                     onClick={onConfirmBackdropClick}
                 >
-                    <div className="relative w-full max-w-md rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4 modal-content-animate">
+                    <div className="relative my-auto w-full max-w-md rounded-[28px] bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[90dvh] overflow-y-auto space-y-4 modal-content-animate">
                         {/* Header */}
                         <div className="text-center space-y-1">
                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F3E5] text-[#246B38] text-xs font-bold uppercase tracking-wider">
@@ -2069,10 +1980,10 @@ export function OpenSessionForm({
             {isCheckoutModalOpen && (
                 <ModalPortal>
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 modal-backdrop-animate"
+                    className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/60 backdrop-blur-xs modal-backdrop-animate"
                     onClick={onCheckoutBackdropClick}
                 >
-                    <div className="relative w-full max-w-lg rounded-3xl bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[92vh] overflow-y-auto space-y-4 modal-content-animate">
+                    <div className="relative my-auto w-full max-w-lg rounded-[28px] bg-white border border-[#E3E8E3] shadow-2xl p-5 flex flex-col max-h-[90dvh] overflow-y-auto space-y-4 modal-content-animate">
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-3">
                             <div className="flex items-center gap-2.5">

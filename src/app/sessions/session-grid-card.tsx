@@ -235,29 +235,29 @@ function SessionGridCardComponent({
                     onSelect(s.id);
                 }
             }}
-            className={`flex flex-col justify-between rounded-xs bg-white p-3 text-left transition-colors select-none cursor-pointer border font-serif ${
+            className={`flex flex-col justify-between rounded-2xl bg-white p-3.5 text-left transition-all select-none cursor-pointer border font-serif shadow-2xs ${
                 isSelected
-                    ? "border-2 border-[#2C4C3B] bg-[#EAEFEA]"
-                    : "border-[#CCCCCC] hover:border-[#2C4C3B]"
+                    ? "border-2 border-[#16A34A] bg-[#F0FDF4] ring-2 ring-[#16A34A]/20 shadow-md"
+                    : "border-slate-200/80 hover:border-[#16A34A] hover:shadow-xs"
             }`}
         >
             {/* Hàng 1: Mã ô & Thời lượng & Trạng thái thu tiền */}
             <div>
-                <div className="flex items-start justify-between gap-1 mb-1">
-                    <span className="text-sm font-bold text-[#1A1A1A] leading-tight truncate font-serif">
+                <div className="flex items-start justify-between gap-1.5 mb-1.5">
+                    <span className="text-sm font-bold text-[#0F172A] leading-tight truncate font-serif">
                         {hutLabel}
                     </span>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                         {s.paymentTiming === "PREPAID" ? (
-                            <span className="rounded-xs bg-[#EAEFEA] px-1.5 py-0.2 text-[9px] font-bold text-[#2C4C3B] border border-[#B8CEB8]">
+                            <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-[10px] font-bold text-[#16A34A] border border-[#BBF7D0]">
                                 Đã thu trước
                             </span>
                         ) : (
-                            <span className="rounded-xs bg-[#FDF7EB] px-1.5 py-0.2 text-[9px] font-bold text-[#8C5C00] border border-[#E8D1A3]">
+                            <span className="rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[10px] font-bold text-[#D97706] border border-[#FDE68A]">
                                 Thu sau
                             </span>
                         )}
-                        <span className="text-[11px] font-semibold text-[#555555]">
+                        <span className="text-[11px] font-semibold text-slate-500">
                             {formatDuration(s.package.durationMinutes)}
                         </span>
                     </div>

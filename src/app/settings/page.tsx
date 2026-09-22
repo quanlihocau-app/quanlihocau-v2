@@ -107,14 +107,19 @@ export default async function SettingsPage() {
                 isSupportMode={tenantContext.isSupportMode}
             />
 
-            {/* ── Page title + role badge ─────────────────────────────── */}
-            <div className="mb-4 flex items-center justify-between">
-                <h1 className="text-[22px] font-black tracking-tight text-white drop-shadow-sm">
-                    Cài đặt
-                </h1>
-                <span className="rounded-full bg-black/30 px-3 py-1 text-xs font-bold text-emerald-200 border border-emerald-400/30 backdrop-blur-md shadow-xs">
-                    {roleBadge}
-                </span>
+            {/* ── Standardized Green Gradient Banner (Đồng bộ trang Đang câu) ── */}
+            <div className="w-full mb-4 rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3.5 shadow-2xs font-serif">
+                <div className="flex items-center justify-between gap-3 w-full">
+                    <div className="flex items-center gap-2">
+                        <div className="h-4.5 w-1.5 rounded-full bg-[#16A34A] shrink-0" />
+                        <h1 className="text-xs sm:text-[13px] font-bold uppercase tracking-normal text-[#0F172A] font-serif leading-none whitespace-nowrap">
+                            CÀI ĐẶT HỆ THỐNG
+                        </h1>
+                    </div>
+                    <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] border border-[#BBF7D0] shadow-2xs font-serif shrink-0 whitespace-nowrap">
+                        {roleBadge}
+                    </span>
+                </div>
             </div>
 
             {/* ── Owner Account & Phone Verification Card ────────────── */}

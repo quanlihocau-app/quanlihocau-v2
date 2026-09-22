@@ -168,25 +168,30 @@ export function DailyReportView({
                 <MobileAppHeader lakeName={lakeName} />
 
                 <div className="p-4 space-y-4 pb-28">
-                    {/* ── Page title + shift badge ───────────────────────────── */}
-                    <div className="flex items-center justify-between border-b border-[#CCCCCC] pb-2">
-                        <div>
-                            <h1 className="text-base font-bold tracking-tight text-[#1A1A1A] uppercase">
-                                Báo cáo sổ ca ngày
-                            </h1>
-                            <p className="text-[11px] text-[#555555] mt-0.5">
-                                {formatDateTime(shift.startTime)} {shift.endTime ? `— ${formatDateTime(shift.endTime)}` : ""}
-                            </p>
+                    {/* ── Standardized Green Gradient Banner (Đồng bộ trang Đang câu) ── */}
+                    <div className="w-full mb-4 rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3.5 shadow-2xs font-serif">
+                        <div className="flex items-center justify-between gap-3 w-full">
+                            <div className="flex items-center gap-2">
+                                <div className="h-4.5 w-1.5 rounded-full bg-[#16A34A] shrink-0" />
+                                <div>
+                                    <h1 className="text-xs sm:text-[13px] font-bold uppercase tracking-normal text-[#0F172A] font-serif leading-none whitespace-nowrap">
+                                        BÁO CÁO SỔ CA NGÀY
+                                    </h1>
+                                    <p className="text-[10px] text-[#64748B] mt-1 font-mono">
+                                        {formatDateTime(shift.startTime)} {shift.endTime ? `— ${formatDateTime(shift.endTime)}` : ""}
+                                    </p>
+                                </div>
+                            </div>
+                            {shift.isClosed ? (
+                                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 border border-slate-200 shadow-2xs font-serif shrink-0 whitespace-nowrap">
+                                    ĐÃ CHỐT CA
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] border border-[#BBF7D0] shadow-2xs font-serif shrink-0 whitespace-nowrap">
+                                    ĐANG MỞ CA
+                                </span>
+                            )}
                         </div>
-                        {shift.isClosed ? (
-                            <span className="rounded-xs bg-[#F2F2F0] px-2.5 py-0.5 text-xs font-bold text-[#555555] border border-[#CCCCCC]">
-                                ĐÃ CHỐT CA
-                            </span>
-                        ) : (
-                            <span className="rounded-xs bg-[#EAEFEA] px-2.5 py-0.5 text-xs font-bold text-[#2C4C3B] border border-[#2C4C3B]">
-                                ĐANG MỞ CA
-                            </span>
-                        )}
                     </div>
 
                     {/* Success Notice */}

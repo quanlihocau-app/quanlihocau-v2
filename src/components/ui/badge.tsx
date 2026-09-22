@@ -13,17 +13,17 @@ export function Badge({
     ...props
 }: BadgeProps) {
     const variantClasses = {
-        default: "bg-[#F2F2F0] text-[#1A1A1A] border border-[#CCCCCC]",
-        success: "bg-[#EAEFEA] text-[#2C4C3B] border border-[#B8CEB8]",
-        warning: "bg-[#FDF7EB] text-[#8C5C00] border border-[#E8D1A3]",
-        danger: "bg-[#FBEBEB] text-[#9E2A2B] border border-[#E9B6B7]",
-        info: "bg-[#EDF3F8] text-[#1F4E79] border border-[#B4CCE0]",
-        neutral: "bg-[#F2F2F0] text-[#555555] border border-[#CCCCCC]",
+        default: "bg-[#F1F5F9] text-[#0F172A] border border-[#E2E8F0]",
+        success: "bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]",
+        warning: "bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A]",
+        danger: "bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA]",
+        info: "bg-[#F0F9FF] text-[#0284C7] border border-[#BAE6FD]",
+        neutral: "bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0]",
     }[variant];
 
     return (
         <span
-            className={`inline-flex items-center gap-1.5 rounded-xs px-2 py-0.5 text-[11px] font-bold tracking-normal font-serif ${variantClasses} ${className}`}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-normal font-serif ${variantClasses} ${className}`}
             {...props}
         >
             {icon && <span className="shrink-0">{icon}</span>}
@@ -39,7 +39,7 @@ export function SessionStatusBadge({ status }: { status: string }) {
                 <Badge
                     variant="success"
                     icon={
-                        <span className="h-1.5 w-1.5 rounded-none bg-[#2C4C3B]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
                     }
                 >
                     Đang câu

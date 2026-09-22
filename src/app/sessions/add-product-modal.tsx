@@ -170,10 +170,10 @@ export function AddProductModal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center modal-backdrop-animate font-serif"
+            className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif"
             onClick={onBackdropClick}
         >
-            <div className="add-product-sheet modal-content-animate">
+            <div className="add-product-sheet modal-content-animate my-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-[#E0E0E0] pb-2.5">
                     <div className="flex items-center gap-2">
@@ -369,10 +369,10 @@ export function AddProductModal({
                         width: 100%;
                         max-width: 480px;
                         background: white;
-                        border-radius: 2px 2px 0 0;
-                        border: 1px solid #CCCCCC;
-                        padding: 16px;
-                        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+                        border-radius: 28px;
+                        border: 1px solid #E2E8F0;
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                        padding: 18px;
                         display: flex;
                         flex-direction: column;
                         gap: 12px;
@@ -382,8 +382,8 @@ export function AddProductModal({
 
                     @media (min-width: 640px) {
                         .add-product-sheet {
-                            border-radius: 2px;
-                            max-height: 85vh;
+                            border-radius: 28px;
+                            max-height: 90dvh;
                         }
                     }
 

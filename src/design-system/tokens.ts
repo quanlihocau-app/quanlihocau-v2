@@ -6,59 +6,60 @@
 
 export const colors = {
   primary: {
-    DEFAULT: "#2C4C3B",
-    dark: "#1B3224",
-    light: "#EAEFEA",
-    hover: "#233D2F",
-    subtle: "#F2F5F2",
+    DEFAULT: "#16A34A",
+    dark: "#15803D",
+    light: "#DCFCE7",
+    hover: "#15803D",
+    subtle: "#F0FDF4",
   },
   surface: {
-    background: "#FAFAF7",
+    background: "#F8FAFC",
     DEFAULT: "#FFFFFF",
-    secondary: "#F2F2F0",
+    secondary: "#F1F5F9",
     container: "#FFFFFF",
-    variant: "#EAEAE6",
+    variant: "#E2E8F0",
   },
   text: {
-    primary: "#1A1A1A",
-    secondary: "#555555",
-    muted: "#777777",
+    primary: "#0F172A",
+    secondary: "#475569",
+    muted: "#64748B",
     inverse: "#FFFFFF",
   },
   border: {
-    DEFAULT: "#E0E0E0",
-    subtle: "#EEEEEE",
-    strong: "#CCCCCC",
-    focus: "#2C4C3B",
+    DEFAULT: "#E2E8F0",
+    subtle: "#F1F5F9",
+    strong: "#CBD5E1",
+    focus: "#16A34A",
   },
   status: {
-    success: "#2C4C3B",
-    successBg: "#EAEFEA",
-    warning: "#8C5C00",
-    warningBg: "#FDF7EB",
-    error: "#9E2A2B",
-    errorBg: "#FBEBEB",
-    info: "#1F4E79",
-    infoBg: "#EDF3F8",
+    success: "#16A34A",
+    successBg: "#F0FDF4",
+    warning: "#D97706",
+    warningBg: "#FFFBEB",
+    error: "#DC2626",
+    errorBg: "#FEF2F2",
+    info: "#0284C7",
+    infoBg: "#F0F9FF",
   },
 } as const;
 
 export const radii = {
   none: "0px",
-  sm: "2px",
-  md: "2px",
-  lg: "4px",
-  xl: "4px",
-  "2xl": "4px",
+  sm: "8px",
+  md: "12px",
+  lg: "16px",
+  xl: "20px",
+  "2xl": "24px",
+  "3xl": "28px",
   full: "9999px",
 } as const;
 
 export const shadows = {
   none: "none",
-  sm: "none",
-  md: "none",
-  lg: "none",
-  sheet: "0 -2px 10px rgba(0, 0, 0, 0.05)",
+  sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+  md: "0 4px 12px -2px rgba(0, 0, 0, 0.08)",
+  lg: "0 10px 25px -3px rgba(0, 0, 0, 0.1)",
+  sheet: "0 -10px 30px rgba(0, 0, 0, 0.12)",
 } as const;
 
 export const typography = {
@@ -68,11 +69,11 @@ export const typography = {
   sectionTitle: "text-base font-bold tracking-tight font-serif",
   body: "text-sm font-normal leading-relaxed font-serif",
   bodyMedium: "text-sm font-semibold leading-relaxed font-serif",
-  caption: "text-xs font-normal text-[#555555] font-serif",
-  captionMedium: "text-xs font-semibold text-[#555555] font-serif",
+  caption: "text-xs font-normal text-[#64748B] font-serif",
+  captionMedium: "text-xs font-semibold text-[#64748B] font-serif",
 } as const;
 
 export const spacing = {
-  touchTarget: "min-h-[44px] min-w-[44px]",
-  tapArea: "min-h-[40px]",
+  touchTarget: "min-h-[48px] min-w-[48px]",
+  tapArea: "min-h-[44px]",
 } as const;

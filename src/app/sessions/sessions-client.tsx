@@ -352,16 +352,14 @@ export function SessionsClient({
     // ── Empty state ───────────────────────────────────────────────────────────
     if (sessions.length === 0) {
         return (
-            <div className="flex min-h-[calc(100vh-220px)] items-center justify-center font-serif">
-                <div
-                    className="w-full rounded-xs border border-[#CCCCCC] bg-[#FFFFFF] p-6 text-center"
-                >
-                    <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xs bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]">
+            <div className="flex min-h-[calc(100vh-240px)] items-center justify-center font-serif">
+                <div className="w-full rounded-2xl border-2 border-dashed border-emerald-200 bg-[#F0FDF4]/80 p-8 text-center shadow-2xs">
+                    <div className="mx-auto mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#DCFCE7] text-[#16A34A] shadow-xs">
                         <svg
-                            className="h-6 w-6"
+                            className="h-7 w-7"
                             fill="none"
                             viewBox="0 0 24 24"
-                            strokeWidth={1.75}
+                            strokeWidth={2}
                             stroke="currentColor"
                         >
                             <path
@@ -371,16 +369,16 @@ export function SessionsClient({
                             />
                         </svg>
                     </div>
-                    <p className="text-base font-bold text-[#1A1A1A] font-serif">
+                    <p className="text-base font-bold text-[#0F172A] font-serif">
                         Hiện không có phiên đang câu
                     </p>
-                    <p className="mt-1 text-xs text-[#555555] font-serif">
+                    <p className="mt-1 text-xs text-slate-500 font-serif">
                         Bấm &quot;Tạo vé mới&quot; để bắt đầu một phiên câu cho khách.
                     </p>
                     {canOpenSession && (
                         <Link
                             href="/sessions/new"
-                            className="mobile-pos-btn mobile-pos-btn-primary mt-4 px-5 font-serif text-xs font-bold"
+                            className="inline-flex items-center justify-center rounded-2xl bg-[#16A34A] hover:bg-[#15803D] mt-4 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all font-serif"
                         >
                             + Tạo vé mới
                         </Link>
@@ -415,10 +413,10 @@ export function SessionsClient({
 
             {/* Thanh thao tác nhanh (Quick Action Toolbar) */}
             {selectedSession && (
-                <div className="mt-3 pt-2.5 border-t border-[#E0E0E0] font-serif">
-                    <div className="mb-2 text-center">
-                        <span className="inline-block text-xs font-bold text-[#2C4C3B] bg-[#EAEFEA] border border-[#CCCCCC] rounded-xs px-3 py-0.5 font-serif">
-                            Đang chọn:{" "}
+                <div className="mt-3 pt-2.5 border-t border-slate-100 font-serif">
+                    <div className="mb-2.5 text-center">
+                        <span className="inline-block text-xs font-bold text-[#16A34A] bg-[#DCFCE7] border border-[#BBF7D0] rounded-full px-4 py-1 shadow-2xs font-serif">
+                            🎣 Đang chọn:{" "}
                             {selectedSession.hutLinks
                                 .map((hl) => hl.hut.name)
                                 .join(" + ")}
@@ -446,20 +444,20 @@ export function SessionsClient({
             {/* ── Modal Chi Tiết Phiên Câu Khi Nhấn Giữ (Long-Press Modal) ──────── */}
             {detailSession && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/40 modal-backdrop-animate font-serif"
+                    className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif"
                     role="dialog"
                     aria-modal="true"
                     aria-label="Chi tiết phiên câu"
                     onClick={onDetailBackdropClick}
                 >
-                    <div className="w-full max-w-md rounded-xs bg-white border border-[#CCCCCC] overflow-hidden flex flex-col max-h-[90vh] modal-content-animate">
+                    <div className="relative my-auto w-full max-w-lg rounded-[28px] bg-white border border-slate-100 shadow-2xl overflow-hidden flex flex-col max-h-[90dvh] modal-content-animate">
                         {/* Header Modal */}
-                        <div className="flex items-center justify-between border-b border-[#E0E0E0] bg-white px-4 py-2.5 shrink-0 font-serif">
+                        <div className="flex items-center justify-between border-b border-slate-100 bg-white px-5 py-3 shrink-0 font-serif">
                             <div>
-                                <h3 className="text-sm font-bold text-[#1A1A1A] font-serif uppercase">
+                                <h3 className="text-sm font-bold text-[#0F172A] font-serif uppercase">
                                     CHI TIẾT: {detailSession.hutLinks.map((hl) => hl.hut.name).join(" + ")}
                                 </h3>
-                                <p className="text-xs text-[#555555] font-serif mt-0.5">
+                                <p className="text-xs text-[#16A34A] font-bold font-serif mt-0.5">
                                     Khách: {detailSession.customer?.name ?? "Khách lẻ"}
                                     {detailSession.customer?.phoneNormalized ? ` (${detailSession.customer.phoneNormalized})` : ""}
                                 </p>
@@ -467,10 +465,10 @@ export function SessionsClient({
                             <button
                                 type="button"
                                 onClick={() => setDetailSession(null)}
-                                className="h-7 w-7 rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] flex items-center justify-center text-[#1A1A1A] hover:bg-[#EAEAE6] transition-colors cursor-pointer"
+                                className="h-8 w-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold transition-colors cursor-pointer"
                             >
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>

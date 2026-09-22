@@ -256,10 +256,10 @@ export function SettlementCheckoutModal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4 modal-backdrop-animate font-serif"
+            className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif"
             onClick={onBackdropClick}
         >
-            <div className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-xs bg-[#FFFFFF] border border-[#CCCCCC] modal-content-animate font-serif">
+            <div className="relative my-auto w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-[28px] bg-[#FFFFFF] border border-slate-100 shadow-2xl modal-content-animate font-serif">
                 {/* Header */}
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#E0E0E0] bg-white px-4 py-3">
                     <div className="flex items-center gap-2.5">

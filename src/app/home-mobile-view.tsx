@@ -157,16 +157,16 @@ export function HomeMobileView({
                     {isSuperAdmin && (
                         <Link
                             href="/admin/lakes"
-                            className="flex items-center justify-between rounded-xs bg-[#1B3224] p-3 text-white border border-[#2C4C3B] active:translate-y-px transition-transform font-serif"
+                            className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-emerald-900 to-green-950 p-3.5 text-white border border-emerald-800 shadow-sm active:scale-[0.98] transition-all font-serif"
                         >
                             <div className="flex items-center gap-2.5">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-xs bg-amber-400 text-slate-950 font-bold text-xs">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400 text-slate-950 font-bold text-xs shadow-xs">
                                     ★
                                 </span>
                                 <div>
                                     <div className="flex items-center gap-1.5">
                                         <span className="text-xs font-bold text-amber-200">QUẢN TRỊ VIÊN HỆ THỐNG</span>
-                                        <span className="rounded-xs bg-amber-400/20 px-1 py-0.2 text-[9px] font-bold text-amber-200 border border-amber-300/30">SUPER ADMIN</span>
+                                        <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[9px] font-bold text-amber-200 border border-amber-300/30">SUPER ADMIN</span>
                                     </div>
                                     <p className="text-[11px] text-slate-300">Quản trị toàn bộ hồ câu, doanh thu &amp; đơn hàng</p>
                                 </div>
@@ -177,115 +177,118 @@ export function HomeMobileView({
                         </Link>
                     )}
 
-                    {/* ── Editorial Operational Status Card ────────────────── */}
-                    <div className="rounded-xs border border-[#CCCCCC] bg-[#FFFFFF] p-3.5 space-y-2">
-                        <div className="flex items-center justify-between border-b border-[#E0E0E0] pb-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wide text-[#2C4C3B]">
+                    {/* ── Sổ Tay Vận Hành Card (Đồng bộ Xanh Lá Hiện Đại) ───── */}
+                    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs space-y-2.5">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#16A34A] border border-[#BBF7D0]">
                                 SỔ TAY VẬN HÀNH
                             </span>
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2C4C3B]">
-                                <span className="h-1.5 w-1.5 bg-[#2C4C3B]" />
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#16A34A]">
+                                <span className="h-2 w-2 rounded-full bg-[#16A34A] animate-pulse" />
                                 Sẵn sàng phục vụ
                             </span>
                         </div>
-                        <div className="flex items-center justify-between pt-1">
-                            <div>
-                                <h2 className="text-base font-bold text-[#1A1A1A] leading-tight font-serif">
+                        <div className="flex items-center justify-between pt-1 gap-2">
+                            <div className="min-w-0 flex-1">
+                                <h2 className="text-base font-bold text-[#0F172A] leading-tight font-serif truncate">
                                     {lakeName}
                                 </h2>
-                                <p className="text-xs text-[#555555] font-serif mt-0.5">
+                                <p className="text-xs text-slate-500 font-serif mt-0.5 leading-relaxed">
                                     Mở vé nhanh, đếm giờ tự động và đối chiếu tiền ca minh bạch.
                                 </p>
                             </div>
                             <Link
                                 href="/sessions/new"
-                                className="inline-flex items-center justify-center rounded-xs bg-[#2C4C3B] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#233D2F] active:translate-y-px transition-all shrink-0 ml-2 font-serif"
+                                className="inline-flex items-center justify-center rounded-2xl bg-[#16A34A] hover:bg-[#15803D] px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all shrink-0 ml-1 font-serif"
                             >
                                 + Mở vé ngay
                             </Link>
                         </div>
                     </div>
 
-                    {/* ── Shift Ledger Summary Table (Bảng cân đối ca) ─────── */}
-                    <div className="rounded-xs border border-[#CCCCCC] bg-[#FFFFFF]">
-                        <div className="flex items-center justify-between px-3 py-2 border-b border-[#E0E0E0] bg-[#FAFAF7]">
-                            <span className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A]">
+                    {/* ── Bảng Số Liệu Ca Trực (Đồng bộ Xanh Lá Hiện Đại) ──── */}
+                    <div className="rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50/80">
+                            <span className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
                                 SỐ LIỆU CA TRỰC HÔM NAY
                             </span>
-                            <span className="text-[11px] font-bold text-[#2C4C3B]">
+                            <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2 py-0.5 text-[10px] font-bold text-[#16A34A]">
                                 Thời gian thực
                             </span>
                         </div>
 
-                        <div className="grid grid-cols-3 divide-x divide-[#E0E0E0] text-center py-2.5">
+                        <div className="grid grid-cols-3 divide-x divide-slate-100 text-center py-3">
                             <div className="px-2">
-                                <p className="text-lg font-bold text-[#2C4C3B] tabular-nums font-serif">
+                                <p className="text-2xl font-bold text-[#16A34A] tabular-nums font-serif">
                                     {activeSessionsCount}
                                 </p>
-                                <p className="text-[11px] font-semibold text-[#555555] mt-0.5">
+                                <p className="text-[11px] font-semibold text-slate-500 mt-0.5">
                                     Đang câu
                                 </p>
                             </div>
                             <div className="px-2">
-                                <p className="text-lg font-bold text-[#1A1A1A] tabular-nums font-serif">
+                                <p className="text-2xl font-bold text-[#0F172A] tabular-nums font-serif">
                                     {totalHutsCount}
                                 </p>
-                                <p className="text-[11px] font-semibold text-[#555555] mt-0.5">
+                                <p className="text-[11px] font-semibold text-slate-500 mt-0.5">
                                     Tổng số ô
                                 </p>
                             </div>
                             <div className="px-2">
-                                <p className="text-sm font-bold text-[#2C4C3B] tabular-nums font-serif pt-1 truncate">
+                                <p className="text-base sm:text-lg font-bold text-[#16A34A] tabular-nums font-serif pt-1 truncate">
                                     {todayRevenue.toLocaleString("vi-VN")}đ
                                 </p>
-                                <p className="text-[11px] font-semibold text-[#555555] mt-0.5">
+                                <p className="text-[11px] font-semibold text-slate-500 mt-0.5">
                                     Đã thu ca
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex divide-x divide-[#E0E0E0] border-t border-[#E0E0E0]">
+                        <div className="flex divide-x divide-slate-100 border-t border-slate-100 bg-slate-50/50">
                             <Link
                                 href="/sessions/new"
                                 prefetch={true}
-                                className="flex-1 py-2 text-center text-xs font-bold text-[#2C4C3B] hover:bg-[#F2F2F0] active:bg-[#EAEAE6] transition-colors"
+                                className="flex-1 py-2.5 text-center text-xs font-bold text-[#16A34A] hover:bg-emerald-50/50 active:bg-emerald-100/50 transition-colors"
                             >
                                 + Mở vé mới
                             </Link>
                             <Link
                                 href="/reports/daily"
                                 prefetch={true}
-                                className="flex-1 py-2 text-center text-xs font-bold text-[#1A1A1A] hover:bg-[#F2F2F0] active:bg-[#EAEAE6] transition-colors"
+                                className="flex-1 py-2.5 text-center text-xs font-bold text-slate-700 hover:bg-slate-100/60 active:bg-slate-200/50 transition-colors"
                             >
                                 Báo cáo ca &gt;
                             </Link>
                         </div>
                     </div>
 
-                    {/* ── Quick Actions Grid (Crisp 4x2) ───────────────────── */}
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between px-0.5 border-b border-[#E0E0E0] pb-1">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A]">
-                                LỐI TẮT NGHIỆP VỤ
-                            </h3>
-                            <span className="text-[11px] text-[#555555]">1 chạm</span>
+                    {/* ── Quick Actions Grid (Lối tắt nghiệp vụ 4x2 Bo tròn hiện đại) ── */}
+                    <div className="space-y-2.5">
+                        <div className="flex items-center justify-between px-1 pb-1">
+                            <div className="flex items-center gap-2">
+                                <div className="h-4 w-1 rounded-full bg-[#16A34A]" />
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+                                    LỐI TẮT NGHIỆP VỤ
+                                </h3>
+                            </div>
+                            <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-[10px] font-bold text-[#16A34A]">1 chạm</span>
                         </div>
 
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-4 gap-2.5">
                             {filteredActions.map((item) => (
                                 <Link
                                     key={item.title}
                                     href={item.href}
                                     prefetch={true}
-                                    className="flex flex-col items-center justify-center rounded-xs border border-[#E0E0E0] bg-[#FFFFFF] p-2 text-center transition-colors hover:border-[#2C4C3B] hover:bg-[#FAFAF7] active:bg-[#F2F2F0] cursor-pointer"
+                                    className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-2.5 text-center shadow-2xs hover:border-[#16A34A] hover:shadow-xs active:scale-95 transition-all cursor-pointer"
                                 >
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-xs bg-[#F2F2F0] text-[#2C4C3B] border border-[#CCCCCC] mb-1.5">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#DCFCE7] text-[#16A34A] mb-1.5 shadow-2xs">
                                         {item.icon}
                                     </div>
-                                    <span className="text-[11px] font-bold text-[#1A1A1A] leading-tight line-clamp-1">
+                                    <span className="text-[11px] font-bold text-[#0F172A] leading-tight line-clamp-1">
                                         {item.title}
                                     </span>
-                                    <span className="text-[9.5px] text-[#555555] leading-none mt-0.5">
+                                    <span className="text-[10px] text-slate-500 leading-none mt-0.5">
                                         {item.subtitle}
                                     </span>
                                 </Link>
@@ -293,52 +296,55 @@ export function HomeMobileView({
                         </div>
                     </div>
 
-                    {/* ── Recent Sessions (Linear Ledger List) ─────────────── */}
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between px-0.5 border-b border-[#E0E0E0] pb-1">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A]">
-                                PHIÊN CÂU GẦN NHẤT
-                            </h3>
+                    {/* ── Recent Sessions (Phiên câu gần nhất) ─────────────── */}
+                    <div className="space-y-2.5">
+                        <div className="flex items-center justify-between px-1 pb-1">
+                            <div className="flex items-center gap-2">
+                                <div className="h-4 w-1 rounded-full bg-[#16A34A]" />
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+                                    PHIÊN CÂU GẦN NHẤT
+                                </h3>
+                            </div>
                             <Link
                                 href="/sessions"
-                                className="text-xs font-bold text-[#2C4C3B] hover:underline"
+                                className="text-xs font-bold text-[#16A34A] hover:underline"
                             >
                                 Xem tất cả &gt;
                             </Link>
                         </div>
 
                         {recentSessions.length === 0 ? (
-                            <div className="rounded-xs border border-dashed border-[#CCCCCC] bg-[#FAFAF7] p-4 text-center">
-                                <p className="text-xs text-[#555555]">
+                            <div className="rounded-2xl border-2 border-dashed border-emerald-200 bg-[#F0FDF4] p-5 text-center space-y-1.5">
+                                <p className="text-xs font-medium text-slate-600">
                                     Hiện chưa có phiên câu nào đang hoạt động.
                                 </p>
                                 <Link
                                     href="/sessions/new"
-                                    className="mt-1.5 inline-flex items-center text-xs font-bold text-[#2C4C3B] hover:underline"
+                                    className="inline-flex items-center text-xs font-bold text-[#16A34A] hover:underline"
                                 >
                                     + Mở vé đầu tiên ngay
                                 </Link>
                             </div>
                         ) : (
-                            <div className="rounded-xs border border-[#E0E0E0] bg-[#FFFFFF] divide-y divide-[#E0E0E0]">
+                            <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden shadow-2xs">
                                 {recentSessions.map((s) => (
                                     <Link
                                         key={s.id}
                                         href="/sessions"
-                                        className="flex items-center justify-between p-2.5 transition-colors hover:bg-[#FAFAF7] active:bg-[#F2F2F0]"
+                                        className="flex items-center justify-between p-3 transition-colors hover:bg-slate-50 active:bg-slate-100"
                                     >
                                         <div className="space-y-0.5 min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold text-[#1A1A1A] truncate">
+                                                <span className="text-xs font-bold text-[#0F172A] truncate">
                                                     {s.huts.length > 0 ? s.huts.join(", ") : "Chưa chọn ô"}
                                                 </span>
                                                 <SessionStatusBadge status={s.status} />
                                             </div>
-                                            <p className="text-[11px] text-[#555555] truncate">
+                                            <p className="text-[11px] text-slate-500 truncate">
                                                 {s.customerName} · {s.packageName}
                                             </p>
                                         </div>
-                                        <div className="text-right shrink-0 pl-2 text-xs font-bold text-[#2C4C3B]">
+                                        <div className="text-right shrink-0 pl-2 text-xs font-bold text-[#16A34A]">
                                             Xem &gt;
                                         </div>
                                     </Link>
@@ -347,40 +353,43 @@ export function HomeMobileView({
                         )}
                     </div>
 
-                    {/* ── Recent Invoices (Linear Ledger List) ──────────────── */}
+                    {/* ── Recent Invoices (Hóa đơn ca vừa thu) ──────────────── */}
                     {recentInvoices.length > 0 && (
-                        <div className="space-y-1.5">
-                            <div className="flex items-center justify-between px-0.5 border-b border-[#E0E0E0] pb-1">
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A]">
-                                    HÓA ĐƠN CA VỪA THU
-                                </h3>
+                        <div className="space-y-2.5">
+                            <div className="flex items-center justify-between px-1 pb-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-4 w-1 rounded-full bg-[#16A34A]" />
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+                                        HÓA ĐƠN CA VỪA THU
+                                    </h3>
+                                </div>
                                 <Link
                                     href="/invoices/history"
-                                    className="text-xs font-bold text-[#2C4C3B] hover:underline"
+                                    className="text-xs font-bold text-[#16A34A] hover:underline"
                                 >
                                     Xem nhật ký &gt;
                                 </Link>
                             </div>
 
-                            <div className="rounded-xs border border-[#E0E0E0] bg-[#FFFFFF] divide-y divide-[#E0E0E0]">
+                            <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden shadow-2xs">
                                 {recentInvoices.map((inv) => (
                                     <div
                                         key={inv.id}
-                                        className="flex items-center justify-between p-2.5 hover:bg-[#FAFAF7]"
+                                        className="flex items-center justify-between p-3 hover:bg-slate-50"
                                     >
                                         <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-xs font-bold text-[#1A1A1A]">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-[#0F172A]">
                                                     {inv.invoiceNumber}
                                                 </span>
                                                 <Badge variant="success">Đã thanh toán</Badge>
                                             </div>
-                                            <p className="text-[11px] text-[#555555] mt-0.5 truncate">
+                                            <p className="text-[11px] text-slate-500 mt-0.5 truncate">
                                                 {inv.customerName}
                                             </p>
                                         </div>
                                         <div className="text-right shrink-0 pl-2">
-                                            <span className="text-xs font-bold text-[#2C4C3B] tabular-nums font-serif">
+                                            <span className="text-xs font-bold text-[#16A34A] tabular-nums font-serif">
                                                 {inv.totalAmountVnd.toLocaleString("vi-VN")}đ
                                             </span>
                                         </div>

@@ -11,17 +11,17 @@ export function Card({
     ...props
 }: CardProps) {
     const variantClasses = {
-        default: "border-[#E0E0E0] bg-white text-[#1A1A1A]",
-        muted: "border-[#E0E0E0] bg-[#FAFAF7] text-[#555555]",
-        selected: "border-[#2C4C3B] bg-[#EAEFEA] text-[#1A1A1A]",
-        highlight: "border-[#2C4C3B]/40 bg-[#EAEFEA] text-[#1A1A1A]",
-        warning: "border-[#8C5C00]/40 bg-[#FDF7EB] text-[#1A1A1A]",
-        danger: "border-[#9E2A2B]/40 bg-[#FBEBEB] text-[#1A1A1A]",
+        default: "border-[#E2E8F0] bg-white text-[#0F172A] shadow-2xs",
+        muted: "border-[#E2E8F0] bg-[#F8FAFC] text-[#475569]",
+        selected: "border-2 border-[#16A34A] bg-[#F0FDF4] text-[#0F172A] shadow-xs",
+        highlight: "border-2 border-[#16A34A] bg-[#DCFCE7]/40 text-[#0F172A]",
+        warning: "border-2 border-[#D97706]/40 bg-[#FFFBEB] text-[#0F172A]",
+        danger: "border-2 border-[#DC2626]/40 bg-[#FEF2F2] text-[#0F172A]",
     }[variant];
 
     return (
         <div
-            className={`rounded-xs border p-3.5 transition-colors sm:p-4 font-serif ${variantClasses} ${className}`}
+            className={`rounded-2xl border p-4 transition-all font-serif ${variantClasses} ${className}`}
             {...props}
         >
             {children}

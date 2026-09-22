@@ -24,16 +24,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 <input
                     id={inputId}
                     ref={ref}
-                    className={`h-11 w-full rounded-xs border bg-white px-3 text-sm font-normal text-[#1A1A1A] placeholder:text-[#777777] focus:outline-none focus:border-[#2C4C3B] focus:ring-1 focus:ring-[#2C4C3B] transition-colors font-serif shadow-none ${
+                    className={`h-12 w-full rounded-2xl border bg-[#F8FAFC] px-3.5 text-sm font-normal text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-white focus:border-2 focus:border-[#16A34A] transition-all font-serif shadow-2xs ${
                         error
-                            ? "border-[#9E2A2B] focus:border-[#9E2A2B] focus:ring-[#9E2A2B] bg-[#FBEBEB]/40"
-                            : "border-[#CCCCCC]"
+                            ? "border-[#DC2626] focus:border-[#DC2626] bg-[#FEF2F2]/50 text-[#DC2626]"
+                            : "border-[#CBD5E1]"
                     } ${className}`}
                     {...props}
                 />
-                {error && <p className="text-xs font-semibold text-[#9E2A2B] font-serif">{error}</p>}
+                {error && <p className="text-xs font-semibold text-[#DC2626] font-serif">{error}</p>}
                 {helperText && !error && (
-                    <p className="text-xs text-[#555555] font-serif">{helperText}</p>
+                    <p className="text-xs text-[#64748B] font-serif">{helperText}</p>
                 )}
             </div>
         );
@@ -54,11 +54,11 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
 
         return (
-            <div className="space-y-1 w-full font-serif">
+            <div className="space-y-1.5 w-full font-serif">
                 {label && (
                     <label
                         htmlFor={selectId}
-                        className="block text-xs font-bold text-[#1A1A1A] uppercase tracking-wide font-serif"
+                        className="block text-xs font-bold text-[#0F172A] uppercase tracking-wide font-serif"
                     >
                         {label}
                     </label>
@@ -66,18 +66,18 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 <select
                     id={selectId}
                     ref={ref}
-                    className={`h-11 w-full rounded-xs border bg-white px-3 text-sm font-normal text-[#1A1A1A] focus:outline-none focus:border-[#2C4C3B] focus:ring-1 focus:ring-[#2C4C3B] transition-colors cursor-pointer font-serif shadow-none ${
+                    className={`h-12 w-full rounded-2xl border bg-[#F8FAFC] px-3.5 text-sm font-normal text-[#0F172A] focus:outline-none focus:bg-white focus:border-2 focus:border-[#16A34A] transition-all cursor-pointer font-serif shadow-2xs ${
                         error
-                            ? "border-[#9E2A2B] focus:border-[#9E2A2B] focus:ring-[#9E2A2B] bg-[#FBEBEB]/40"
-                            : "border-[#CCCCCC]"
+                            ? "border-[#DC2626] focus:border-[#DC2626] bg-[#FEF2F2]/50 text-[#DC2626]"
+                            : "border-[#CBD5E1]"
                     } ${className}`}
                     {...props}
                 >
                     {children}
                 </select>
-                {error && <p className="text-xs font-semibold text-[#9E2A2B] font-serif">{error}</p>}
+                {error && <p className="text-xs font-semibold text-[#DC2626] font-serif">{error}</p>}
                 {helperText && !error && (
-                    <p className="text-xs text-[#555555] font-serif">{helperText}</p>
+                    <p className="text-xs text-[#64748B] font-serif">{helperText}</p>
                 )}
             </div>
         );

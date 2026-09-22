@@ -55,9 +55,7 @@ export function BottomSheet({
 
     const modalContent = (
         <div
-            className={`fixed inset-0 z-100 flex justify-center bg-black/40 backdrop-blur-none modal-backdrop-animate font-serif ${
-                isCenter ? "items-center p-3 sm:p-4" : "items-end"
-            }`}
+            className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
@@ -65,28 +63,20 @@ export function BottomSheet({
             role="dialog"
         >
             <div
-                className={`relative flex max-h-[92dvh] w-full max-w-md flex-col bg-white border border-[#CCCCCC] ${
-                    isCenter
-                        ? "rounded-xs modal-content-animate"
-                        : "rounded-t-xs border-b-0 animate-page-enter"
-                } ${className}`}
+                className={`relative my-auto flex max-h-[90dvh] w-full max-w-lg flex-col bg-white overflow-hidden rounded-[28px] border border-slate-100 shadow-2xl modal-content-animate ${className}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 {(title || description) && (
-                    <div
-                        className={`flex items-start justify-between border-b border-[#E0E0E0] bg-[#FFFFFF] ${
-                            isCenter ? "px-5 py-3.5" : "px-4 py-3"
-                        }`}
-                    >
+                    <div className="flex items-start justify-between border-b border-slate-100 bg-[#FFFFFF] px-5 sm:px-6 py-4 shrink-0">
                         <div>
                             {title && (
-                                <h3 className="text-base font-bold text-[#1A1A1A] font-serif">
+                                <h3 className="text-base font-bold text-[#0F172A] font-serif">
                                     {title}
                                 </h3>
                             )}
                             {description && (
-                                <p className="mt-0.5 text-xs text-[#555555] font-serif">
+                                <p className="mt-0.5 text-xs text-[#16A34A] font-bold uppercase tracking-wider font-serif">
                                     {description}
                                 </p>
                             )}
@@ -95,13 +85,13 @@ export function BottomSheet({
                             type="button"
                             onClick={onClose}
                             aria-label="Đóng"
-                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] text-[#1A1A1A] hover:bg-[#EAEAE6] transition-colors cursor-pointer"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
                         >
                             <svg
-                                className="h-3.5 w-3.5"
+                                className="h-4 w-4"
                                 fill="none"
                                 viewBox="0 0 24 24"
-                                strokeWidth={2}
+                                strokeWidth={2.2}
                                 stroke="currentColor"
                             >
                                 <path
@@ -116,9 +106,7 @@ export function BottomSheet({
 
                 {/* Content */}
                 <div
-                    className={`flex-1 overflow-y-auto overscroll-contain ${
-                        isCenter ? "px-5 py-4" : "px-4 py-3.5"
-                    }`}
+                    className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 scroll-smooth"
                 >
                     {children}
                 </div>
@@ -126,11 +114,7 @@ export function BottomSheet({
                 {/* Optional Footer */}
                 {footer && (
                     <div
-                        className={`border-t border-[#E0E0E0] bg-[#FAFAF7] ${
-                            isCenter
-                                ? "px-5 py-3"
-                                : "px-4 py-3"
-                        }`}
+                        className="border-t border-slate-100 bg-slate-50/80 px-5 py-3 shrink-0"
                     >
                         {footer}
                     </div>

@@ -15,46 +15,46 @@ export function InlineAlert({
 }: InlineAlertProps) {
     const config = {
         success: {
-            bg: "bg-[#EBF6ED] border-[#3E9B4F]/30 text-[#246B38]",
+            bg: "bg-[#F0FDF4] border-[#86EFAC] text-[#16A34A]",
             icon: (
-                <svg className="h-5 w-5 text-[#3E9B4F] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-[#16A34A] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             ),
         },
         warning: {
-            bg: "bg-[#FDF6E9] border-[#D99A32]/30 text-[#8F5A0E]",
+            bg: "bg-[#FFFBEB] border-[#FDE68A] text-[#D97706]",
             icon: (
-                <svg className="h-5 w-5 text-[#D99A32] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-[#D97706] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
             ),
         },
         error: {
-            bg: "bg-[#FCEEED] border-[#D9534F]/30 text-[#D9534F]",
+            bg: "bg-[#FEF2F2] border-[#FECACA] text-[#DC2626]",
             icon: (
-                <svg className="h-5 w-5 text-[#D9534F] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-[#DC2626] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             ),
         },
         info: {
-            bg: "bg-[#E8F3E5] border-[#4F9D5A]/30 text-[#246B38]",
+            bg: "bg-[#F0FDF4] border-[#BBF7D0] text-[#16A34A]",
             icon: (
-                <svg className="h-5 w-5 text-[#4F9D5A] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <div className="h-5 w-5 rounded-full border-2 border-[#16A34A] flex items-center justify-center text-[#16A34A] shrink-0 text-xs font-bold">
+                    i
+                </div>
             ),
         },
     }[type];
 
     return (
         <div
-            className={`flex items-start gap-3 rounded-2xl border p-3.5 text-xs ${config.bg} ${className}`}
+            className={`flex items-start gap-3 rounded-2xl border p-4 text-xs font-serif ${config.bg} ${className}`}
         >
             {config.icon}
-            <div className="space-y-0.5 flex-1">
-                {title && <p className="font-bold text-[#17201A]">{title}</p>}
+            <div className="space-y-0.5 flex-1 font-serif">
+                {title && <p className="font-bold uppercase tracking-wide">{title}</p>}
                 <div className="font-normal leading-relaxed">{message}</div>
             </div>
         </div>

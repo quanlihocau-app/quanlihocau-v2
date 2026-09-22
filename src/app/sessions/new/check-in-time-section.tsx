@@ -31,6 +31,7 @@ interface CheckInTimeSectionProps {
     overtimeHourlyVnd?: number;
     hutCount?: number;
     onStateChange?: (state: CheckInTimeState) => void;
+    embedded?: boolean;
 }
 
 // Formatters for Asia/Ho_Chi_Minh
@@ -89,6 +90,7 @@ export const CheckInTimeSection = memo(function CheckInTimeSection({
     overtimeHourlyVnd = 0,
     hutCount = 1,
     onStateChange,
+    embedded = false,
 }: CheckInTimeSectionProps) {
     const [nowMs, setNowMs] = useState<number>(() => sessionTicker.getNowMs());
     const [isCustom, setIsCustom] = useState<boolean>(false);
@@ -230,6 +232,122 @@ export const CheckInTimeSection = memo(function CheckInTimeSection({
     const formattedEndDate = dateFormatter.format(computed.plannedEndDate);
 
     const isDifferentDay = formattedStartDate !== formattedEndDate;
+
+    if (embedded) {
+        if (durationMinutes <= 0) return null;
+
+        return (
+            <div className="space-y-3 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wide text-[#16A34A] flex items-center gap-1.5 font-serif">
+                        <span>⏱️</span>
+                        <span>Thời gian ca câu</span>
+                    </span>
+                    {isCustom ? (
+                        <button
+                            type="button"
+                            onClick={handleResetToAuto}
+                            className="inline-flex items-center gap-1 rounded-full bg-[#F1F5F9] px-2.5 py-0.5 text-[10px] font-bold text-[#475569] border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer"
+                        >
+                            <span>↺</span>
+                            <span>Giờ hiện tại</span>
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => setIsCustom(true)}
+                            className="inline-flex items-center gap-1 rounded-full bg-[#DCFCE7] px-2.5 py-0.5 text-[10px] font-bold text-[#16A34A] border border-[#BBF7D0] hover:bg-emerald-100 transition-colors cursor-pointer"
+                        >
+                            <span>✏️</span>
+                            <span>Khách vào trước đó</span>
+                        </button>
+                    )}
+                </div>
+
+                {/* Custom Time Inputs */}
+                {isCustom && (
+                    <div className="rounded-2xl border border-emerald-200 bg-[#F0FDF4] p-3 space-y-2 font-serif">
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                            <div className="sm:col-span-4">
+                                <label className="block text-[10px] font-semibold uppercase text-slate-600 mb-0.5">
+                                    Giờ vào (24h)
+                                </label>
+                                <input
+                                    type="time"
+                                    value={inputTime}
+                                    onChange={handleTimeChange}
+                                    aria-label="Giờ vào câu"
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-slate-900 focus:border-[#16A34A] focus:outline-none"
+                                />
+                            </div>
+                            <div className="sm:col-span-5">
+                                <label className="block text-[10px] font-semibold uppercase text-slate-600 mb-0.5">
+                                    Ngày vào
+                                </label>
+                                <input
+                                    type="date"
+                                    value={inputDate}
+                                    onChange={handleDateChange}
+                                    aria-label="Ngày vào câu"
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-slate-900 focus:border-[#16A34A] focus:outline-none"
+                                />
+                            </div>
+                            <div className="sm:col-span-3 flex items-end">
+                                <button
+                                    type="button"
+                                    onClick={handleSetCurrentTime}
+                                    className="w-full h-8.5 inline-flex items-center justify-center gap-1 rounded-xl border border-[#BBF7D0] bg-[#DCFCE7] px-2 text-[11px] font-bold text-[#16A34A] hover:bg-emerald-200 transition-colors cursor-pointer"
+                                >
+                                    <span>⚡</span>
+                                    <span>Lấy giờ này</span>
+                                </button>
+                            </div>
+                        </div>
+                        {!computed.isValid && computed.errorMessage && (
+                            <div className="text-xs text-rose-700 font-medium">⚠️ {computed.errorMessage}</div>
+                        )}
+                    </div>
+                )}
+
+                {/* Compact Live Timing Details */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-serif">
+                    <div className="rounded-xl bg-slate-50 p-2 border border-slate-200">
+                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Giờ vào</span>
+                        <span className="font-mono font-bold text-slate-900 text-sm block">{formattedStartTime}</span>
+                        <span className="text-[10px] text-slate-500 block">{formattedStartDate}</span>
+                    </div>
+                    <div className="rounded-xl bg-[#F0FDF4] p-2 border border-emerald-200">
+                        <span className="text-[10px] uppercase font-semibold text-[#16A34A] block">Giờ ra dự kiến</span>
+                        <span className="font-mono font-bold text-[#16A34A] text-sm block">{formattedEndTime}</span>
+                        <span className={`text-[10px] font-semibold block ${isDifferentDay ? "text-amber-700" : "text-emerald-700"}`}>
+                            {formattedEndDate} {isDifferentDay && "· Hôm sau"}
+                        </span>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-2 border border-slate-200">
+                        <span className="text-[10px] uppercase font-semibold text-slate-500 block">Thời lượng</span>
+                        <span className="font-mono font-bold text-slate-900 text-sm block">{formatMinutesToVi(durationMinutes)}</span>
+                        <span className="text-[10px] text-slate-500 block">{packageName}</span>
+                    </div>
+                    <div className={`rounded-xl p-2 border ${computed.isOvertime ? "bg-rose-50 border-rose-200 text-rose-800" : "bg-slate-50 border-slate-200 text-slate-900"}`}>
+                        <span className="text-[10px] uppercase font-semibold block">{computed.isOvertime ? "Quá giờ" : "Thời gian còn"}</span>
+                        <span className={`font-mono font-bold text-sm block ${computed.isOvertime ? "text-rose-600" : "text-emerald-700"}`}>
+                            {computed.isOvertime ? `+${formatMinutesToVi(computed.overtimeMinutes)}` : formatMinutesToVi(computed.remainingMs / 60_000)}
+                        </span>
+                        <span className="text-[10px] block opacity-80">{computed.isOvertime ? "Vượt khung giờ" : "Đếm ngược tự động"}</span>
+                    </div>
+                </div>
+
+                {computed.isOvertime && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-900 space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-amber-800">
+                            <span>⚠️</span>
+                            <span>Đã trôi qua giờ ra ({formatMinutesToVi(computed.overtimeMinutes)})</span>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
         <Card className="space-y-4 bg-white border-[#E3E8E3] rounded-2xl shadow-xs p-4">

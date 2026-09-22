@@ -154,10 +154,10 @@ export function FishBuybackModal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4 modal-backdrop-animate font-serif"
+            className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif"
             onClick={onBackdropClick}
         >
-            <div className="w-full max-w-sm rounded-xs bg-white border border-[#CCCCCC] p-4 space-y-3.5 modal-content-animate font-serif">
+            <div className="relative my-auto w-full max-w-sm rounded-[28px] bg-white border border-slate-100 p-4 sm:p-5 space-y-3.5 shadow-2xl max-h-[90dvh] overflow-y-auto modal-content-animate font-serif">
                 <div className="flex items-center justify-between border-b border-[#E0E0E0] pb-2.5">
                     <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-xs bg-[#FBEBEB] text-[#9E2A2B] border border-[#E9B6B7]">

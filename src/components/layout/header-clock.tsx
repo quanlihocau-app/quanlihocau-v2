@@ -42,18 +42,21 @@ export const HeaderClock = memo(function HeaderClock() {
 
     return (
         <div
-            className="flex flex-col text-left leading-none shrink-0"
-            title="Thời gian thực máy chủ (Giờ Việt Nam GMT+7)"
+            className="flex items-center gap-1.5 text-left shrink-0 mt-0.5"
+            title="Thời gian thực máy chủ"
         >
-            <div className="font-mono text-[11px] font-bold text-[#17201A] tabular-nums tracking-tight flex items-center">
-                <span>{timeStr}</span>
-                <span className="mx-1 text-[#66716A]/50">·</span>
-                <span>{dateStr}</span>
-            </div>
-            <div className="text-[9px] font-semibold text-[#246B38] tracking-wider uppercase mt-0.5 flex items-center gap-1">
-                <span className="inline-block h-1 w-1 rounded-full bg-[#3E9B4F]" />
-                <span>Giờ Việt Nam</span>
-            </div>
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-[#16A34A] bg-[#DCFCE7]/70 border border-[#BBF7D0] px-1.5 py-0.5 rounded-lg tabular-nums shadow-3xs">
+                <svg className="h-3 w-3 text-[#16A34A]" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                {timeStr}
+            </span>
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] font-medium text-slate-600 bg-slate-100/80 border border-slate-200 px-1.5 py-0.5 rounded-lg tabular-nums shadow-3xs">
+                <svg className="h-3 w-3 text-slate-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                </svg>
+                {dateStr}
+            </span>
         </div>
     );
 });

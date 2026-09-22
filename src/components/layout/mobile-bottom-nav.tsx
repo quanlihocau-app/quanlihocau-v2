@@ -165,7 +165,7 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
         <nav
             aria-label="Mobile Navigation"
             style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-40 border-t border-[#E0E0E0] bg-[#FFFFFF] print:hidden shadow-none font-serif"
+            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg z-40 border-t border-slate-100 bg-[#FFFFFF] print:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] font-serif"
         >
             <div className="flex h-14 items-center justify-around px-1 relative">
                 {navItems.map((item) => {
@@ -184,23 +184,23 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
                             }}
                             className={`flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-center select-none cursor-pointer font-serif transition-colors ${
                                 active
-                                    ? "text-[#2C4C3B]"
+                                    ? "text-[#16A34A]"
                                     : isPending
-                                      ? "text-[#2C4C3B]"
-                                      : "text-[#555555] hover:text-[#1A1A1A]"
+                                      ? "text-[#16A34A]"
+                                      : "text-slate-400 hover:text-slate-700"
                             }`}
                         >
-                            {/* Sharp ledger active indicator container */}
+                            {/* Modern active indicator container */}
                             <div
-                                className={`flex h-7 w-9 items-center justify-center rounded-xs transition-colors ${
+                                className={`flex h-7 w-9 items-center justify-center rounded-2xl transition-all ${
                                     active
-                                        ? "bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]"
-                                        : "bg-transparent text-[#555555]"
+                                        ? "bg-[#DCFCE7] text-[#16A34A] shadow-2xs"
+                                        : "bg-transparent text-slate-400"
                                 }`}
                             >
                                 {isPending ? (
                                     <svg
-                                        className="h-4 w-4 animate-spin text-[#2C4C3B]"
+                                        className="h-4 w-4 animate-spin text-[#16A34A]"
                                         fill="none"
                                         viewBox="0 0 24 24"
                                     >
@@ -226,8 +226,8 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
                             <span
                                 className={`text-[11px] leading-tight tracking-normal font-serif ${
                                     active
-                                        ? "font-bold text-[#2C4C3B]"
-                                        : "font-normal text-[#555555]"
+                                        ? "font-bold text-[#16A34A]"
+                                        : "font-normal text-slate-500"
                                 }`}
                             >
                                 {isPending ? "Đang mở…" : item.label}

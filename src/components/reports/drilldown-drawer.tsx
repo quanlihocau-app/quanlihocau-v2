@@ -131,12 +131,12 @@ export function DrilldownDrawer({
     });
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-xs modal-backdrop-animate">
+        <div className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif">
             {/* Backdrop */}
             <div className="absolute inset-0" onClick={onClose} />
 
-            {/* Content Drawer */}
-            <div className="relative z-10 w-full max-w-2xl rounded-t-2xl bg-white p-4 shadow-2xl transition-transform animate-in slide-in-from-bottom duration-200 h-[85vh] flex flex-col">
+            {/* Centered Modal content */}
+            <div className="relative z-10 my-auto w-full max-w-2xl rounded-[28px] border border-slate-100 bg-white p-4 sm:p-5 shadow-2xl modal-content-animate max-h-[90dvh] flex flex-col font-serif">
                 {/* Drawer Header */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div>
