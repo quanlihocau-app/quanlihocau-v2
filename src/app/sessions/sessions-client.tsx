@@ -16,6 +16,7 @@ import {
 } from "./session-grid-card";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
+import { useSessionAlarms } from "@/hooks/use-session-alarms";
 import type { ActionPackage } from "./session-actions";
 
 const SettlementCheckoutModal = dynamic(
@@ -207,6 +208,12 @@ export function SessionsClient({
     const handleSelect = useCallback((id: string) => {
         setSelectedId(id);
     }, []);
+
+    // ── Cảnh báo chuông & rung khi phiên câu sắp hết giờ / lố giờ ──────────────
+    useSessionAlarms({
+        sessions,
+        onSelectSession: handleSelect,
+    });
 
     const handleLongPress = useCallback((session: SerializableSession) => {
         setDetailSession(session);

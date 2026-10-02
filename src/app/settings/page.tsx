@@ -12,6 +12,7 @@ import { privateRouteMetadata } from "@/lib/metadata";
 import { NegativeInventoryToggle } from "./negative-inventory-toggle";
 import { SubscriptionBanner } from "./subscription-banner";
 import { PwaInstallSettingRow } from "./pwa-install-button";
+import { SessionAlarmSettingsRow } from "@/components/sessions/session-alarm-settings-row";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 
@@ -311,6 +312,9 @@ export default async function SettingsPage() {
                     </div>
                     <ChevronRight />
                 </Link>
+
+                {/* Cảnh báo chuông & rung khi hết giờ */}
+                <SessionAlarmSettingsRow />
 
                 {/* Cài đặt App ra Màn hình chính (PWA) */}
                 <PwaInstallSettingRow />

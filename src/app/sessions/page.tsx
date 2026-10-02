@@ -10,6 +10,7 @@ import { privateRouteMetadata } from "@/lib/metadata";
 
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
+import { SessionAlarmButton } from "@/components/sessions/session-alarm-modal";
 // Import main client controller for session POS grid
 import { SessionsClient, type SerializableSession, type SerializablePackage } from "./sessions-client";
 
@@ -285,9 +286,12 @@ export default async function SessionsPage() {
                                     PHIÊN CÂU ĐANG HOẠT ĐỘNG
                                 </h1>
                             </div>
-                            <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] border border-[#BBF7D0] shadow-2xs font-serif shrink-0 whitespace-nowrap">
-                                {serializedSessions.length} vé · {activeHutCount} ô
-                            </span>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <SessionAlarmButton />
+                                <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] border border-[#BBF7D0] shadow-2xs font-serif whitespace-nowrap">
+                                    {serializedSessions.length} vé · {activeHutCount} ô
+                                </span>
+                            </div>
                         </div>
                     </div>
 
