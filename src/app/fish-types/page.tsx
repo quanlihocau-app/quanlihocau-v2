@@ -58,7 +58,7 @@ export default async function FishTypesPage() {
     });
 
     return (
-        <main className="min-h-screen bg-[#F8FAFC] pb-24 pt-4 sm:pt-6">
+        <main className="min-h-screen bg-[#F8FAFC] has-bottom-nav pt-4 sm:pt-6">
             <div className="mx-auto max-w-5xl px-4 sm:px-6">
                 {/* Header Flat Navy/Blue */}
                 <div className="mb-6 space-y-3 border-b border-slate-200 pb-5">

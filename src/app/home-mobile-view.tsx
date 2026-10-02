@@ -145,7 +145,7 @@ export function HomeMobileView({
                 />
 
                 {/* ── Main Scroll Area ───────────────────────────────────── */}
-                <main className="flex-1 px-4 py-3 space-y-4 overflow-y-auto font-serif">
+                <main className="flex-1 px-4 py-3 space-y-4 overflow-y-auto font-serif has-bottom-nav">
                     {/* ── Search Bar ──────────────────────────────────────── */}
                     <SearchBar
                         value={searchQuery}

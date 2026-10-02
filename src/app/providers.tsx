@@ -6,6 +6,7 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { getQueryClient, createLocalStoragePersister } from "@/lib/query-client";
 import { ToastProvider } from "@/components/ui/toast";
 import { AutoScrollCenter } from "@/components/ui/auto-scroll-center";
+import { VirtualKeyboardHandler } from "@/components/ui/virtual-keyboard-handler";
 
 export function Providers({ children }: { children: React.ReactNode }) {
     // Đảm bảo queryClient và persister là instance ổn định trên Client
@@ -15,6 +16,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const content = (
         <ToastProvider>
             <AutoScrollCenter />
+            <VirtualKeyboardHandler />
             {children}
         </ToastProvider>
     );

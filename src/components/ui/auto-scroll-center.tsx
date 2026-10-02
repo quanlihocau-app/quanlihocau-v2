@@ -4,14 +4,18 @@ import { useEffect } from "react";
 
 /**
  * AutoScrollCenterProvider
- * Tự động căn chỉnh mượt mà (smooth center) phần tử tương tác (button, card, input...)
- * vào giữa màn hình khi người dùng bấm/chạm, giúp tăng trải nghiệm sử dụng trên cả mobile và desktop.
+ * Tự động căn chỉnh mượt mà phần tử tương tác (button, card, input...)
+ * vào vùng nhìn thấy được khi người dùng bấm/chạm.
+ *
+ * Đặc biệt quan trọng trên mobile: đảm bảo input không bị che bởi:
+ * - Tabbar cố định phía dưới (height ~64px + safe-area)
+ * - Bàn phím ảo khi mở (iOS/Android)
  *
  * Tối ưu hiệu năng:
- * - Sử dụng passive event listener, không chặn luồng chính (0ms overhead).
+ * - Sử dụng passive event listener, không chặn luồng chính.
  * - Sử dụng requestAnimationFrame để hạn chế layout thrashing.
- * - Kiểm tra vùng an toàn (comfort zone): Nếu phần tử đã nằm gần tâm màn hình thì không cuộn để tránh giật.
- * - Bỏ qua các phần tử có data-no-auto-center hoặc thuộc fixed headers/navigation.
+ * - Kiểm tra vùng an toàn: không cuộn nếu element đã trong vùng OK.
+ * - Bỏ qua fixed headers/navigation.
  */
 export function AutoScrollCenter() {
     useEffect(() => {
@@ -19,10 +23,15 @@ export function AutoScrollCenter() {
         let lastTarget: Element | null = null;
         let lastScrollTime = 0;
 
+        // Chiều cao tabbar cố định + safe-area ước tính
+        const TAB_BAR_HEIGHT = 72;
+        // Khoảng padding tối thiểu phía trên (tránh bị header che)
+        const TOP_MARGIN = 80;
+
         function handleInteraction(event: Event) {
             const now = performance.now();
-            // Debounce nhẹ giữa các lần click liên tiếp (120ms)
-            if (now - lastScrollTime < 120) return;
+            // Debounce nhẹ giữa các lần click liên tiếp (100ms)
+            if (now - lastScrollTime < 100) return;
 
             const eventTarget = event.target as Element | null;
             if (!eventTarget || typeof eventTarget.closest !== "function") return;
@@ -39,29 +48,40 @@ export function AutoScrollCenter() {
             if (interactiveEl.getAttribute("data-no-auto-center") === "true") return;
 
             // Bỏ qua các nút đóng modal hoặc dropdown nội bộ nếu nằm trong dialog cố định
-            const isModalClose = interactiveEl.getAttribute("aria-label")?.toLowerCase().includes("đóng") ||
+            const isModalClose =
+                interactiveEl.getAttribute("aria-label")?.toLowerCase().includes("đóng") ||
                 interactiveEl.classList.contains("modal-close-btn");
             if (isModalClose) return;
 
-            // Bỏ qua nếu là click trên thanh điều hướng ghim đầu trang/chân trang cố định
-            const isStickyOrFixed = window.getComputedStyle(interactiveEl).position === "fixed";
-            if (isStickyOrFixed) return;
+            // Bỏ qua nếu là phần tử cố định (tabbar, header)
+            const computedStyle = window.getComputedStyle(interactiveEl);
+            if (computedStyle.position === "fixed") return;
+
+            // Kiểm tra thêm: parent gần nhất có position: fixed không
+            const closestFixed = interactiveEl.closest(
+                'nav[class*="fixed"], header[class*="sticky"], [class*="mobile-pos-nav"], [class*="fixed bottom"]'
+            );
+            if (closestFixed) return;
 
             // Tránh lặp lại cuộn cùng 1 phần tử trong thời gian ngắn
-            if (lastTarget === interactiveEl && now - lastScrollTime < 600) return;
+            if (lastTarget === interactiveEl && now - lastScrollTime < 500) return;
 
-            // Tính toán vị trí xem có cần cuộn không
             const rect = interactiveEl.getBoundingClientRect();
             // Nếu phần tử đang ẩn (display: none / 0 kích thước) thì bỏ qua
             if (rect.width === 0 || rect.height === 0) return;
 
             const viewportHeight = window.innerHeight;
-            const elementCenter = rect.top + rect.height / 2;
-            const viewportCenter = viewportHeight / 2;
+            // Vùng hiển thị an toàn (trừ tabbar phía dưới)
+            const safeBottom = viewportHeight - TAB_BAR_HEIGHT;
 
-            // Comfort zone: nếu phần tử đã nằm trong khoảng 32% - 68% chiều cao màn hình thì giữ nguyên
-            const distanceRatio = Math.abs(elementCenter - viewportCenter) / viewportHeight;
-            if (distanceRatio < 0.18) return;
+            const elementTop = rect.top;
+            const elementBottom = rect.bottom;
+
+            // Kiểm tra xem element có đang trong vùng an toàn không
+            const isFullyVisible =
+                elementTop >= TOP_MARGIN && elementBottom <= safeBottom;
+
+            if (isFullyVisible) return;
 
             lastTarget = interactiveEl;
             lastScrollTime = now;
@@ -72,11 +92,27 @@ export function AutoScrollCenter() {
 
             frameId = requestAnimationFrame(() => {
                 try {
-                    interactiveEl.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center",
-                        inline: "nearest",
-                    });
+                    // Cho input/textarea/select: scroll để hiện phần trên (gần label)
+                    const isFormEl =
+                        interactiveEl.tagName === "INPUT" ||
+                        interactiveEl.tagName === "TEXTAREA" ||
+                        interactiveEl.tagName === "SELECT";
+
+                    if (isFormEl) {
+                        // Scroll để element vào vùng nhìn thấy phía trên (tránh tabbar và bàn phím)
+                        interactiveEl.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center",
+                            inline: "nearest",
+                        });
+                    } else {
+                        // Với button/card: scroll để nhìn thấy, block nearest để ít giật nhất
+                        interactiveEl.scrollIntoView({
+                            behavior: "smooth",
+                            block: "nearest",
+                            inline: "nearest",
+                        });
+                    }
                 } catch {
                     // Fallback an toàn cho các trình duyệt cũ
                     interactiveEl.scrollIntoView(false);
@@ -84,11 +120,14 @@ export function AutoScrollCenter() {
             });
         }
 
-        // Lắng nghe click với { passive: true } để không ảnh hưởng đến tốc độ phản hồi touch/click
+        // Lắng nghe click với { passive: true } để không ảnh hưởng đến tốc độ phản hồi
         document.addEventListener("click", handleInteraction, { passive: true });
+        // Thêm touchstart để phản hồi nhanh hơn trên mobile (trước khi click fire)
+        document.addEventListener("touchstart", handleInteraction, { passive: true });
 
         return () => {
             document.removeEventListener("click", handleInteraction);
+            document.removeEventListener("touchstart", handleInteraction);
             if (frameId !== null) {
                 cancelAnimationFrame(frameId);
             }

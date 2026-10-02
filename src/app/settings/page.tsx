@@ -100,12 +100,15 @@ export default async function SettingsPage() {
     const roleBadge = isOwner ? "Chủ hồ" : isManager ? "Quản lý" : "Nhân viên";
 
     return (
-        <main className="mx-auto min-h-screen max-w-lg bg-transparent px-4 pb-24 pt-5 sm:px-6">
+        <div className="mobile-pos-shell font-serif">
+            <div className="mobile-pos-frame pb-tab-safe">
             {/* ── App Header ─────────────────────────────────────────── */}
             <MobileAppHeader
                 lakeName={tenantContext.lakeName}
                 isSupportMode={tenantContext.isSupportMode}
             />
+
+            <main className="flex-1 overflow-y-auto px-4 pt-4 pb-4 sm:px-5">
 
             {/* ── Standardized Green Gradient Banner (Đồng bộ trang Đang câu) ── */}
             <div className="w-full mb-4 rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3.5 shadow-2xs font-serif">
@@ -331,7 +334,10 @@ export default async function SettingsPage() {
                 </Link>
             </div>
 
+            </main>
+
             <MobileBottomNav isSuperAdmin={currentUser?.systemRole === "SUPER_ADMIN"} />
-        </main>
+            </div>
+        </div>
     );
 }

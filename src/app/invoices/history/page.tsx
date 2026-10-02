@@ -165,7 +165,7 @@ export default async function InvoiceHistoryPage({
             <div className="mobile-pos-frame">
                 <MobileAppHeader lakeName={tenantContext.lakeName} />
 
-                <div className="p-4 space-y-4 pb-28">
+                <main className="flex-1 overflow-y-auto p-4 space-y-4 has-bottom-nav">
                     <div className="flex items-center justify-between">
                         <h1 className="text-[22px] font-bold tracking-tight text-[#17201A]">
                             Nhật ký
@@ -183,7 +183,7 @@ export default async function InvoiceHistoryPage({
                         lakeName={tenantContext.lakeName}
                         initialTab={initialTab}
                     />
-                </div>
+                </main>
 
                 <MobileBottomNav />
             </div>

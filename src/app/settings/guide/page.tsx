@@ -59,7 +59,7 @@ export default function GuidePage() {
     }
 
     return (
-        <main className="mx-auto min-h-screen max-w-lg bg-[#F7F9F5] px-4 pb-28 pt-4 sm:px-6">
+        <main className="mx-auto min-h-screen max-w-lg bg-[#F7F9F5] px-4 has-bottom-nav pt-4 sm:px-6">
             {/* Header bar */}
             <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">

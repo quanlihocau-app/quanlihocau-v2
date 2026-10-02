@@ -291,7 +291,7 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
     return (
         <div className="mobile-pos-shell font-serif">
-            <div className="mobile-pos-frame pb-24">
+            <div className="mobile-pos-frame has-bottom-nav">
                 {/* App Header */}
                 <MobileAppHeader lakeName={lakeName} roleBadge="Báo cáo" />
 

@@ -90,24 +90,28 @@ export default async function InvoicesPage() {
     }));
 
     return (
-        <main className="mx-auto min-h-screen max-w-lg bg-[#F7F9F5] px-4 pb-24 pt-5 sm:px-6">
-            <MobileAppHeader lakeName={tenantContext.lakeName} />
+        <div className="mobile-pos-shell font-serif">
+            <div className="mobile-pos-frame">
+                <MobileAppHeader lakeName={tenantContext.lakeName} />
 
-            <div className="mb-4 flex items-center justify-between">
-                <div>
-                    <h1 className="text-[22px] font-bold tracking-tight text-[#17201A]">
-                        Bán hàng
-                    </h1>
-                </div>
-                <span className="rounded-full bg-[#E8F3E5] px-3 py-1 text-xs font-semibold text-[#246B38]">
-                    Thêm vào vé
-                </span>
+                <main className="flex-1 overflow-y-auto px-4 pt-4 sm:px-6 has-bottom-nav">
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-[22px] font-bold tracking-tight text-[#17201A]">
+                                Bán hàng
+                            </h1>
+                        </div>
+                        <span className="rounded-full bg-[#E8F3E5] px-3 py-1 text-xs font-semibold text-[#246B38]">
+                            Thêm vào vé
+                        </span>
+                    </div>
+
+                    {/* Sales POS Client Interface */}
+                    <SalesPos activeSessions={serializedSessions} />
+                </main>
+
+                <MobileBottomNav />
             </div>
-
-            {/* Sales POS Client Interface */}
-            <SalesPos activeSessions={serializedSessions} />
-
-            <MobileBottomNav />
-        </main>
+        </div>
     );
 }

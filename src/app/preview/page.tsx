@@ -171,7 +171,7 @@ export default function PreviewPage() {
             {/* Main Stage */}
             <main className="flex-1 flex items-center justify-center p-3 sm:p-6 overflow-x-hidden overflow-y-auto">
                 <div
-                    className={`w-full ${getContainerWidth()} transition-all duration-300 min-h-[800px] h-[88vh] rounded-[44px] border-[10px] border-slate-800 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.7)] flex flex-col relative bg-slate-50 ring-1 ring-white/15 overflow-hidden box-border`}
+                    className={`w-full ${getContainerWidth()} transition-all duration-300 min-h-200 h-[88vh] rounded-[44px] border-10 border-slate-800 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.7)] flex flex-col relative bg-slate-50 ring-1 ring-white/15 overflow-hidden box-border`}
                 >
                     {/* Phone Notch/Island */}
                     {deviceRes !== "fluid" && (
@@ -182,7 +182,7 @@ export default function PreviewPage() {
                     <div className="flex-1 w-full flex flex-col overflow-y-auto overflow-x-hidden relative bg-[#F8FAFC]">
                         {/* SCREEN 1: DÀNH CHO THÀNH VIÊN MỚI (EXACT REPRODUCTION OF IMAGE 1 - HIGH RES & EXPANSIVE) */}
                         {activeScreen === "onboarding" && (
-                            <div className="min-h-full w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-b from-slate-100 via-slate-50 to-slate-200/50 relative overflow-x-hidden box-border">
+                            <div className="min-h-full w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-linear-to-b from-slate-100 via-slate-50 to-slate-200/50 relative overflow-x-hidden box-border">
                                 {/* Error Toast (Simulating Screenshot 1 Error message with crisp rendering) */}
                                 <div className="w-full max-w-md mb-3.5 box-border">
                                     <div className="bg-white rounded-2xl p-3.5 shadow-md border border-slate-200 flex items-start gap-3 text-xs text-slate-700">
@@ -199,7 +199,7 @@ export default function PreviewPage() {
                                 <div className="w-full max-w-md bg-white rounded-[30px] shadow-[0_20px_40px_rgba(0,0,0,0.06)] border border-slate-100 p-6 sm:p-8 relative overflow-hidden box-border">
                                     {/* Top Right Decorative Wave Aura */}
                                     <div className="absolute -top-12 -right-12 w-36 h-36 bg-emerald-100/60 rounded-full blur-2xl pointer-events-none" />
-                                    <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-50 rounded-bl-[70px] pointer-events-none -z-0" />
+                                    <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-50 rounded-bl-[70px] pointer-events-none z-0" />
 
                                     {/* Header Icon + Title */}
                                     <div className="relative z-10 flex items-center gap-3.5 mb-5">
@@ -554,7 +554,7 @@ export default function PreviewPage() {
                                 {/* Content Cards */}
                                 <div className="p-4 sm:p-5 space-y-4 flex-1 overflow-y-auto overflow-x-hidden box-border">
                                     {/* Quick Summary Pill Banner */}
-                                    <div className="rounded-2xl bg-gradient-to-r from-emerald-600 to-green-600 text-white p-4 sm:p-5 shadow-md shadow-emerald-600/20">
+                                    <div className="rounded-2xl bg-linear-to-r from-emerald-600 to-green-600 text-white p-4 sm:p-5 shadow-md shadow-emerald-600/20">
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <p className="text-xs opacity-90 font-medium">Doanh thu hôm nay</p>

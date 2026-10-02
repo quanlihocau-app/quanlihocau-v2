@@ -174,7 +174,7 @@ export function OpenSessionForm({
     >([]);
 
     // Fish buyback state (Mục 6)
-    const [fishTypeList, setFishTypeList] = useState<SelectFishType[]>(initialFishTypes);
+    const [, setFishTypeList] = useState<SelectFishType[]>(initialFishTypes);
     const [selectedFishTypeId, setSelectedFishTypeId] = useState<string>("");
 
     // General Form state
@@ -1313,11 +1313,11 @@ export function OpenSessionForm({
                 )}
             </Card>
 
-            {/* 3. GÓI CÂU & THỜI GIAN VÀO (GỘP GỌN 1 Ô) */}
-            <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs p-3.5">
+            {/* 3. CHỌN GÓI CÂU */}
+            <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                        3. Gói câu &amp; Thời gian vào <span className="text-rose-600">*</span>
+                        3. Chọn gói câu <span className="text-rose-600">*</span>
                     </label>
                     <button
                         type="button"
@@ -1385,29 +1385,28 @@ export function OpenSessionForm({
                                 </div>
                             );
                         })}
-
-                        {/* ── Thời gian vào & Kết thúc tự động mở khi đã chọn gói ── */}
-                        <CheckInTimeSection
-                            durationMinutes={selectedPackage?.durationMinutes || 0}
-                            packageName={selectedPackage?.name}
-                            overtimeHourlyVnd={
-                                selectedPackage && "overtimeHourlyVnd" in selectedPackage
-                                    ? Number((selectedPackage as { overtimeHourlyVnd?: number }).overtimeHourlyVnd) || 50000
-                                    : 50000
-                            }
-                            hutCount={selectedHutIds.length || 1}
-                            onStateChange={setCheckInState}
-                            embedded={true}
-                        />
                     </div>
                 )}
             </Card>
 
-            {/* 4. SẢN PHẨM / DỊCH VỤ DÙNG KÈM */}
+            {/* 4. GIỜ VÀO TÙY CHỌN & XEM TRƯỚC THỜI GIAN CA CÂU */}
+            <CheckInTimeSection
+                durationMinutes={selectedPackage?.durationMinutes || 0}
+                packageName={selectedPackage?.name}
+                overtimeHourlyVnd={
+                    selectedPackage && "overtimeHourlyVnd" in selectedPackage
+                        ? Number((selectedPackage as { overtimeHourlyVnd?: number }).overtimeHourlyVnd) || 50000
+                        : 50000
+                }
+                hutCount={selectedHutIds.length || 1}
+                onStateChange={setCheckInState}
+            />
+
+            {/* 5. SẢN PHẨM / DỊCH VỤ DÙNG KÈM */}
             <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                        4. Sản phẩm / Dịch vụ bán kèm
+                        5. Sản phẩm / Dịch vụ bán kèm
                     </label>
                     <button
                         type="button"
@@ -1488,7 +1487,7 @@ export function OpenSessionForm({
                                                 type="button"
                                                 onClick={() => {
                                                     setSelectedItems((prev) =>
-                                                        prev.filter((it) => it.productId === item.productId),
+                                                        prev.filter((it) => it.productId !== item.productId),
                                                     );
                                                 }}
                                                 className="p-1 text-rose-600 hover:text-rose-800 ml-1 cursor-pointer"
@@ -1551,10 +1550,10 @@ export function OpenSessionForm({
                 )}
             </Card>
 
-            {/* 5. GHI CHÚ VÉ CÂU */}
+            {/* 6. GHI CHÚ VÉ CÂU */}
             <Card className="space-y-2 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
                 <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                    5. Ghi chú vé câu (tùy chọn)
+                    6. Ghi chú vé câu (tùy chọn)
                 </label>
                 <Input
                     placeholder="Ví dụ: Khách quen, mượn cần câu số 2, cọc trước…"

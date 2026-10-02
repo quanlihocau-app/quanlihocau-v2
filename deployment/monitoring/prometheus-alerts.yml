@@ -1,0 +1,82 @@
+# ==============================================================================
+# Prometheus Alerting Rules for Host & Node.js Application
+# ==============================================================================
+groups:
+  - name: nodejs_web_app_alerts
+    rules:
+      # --- CPU USAGE ---
+      - alert: HostHighCpuUsageWarning
+        expr: (100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 75
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host CPU usage is elevated on {{ $labels.instance }}"
+          description: "CPU usage has been above 75% for 5 minutes (Value: {{ $value | printf \"%.2f\" }}%)."
+
+      - alert: HostHighCpuUsageCritical
+        expr: (100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 90
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CRITICAL: Host CPU usage dangerously high on {{ $labels.instance }}"
+          description: "CPU usage is above 90% for 3 minutes. Service degradation likely."
+
+      # --- NODE.JS EVENT LOOP LAG (CRITICAL FOR NODE.JS APPS) ---
+      - alert: NodejsEventLoopLagCritical
+        expr: nodejs_eventloop_lag_seconds{quantile="0.99"} > 0.25
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node.js Event Loop is blocked on {{ $labels.instance }}"
+          description: "P99 Event Loop lag is {{ $value }}s (> 250ms). Requests will time out."
+
+      # --- MEMORY (HOST & V8 HEAP) ---
+      - alert: HostMemoryUsageWarning
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host Memory usage is high on {{ $labels.instance }}"
+          description: "RAM usage is {{ $value | printf \"%.2f\" }}% (> 80%)."
+
+      - alert: NodejsHeapExhaustionRisk
+        expr: (nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes) * 100 > 85
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node.js V8 Heap near OOM limit on {{ $labels.instance }}"
+          description: "Heap utilization is {{ $value | printf \"%.2f\" }}%. Risk of process termination."
+
+      # --- PREDICTIVE DISK SPACE EXHAUSTION ---
+      - alert: DiskWillFillIn6Hours
+        expr: predict_linear(node_filesystem_free_bytes{mountpoint="/"}[1h], 6 * 3600) < 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk expected to run out of space within 6 hours on {{ $labels.instance }}"
+          description: "Current linear disk usage rate indicates mountpoint {{ $labels.mountpoint }} will fill soon."
+
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CRITICAL: Free disk space below 10% on {{ $labels.instance }}"
+          description: "Free disk space is {{ $value | printf \"%.2f\" }}% (Mount: {{ $labels.mountpoint }})."
+
+      # --- APPLICATION GOLDEN SIGNALS (HTTP 5XX & HIGH LATENCY) ---
+      - alert: HighHttp5xxErrorRate
+        expr: (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP 5xx error rate detected"
+          description: "More than 5% of all HTTP requests returned 5xx errors in the last 5 minutes."

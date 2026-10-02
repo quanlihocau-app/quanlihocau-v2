@@ -150,6 +150,8 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  /* Ngăn bounce scroll trên iOS */
+  overscroll-behavior: none;
 }
 
 /* Enforce Times New Roman on all typography */
@@ -167,6 +169,19 @@ h4, h5, h6 { font-weight: 700; }
 .min-touch-target {
   min-height: 44px;
   min-width: 44px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CRITICAL FIX: iOS sẽ tự zoom vào khi font-size < 16px trên input.
+   Đặt font-size 16px để tránh zoom - sau đó dùng CSS scale để vẫn trông nhỏ.
+   ──────────────────────────────────────────────────────────────────────── */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Safe bottom padding helper: dùng cho main content khi có fixed tabbar */
+.pb-tab-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
 }
 
 /* Tabular numbers for financial and clock values */
@@ -401,6 +416,13 @@ a, button, [role="button"], input, select, textarea {
   touch-action: manipulation;
 }
 
+/* Khi focus vào input/select, đảm bảo không bị che bởi tabbar:
+   scroll container cha tự adjust để input visible */
+input:focus, textarea:focus, select:focus {
+  scroll-margin-bottom: 80px;
+  scroll-margin-top: 20px;
+}
+
 /* Snappy Modal & Popup Animations without blur/shadow slop */
 .modal-backdrop-animate {
   animation: modal-backdrop-in 0.1s ease-out forwards;
@@ -448,3 +470,34 @@ body {
   min-height: -webkit-fill-available;
   min-height: 100dvh;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MOBILE POS FRAME: scroll container chính — nội dung cuộn trong frame,
+   tabbar và header luôn cố định.
+   ──────────────────────────────────────────────────────────────────────── */
+.mobile-pos-frame {
+  /* Đảm bảo frame chiếm đúng viewport hiện tại (dvh co theo keyboard) */
+  min-height: 100dvh;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HAPTIC FEEDBACK: active states cho touch
+   ──────────────────────────────────────────────────────────────────────── */
+button:active, [role="button"]:active {
+  transition: transform 60ms ease-out;
+}
+
+/* Ngoại lệ: không scale nút trong nav (tránh giật) */
+nav button:active, nav a:active {
+  transform: none;
+  opacity: 0.7;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   UTILITY: Đảm bảo page content không bị che bởi tabbar
+   ──────────────────────────────────────────────────────────────────────── */
+.has-bottom-nav {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px) !important;
+}
+
+

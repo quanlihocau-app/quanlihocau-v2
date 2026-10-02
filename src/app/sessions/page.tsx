@@ -275,9 +275,9 @@ export default async function SessionsPage() {
                 />
 
                 {/* ── Main Content Area ───────────────────────────────────── */}
-                <main className="flex-1 px-4 sm:px-5 py-4 overflow-y-auto">
+                <main className="flex-1 px-4 sm:px-5 py-4 overflow-y-auto has-bottom-nav">
                     {/* ── Section header: Tách biệt & Nổi bật theo yêu cầu Hình 2 ─── */}
-                    <div className="w-full mb-4 rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3.5 shadow-2xs font-serif">
+                    <div className="w-full mb-4 rounded-2xl border border-emerald-200/90 bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3.5 shadow-2xs font-serif">
                         <div className="flex items-center justify-between gap-3 w-full">
                             <div className="flex items-center gap-2">
                                 <div className="h-4.5 w-1.5 rounded-full bg-[#16A34A] shrink-0" />

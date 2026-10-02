@@ -117,7 +117,7 @@ export default async function AdminLayout({
             </header>
 
             {/* Admin Main Body */}
-            <main className="flex-1 pb-24">
+            <main className="flex-1 has-bottom-nav">
                 {children}
             </main>
 

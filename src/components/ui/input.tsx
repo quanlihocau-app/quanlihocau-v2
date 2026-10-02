@@ -10,6 +10,7 @@ export interface InputProps
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ({ label, error, helperText, className = "", id, ...props }, ref) => {
         const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+        const resolvedInputMode = props.inputMode || (props.type === "number" ? "decimal" : undefined);
 
         return (
             <div className="space-y-1 w-full font-serif">
@@ -24,7 +25,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 <input
                     id={inputId}
                     ref={ref}
-                    className={`h-12 w-full rounded-2xl border bg-[#F8FAFC] px-3.5 text-sm font-normal text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-white focus:border-2 focus:border-[#16A34A] transition-all font-serif shadow-2xs ${
+                    inputMode={resolvedInputMode}
+                    className={`h-12 w-full rounded-2xl border bg-[#F8FAFC] px-3.5 text-base font-normal text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-white focus:border-2 focus:border-[#16A34A] transition-all font-serif shadow-2xs ${
                         error
                             ? "border-[#DC2626] focus:border-[#DC2626] bg-[#FEF2F2]/50 text-[#DC2626]"
                             : "border-[#CBD5E1]"
@@ -66,7 +68,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 <select
                     id={selectId}
                     ref={ref}
-                    className={`h-12 w-full rounded-2xl border bg-[#F8FAFC] px-3.5 text-sm font-normal text-[#0F172A] focus:outline-none focus:bg-white focus:border-2 focus:border-[#16A34A] transition-all cursor-pointer font-serif shadow-2xs ${
+                    className={`h-12 w-full rounded-2xl border bg-[#F8FAFC] px-3.5 text-base font-normal text-[#0F172A] focus:outline-none focus:bg-white focus:border-2 focus:border-[#16A34A] transition-all cursor-pointer font-serif shadow-2xs ${
                         error
                             ? "border-[#DC2626] focus:border-[#DC2626] bg-[#FEF2F2]/50 text-[#DC2626]"
                             : "border-[#CBD5E1]"

@@ -24,7 +24,7 @@ export default async function PrinterSettingsPage() {
                 isSupportMode={tenantContext?.isSupportMode}
             />
 
-            <main className="mx-auto flex-1 w-full max-w-lg px-4 pb-28 pt-4 sm:px-6">
+            <main className="mx-auto flex-1 w-full max-w-lg px-4 has-bottom-nav pt-4 sm:px-6">
                 {/* Header Navigation */}
                 <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
