@@ -1,4 +1,5 @@
 "use client";
+import { clearCatalogCache } from "@/lib/query-client";
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -215,6 +216,7 @@ export function LakesAdminClient({
             });
             const data = await res.json();
             if (res.ok) {
+                clearCatalogCache();
                 startTransition(() => {
                     router.push(data.redirectUrl || "/sessions");
                     router.refresh();

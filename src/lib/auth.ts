@@ -222,10 +222,16 @@ export interface SessionPayload {
     email: string;
     role: string;
     name: string;
+    sessionVersion?: number;
+    expiresAt?: number;
 }
 
 export function signSession(payload: SessionPayload): string {
-    const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const data = Buffer.from(JSON.stringify({
+        ...payload,
+        sessionVersion: payload.sessionVersion ?? 0,
+        expiresAt: payload.expiresAt ?? Date.now() + 7 * 24 * 60 * 60 * 1000,
+    })).toString("base64url");
     const signature = crypto
         .createHmac("sha256", SESSION_SECRET)
         .update(data)
@@ -235,23 +241,33 @@ export function signSession(payload: SessionPayload): string {
 
 export function verifySession(token: string): SessionPayload | null {
     try {
-        const [data, signature] = token.split(".");
-        if (!data || !signature) return null;
+        const [data, signature, extra] = token.split(".");
+        if (!data || !signature || extra !== undefined) return null;
         const expectedSig = crypto
             .createHmac("sha256", SESSION_SECRET)
             .update(data)
             .digest("base64url");
-        if (signature !== expectedSig) return null;
-        return JSON.parse(
+        const actual = Buffer.from(signature);
+        const expected = Buffer.from(expectedSig);
+        if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) return null;
+        const payload = JSON.parse(
             Buffer.from(data, "base64url").toString("utf-8"),
         ) as SessionPayload;
+        if (!payload || typeof payload.userId !== "string" || typeof payload.email !== "string") return null;
+        if (payload.expiresAt !== undefined && (!Number.isFinite(payload.expiresAt) || payload.expiresAt <= Date.now())) return null;
+        return payload;
     } catch {
         return null;
     }
 }
 
 export async function setSessionCookie(payload: SessionPayload) {
-    const token = signSession(payload);
+    const user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        select: { sessionVersion: true, isLocked: true },
+    });
+    if (!user || user.isLocked) throw new Error("Tài khoản không khả dụng.");
+    const token = signSession({ ...payload, sessionVersion: user.sessionVersion });
     const cookieStore = await cookies();
     cookieStore.set(COOKIE_NAME, token, {
         httpOnly: true,
@@ -267,7 +283,14 @@ export async function getSessionCookie(): Promise<SessionPayload | null> {
         const cookieStore = await cookies();
         const token = cookieStore.get(COOKIE_NAME)?.value;
         if (!token) return null;
-        return verifySession(token);
+        const payload = verifySession(token);
+        if (!payload) return null;
+        const user = await prisma.user.findUnique({
+            where: { id: payload.userId },
+            select: { email: true, systemRole: true, isLocked: true, sessionVersion: true },
+        });
+        if (!user || user.isLocked || user.sessionVersion !== (payload.sessionVersion ?? 0) || user.email !== payload.email) return null;
+        return { ...payload, role: user.systemRole };
     } catch {
         return null;
     }
@@ -285,4 +308,4 @@ export async function clearSessionCookie() {
         // Safe ignore
     }
 }
-
+

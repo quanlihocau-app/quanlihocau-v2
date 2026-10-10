@@ -1043,9 +1043,7 @@ export function OpenSessionForm({
             {/* 1. KHÁCH HÀNG */}
             <Card className="space-y-2.5 bg-white border-[#E3E8E3] rounded-2xl shadow-xs p-3.5">
                 <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                        1. Khách hàng
-                    </label>
+                    <span className="section-title">1. Khách hàng</span>
                 </div>
 
                 {/* Customer Selection or Single-line Integrated Search */}
@@ -1196,9 +1194,7 @@ export function OpenSessionForm({
             {/* 2. CHỌN Ô CÂU */}
             <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
                 <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                        2. Chọn ô câu <span className="text-rose-600">*</span>
-                    </label>
+                    <span className="section-title">2. Chọn ô câu <span className="text-rose-500">*</span></span>
                     <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-[#246B38]">
                             {selectedHutIds.length > 0
@@ -1316,9 +1312,7 @@ export function OpenSessionForm({
             {/* 3. CHỌN GÓI CÂU */}
             <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
                 <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                        3. Chọn gói câu <span className="text-rose-600">*</span>
-                    </label>
+                    <span className="section-title">3. Chọn gói câu <span className="text-rose-500">*</span></span>
                     <button
                         type="button"
                         onClick={() => setIsPackageSheetOpen(true)}
@@ -1405,9 +1399,7 @@ export function OpenSessionForm({
             {/* 5. SẢN PHẨM / DỊCH VỤ DÙNG KÈM */}
             <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
                 <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-[#66716A]">
-                        5. Sản phẩm / Dịch vụ bán kèm
-                    </label>
+                    <span className="section-title">5. Sản phẩm / Dịch vụ bán kèm</span>
                     <button
                         type="button"
                         onClick={() => setIsProductSheetOpen(true)}

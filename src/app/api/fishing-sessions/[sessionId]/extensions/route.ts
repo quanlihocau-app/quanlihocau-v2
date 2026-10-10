@@ -199,11 +199,9 @@ export async function POST(request: Request, { params }: RouteParams) {
                         }
 
                         // 4. Calculate new plannedEndAt
-                        const now = new Date();
-                        const baseTime =
-                            session.plannedEndAt.getTime() > now.getTime()
-                                ? session.plannedEndAt
-                                : now;
+                        // Extensions always continue from the previous deadline,
+                        // including the time spent waiting for staff confirmation.
+                        const baseTime = session.plannedEndAt;
                         const newPlannedEndAt = new Date(
                             baseTime.getTime() +
                                 pkg.durationMinutes * 60 * 1000,
@@ -291,6 +289,16 @@ export async function POST(request: Request, { params }: RouteParams) {
                             invoice: {
                                 id: invoice.id,
                                 newTotalAmountVnd,
+                            },
+                            line: {
+                                id: line.id,
+                                productId: null,
+                                fishBuybackId: null,
+                                name: line.name,
+                                unitPrice: line.unitPrice,
+                                quantity: Number(line.quantity),
+                                totalVnd: line.totalVnd,
+                                createdAt: line.createdAt.toISOString(),
                             },
                         };
 

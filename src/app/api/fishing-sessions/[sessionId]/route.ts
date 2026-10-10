@@ -301,58 +301,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                             }
 
                             if (finalInvoice) {
-                                // Tự động chốt và ghi nhận phụ thu quá giờ nếu phiên vượt quá thời gian dự kiến
-                                const endedAtMs = endedAt.getTime();
-                                const plannedEndMs = session.plannedEndAt.getTime();
-                                const overtimeRate = session.overtimeHourlyVndSnapshot || session.package?.overtimeHourlyVnd || 0;
-                                const effectiveHutCount = Math.max(hutIds.length, 1);
-
-                                if (endedAtMs > plannedEndMs && overtimeRate > 0) {
-                                    const overtimeMinutes = Math.floor((endedAtMs - plannedEndMs) / 60_000);
-                                    if (overtimeMinutes > 0) {
-                                        const overtimeVnd = Math.round((overtimeMinutes / 60) * overtimeRate * effectiveHutCount);
-                                        const durationText =
-                                            overtimeMinutes >= 60
-                                                ? `${Math.floor(overtimeMinutes / 60)}h${overtimeMinutes % 60 > 0 ? `${overtimeMinutes % 60}p` : ""}`
-                                                : `${overtimeMinutes}p`;
-
-                                        // Kiểm tra xem đã có dòng phụ thu quá giờ trước đó chưa
-                                        const existingOvertimeLine = invLines.find(
-                                            (l) =>
-                                                !l.productId &&
-                                                !l.fishBuybackId &&
-                                                !l.name.toLowerCase().includes("gia hạn") &&
-                                                (l.name.toLowerCase().includes("thêm giờ") ||
-                                                    l.name.toLowerCase().includes("phụ trội") ||
-                                                    l.name.toLowerCase().includes("quá giờ")),
-                                        );
-
-                                        if (existingOvertimeLine && existingOvertimeLine.id) {
-                                            const updatedLine = await tx.invoiceLine.update({
-                                                where: { id: existingOvertimeLine.id },
-                                                data: {
-                                                    name: `Thêm giờ: Quá giờ ${durationText}${effectiveHutCount > 1 ? ` (${effectiveHutCount} ô)` : ""}`,
-                                                    unitPrice: overtimeRate * effectiveHutCount,
-                                                    quantity: Number((overtimeMinutes / 60).toFixed(2)),
-                                                    totalVnd: overtimeVnd,
-                                                },
-                                            });
-                                            invLines = invLines.map((l) => (l.id === updatedLine.id ? updatedLine : l));
-                                        } else if (overtimeVnd > 0) {
-                                            const createdLine = await tx.invoiceLine.create({
-                                                data: {
-                                                    invoiceId: finalInvoice.id,
-                                                    name: `Thêm giờ: Quá giờ ${durationText}${effectiveHutCount > 1 ? ` (${effectiveHutCount} ô)` : ""}`,
-                                                    unitPrice: overtimeRate * effectiveHutCount,
-                                                    quantity: Number((overtimeMinutes / 60).toFixed(2)),
-                                                    totalVnd: overtimeVnd,
-                                                },
-                                            });
-                                            invLines.push(createdLine);
-                                        }
-                                    }
-                                }
-
+                                // Expired sessions stay at their recorded price; only explicit extensions add charges.
                                 const grossAmount = invLines.reduce((s, l) => s + l.totalVnd, 0);
                                 let netPaid = invPayments.reduce((s, p) => {
                                     return p.direction === "IN" ? s + p.amountVnd : s - p.amountVnd;
@@ -759,16 +708,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
         let overtimeMinutes = 0;
 
         if (existingOvertimeLines.length === 0 && session.status === SessionStatus.ACTIVE) {
-            const plannedEndMs = session.plannedEndAt.getTime();
-            const nowMs = Date.now();
-            if (nowMs > plannedEndMs) {
-                overtimeMinutes = Math.floor((nowMs - plannedEndMs) / 60_000);
-                const overtimeRate =
-                    session.overtimeHourlyVndSnapshot || session.package?.overtimeHourlyVnd || 0;
-                if (overtimeMinutes > 0 && overtimeRate > 0) {
-                    overtimeTotal = Math.round((overtimeMinutes / 60) * overtimeRate * hutCount);
-                }
-            }
+            // Phiên đang ACTIVE và hết giờ nhưng CHƯA có dòng quá giờ ghi nhận.
+            // → GIỮ NGUYÊN tiền (0 phụ thu quá giờ tự động).
+            // Kết thúc không tự tính phụ thu. Gia hạn chỉ cộng tiền gói đã xác nhận.
+            overtimeTotal = 0;
+            overtimeMinutes = 0;
         }
 
         const otherLines = lines.filter(

@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { loginUser } from '@/app/actions/auth'
 import { signIn } from 'next-auth/react'
+import { clearCatalogCache } from '@/lib/query-client'
+import { safeRedirectPath } from '@/lib/navigation'
 import { Suspense } from 'react'
 
 function LoginForm() {
@@ -44,7 +46,8 @@ function LoginForm() {
       }
 
       // 3. Chuyển hướng vào trang quản trị
-      router.push(redirectUrl)
+      clearCatalogCache()
+      router.push(safeRedirectPath(redirectUrl))
       router.refresh()
     } catch {
       setErrorMsg('Không thể kết nối đến hệ thống.')

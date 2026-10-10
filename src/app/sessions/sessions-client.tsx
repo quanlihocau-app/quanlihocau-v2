@@ -17,7 +17,7 @@ import {
 import { useNetworkStatus } from "@/lib/network/use-network-status";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 import { useSessionAlarms } from "@/hooks/use-session-alarms";
-import type { ActionPackage } from "./session-actions";
+import type { ActionPackage, ExtensionResult } from "./session-actions";
 
 const SettlementCheckoutModal = dynamic(
     () =>
@@ -222,6 +222,12 @@ export function SessionsClient({
     const handleSettlement = useCallback((id: string) => {
         setSettlementSessionId(id);
     }, []);
+    const [extensionSessionId, setExtensionSessionId] = useState<string | null>(null);
+    const handleExtend = useCallback((id: string) => {
+        setSelectedId(id);
+        setExtensionSessionId(id);
+    }, []);
+    const handleExtensionRequestHandled = useCallback(() => setExtensionSessionId(null), []);
 
     // ── Optimistic UI Handlers (Cập nhật tức thì 0ms trước khi server phản hồi) ─
     const handleOptimisticAddProduct = useCallback(
@@ -268,47 +274,30 @@ export function SessionsClient({
     );
 
     const handleOptimisticExtend = useCallback(
-        (pkg: ActionPackage) => {
-            if (!selectedSession) return;
-            const targetSessionId = selectedSession.id;
+        (result: ExtensionResult) => {
+            const targetSessionId = result.session.id;
             setSessions((prev) =>
                 prev.map((s) => {
                     if (s.id !== targetSessionId) return s;
                     const inv = s.invoices[0];
                     if (!inv) return s;
 
-                    const currentPlannedEnd = new Date(s.plannedEndAt);
-                    const newPlannedEnd = new Date(
-                        currentPlannedEnd.getTime() + pkg.durationMinutes * 60_000,
-                    );
-
-                    const newLine: SerializableInvoiceLine = {
-                        id: `optimistic-ext-${Date.now()}`,
-                        productId: null,
-                        fishBuybackId: null,
-                        name: `Gia hạn: ${pkg.name}`,
-                        unitPrice: pkg.priceVnd,
-                        quantity: 1,
-                        totalVnd: pkg.priceVnd,
-                        createdAt: new Date().toISOString(),
-                    };
-
-                    const updatedLines = [...(inv.lines ?? []), newLine];
+                    const updatedLines = [...(inv.lines ?? []).filter((line) => line.id !== result.line.id), result.line];
                     const updatedInv = {
                         ...inv,
-                        totalAmountVnd: inv.totalAmountVnd + pkg.priceVnd,
+                        totalAmountVnd: result.invoice.newTotalAmountVnd,
                         lines: updatedLines,
                     };
 
                     return {
                         ...s,
-                        plannedEndAt: newPlannedEnd.toISOString(),
+                        plannedEndAt: result.session.plannedEndAt,
                         invoices: [updatedInv, ...s.invoices.slice(1)],
                     };
                 }),
             );
         },
-        [selectedSession],
+        [],
     );
 
     const handleOptimisticFishBuyback = useCallback(
@@ -409,6 +398,7 @@ export function SessionsClient({
                         onSelect={handleSelect}
                         onLongPress={handleLongPress}
                         onSettlement={handleSettlement}
+                        onExtend={handleExtend}
                     />
                 ))}
             </div>
@@ -434,6 +424,7 @@ export function SessionsClient({
                     </div>
 
                     <SessionActions
+                        key={selectedSession.id}
                         sessionId={selectedSession.id}
                         canComplete={canComplete}
                         canCancel={canCancel}
@@ -443,6 +434,8 @@ export function SessionsClient({
                         netBalance={selectedSessionFinancials?.netBalance}
                         onOptimisticAddProduct={handleOptimisticAddProduct}
                         onOptimisticExtend={handleOptimisticExtend}
+                        extensionRequested={extensionSessionId === selectedSession.id}
+                        onExtensionRequestHandled={handleExtensionRequestHandled}
                         onOptimisticFishBuyback={handleOptimisticFishBuyback}
                     />
                 </div>

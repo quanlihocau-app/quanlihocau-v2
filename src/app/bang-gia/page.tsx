@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { BANK_CONFIG, PLAN_PRICING } from "@/lib/vietqr";
 
 export const metadata: Metadata = {
@@ -103,7 +104,7 @@ export default function PublicPricingPage() {
             <header className="sticky top-0 z-30 border-b border-[#246B38]/30 bg-[#061F13]/90 backdrop-blur-md">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
                     <Link href="/" className="flex items-center gap-2 text-white font-bold text-lg hover:opacity-90 transition-opacity">
-                        <img
+                        <Image width={32} height={32}
                             src="/icons/icon-192x192.png"
                             alt="Logo Quản Lí Hồ Câu"
                             className="h-8 w-8 rounded-lg border border-emerald-500/40"

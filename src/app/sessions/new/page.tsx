@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Role } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getProductStockMap } from "@/lib/product-stock";
 import { getTenantContext } from "@/lib/tenant";
 import { TicketOrRetailSwitcher } from "./ticket-or-retail-switcher";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
@@ -45,7 +46,7 @@ export default async function NewSessionPage() {
     }
 
     // Fetch active data for the current lake
-    const [customers, packages, huts, rawProducts, fishTypes] = await Promise.all([
+    const [customers, packages, huts, rawProducts, fishTypes, stockByProduct] = await Promise.all([
         prisma.customer.findMany({
             where: { lakeId: tenantContext.lakeId, deletedAt: null },
             select: { id: true, name: true, phoneNormalized: true },
@@ -78,11 +79,6 @@ export default async function NewSessionPage() {
                 name: true,
                 sku: true,
                 priceVnd: true,
-                movements: {
-                    select: {
-                        quantity: true,
-                    },
-                },
             },
             orderBy: { name: "asc" },
         }),
@@ -95,19 +91,16 @@ export default async function NewSessionPage() {
             },
             orderBy: { name: "asc" },
         }),
+        getProductStockMap(tenantContext.lakeId),
     ]);
 
     const products = rawProducts.map((p) => {
-        const stock = p.movements.reduce(
-            (sum, m) => sum + Number(m.quantity),
-            0,
-        );
         return {
             id: p.id,
             name: p.name,
             sku: p.sku,
             priceVnd: p.priceVnd,
-            stock,
+            stock: stockByProduct.get(p.id) ?? 0,
         };
     });
 

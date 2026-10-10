@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { setSessionCookie, clearSessionCookie } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { normalizeVietnamesePhone } from '@/lib/phone'
+import { z } from 'zod'
 
 export interface RegisterInput {
   email: string
@@ -15,8 +17,21 @@ export interface RegisterInput {
 
 export async function registerUser(input: RegisterInput) {
   try {
+    const parsed = z.object({
+      email: z.string().trim().pipe(z.email('Email không hợp lệ.')),
+      password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự.').max(128),
+      name: z.string().trim().min(1, 'Vui lòng nhập họ tên.').max(100),
+      phone: z.string().nullable().optional(),
+      lakeName: z.string().trim().max(200).nullable().optional(),
+    }).safeParse(input)
+    if (!parsed.success) return { success: false, message: parsed.error.issues[0]?.message || 'Dữ liệu không hợp lệ.' }
+    input = parsed.data
     const email = input.email.trim().toLowerCase()
     const { password, name, phone, lakeName } = input
+    let normalizedPhone: string | null
+    try { normalizedPhone = normalizeVietnamesePhone(phone) } catch {
+      return { success: false, message: 'Số điện thoại không hợp lệ.' }
+    }
 
     if (!email || !password || !name) {
       return { success: false, message: 'Vui lòng điền đầy đủ thông tin bắt buộc.' }
@@ -41,11 +56,6 @@ export async function registerUser(input: RegisterInput) {
 
     // 3. Atomic transaction cho việc tạo user và gán trial data
     const newUser = await prisma.$transaction(async (tx) => {
-      // Tìm xem có trial plan nào không
-      const trialPlan = await tx.subscriptionPlan.findFirst({
-        where: { code: 'TRIAL' }
-      })
-
       // Mặc định gói dùng thử khi đăng ký tài khoản mới là 7 ngày theo chuẩn nghiệp vụ
       const trialDays = 7
       const trialExpiresAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
@@ -80,7 +90,7 @@ export async function registerUser(input: RegisterInput) {
           email,
           passwordHash: hashedPassword,
           name: name.trim(),
-          phone: phone && phone.trim().length > 0 ? phone.trim() : null,
+          phone: normalizedPhone,
           systemRole: 'USER',
           phoneVerified: Boolean(phone && phone.trim().length > 0),
           phoneVerifiedAt: phone && phone.trim().length > 0 ? new Date() : null,
@@ -197,4 +207,3 @@ export async function logoutUser() {
 export async function registerUserAction(input: unknown) {
   return registerUser(input as RegisterInput)
 }
-

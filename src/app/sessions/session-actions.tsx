@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { SerializableInvoiceLine } from "./sessions-client";
 
 import { Button } from "@/components/ui/button";
 import { usePrinter } from "@/lib/printing/use-printer";
@@ -51,8 +52,16 @@ export interface SessionActionsProps {
     fishTypes?: Array<{ id: string; name: string; pricePerKg: number }>;
     netBalance?: number;
     onOptimisticAddProduct?: (product: Product, quantity: number) => void;
-    onOptimisticExtend?: (pkg: ActionPackage) => void;
+    onOptimisticExtend?: (result: ExtensionResult) => void;
+    extensionRequested?: boolean;
+    onExtensionRequestHandled?: () => void;
     onOptimisticFishBuyback?: (type: { id: string; name: string; pricePerKg: number }, weight: number, totalVnd: number) => void;
+}
+
+export interface ExtensionResult {
+    session: { id: string; plannedEndAt: string };
+    invoice: { id: string; newTotalAmountVnd: number };
+    line: SerializableInvoiceLine;
 }
 
 export function SessionActions({
@@ -65,6 +74,8 @@ export function SessionActions({
     netBalance,
     onOptimisticAddProduct,
     onOptimisticExtend,
+    extensionRequested,
+    onExtensionRequestHandled,
     onOptimisticFishBuyback,
 }: SessionActionsProps) {
     const router = useRouter();
@@ -99,6 +110,19 @@ export function SessionActions({
     const [isExtending, setIsExtending] = useState(false);
     const [extensionError, setExtensionError] = useState("");
     const [extensionSuccess, setExtensionSuccess] = useState("");
+    const extensionKeyRef = useRef<{ packageId: string; key: string } | null>(null);
+    const extensionSubmittingRef = useRef(false);
+
+    useEffect(() => {
+        if (!extensionRequested) return;
+        const timer = setTimeout(() => {
+            setExtensionError("");
+            setExtensionSuccess("");
+            setIsExtensionModalOpen(true);
+            onExtensionRequestHandled?.();
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [extensionRequested, onExtensionRequestHandled]);
 
     const { onBackdropClick: onExtensionBackdropClick } = useModalDismiss({
         isOpen: isExtensionModalOpen,
@@ -214,16 +238,21 @@ export function SessionActions({
     }
 
     async function handleConfirmExtension() {
+        if (extensionSubmittingRef.current) return;
         if (!selectedPackageId) {
             setExtensionError("Vui lòng chọn gói câu gia hạn.");
             return;
         }
 
+        extensionSubmittingRef.current = true;
         setIsExtending(true);
         setExtensionError("");
         setExtensionSuccess("");
 
-        const idempotencyKey = crypto.randomUUID();
+        if (extensionKeyRef.current?.packageId !== selectedPackageId) {
+            extensionKeyRef.current = { packageId: selectedPackageId, key: crypto.randomUUID() };
+        }
+        const idempotencyKey = extensionKeyRef.current.key;
 
         try {
             const response = await fetch(
@@ -240,7 +269,7 @@ export function SessionActions({
                 },
             );
 
-            const data = (await response.json()) as {
+            const data = (await response.json()) as ExtensionResult & {
                 error?: string;
                 message?: string;
             };
@@ -249,25 +278,20 @@ export function SessionActions({
                 setExtensionError(
                     data.error ?? "Không thể gia hạn phiên câu.",
                 );
-                setIsExtending(false);
                 return;
             }
 
             setExtensionSuccess(data.message ?? "Đã gia hạn thành công!");
-            setIsExtending(false);
-
-            if (onOptimisticExtend && selectedPkg) {
-                onOptimisticExtend(selectedPkg);
-            }
-
-            setTimeout(() => {
-                setIsExtensionModalOpen(false);
-                router.refresh();
-            }, 150);
+            onOptimisticExtend?.(data);
+            extensionKeyRef.current = null;
+            setIsExtensionModalOpen(false);
+            router.refresh();
         } catch {
             setExtensionError(
                 "Lỗi kết nối mạng khi gia hạn. Vui lòng thử lại.",
             );
+        } finally {
+            extensionSubmittingRef.current = false;
             setIsExtending(false);
         }
     }
@@ -536,6 +560,9 @@ export function SessionActions({
                         </div>
 
                         {/* Error or Success notification */}
+                        <p className="text-xs text-slate-600">
+                            Gia hạn nối từ giờ kết thúc phiên cũ, bao gồm thời gian chờ xác nhận. Tiền gói được cộng ngay vào bill.
+                        </p>
                         {extensionError && (
                             <div className="rounded-xs border border-[#FFCCC7] bg-[#FFF1F0] p-2.5 text-xs text-[#A8071A] font-semibold">
                                 {extensionError}
@@ -564,11 +591,9 @@ export function SessionActions({
                                         return (
                                             <div
                                                 key={pkg.id}
-                                                onClick={() =>
-                                                    setSelectedPackageId(
-                                                        pkg.id,
-                                                    )
-                                                }
+                                                onClick={() => {
+                                                    if (!isExtending) setSelectedPackageId(pkg.id);
+                                                }}
                                                 className={`cursor-pointer rounded-xs border p-2.5 flex items-center justify-between transition-colors ${
                                                     isSelected
                                                         ? "border-[#2C4C3B] bg-[#EAEFEA]"

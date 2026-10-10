@@ -1,4 +1,5 @@
 "use client";
+import { clearCatalogCache } from "@/lib/query-client";
 
 import { useRouter } from "next/navigation";
 
@@ -97,7 +98,9 @@ export function MobileAppHeader({
                     <button
                         type="button"
                         onClick={async () => {
-                            await fetch("/api/admin/impersonate/exit", { method: "POST" });
+                            const response = await fetch("/api/admin/impersonate/exit", { method: "POST" });
+                            if (!response.ok) return;
+                            clearCatalogCache();
                             router.push("/admin/lakes");
                             router.refresh();
                         }}

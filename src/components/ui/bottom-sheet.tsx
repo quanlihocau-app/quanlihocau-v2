@@ -22,7 +22,6 @@ export function BottomSheet({
     children,
     footer,
     className = "",
-    position = "center",
 }: BottomSheetProps) {
     const [mounted, setMounted] = useState(false);
 
@@ -50,8 +49,6 @@ export function BottomSheet({
     }, [isOpen, onClose]);
 
     if (!isOpen || !mounted) return null;
-
-    const isCenter = position !== "bottom";
 
     const modalContent = (
         <div

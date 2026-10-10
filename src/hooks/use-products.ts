@@ -7,7 +7,7 @@ export interface CachedProduct {
     name: string;
     priceVnd: number;
     sku: string | null;
-    stockQuantity?: number;
+    stock?: number;
 }
 
 export const productCatalogKeys = {
@@ -24,8 +24,8 @@ export const productCatalogKeys = {
 export function useProducts(initialData?: CachedProduct[]) {
     return useQuery({
         queryKey: productCatalogKeys.list(),
-        queryFn: async () => {
-            const res = await fetch("/api/products");
+        queryFn: async ({ signal }) => {
+            const res = await fetch("/api/products", { signal });
             if (!res.ok) {
                 throw new Error("Không thể tải danh sách sản phẩm.");
             }

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { memo, useRef } from "react";
+import React, { memo, useRef, useSyncExternalStore } from "react";
+import { sessionTicker } from "@/lib/ticker/session-ticker";
 import { SessionCountdown } from "./session-countdown";
 import type { SerializableSession } from "./sessions-client";
 
@@ -90,21 +91,23 @@ export function computeSessionFinancials(s: SerializableSession, currentNowMs: n
 
     // ── Tính phụ thu quá giờ theo thời gian thực ─────────────────────────────
     const plannedEndMs = new Date(s.plannedEndAt).getTime();
-    const isOvertime = currentNowMs > plannedEndMs;
+    const isOvertime = currentNowMs >= plannedEndMs;
     const overtimeRate = s.overtimeHourlyVndSnapshot ?? s.package.overtimeHourlyVnd ?? 0;
 
     let liveOvertimeMinutes = 0;
     let liveOvertimeVnd = 0;
 
     if (recordedOvertimeLines.length > 0) {
+        // Có dòng quá giờ đã ghi nhận → dùng giá trị đó, không tự tính thêm
         liveOvertimeVnd = recordedOvertimeTotal;
-    } else if (isOvertime && overtimeRate > 0) {
-        const diffMs = currentNowMs - plannedEndMs;
-        liveOvertimeMinutes = Math.floor(diffMs / 60_000);
-        if (liveOvertimeMinutes > 0) {
-            liveOvertimeVnd = Math.round((liveOvertimeMinutes / 60) * overtimeRate * hutCount);
-        }
+        // Tính số phút quá giờ từ dòng đã ghi
+        liveOvertimeMinutes = Math.round(
+            recordedOvertimeLines.reduce((sum, l) => sum + l.quantity, 0) * 60,
+        );
     }
+    // Nếu hết giờ nhưng CHƯA có dòng quá giờ → GIỮ NGUYÊN tiền (không tự cộng thêm)
+    // Chỉ gia hạn được xác nhận mới cộng tiền; kết thúc không tự thêm phụ thu.
+    // Đồng hồ vẫn ghi nhận thời gian thực, kể cả thời gian chờ nhân viên.
 
     // Tổng chi phí = Tiền gói câu + Gia hạn + Sản phẩm/Dịch vụ + Phụ thu quá giờ
     const totalCharges = packageTotal + productsTotal + extensionsTotal + liveOvertimeVnd;
@@ -165,7 +168,10 @@ export interface SessionGridCardProps {
     onSelect: (id: string) => void;
     onLongPress: (session: SerializableSession) => void;
     onSettlement: (sessionId: string) => void;
+    onExtend: (sessionId: string) => void;
 }
+
+const subscribeTicker = (listener: () => void) => sessionTicker.subscribe(listener);
 
 function SessionGridCardComponent({
     session: s,
@@ -175,9 +181,16 @@ function SessionGridCardComponent({
     onSelect,
     onLongPress,
     onSettlement,
+    onExtend,
 }: SessionGridCardProps) {
     const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
     const didLongPressRef = useRef<boolean>(false);
+    const plannedEndMs = new Date(s.plannedEndAt).getTime();
+    const isExpired = useSyncExternalStore(
+        subscribeTicker,
+        () => sessionTicker.getNowMs() >= plannedEndMs,
+        () => nowMs >= plannedEndMs,
+    );
 
     const hutLabel = s.hutLinks.map((hl) => hl.hut.name).join(" + ") || "—";
     const {
@@ -191,6 +204,9 @@ function SessionGridCardComponent({
         totalPaid,
         netBalance,
     } = computeSessionFinancials(s, nowMs);
+
+    // Every expired session requires an explicit finish or extension decision.
+    const isPriceFreezed = isExpired;
 
     function startLongPress() {
         didLongPressRef.current = false;
@@ -230,6 +246,7 @@ function SessionGridCardComponent({
                 onSelect(s.id);
             }}
             onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
                 if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     onSelect(s.id);
@@ -273,9 +290,17 @@ function SessionGridCardComponent({
                 </p>
             </div>
 
-            {/* Hàng 3: Đồng hồ đếm ngược */}
+            {/* Hàng 3: Đồng hồ đếm ngược + cảnh báo hết giờ */}
             <div className="my-1">
                 <SessionCountdown plannedEndAt={s.plannedEndAt} />
+                {isPriceFreezed && (
+                    <div className="mt-1 flex items-center gap-1 rounded-xs border border-red-300 bg-red-50 px-1.5 py-0.5">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500 animate-pulse" />
+                        <span className="text-[10px] font-bold text-red-700 leading-tight">
+                            HẾT GIỜ — Giá đang giữ nguyên. Vui lòng kết thúc hoặc gia hạn.
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Hàng 4: Chi tiết bill & Kết quả */}
@@ -376,7 +401,18 @@ function SessionGridCardComponent({
                 )}
 
                 {/* Nút Thanh toán & In bill trực tiếp trên ô */}
-                {canComplete && (
+                {canComplete && isExpired ? (
+                    <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2" onPointerDown={(e) => e.stopPropagation()}>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); onSettlement(s.id); }}
+                            className="rounded-xs bg-[#9E2A2B] px-2 py-2 text-[11px] font-bold text-white hover:bg-[#832324]">
+                            Kết thúc
+                        </button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); onExtend(s.id); }}
+                            className="rounded-xs bg-[#2C4C3B] px-2 py-2 text-[11px] font-bold text-white hover:bg-[#233D2F]">
+                            Gia hạn thêm giờ
+                        </button>
+                    </div>
+                ) : canComplete && (
                     <button
                         type="button"
                         onClick={(e) => {
@@ -412,10 +448,15 @@ export const SessionGridCard = memo(SessionGridCardComponent, (prev, next) => {
     if (prev.isSelected !== next.isSelected) return false;
     if (prev.canComplete !== next.canComplete) return false;
     if (prev.session !== next.session) return false;
-    // Chỉ re-render khi phút quá giờ hoặc số dư thực tế thay đổi
+    // Re-render khi:
+    //   1. Chuyển trạng thái từ trong giờ → hết giờ (để hiện badge cảnh báo)
+    //   2. Phút quá giờ thay đổi (chỉ khi đã ghi nhận dòng quá giờ)
+    //   3. Số dư thay đổi
     if (prev.nowMs !== next.nowMs) {
         const prevFin = computeSessionFinancials(prev.session, prev.nowMs);
         const nextFin = computeSessionFinancials(next.session, next.nowMs);
+        // Kiểm tra có vừa chuyển sang trạng thái hết giờ không
+        if (prevFin.isOvertime !== nextFin.isOvertime) return false;
         if (
             prevFin.liveOvertimeMinutes !== nextFin.liveOvertimeMinutes ||
             prevFin.netBalance !== nextFin.netBalance

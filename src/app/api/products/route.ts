@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getProductStockMap } from "@/lib/product-stock";
 import {
     AuthenticationError,
     ForbiddenError,
@@ -42,33 +43,20 @@ export async function GET() {
             Role.STAFF,
         ]);
 
-        const products = await prisma.product.findMany({
+        const [products, stockByProduct] = await Promise.all([prisma.product.findMany({
             where: {
                 lakeId: tenantContext.lakeId,
                 deletedAt: null,
             },
-            include: {
-                movements: {
-                    select: {
-                        quantity: true,
-                    },
-                },
-            },
             orderBy: {
                 createdAt: "desc",
             },
-        });
+        }), getProductStockMap(tenantContext.lakeId)]);
 
         const productsWithStock = products.map((p) => {
-            const stock = p.movements.reduce(
-                (sum, m) => sum + Number(m.quantity),
-                0,
-            );
-            const { movements: _movements, ...rest } = p;
-            void _movements;
             return {
-                ...rest,
-                stock,
+                ...p,
+                stock: stockByProduct.get(p.id) ?? 0,
             };
         });
 

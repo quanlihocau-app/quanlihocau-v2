@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test:unit": "node --test --test-timeout=15000 tests/app-regressions.test.mjs tests/custom-start-time.test.mjs tests/verification-timer-comprehensive.mjs",
     "postinstall": "prisma generate",
     "test": "node --test --test-concurrency=1 --env-file=.env tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs tests/speedsms-and-otp-security.test.mjs tests/comprehensive-reporting.test.mjs tests/test-auth-and-subscription.test.mjs tests/prepaid-and-postpaid-billing.test.mjs tests/admin-user-management.test.mjs tests/admin-manual-order-confirm.test.mjs"
   },

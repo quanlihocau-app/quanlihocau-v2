@@ -82,6 +82,7 @@ test("Verification 2: Tab switch / Background / Screen lock / 5-minute jump / Ne
         // 4. Server offset adjustment (client clock is behind by 15s)
         sessionTicker.setServerOffsetMs(15_000);
         assert.equal(sessionTicker.getServerOffsetMs(), 15_000);
+        assert.ok(currentCalculatedLabel, "Offset updates must notify subscribed countdowns");
     } finally {
         unsub();
         sessionTicker.resetForTest();

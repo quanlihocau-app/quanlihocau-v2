@@ -1,17 +1,31 @@
 "use client";
 
-import React, { useState } from "react";
-import { SessionProvider } from "next-auth/react";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { getQueryClient, createLocalStoragePersister } from "@/lib/query-client";
+import React, { useEffect, useRef, useState } from "react";
+import { SessionProvider, useSession } from "next-auth/react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { getQueryClient, clearCatalogCache } from "@/lib/query-client";
 import { ToastProvider } from "@/components/ui/toast";
 import { AutoScrollCenter } from "@/components/ui/auto-scroll-center";
 import { VirtualKeyboardHandler } from "@/components/ui/virtual-keyboard-handler";
 
+function SessionCacheGuard() {
+    const { data: session, status } = useSession();
+    const previousIdentity = useRef<string | null | undefined>(undefined);
+    useEffect(() => {
+        if (status === "loading") return;
+        const identity = session?.user?.id ?? null;
+        if (previousIdentity.current !== undefined && previousIdentity.current !== identity) {
+            clearCatalogCache();
+        }
+        previousIdentity.current = identity;
+        try { window.localStorage.removeItem("QLHC_POS_CACHE_V1"); } catch { /* Storage is optional. */ }
+    }, [session?.user?.id, status]);
+    return null;
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
-    // Đảm bảo queryClient và persister là instance ổn định trên Client
+    // Stable client for both server rendering and browser hydration.
     const [queryClient] = useState(() => getQueryClient());
-    const [persister] = useState(() => createLocalStoragePersister());
 
     const content = (
         <ToastProvider>
@@ -21,27 +35,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         </ToastProvider>
     );
 
-    // Nếu môi trường server hoặc persister chưa khởi tạo, fallback về SessionProvider + content
-    if (!persister) {
-        return (
-            <SessionProvider>
-                {content}
-            </SessionProvider>
-        );
-    }
-
     return (
         <SessionProvider>
-            <PersistQueryClientProvider
-                client={queryClient}
-                persistOptions={{
-                    persister,
-                    maxAge: 1000 * 60 * 60 * 24, // Giữ cache 24 giờ trong LocalStorage
-                    buster: "v1.0.0",
-                }}
-            >
+            <QueryClientProvider client={queryClient}>
+                <SessionCacheGuard />
                 {content}
-            </PersistQueryClientProvider>
+            </QueryClientProvider>
         </SessionProvider>
     );
 }

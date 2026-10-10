@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
+import { getQueryClient } from "@/lib/query-client";
+import { productCatalogKeys, useProducts } from "@/hooks/use-products";
 
 export interface Product {
     id: string;
@@ -15,28 +17,16 @@ function formatPrice(vnd: number): string {
     return new Intl.NumberFormat("vi-VN").format(vnd) + "đ";
 }
 
-let cachedProducts: Product[] | null = null;
-let fetchProductsPromise: Promise<Product[]> | null = null;
-
 export async function getCachedProducts(): Promise<Product[]> {
-    if (cachedProducts) return cachedProducts;
-    if (fetchProductsPromise) return fetchProductsPromise;
-
-    fetchProductsPromise = fetch("/api/products")
-        .then((r) => r.json())
-        .then((data: { products?: Product[]; error?: string }) => {
-            if (data.products) {
-                cachedProducts = data.products;
-                return cachedProducts;
-            }
-            return [];
-        })
-        .catch(() => [])
-        .finally(() => {
-            fetchProductsPromise = null;
-        });
-
-    return fetchProductsPromise;
+    return getQueryClient().fetchQuery({
+        queryKey: productCatalogKeys.list(),
+        queryFn: async ({ signal }) => {
+            const response = await fetch("/api/products", { signal });
+            if (!response.ok) throw new Error("Không thể tải danh sách sản phẩm.");
+            const data = await response.json() as { products?: Product[] };
+            return data.products ?? [];
+        },
+    });
 }
 
 export interface AddProductModalProps {
@@ -52,9 +42,10 @@ export function AddProductModal({
     onSuccess,
     onOptimisticAdd,
 }: AddProductModalProps) {
-    const [products, setProducts] = useState<Product[]>(() => cachedProducts ?? []);
-    const [isLoadingProducts, setIsLoadingProducts] = useState(!cachedProducts);
-    const [loadError, setLoadError] = useState("");
+    const productQuery = useProducts();
+    const products = productQuery.data ?? [];
+    const isLoadingProducts = productQuery.isPending;
+    const loadError = productQuery.error?.message ?? "";
     const [search, setSearch] = useState("");
     const [selectedProductId, setSelectedProductId] = useState<string>("");
     const [quantity, setQuantity] = useState(1);
@@ -69,31 +60,6 @@ export function AddProductModal({
     });
 
     const searchRef = useRef<HTMLInputElement>(null);
-
-    // Load products with memory cache for instant 0ms open
-    useEffect(() => {
-        let cancelled = false;
-
-        if (!cachedProducts) {
-            getCachedProducts()
-                .then((prods) => {
-                    if (!cancelled) {
-                        setProducts(prods);
-                        setIsLoadingProducts(false);
-                    }
-                })
-                .catch(() => {
-                    if (!cancelled) {
-                        setLoadError("Không thể tải danh sách sản phẩm.");
-                        setIsLoadingProducts(false);
-                    }
-                });
-        }
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     // Focus search on open
     useEffect(() => {

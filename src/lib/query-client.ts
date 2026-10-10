@@ -1,7 +1,6 @@
 "use client";
 
 import { QueryClient } from "@tanstack/react-query";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 
 /**
  * Cấu hình QueryClient chuẩn hiệu năng cao cho Mobile POS (Capacitor / Next.js)
@@ -39,14 +38,15 @@ export function getQueryClient() {
 }
 
 /**
- * Bộ lưu trữ Persister vào LocalStorage (hỗ trợ hiển thị 0ms & Offline Mode tại hồ câu)
+ * Discard tenant data when the authenticated account or support lake changes.
  */
-export function createLocalStoragePersister() {
-    if (typeof window === "undefined") return undefined;
-
-    return createSyncStoragePersister({
-        storage: window.localStorage,
-        key: "QLHC_POS_CACHE_V1",
-        throttleTime: 1000,
-    });
+export function clearCatalogCache() {
+    browserQueryClient?.clear();
+    // Remove the legacy cache, which was shared by all accounts and lakes.
+    try {
+        window.localStorage.removeItem("QLHC_POS_CACHE_V1");
+        window.localStorage.removeItem("qlhc_ticket_form_draft");
+    } catch {
+        // Storage may be unavailable in private browsing or a restricted WebView.
+    }
 }

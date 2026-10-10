@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { Role } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getProductStockMap } from "@/lib/product-stock";
 import { getTenantContext } from "@/lib/tenant";
 import { privateRouteMetadata } from "@/lib/metadata";
 
@@ -48,33 +49,20 @@ export default async function ProductsPage() {
         tenantContext.role === Role.OWNER ||
         tenantContext.role === Role.MANAGER;
 
-    const products = await prisma.product.findMany({
+    const [products, stockByProduct] = await Promise.all([prisma.product.findMany({
         where: {
             lakeId: tenantContext.lakeId,
             deletedAt: null,
         },
-        include: {
-            movements: {
-                select: {
-                    quantity: true,
-                },
-            },
-        },
         orderBy: {
             createdAt: "desc",
         },
-    });
+    }), getProductStockMap(tenantContext.lakeId)]);
 
     const productsWithStock = products.map((p) => {
-        const stock = p.movements.reduce(
-            (sum, m) => sum + Number(m.quantity),
-            0,
-        );
-        const { movements: _m, ...rest } = p;
-        void _m;
         return {
-            ...rest,
-            stock,
+            ...p,
+            stock: stockByProduct.get(p.id) ?? 0,
         };
     });
 

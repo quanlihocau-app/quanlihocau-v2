@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>;
@@ -118,7 +119,7 @@ export function PwaInstallPrompt() {
                 >
                     <div className="flex items-center gap-3 rounded-2xl border border-[#246B38]/30 bg-[#0B2E1D]/95 px-3.5 py-3 text-white shadow-xl backdrop-blur-md">
                         {/* App Icon */}
-                        <img
+                        <Image width={40} height={40}
                             src="/icons/icon-192x192.png"
                             alt="Hồ Câu POS"
                             className="h-10 w-10 shrink-0 rounded-xl shadow-md border border-emerald-400/30 object-cover"
@@ -172,7 +173,7 @@ export function PwaInstallPrompt() {
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-emerald-800/40 pb-3">
                             <div className="flex items-center gap-2.5">
-                                <img
+                                <Image width={40} height={40}
                                     src="/icons/icon-192x192.png"
                                     alt="Icon"
                                     className="h-10 w-10 rounded-xl shadow-md border border-emerald-400/30"

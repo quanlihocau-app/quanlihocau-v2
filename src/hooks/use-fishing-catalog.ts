@@ -42,8 +42,8 @@ export const catalogKeys = {
 export function useFishingSpots(initialData?: FishingHut[]) {
     const query = useQuery({
         queryKey: catalogKeys.spots(),
-        queryFn: async () => {
-            const res = await fetch("/api/huts");
+        queryFn: async ({ signal }) => {
+            const res = await fetch("/api/huts", { signal });
             if (!res.ok) {
                 throw new Error("Không thể tải danh sách ô câu.");
             }
@@ -72,8 +72,8 @@ export function useFishingSpots(initialData?: FishingHut[]) {
 export function useFishingPackages(initialData?: FishingPackage[]) {
     return useQuery({
         queryKey: catalogKeys.packages(),
-        queryFn: async () => {
-            const res = await fetch("/api/packages");
+        queryFn: async ({ signal }) => {
+            const res = await fetch("/api/packages", { signal });
             if (!res.ok) {
                 throw new Error("Không thể tải danh sách gói câu.");
             }
@@ -103,9 +103,8 @@ export function useQuickCatalogMutations() {
         onSuccess: (newHut) => {
             // Cập nhật ngay vào cache để giao diện hiển thị tức thì (0ms)
             queryClient.setQueryData<FishingHut[]>(catalogKeys.spots(), (old) => {
-                if (!old) return [];
                 return [
-                    ...old,
+                    ...(old ?? []),
                     {
                         id: newHut.id,
                         name: newHut.name,
@@ -153,8 +152,7 @@ export function useQuickCatalogMutations() {
         },
         onSuccess: (newPkg) => {
             queryClient.setQueryData<FishingPackage[]>(catalogKeys.packages(), (old) => {
-                if (!old) return [];
-                return [...old, newPkg];
+                return [...(old ?? []), newPkg];
             });
             queryClient.invalidateQueries({ queryKey: catalogKeys.packages() });
         },

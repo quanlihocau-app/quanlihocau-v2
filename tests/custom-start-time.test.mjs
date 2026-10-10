@@ -35,6 +35,12 @@ const openSessionTestSchema = z.object({
         .optional(),
 });
 
+test("Custom start input rejects an invalid timestamp", () => {
+    const input = { packageId: "550e8400-e29b-41d4-a716-446655440000", hutIds: ["hut-1"] };
+    assert.equal(openSessionTestSchema.safeParse({ ...input, customStartAt: "invalid" }).success, false);
+    assert.equal(openSessionTestSchema.safeParse({ ...input, customStartAt: "2026-10-06T09:00:00+07:00" }).success, true);
+});
+
 // Business Logic Helper: Calculate Live Preview
 function calculateLivePreview({
     nowMs,

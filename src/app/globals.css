@@ -500,4 +500,54 @@ nav button:active, nav a:active {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px) !important;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   SECTION TITLE: Tiêu đề mục/phần dùng chung toàn app
+   Đồng bộ phong cách nổi bật, dễ đọc trên mọi trang mobile.
+   ──────────────────────────────────────────────────────────────────────── */
 
+/* Dùng cho tiêu đề các mục trong Card/Form (Tạo vé, Cài đặt, ...) */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0F172A;
+  line-height: 1.1;
+}
+
+/* Thanh xanh lá dọc bên trái đặc trưng của app */
+.section-title::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  border-radius: 99px;
+  background: #16A34A;
+  flex-shrink: 0;
+}
+
+/* Dùng cho tiêu đề mục nhỏ hơn (trong Card mục con) */
+.section-title-sm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #246B38;
+  line-height: 1;
+}
+
+.section-title-sm::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  border-radius: 99px;
+  background: #16A34A;
+  flex-shrink: 0;
+}
