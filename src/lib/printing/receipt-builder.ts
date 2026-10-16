@@ -1,4 +1,4 @@
-import { EscPosBuilder } from "./escpos";
+import { EscPosBuilder, removeVietnameseTones } from "./escpos";
 import {
     PaymentReceiptData,
     PrinterConfig,
@@ -27,99 +27,67 @@ export function buildSessionTicketEscPos(
     data: SessionTicketData,
     config?: Partial<PrinterConfig>,
 ): Uint8Array {
-    const charsPerLine = config?.charsPerLine ?? 32;
+    // Standard Font A is readable on the MP210's 48 mm printable area.
+    // Omit QR and redundant lines to keep ordinary tickets near 12 cm or less.
+    const charsPerLine = config?.paperWidthMm === 80 ? 48 : 32;
     const encoding = config?.encoding ?? "ascii-normalized";
     const builder = new EscPosBuilder(charsPerLine, encoding);
+    builder.font("A").size(1, 1).lineSpacing(26);
 
-    // 1. Header
-    builder.align("center");
-    if (data.organizationName) {
-        builder.text(data.organizationName.toUpperCase()).feed(1);
-    }
-    builder.bold(true).size(2, 2).text(data.lakeName.toUpperCase()).feed(1);
-    const isPrepaid =
-        data.paymentTiming === "PREPAID" ||
+    // Wrap customer text instead of truncating names, huts or important notes.
+    const line = (value: string) => {
+        let remaining = encoding === "ascii-normalized" ? removeVietnameseTones(value) : value;
+        for (const paragraph of remaining.split(/\r?\n/)) {
+            remaining = paragraph;
+            while (remaining.length > charsPerLine) {
+                const breakAt = remaining.lastIndexOf(" ", charsPerLine);
+                const end = breakAt > 0 ? breakAt : charsPerLine;
+                builder.line(remaining.slice(0, end));
+                remaining = remaining.slice(end).trimStart();
+            }
+            builder.line(remaining);
+        }
+    };
+
+    const isPrepaid = data.paymentTiming === "PREPAID" ||
         (data.prepaidAmountVnd !== undefined && data.prepaidAmountVnd > 0);
-
-    builder.bold(true).text(isPrepaid ? "--- VE CAU - DA THANH TOAN ---" : "--- VE CAU - THU SAU ---").feed(1);
-    if (data.isReprint) {
-        builder.bold(true).text("*** BAN IN LAI ***").feed(1);
-    }
+    builder.align("center").bold(true);
+    if (data.organizationName && data.organizationName !== data.lakeName) line(data.organizationName.toUpperCase());
+    line(data.lakeName.toUpperCase());
+    line(isPrepaid ? "VE CAU - DA THANH TOAN" : "VE CAU - THU SAU");
     builder.bold(false);
-    const displayTicketCode = data.ticketCode || `#${data.sessionId.slice(0, 8).toUpperCase()}`;
-    builder.text(`Ma phien: ${displayTicketCode}`).feed(1);
-    builder.divider("=");
+    if (data.isReprint) line("*** BAN IN LAI ***");
+    line(`Ma ve: ${data.ticketCode || data.sessionId.slice(0, 8).toUpperCase()}`);
+    builder.align("left").divider("-");
 
-    // 2. Info section
-    builder.align("left");
-    const hutList = data.huts.map((h) => h.areaName ? `${h.name} (${h.areaName})` : h.name).join(", ");
-    builder.twoCols("Vi tri / Choi:", hutList || "Tu do");
-    builder.twoCols("Goi cau:", data.packageName);
-    builder.twoCols("Thoi luong:", `${data.durationMinutes} phut`);
-    builder.twoCols("Gia goi:", formatVnd(data.packagePriceVnd));
-
-    if (data.customerName) {
-        builder.twoCols("Khach hang:", data.customerName);
-        if (data.customerPhone) {
-            builder.twoCols("SDT:", data.customerPhone);
-        }
-    }
-
-    builder.divider("-");
-    builder.twoCols("Gio bat dau:", formatDateTime(data.startAt));
-    if (data.plannedEndAt) {
-        builder.twoCols("Du kien het:", formatDateTime(data.plannedEndAt));
-    }
-    if (data.cashierName) {
-        builder.twoCols("Nhan vien:", data.cashierName);
-    }
-    if (data.note) {
-        builder.twoCols("Ghi chu:", data.note);
-    }
-
-    // 3. Initial products bought with session
-    if (data.items && data.items.length > 0) {
+    const huts = data.huts.map(h => h.areaName ? `${h.name} (${h.areaName})` : h.name).join(", ");
+    line(`Choi: ${huts || "Tu do"}`);
+    line(`Goi: ${data.packageName}`);
+    builder.twoCols(`${data.durationMinutes} phut`, formatVnd(data.packagePriceVnd));
+    if (data.customerName) line(`Khach: ${data.customerName}`);
+    if (data.customerPhone) line(`SDT: ${data.customerPhone}`);
+    line(`Vao: ${formatDateTime(data.startAt)}`);
+    if (data.plannedEndAt) line(`Het: ${formatDateTime(data.plannedEndAt)}`);
+    if (data.cashierName && config?.template?.showCashierName !== false) line(`NV: ${data.cashierName}`);
+    if (data.note) line(`Ghi chu: ${data.note}`);
+    if (data.items?.length) {
         builder.divider("-");
-        builder.bold(true).text("Hang mua kem:").bold(false).feed(1);
         for (const item of data.items) {
-            builder.twoCols(`${item.name} x${item.quantity}`, formatVnd(item.totalVnd));
+            line(`${item.name} x${item.quantity}: ${formatVnd(item.totalVnd)}`);
         }
     }
-
-    // 4. Prepayment / Financials at ticket creation
     builder.divider("-");
-    builder.twoCols("Tong tien ve:", formatVnd(data.packagePriceVnd));
-    if (isPrepaid) {
-        const paidAmount = data.prepaidAmountVnd ?? data.packagePriceVnd;
-        builder.twoCols("Da thanh toan:", formatVnd(paidAmount));
-        if (data.paymentMethod) {
-            const methodLabel =
-                data.paymentMethod === "CASH"
-                    ? "Tien mat"
-                    : data.paymentMethod === "BANK_TRANSFER"
-                    ? "Chuyen khoan"
-                    : data.paymentMethod;
-            builder.twoCols("Hinh thuc:", methodLabel);
-        }
-        builder.bold(true).twoCols("Con phai thu:", "0d").bold(false);
-    } else {
-        builder.twoCols("Da thanh toan:", "0d");
-        const remaining = data.balanceDueVnd ?? data.packagePriceVnd;
-        builder.bold(true).twoCols("Con phai thu:", formatVnd(remaining)).bold(false);
+    const paidAmount = data.prepaidAmountVnd ?? (isPrepaid ? data.packagePriceVnd : 0);
+    const remainingAmount = data.balanceDueVnd ?? Math.max(0, data.packagePriceVnd - paidAmount);
+    builder.twoCols("Da thu:", formatVnd(paidAmount));
+    builder.bold(true).twoCols("Con thu:", formatVnd(remainingAmount)).bold(false);
+    if (data.paymentMethod) {
+        const method = data.paymentMethod === "CASH" ? "Tien mat" : data.paymentMethod === "BANK_TRANSFER" ? "Chuyen khoan" : data.paymentMethod;
+        line(`Thanh toan: ${method}`);
     }
-
-    builder.divider("=");
-
-    // 5. QR Code for Ticket verification
     builder.align("center");
-    builder.qrCode(`SESSION:${data.sessionId}`, 4);
-
-    // 6. Footer
-    builder.text("Chuc quy can thu giat ca moi tay!").feed(1);
-    builder.text("Vui long giu phieu den het gio cau.").feed(1);
-    builder.feed(3);
-    builder.cut();
-
+    line("Giu ve den het ca. Cam on quy khach!");
+    builder.feed(1).cut();
     return builder.build();
 }
 
@@ -184,32 +152,46 @@ export function buildPaymentReceiptEscPos(
 
     builder.divider("=");
 
-    // 4. Financial Summary
-    builder.twoCols("Tong hoa don:", formatVnd(data.totalAmountVnd));
-    if (data.prepaidAmountVnd !== undefined && data.prepaidAmountVnd > 0) {
-        builder.twoCols("Da thu truoc:", formatVnd(data.prepaidAmountVnd));
-    }
-    if (data.supplementaryAmountVnd !== undefined && data.supplementaryAmountVnd > 0) {
-        builder.bold(true);
-        builder.twoCols("Thu bo sung:", formatVnd(data.supplementaryAmountVnd));
-        builder.bold(false);
-    } else if (data.paymentAmountVnd !== undefined && data.paymentAmountVnd > 0) {
-        builder.bold(true);
-        builder.twoCols("Thu lan nay:", formatVnd(data.paymentAmountVnd));
-        builder.bold(false);
-    }
-    builder.twoCols("Da thanh toan:", formatVnd(data.paidAmountVnd));
+    // 4. Financial Summary — show the complete charge, then clarify prior payments and the remaining balance.
+    const hourTotal =
+        (data.packageTotalVnd ?? 0) +
+        (data.extensionsTotalVnd ?? 0) +
+        (data.overtimeTotalVnd ?? 0);
+    const itemsTotal = data.itemsTotalVnd ?? 0;
+    const fishTotal = data.fishBuybackTotalVnd ?? 0;
+    // prepaidAmountVnd is the portion of total paid before checkout; don't deduct it twice.
+    const prepaidTotal = data.prepaidAmountVnd ?? 0;
 
-    if (data.changeAmountVnd !== undefined && data.changeAmountVnd > 0) {
-        builder.twoCols("Tien thoi lai:", formatVnd(data.changeAmountVnd));
+    if (hourTotal > 0) {
+        builder.twoCols("Tien gio cau:", formatVnd(hourTotal));
     }
+    if (itemsTotal > 0) {
+        builder.twoCols("+ San pham/Moi:", formatVnd(itemsTotal));
+    }
+    if (fishTotal > 0) {
+        builder.twoCols("Tru tien ca thu lai:", `-${formatVnd(fishTotal)}`);
+    }
+    builder.divider("-");
+    builder.bold(true).twoCols("TONG HOA DON:", formatVnd(data.invoiceTotalVnd ?? data.totalAmountVnd)).bold(false);
+    if (prepaidTotal > 0) {
+        builder.twoCols("Ve da thanh toan:", formatVnd(prepaidTotal));
+    }
+    const supplementaryPaid = Math.max(0, (data.paidAmountVnd ?? 0) - prepaidTotal);
+    if (supplementaryPaid > 0) {
+        builder.twoCols("Da thu them:", formatVnd(supplementaryPaid));
+    }
+    builder.divider("-");
     if (data.refundAmountVnd && data.refundAmountVnd > 0) {
         builder.bold(true);
-        builder.twoCols("Hoan tra khach:", formatVnd(data.refundAmountVnd));
+        builder.twoCols("THOI LAI KHACH:", formatVnd(data.refundAmountVnd));
+        builder.bold(false);
+    } else if (data.remainingVnd > 0) {
+        builder.bold(true);
+        builder.twoCols("= CAN THU:", formatVnd(data.remainingVnd));
         builder.bold(false);
     } else {
         builder.bold(true);
-        builder.twoCols("Con phai thu:", formatVnd(data.remainingVnd));
+        builder.twoCols("= THANH TOAN DU", "0d");
         builder.bold(false);
     }
 

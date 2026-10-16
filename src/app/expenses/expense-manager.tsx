@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -63,6 +64,8 @@ export function ExpenseManager({
     lakeName,
 }: ExpenseManagerProps) {
     const router = useRouter();
+    const pendingRequest = useRef<{ body: string; key: string } | null>(null);
+    const submitting = useRef(false);
 
     const [expenses, setExpenses] = useState<ExpenseItem[]>(initialExpenses);
     const [pagination, setPagination] = useState<PaginationInfo>(initialPagination);
@@ -87,7 +90,7 @@ export function ExpenseManager({
         closeOnEscape: !isSubmitting,
     });
 
-    const numericAmount = parseInt(amountStr.replace(/\D/g, ""), 10) || 0;
+    const numericAmount = Number(amountStr);
 
     async function fetchPage(pageNumber: number) {
         setIsLoadingPage(true);
@@ -115,10 +118,11 @@ export function ExpenseManager({
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+        if (submitting.current) return;
         setError(null);
         setSuccessMessage(null);
 
-        if (numericAmount <= 0) {
+        if (!Number.isInteger(numericAmount) || numericAmount <= 0 || numericAmount > 2147483647) {
             setError("Vui lòng nhập số tiền chi phí hợp lệ lớn hơn 0.");
             return;
         }
@@ -129,7 +133,10 @@ export function ExpenseManager({
         }
 
         setIsSubmitting(true);
-        const idempotencyKey = crypto.randomUUID();
+        submitting.current = true;
+        const requestBody = JSON.stringify({ amountVnd: numericAmount, description: description.trim(), category: selectedCategory, paymentMethod });
+        if (pendingRequest.current?.body !== requestBody) pendingRequest.current = { body: requestBody, key: crypto.randomUUID() };
+        const idempotencyKey = pendingRequest.current.key;
 
         try {
             const res = await fetch("/api/expenses", {
@@ -138,12 +145,7 @@ export function ExpenseManager({
                     "Content-Type": "application/json",
                     "Idempotency-Key": idempotencyKey,
                 },
-                body: JSON.stringify({
-                    amountVnd: numericAmount,
-                    description: description.trim(),
-                    category: selectedCategory,
-                    paymentMethod,
-                }),
+                body: requestBody,
             });
 
             const data = await res.json();
@@ -154,18 +156,17 @@ export function ExpenseManager({
                 return;
             }
 
+            pendingRequest.current = null;
             setSuccessMessage("Đã tạo chi phí thành công!");
             setIsSubmitting(false);
 
-            setTimeout(() => {
-                setIsModalOpen(false);
-                router.refresh();
-                fetchPage(1);
-            }, 800);
+            setIsModalOpen(false);
+            router.refresh();
+            await fetchPage(1);
         } catch {
             setError("Lỗi kết nối mạng khi tạo chi phí.");
             setIsSubmitting(false);
-        }
+        } finally { submitting.current = false; }
     }
 
     return (
@@ -195,6 +196,7 @@ export function ExpenseManager({
                 }
             />
 
+            <Link href="/cashbook" className="mb-4 block rounded-xl border bg-white p-4 font-bold text-[#102A43]">Sổ thu chi: lập phiếu thu, xem dòng tiền và xuất file →</Link>
             {/* Success message */}
             {successMessage && (
                 <div className="mb-4">

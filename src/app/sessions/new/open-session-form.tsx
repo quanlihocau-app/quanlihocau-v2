@@ -135,7 +135,7 @@ export function OpenSessionForm({
 }: OpenSessionFormProps) {
     const router = useRouter();
     const toast = useToast();
-    const { isConnected, printSessionTicket } = usePrinter();
+    const { config: printerConfig, templateConfig, printSessionTicket } = usePrinter();
 
     // Customer state
     const [customerList, setCustomerList] =
@@ -694,7 +694,7 @@ export function OpenSessionForm({
             toast.success("Bắt đầu ca câu thành công (Thu sau)!");
 
             // Print ticket for postpaid session
-            if (isConnected) {
+            if (printerConfig && templateConfig.autoPrintSession) {
                 printSessionTicket(
                     {
                         sessionId: ticketData.sessionId,
@@ -714,8 +714,10 @@ export function OpenSessionForm({
                         balanceDueVnd: grandTotalPrice,
                         prepaidAmountVnd: 0,
                     },
-                    { manual: false },
-                ).catch(() => {});
+                    { manual: false, jobId: `open-session-${ticketData.sessionId}` },
+                ).then((result) => {
+                    if (!result.success) toast.error(result.error || "Đã tạo ca câu, nhưng chưa in được vé. Có thể in lại trong chi tiết ca.");
+                }).catch(() => toast.error("Đã tạo ca câu, nhưng chưa in được vé."));
             }
 
             setTimeout(() => {
@@ -952,8 +954,8 @@ export function OpenSessionForm({
 
             // Print prepaid ticket
             try {
-                if (isConnected) {
-                    await printSessionTicket(
+                if (printerConfig && templateConfig.autoPrintSession) {
+                    const printResult = await printSessionTicket(
                         {
                             sessionId: ticketData.sessionId,
                             ticketCode: ticketData.ticketCode,
@@ -973,9 +975,10 @@ export function OpenSessionForm({
                             balanceDueVnd: 0,
                             paymentMethod: paymentMethodChoice === "VIETQR" ? "BANK_TRANSFER" : paymentMethodChoice === "SPLIT" ? "CASH" : paymentMethodChoice,
                         },
-                        { manual: false },
+                        { manual: false, jobId: `open-session-${ticketData.sessionId}` },
                     );
-                    toast.success("Đã in vé thành công!");
+                    if (printResult.success) toast.success("Đã gửi vé đến máy in!");
+                    else toast.error(printResult.error || "Thanh toán đã ghi nhận, nhưng chưa in được vé. Có thể in lại trong chi tiết ca.");
                 }
             } catch (err: unknown) {
                 console.error("Print prepaid ticket failed:", err);

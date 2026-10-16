@@ -18,13 +18,30 @@ export function usePrinter() {
     const [templateConfig, setTemplateConfig] = useState<PrinterTemplateConfig>(printManager.getTemplateConfig());
     const isNative = printManager.isNative();
 
+    const [isStation, setIsStation] = useState<boolean>(printManager.isStation());
+
     useEffect(() => {
         const unsubscribe = printManager.subscribe((newStatus, newConfig, newTemplate) => {
             setStatus(newStatus);
             setConfig(newConfig);
             setTemplateConfig(newTemplate);
         });
-        return unsubscribe;
+        const unsubscribeStation = printManager.subscribeDeskStation((station) => {
+            setIsStation(station);
+        });
+        void printManager.autoConnect();
+        if (printManager.isStation()) {
+            printManager.startDeskStationPolling();
+        }
+        const reconnect = () => { void printManager.autoConnect(); };
+        window.addEventListener("focus", reconnect);
+        const usbTimer = window.setInterval(() => { void printManager.refreshUsbConnection(); }, 5000);
+        return () => {
+            unsubscribe();
+            unsubscribeStation();
+            window.clearInterval(usbTimer);
+            window.removeEventListener("focus", reconnect);
+        };
     }, []);
 
     return {
@@ -32,7 +49,12 @@ export function usePrinter() {
         config,
         templateConfig,
         isNative,
+        isStation,
+        setDeskStation: (enabled: boolean) => printManager.setDeskStation(enabled),
+        sendToCloudSpooler: (jobType: "SESSION_TICKET" | "PAYMENT_RECEIPT" | "TEST", targetName: string, payload: SessionTicketData | PaymentReceiptData | object) =>
+            printManager.sendToCloudSpooler(jobType, targetName, payload),
         isConnected: printManager.isConnected(),
+        connectWithConsent: (connectionType?: "USB" | "BLUETOOTH") => printManager.connectWithConsent(connectionType),
         scanBluetooth: () => printManager.scanBluetooth(),
         connectBluetooth: (device: PrinterDevice) => printManager.connectBluetooth(device),
         listUsbDevices: () => printManager.listUsbDevices(),

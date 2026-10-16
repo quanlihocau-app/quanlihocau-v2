@@ -1,3 +1,4 @@
+import { financialScope } from "@/lib/reports/financial-scope";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
@@ -31,6 +32,7 @@ export interface DrilldownItem {
     paymentMethod: string;
     status: string;
     details?: Record<string, unknown>;
+    href?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -55,8 +57,8 @@ export async function GET(request: NextRequest) {
         const customFromTime = searchParams.get("fromTime") || "00:00";
         const customToTime = searchParams.get("toTime") || "23:59";
 
-        const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-        const limit = Math.min(100, Math.max(10, parseInt(searchParams.get("limit") || "50", 10)));
+        const page = Math.max(1, (parseInt(searchParams.get("page") || "1", 10) || 1));
+        const limit = Math.min(100, Math.max(10, (parseInt(searchParams.get("limit") || "50", 10) || 50)));
         const skip = (page - 1) * limit;
 
         const dateRange = getDateRangeForPreset(
@@ -68,6 +70,7 @@ export async function GET(request: NextRequest) {
             customToTime
         );
 
+        const scope = await financialScope(lakeId, searchParams);
         let items: DrilldownItem[] = [];
         let totalCount = 0;
         let title = "Danh sách giao dịch chi tiết";
@@ -75,7 +78,7 @@ export async function GET(request: NextRequest) {
         if (metric === "ticketRevenue" || metric === "totalRevenue") {
             title = metric === "ticketRevenue" ? "Chi tiết Doanh thu Vé câu" : "Chi tiết Tổng Doanh thu";
             const where: Prisma.InvoiceWhereInput = {
-                lakeId,
+                ...scope.invoice,
                 createdAt: { gte: dateRange.from, lte: dateRange.to },
                 status: { not: InvoiceStatus.VOIDED },
             };
@@ -111,6 +114,7 @@ export async function GET(request: NextRequest) {
 
                 return {
                     id: inv.id,
+                    href: `/invoices/${inv.id}`,
                     code: inv.id.substring(0, 8).toUpperCase(),
                     dateTime: formatVnDateTimeDisplay(inv.createdAt),
                     customerName: inv.customer?.name || "Khách vãng lai",
@@ -125,11 +129,11 @@ export async function GET(request: NextRequest) {
             title = "Chi tiết Sản phẩm & Dịch vụ đã bán";
             const where: Prisma.InvoiceLineWhereInput = {
                 invoice: {
-                    lakeId,
+                    ...scope.invoice,
                     createdAt: { gte: dateRange.from, lte: dateRange.to },
                     status: { not: InvoiceStatus.VOIDED },
                 },
-                productId: { not: null },
+                productId: scope.productId ?? { not: null },
             };
 
             totalCount = await prisma.invoiceLine.count({ where });
@@ -150,6 +154,7 @@ export async function GET(request: NextRequest) {
                 const methods = Array.from(new Set(line.invoice.payments.map(p => p.method === PaymentMethod.CASH ? "Tiền mặt" : "Chuyển khoản"))).join(", ") || "Tiền mặt";
                 return {
                     id: line.id,
+                    href: `/invoices/${line.invoiceId}`,
                     code: line.id.substring(0, 8).toUpperCase(),
                     dateTime: formatVnDateTimeDisplay(line.createdAt),
                     customerName: line.invoice.customer?.name || "Khách lẻ",
@@ -168,7 +173,7 @@ export async function GET(request: NextRequest) {
                     createdAt: { gte: dateRange.from, lte: dateRange.to },
                     status: { not: InvoiceStatus.VOIDED },
                 },
-                name: { contains: "giờ" },
+                fishBuybackId: null, productId: null, OR: [{ name: { contains: "thêm giờ", mode: "insensitive" } }, { name: { contains: "phụ trội", mode: "insensitive" } }, { name: { contains: "gia hạn", mode: "insensitive" } }],
             };
 
             totalCount = await prisma.invoiceLine.count({ where });
@@ -200,7 +205,7 @@ export async function GET(request: NextRequest) {
         } else if (metric === "totalFishBuyback") {
             title = "Chi tiết Thu mua cá từ cần thủ";
             const where: Prisma.FishBuybackWhereInput = {
-                lakeId,
+                ...scope.buyback,
                 createdAt: { gte: dateRange.from, lte: dateRange.to },
             };
 
@@ -215,6 +220,7 @@ export async function GET(request: NextRequest) {
 
             items = buybacks.map(fb => ({
                 id: fb.id,
+                href: "/fish-buybacks",
                 code: fb.id.substring(0, 8).toUpperCase(),
                 dateTime: formatVnDateTimeDisplay(fb.createdAt),
                 customerName: "Cần thủ",
@@ -227,7 +233,7 @@ export async function GET(request: NextRequest) {
         } else if (metric === "totalExpense") {
             title = "Chi tiết Các Phiếu chi & Chi phí";
             const where: Prisma.ExpenseWhereInput = {
-                lakeId,
+                ...scope.expense,
                 createdAt: { gte: dateRange.from, lte: dateRange.to },
             };
 
@@ -241,9 +247,10 @@ export async function GET(request: NextRequest) {
             });
 
             items = expenses.map(exp => {
-                const method = exp.payments[0]?.method === PaymentMethod.CASH ? "Tiền mặt" : "Chuyển khoản";
+                const method = !exp.payments.length ? "Chưa xác định" : exp.payments[0].method === PaymentMethod.CASH ? "Tiền mặt" : "Chuyển khoản";
                 return {
                     id: exp.id,
+                    href: `/expenses/${exp.id}`,
                     code: exp.id.substring(0, 8).toUpperCase(),
                     dateTime: formatVnDateTimeDisplay(exp.createdAt),
                     customerName: "Người nhận / NCC",
@@ -291,7 +298,7 @@ export async function GET(request: NextRequest) {
             title = isCash ? "Chi tiết Giao dịch Tiền mặt" : "Chi tiết Giao dịch Chuyển khoản";
             const method = isCash ? PaymentMethod.CASH : PaymentMethod.BANK_TRANSFER;
             const where: Prisma.PaymentWhereInput = {
-                lakeId,
+                ...scope.payment,
                 method,
                 createdAt: { gte: dateRange.from, lte: dateRange.to },
             };
@@ -310,6 +317,7 @@ export async function GET(request: NextRequest) {
 
             items = payments.map(p => ({
                 id: p.id,
+                href: `/cashbook/${p.id}`,
                 code: p.id.substring(0, 8).toUpperCase(),
                 dateTime: formatVnDateTimeDisplay(p.createdAt),
                 customerName: p.invoice?.customer?.name || (p.direction === PaymentDirection.IN ? "Khách hàng" : "Người nhận"),
@@ -376,7 +384,7 @@ export async function GET(request: NextRequest) {
             // Default: Fishing sessions
             title = "Chi tiết Các phiên / Vé câu";
             const where: Prisma.FishingSessionWhereInput = {
-                lakeId,
+                ...scope.session,
                 createdAt: { gte: dateRange.from, lte: dateRange.to },
             };
             if (metric === "activeSessions") where.status = SessionStatus.ACTIVE;
@@ -389,6 +397,7 @@ export async function GET(request: NextRequest) {
                 include: {
                     customer: true,
                     package: true,
+                    invoices: { select: { id: true }, take: 1 },
                     hutLinks: { include: { hut: true } },
                 },
                 orderBy: { createdAt: "desc" },
@@ -400,6 +409,7 @@ export async function GET(request: NextRequest) {
                 const spots = s.hutLinks.map(l => l.hut.name).join(", ") || "Chưa gắn ô";
                 return {
                     id: s.id,
+                    href: s.invoices[0] ? `/invoices/${s.invoices[0].id}` : "/sessions",
                     code: s.id.substring(0, 8).toUpperCase(),
                     dateTime: formatVnDateTimeDisplay(s.startAt),
                     customerName: s.customer?.name || "Khách câu",
@@ -419,7 +429,7 @@ export async function GET(request: NextRequest) {
             totalCount,
             page,
             limit,
-            totalPages: Math.ceil(totalCount / limit),
+            totalPages: Math.max(1, Math.ceil(totalCount / limit)),
             items,
         });
     } catch (error: unknown) {

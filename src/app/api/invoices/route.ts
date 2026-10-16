@@ -51,6 +51,7 @@ export async function GET() {
         const invoices = await prisma.invoice.findMany({
             where: {
                 lakeId: tenantContext.lakeId,
+                NOT: { lines: { some: { name: { startsWith: "Thu khác: " } } } },
             },
             include: invoiceInclude,
             orderBy: {

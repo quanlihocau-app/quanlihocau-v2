@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { isQuickActionPage } from "@/lib/quick-actions";
 
 interface BeforeInstallPromptEvent extends Event {
     prompt: () => Promise<void>;
@@ -41,7 +42,8 @@ export function PwaInstallPrompt() {
     const isOperationalRoute =
         pathname?.includes("/settings/printer") ||
         pathname?.includes("/sessions/new") ||
-        pathname?.startsWith("/invoices");
+        pathname?.startsWith("/invoices") ||
+        isQuickActionPage(pathname);
 
     useEffect(() => {
         // 1. If already running in standalone mode (installed), do not show prompt

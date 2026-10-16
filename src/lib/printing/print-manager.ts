@@ -1,4 +1,7 @@
-import { Capacitor } from "@capacitor/core";
+import { windowsUsbPrinter } from "./windows-usb-printer";
+import { webSerialPrinter } from "./web-serial-printer";
+
+import { Capacitor, registerPlugin } from "@capacitor/core";
 
 import {
     buildPaymentReceiptEscPos,
@@ -32,10 +35,13 @@ interface ThermalPrinterPlugin {
     getStatus(): Promise<{ status: PrinterStatus; isConnected: boolean; device?: PrinterDevice }>;
 }
 
+const nativePrinter = registerPlugin<ThermalPrinterPlugin>("ThermalPrinter");
+
 function getNativePlugin(): ThermalPrinterPlugin | null {
     if (typeof window === "undefined") return null;
-    const cap = (window as unknown as { Capacitor?: { Plugins?: { ThermalPrinter?: ThermalPrinterPlugin } } })?.Capacitor;
-    return cap?.Plugins?.ThermalPrinter ?? null;
+    if (Capacitor.isNativePlatform()) return nativePrinter;
+    if (windowsUsbPrinter.isSelected()) return windowsUsbPrinter;
+    return webSerialPrinter.isSupported() ? webSerialPrinter : null;
 }
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
@@ -57,6 +63,9 @@ class PrintManager {
     private listeners: Set<(status: PrinterStatus, config: PrinterConfig | null, template: PrinterTemplateConfig) => void> = new Set();
     private completedJobIds: Set<string> = new Set();
     private isPrinting = false;
+    private autoReconnectEnabled = true;
+    private lastUsbCheck = 0;
+    private usbCheck: Promise<void> | null = null;
 
     constructor() {
         if (typeof window !== "undefined") {
@@ -157,6 +166,119 @@ class PrintManager {
         this.notify();
     }
 
+    private autoConnection: Promise<boolean> | null = null;
+
+    public autoConnect(): Promise<boolean> {
+        if (!this.autoReconnectEnabled) return Promise.resolve(false);
+        if (this.isConnected()) return Promise.resolve(true);
+        if (this.autoConnection) return this.autoConnection;
+        if (this.status === "connecting" || this.status === "scanning" || this.isPrinting) return Promise.resolve(false);
+        this.autoConnection = this.restoreConnection().finally(() => { this.autoConnection = null; });
+        return this.autoConnection;
+    }
+
+    public refreshUsbConnection(): Promise<void> {
+        if (this.usbCheck) return this.usbCheck;
+        if (this.isNative() || !this.autoReconnectEnabled || this.isPrinting || this.status === "connecting" ||
+            !this.config?.device.id?.startsWith("windows-usb") || Date.now() - this.lastUsbCheck < 4000) return Promise.resolve();
+        this.lastUsbCheck = Date.now();
+        this.usbCheck = (async () => {
+            try {
+                const current = await windowsUsbPrinter.getStatus();
+                if (!current.isConnected) {
+                    this.status = "disconnected";
+                    if (this.config) this.config.device.isConnected = false;
+                    this.notify();
+                    await this.autoConnect();
+                }
+            } catch {
+                this.status = "disconnected";
+                if (this.config) this.config.device.isConnected = false;
+                this.notify();
+            }
+        })().finally(() => { this.usbCheck = null; });
+        return this.usbCheck;
+    }
+
+    private async restoreConnection(): Promise<boolean> {
+        if (!this.config) {
+            if (!this.isNative()) return false;
+            const target = /(?:MP[ -]?210|RPP[ -]?02N)/i;
+            try {
+                const usb = (await this.listUsbDevices()).filter(device => target.test(device.name));
+                if (usb.length === 1) return await this.connectUsb(usb[0]);
+                if (usb.length > 1) return false;
+                const bluetooth = (await this.scanBluetooth()).filter(device => target.test(device.name));
+                if (bluetooth.length === 1) return await this.connectBluetooth(bluetooth[0]);
+            } catch {
+                this.status = "disconnected";
+                this.notify();
+            }
+            return false;
+        }
+        try {
+            // Never show a device chooser automatically on the web.
+            if (!this.isNative() && !this.config.device.id?.startsWith("windows-usb") && !await webSerialPrinter.restore(this.config.device)) return false;
+            if (this.config.device.id?.startsWith("windows-usb")) windowsUsbPrinter.activate();
+            if (this.config.connectionType === "USB") return await this.connectUsb(this.config.device);
+            if (this.config.connectionType === "BLUETOOTH") return await this.connectBluetooth(this.config.device);
+            return await this.connectWifi(this.config.device.address, this.config.device.port);
+        } catch {
+            this.status = "disconnected";
+            this.notify();
+            return false;
+        }
+    }
+
+    public async connectWithConsent(connectionType?: "USB" | "BLUETOOTH"): Promise<boolean> {
+        this.autoReconnectEnabled = true;
+        if (this.isPrinting) throw new Error("Đợi máy in gửi xong vé hiện tại trước khi đổi kết nối.");
+        if (this.isNative()) return this.autoConnect();
+        if (connectionType !== "BLUETOOTH") return this.connectWindowsUsbWithConsent();
+        if (!webSerialPrinter.isSupported()) {
+            throw new Error("Hãy mở app bằng Chrome hoặc Edge trên Windows để kết nối máy in trực tiếp.");
+        }
+        this.status = "connecting";
+        this.notify();
+        try {
+            // requestPort is invoked before any await to preserve the button's user gesture.
+            const device = await webSerialPrinter.requestConnection(connectionType);
+            windowsUsbPrinter.deactivate();
+            this.templateConfig = { ...this.templateConfig, paperWidthMm: 58 };
+            this.status = "connected";
+            this.saveConfig({ connectionType: device.connectionType, device: { ...device, isConnected: true },
+                paperWidthMm: 58, charsPerLine: 32, encoding: "ascii-normalized", template: this.templateConfig });
+            return true;
+        } catch (error) {
+            this.status = "disconnected";
+            if (this.config) this.config.device.isConnected = false;
+            this.notify();
+            throw error;
+        }
+    }
+
+    private async connectWindowsUsbWithConsent(): Promise<boolean> {
+        this.status = "connecting";
+        this.notify();
+        try {
+            await windowsUsbPrinter.authorize();
+            const { devices } = await windowsUsbPrinter.listUsbDevices();
+            if (devices.length !== 1) throw new Error("Chưa thấy máy in PT210 USB. Bật nguồn máy in, cắm dây USB vào PC rồi thử lại.");
+            const result = await windowsUsbPrinter.connectUsb();
+            if (!result.success) throw new Error("Không mở được kết nối máy in USB Windows.");
+            windowsUsbPrinter.activate();
+            this.templateConfig = { ...this.templateConfig, paperWidthMm: 58 };
+            this.status = "connected";
+            this.saveConfig({ connectionType: "USB", device: { ...devices[0], isConnected: true },
+                paperWidthMm: 58, charsPerLine: 32, encoding: "ascii-normalized", template: this.templateConfig });
+            return true;
+        } catch (error) {
+            this.status = "disconnected";
+            this.notify();
+            throw error;
+        }
+    }
+
     // --- Connect methods ---
 
     public async scanBluetooth(): Promise<PrinterDevice[]> {
@@ -177,66 +299,14 @@ class PrintManager {
             }
         }
 
-        // Web Bluetooth API Fallback (Chrome on Android / Windows / Mac)
-        if (typeof navigator !== "undefined" && "bluetooth" in navigator) {
-            this.status = "scanning";
-            this.notify();
-            try {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const navBt = (navigator as any).bluetooth;
-                const device = await navBt.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: [
-                        "000018f0-0000-1000-8000-00805f9b34fb",
-                        "e7810a71-73ae-499d-8c15-faa9aef0c3f2",
-                        "49535343-fe7d-4ae5-8fa9-9fafd205e455",
-                    ],
-                });
-                this.status = "disconnected";
-                this.notify();
-                if (device) {
-                    return [
-                        {
-                            id: device.id,
-                            name: device.name || "Máy in Bluetooth (RPP02N/MP210)",
-                            connectionType: "BLUETOOTH",
-                            address: device.id,
-                        },
-                    ];
-                }
-                return [];
-            } catch (err: unknown) {
-                this.status = "disconnected";
-                this.notify();
-                if (err instanceof Error && (err.name === "NotFoundError" || err.message.includes("User cancelled"))) {
-                    return [];
-                }
-                // Don't crash if browser restricts Bluetooth; let manual input handle it
-                return [];
-            }
-        }
-
-        return [];
+        throw new Error("Kết nối trực tiếp cần Chrome/Edge trên Windows hoặc ứng dụng Android có plugin máy in.");
     }
 
     public async connectBluetooth(device: PrinterDevice): Promise<boolean> {
+        this.autoReconnectEnabled = true;
         const plugin = getNativePlugin();
         if (!plugin) {
-            if (!this.isNative()) {
-                // In web preview mode, simulate saving the device config
-                this.saveConfig({
-                    connectionType: "BLUETOOTH",
-                    device,
-                    paperWidthMm: this.templateConfig.paperWidthMm,
-                    charsPerLine: this.templateConfig.paperWidthMm === 80 ? 48 : 32,
-                    encoding: "ascii-normalized",
-                    template: this.templateConfig,
-                });
-                this.status = "connected";
-                this.notify();
-                return true;
-            }
-            throw new Error("Không tìm thấy native plugin ThermalPrinter.");
+            throw new Error("Không có kết nối máy in trực tiếp. Hãy dùng Chrome/Edge trên Windows hoặc app Android.");
         }
 
         this.status = "connecting";
@@ -286,29 +356,17 @@ class PrintManager {
     }
 
     public async connectUsb(device: PrinterDevice): Promise<boolean> {
+        this.autoReconnectEnabled = true;
         const plugin = getNativePlugin();
         if (!plugin) {
-            if (!this.isNative()) {
-                this.saveConfig({
-                    connectionType: "USB",
-                    device,
-                    paperWidthMm: this.templateConfig.paperWidthMm,
-                    charsPerLine: this.templateConfig.paperWidthMm === 80 ? 48 : 32,
-                    encoding: "ascii-normalized",
-                    template: this.templateConfig,
-                });
-                this.status = "connected";
-                this.notify();
-                return true;
-            }
-            throw new Error("Không tìm thấy native plugin ThermalPrinter.");
+            throw new Error("Không có kết nối máy in trực tiếp. Hãy dùng Chrome/Edge trên Windows hoặc app Android.");
         }
 
         this.status = "connecting";
         this.notify();
 
         try {
-            const res = await plugin.connectUsb({ deviceId: device.address });
+            const res = await plugin.connectUsb({ deviceId: device.id });
             if (res.success) {
                 this.status = "connected";
                 this.saveConfig({
@@ -351,17 +409,7 @@ class PrintManager {
 
         const plugin = getNativePlugin();
         if (!plugin) {
-            this.saveConfig({
-                connectionType: "WIFI",
-                device,
-                paperWidthMm: this.templateConfig.paperWidthMm,
-                charsPerLine: this.templateConfig.paperWidthMm === 80 ? 48 : 32,
-                encoding: "ascii-normalized",
-                template: this.templateConfig,
-            });
-            this.status = "connected";
-            this.notify();
-            return true;
+            throw new Error("Không có kết nối máy in trực tiếp. Hãy dùng Chrome/Edge trên Windows hoặc app Android.");
         }
 
         this.status = "connecting";
@@ -393,6 +441,7 @@ class PrintManager {
     }
 
     public async disconnect(): Promise<void> {
+        this.autoReconnectEnabled = false;
         const plugin = getNativePlugin();
         if (plugin) {
             try {
@@ -406,6 +455,67 @@ class PrintManager {
             this.config.device.isConnected = false;
         }
         this.notify();
+    }
+
+    private printQueue: Promise<void> = Promise.resolve();
+
+    private enqueuePrint(action: () => Promise<PrintResult>): Promise<PrintResult> {
+        const result = this.printQueue.then(action);
+        this.printQueue = result.then(() => undefined, () => undefined);
+        return result;
+    }
+
+    public printSessionTicket(data: SessionTicketData, options?: { jobId?: string; manual?: boolean }): Promise<PrintResult> {
+        // Nếu thiết bị này không kết nối máy in trực tiếp, tự động gửi về Trạm in bàn (Cloud Spooler)
+        if (!this.isConnected() && !this.isNative() && !options?.manual) {
+            return this.sendToCloudSpooler("SESSION_TICKET", `Vé #${data.ticketCode || data.sessionId}`, data);
+        }
+
+        const consent = options?.manual && !this.isConnected() && !this.isNative() && !this.isPrinting
+            ? this.connectWithConsent(this.config?.connectionType === "BLUETOOTH" ? "BLUETOOTH" : undefined).then(() => null, error => error) : null;
+        return this.enqueuePrint(async () => {
+            try { 
+                if (consent) { 
+                    const error = await consent; 
+                    if (error) {
+                        // Nếu bấm in thủ công nhưng không nối được máy in tại máy, gửi lên Trạm in bàn
+                        return await this.sendToCloudSpooler("SESSION_TICKET", `Vé #${data.ticketCode || data.sessionId}`, data);
+                    } 
+                } 
+            }
+            catch { 
+                return await this.sendToCloudSpooler("SESSION_TICKET", `Vé #${data.ticketCode || data.sessionId}`, data);
+            }
+            return this.performSessionTicket(data, options);
+        });
+    }
+
+    public printPaymentReceipt(data: PaymentReceiptData, options?: { jobId?: string; manual?: boolean }): Promise<PrintResult> {
+        // Nếu thiết bị này không kết nối máy in trực tiếp, tự động gửi về Trạm in bàn (Cloud Spooler)
+        if (!this.isConnected() && !this.isNative() && !options?.manual) {
+            return this.sendToCloudSpooler("PAYMENT_RECEIPT", `Hóa đơn #${data.invoiceId}`, data);
+        }
+
+        const consent = options?.manual && !this.isConnected() && !this.isNative() && !this.isPrinting
+            ? this.connectWithConsent(this.config?.connectionType === "BLUETOOTH" ? "BLUETOOTH" : undefined).then(() => null, error => error) : null;
+        return this.enqueuePrint(async () => {
+            try { 
+                if (consent) { 
+                    const error = await consent; 
+                    if (error) {
+                        return await this.sendToCloudSpooler("PAYMENT_RECEIPT", `Hóa đơn #${data.invoiceId}`, data);
+                    } 
+                } 
+            }
+            catch { 
+                return await this.sendToCloudSpooler("PAYMENT_RECEIPT", `Hóa đơn #${data.invoiceId}`, data);
+            }
+            return this.performPaymentReceipt(data, options);
+        });
+    }
+
+    public printTest(): Promise<PrintResult> {
+        return this.enqueuePrint(() => this.performTest());
     }
 
     // --- Printing execution ---
@@ -434,8 +544,7 @@ class PrintManager {
                     throw new Error("Lệnh in thất bại từ thiết bị.");
                 }
             } else {
-                // In browser fallback mode, simulate short delay
-                await new Promise((resolve) => setTimeout(resolve, 600));
+                throw new Error("Không có kết nối máy in thật để gửi vé.");
             }
 
             this.completedJobIds.add(jobId);
@@ -457,7 +566,7 @@ class PrintManager {
         }
     }
 
-    public async printSessionTicket(
+    private async performSessionTicket(
         data: SessionTicketData,
         options?: { jobId?: string; manual?: boolean },
     ): Promise<PrintResult> {
@@ -468,10 +577,14 @@ class PrintManager {
         }
 
         if (!this.isConnected()) {
-            if (options?.manual && typeof window !== "undefined") {
-                window.print();
-                return { success: true, jobId };
+            try {
+                if (options?.manual && !this.isNative()) await this.connectWithConsent(this.config?.connectionType === "BLUETOOTH" ? "BLUETOOTH" : undefined);
+                else await this.autoConnect();
+            } catch (error) {
+                return { success: false, jobId, error: error instanceof Error ? error.message : "Không thể kết nối máy in.", errorCode: "PRINTER_NOT_CONNECTED" };
             }
+        }
+        if (!this.isConnected()) {
             return {
                 success: false,
                 jobId,
@@ -484,15 +597,17 @@ class PrintManager {
         let lastRes: PrintResult = { success: true, jobId };
 
         for (let i = 0; i < copies; i++) {
+            if (this.completedJobIds.has(`${jobId}-${i}`)) continue;
             const bytes = buildSessionTicketEscPos(data, this.config || undefined);
             lastRes = await this.executeEscPosBytes(bytes, `${jobId}-${i}`);
             if (!lastRes.success) break;
         }
 
-        return lastRes;
+        if (lastRes.success) this.completedJobIds.add(jobId);
+        return { ...lastRes, jobId };
     }
 
-    public async printPaymentReceipt(
+    private async performPaymentReceipt(
         data: PaymentReceiptData,
         options?: { jobId?: string; manual?: boolean },
     ): Promise<PrintResult> {
@@ -503,10 +618,14 @@ class PrintManager {
         }
 
         if (!this.isConnected()) {
-            if (options?.manual && typeof window !== "undefined") {
-                window.print();
-                return { success: true, jobId };
+            try {
+                if (options?.manual && !this.isNative()) await this.connectWithConsent(this.config?.connectionType === "BLUETOOTH" ? "BLUETOOTH" : undefined);
+                else await this.autoConnect();
+            } catch (error) {
+                return { success: false, jobId, error: error instanceof Error ? error.message : "Không thể kết nối máy in.", errorCode: "PRINTER_NOT_CONNECTED" };
             }
+        }
+        if (!this.isConnected()) {
             return {
                 success: false,
                 jobId,
@@ -519,16 +638,185 @@ class PrintManager {
         let lastRes: PrintResult = { success: true, jobId };
 
         for (let i = 0; i < copies; i++) {
+            if (this.completedJobIds.has(`${jobId}-${i}`)) continue;
             const bytes = buildPaymentReceiptEscPos(data, this.config || undefined);
             lastRes = await this.executeEscPosBytes(bytes, `${jobId}-${i}`);
             if (!lastRes.success) break;
         }
 
-        return lastRes;
+        if (lastRes.success) this.completedJobIds.add(jobId);
+        return { ...lastRes, jobId };
     }
 
-    public async printTest(): Promise<PrintResult> {
+    private isDeskStation = false;
+    private deskStationPollTimer: number | null = null;
+    private deskStationListeners: Set<(isStation: boolean) => void> = new Set();
+
+    public isStation(): boolean {
+        if (typeof window !== "undefined" && !this.isDeskStation) {
+            try {
+                this.isDeskStation = localStorage.getItem("quanlihocau_desk_print_station") === "true";
+            } catch {
+                this.isDeskStation = false;
+            }
+        }
+        return this.isDeskStation;
+    }
+
+    public subscribeDeskStation(listener: (isStation: boolean) => void): () => void {
+        this.deskStationListeners.add(listener);
+        listener(this.isStation());
+        return () => {
+            this.deskStationListeners.delete(listener);
+        };
+    }
+
+    private notifyDeskStation(): void {
+        const val = this.isStation();
+        for (const l of this.deskStationListeners) {
+            l(val);
+        }
+    }
+
+    public setDeskStation(enabled: boolean): void {
+        this.isDeskStation = enabled;
+        try {
+            if (enabled) {
+                localStorage.setItem("quanlihocau_desk_print_station", "true");
+            } else {
+                localStorage.removeItem("quanlihocau_desk_print_station");
+            }
+        } catch {
+            // Ignore storage errors
+        }
+        this.notifyDeskStation();
+        if (enabled) {
+            this.startDeskStationPolling();
+        } else {
+            this.stopDeskStationPolling();
+        }
+    }
+
+    public startDeskStationPolling(): void {
+        if (typeof window === "undefined") return;
+        this.stopDeskStationPolling();
+        // Lấy lệnh in mới mỗi 2 giây
+        this.deskStationPollTimer = window.setInterval(() => {
+            void this.pollCloudJobs();
+        }, 2000);
+        void this.pollCloudJobs();
+    }
+
+    public stopDeskStationPolling(): void {
+        if (this.deskStationPollTimer !== null) {
+            clearInterval(this.deskStationPollTimer);
+            this.deskStationPollTimer = null;
+        }
+    }
+
+    private isPollingJobs = false;
+
+    public async pollCloudJobs(): Promise<void> {
+        if (!this.isStation() || this.isPollingJobs || typeof window === "undefined") return;
+        this.isPollingJobs = true;
+        try {
+            const res = await fetch("/api/print-jobs?poll=true");
+            if (!res.ok) return;
+            const data = await res.json();
+            const jobs = data.jobs || [];
+
+            for (const job of jobs) {
+                try {
+                    const payload = JSON.parse(job.payloadJson);
+                    let printRes: PrintResult;
+
+                    if (job.jobType === "SESSION_TICKET") {
+                        printRes = await this.performSessionTicket(payload, { jobId: job.id });
+                    } else if (job.jobType === "PAYMENT_RECEIPT") {
+                        printRes = await this.performPaymentReceipt(payload, { jobId: job.id });
+                    } else {
+                        printRes = await this.performTest();
+                    }
+
+                    if (printRes.success) {
+                        await fetch(`/api/print-jobs/${job.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                status: "PRINTED",
+                                printedBy: "Trạm in bàn (" + (this.config?.device.name || "Máy in bàn") + ")",
+                            }),
+                        });
+                    } else {
+                        await fetch(`/api/print-jobs/${job.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                status: "FAILED",
+                                error: printRes.error || "In thất bại tại trạm in bàn.",
+                            }),
+                        });
+                    }
+                } catch (jobErr) {
+                    await fetch(`/api/print-jobs/${job.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            status: "FAILED",
+                            error: jobErr instanceof Error ? jobErr.message : "Lỗi xử lý lệnh in.",
+                        }),
+                    });
+                }
+            }
+        } catch {
+            // Lỗi mạng hoặc server gián đoạn, tự thử lại ở lần sau
+        } finally {
+            this.isPollingJobs = false;
+        }
+    }
+
+    /**
+     * Đẩy lệnh in lên Hàng đợi Cloud Spooler khi in từ điện thoại di động
+     */
+    public async sendToCloudSpooler(
+        jobType: "SESSION_TICKET" | "PAYMENT_RECEIPT" | "TEST",
+        targetName: string,
+        payload: SessionTicketData | PaymentReceiptData | object,
+    ): Promise<PrintResult> {
+        try {
+            const res = await fetch("/api/print-jobs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    jobType,
+                    targetName,
+                    payload,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                throw new Error(data.error || "Không thể gửi lệnh in tới trạm in bàn.");
+            }
+
+            return {
+                success: true,
+                jobId: data.job?.id || `cloud-${Date.now()}`,
+            };
+        } catch (err) {
+            return {
+                success: false,
+                jobId: `cloud-err-${Date.now()}`,
+                error: err instanceof Error ? err.message : "Lỗi khi gửi lệnh in đám mây.",
+                errorCode: "PRINT_FAILED",
+            };
+        }
+    }
+
+    private async performTest(): Promise<PrintResult> {
         const jobId = `test-${Date.now()}`;
+        if (!this.isConnected()) await this.autoConnect();
+        if (!this.isConnected()) return { success: false, jobId, error: "Chưa kết nối máy in nhiệt.", errorCode: "PRINTER_NOT_CONNECTED" };
         const deviceName = this.config?.device.name || "Máy in thử nghiệm";
         const connectionType: PrinterConnectionType = this.config?.connectionType || "BLUETOOTH";
 
@@ -548,3 +836,4 @@ class PrintManager {
 
 // Global singleton instance
 export const printManager = new PrintManager();
+

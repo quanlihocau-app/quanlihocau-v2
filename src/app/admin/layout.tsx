@@ -1,8 +1,9 @@
 import { getServerSession } from "next-auth";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { authOptions } from "@/lib/auth";
+import { authOptions, getSessionCookie } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
@@ -25,6 +26,14 @@ export default async function AdminLayout({
 
     if (dbUser?.systemRole !== "SUPER_ADMIN") {
         redirect("/403");
+    }
+
+    const cookieStore = await cookies();
+    if (cookieStore.has("qa_session")) {
+        const appSession = await getSessionCookie();
+        if (!appSession || appSession.email.toLowerCase() !== dbUser.email.toLowerCase()) {
+            redirect("/403");
+        }
     }
 
     return (

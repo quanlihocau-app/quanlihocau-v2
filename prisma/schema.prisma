@@ -75,6 +75,37 @@ enum PaymentDirection {
   OUT
 }
 
+enum FinancialTransactionType {
+  RECEIPT
+  EXPENSE
+}
+
+enum FinancialTransactionStatus {
+  DRAFT
+  APPROVED
+  CANCELLED
+  REVERSED
+}
+
+enum FinancialAccountType {
+  CASH
+  BANK
+  WALLET
+}
+
+enum DebtType {
+  RECEIVABLE
+  PAYABLE
+}
+
+enum DebtStatus {
+  PENDING
+  PARTIAL
+  SETTLED
+  OVERDUE
+  CANCELLED
+}
+
 // -----------------------------------------------------------------------------
 // CORE & TENANT
 // -----------------------------------------------------------------------------
@@ -120,9 +151,17 @@ model Lake {
   fishTypes          FishType[]
   fishBuybacks       FishBuyback[]
   shifts             Shift[]
-  auditEvents        AuditEvent[]
-  idempotencyKeys    IdempotencyKey[]
-  subscriptionOrders SubscriptionOrder[]
+  auditEvents           AuditEvent[]
+  idempotencyKeys       IdempotencyKey[]
+  subscriptionOrders    SubscriptionOrder[]
+  financialCategories   FinancialCategory[]
+  financialAccounts     FinancialAccount[]
+  financialTransactions FinancialTransaction[]
+  fundTransfers         FundTransfer[]
+  debts                 Debt[]
+  financialPeriods      FinancialPeriod[]
+  reconciliations       ReconciliationRecord[]
+  printJobs             PrintJob[]
 
   @@index([subscriptionStatus])
   @@index([subscriptionExpiresAt])
@@ -145,7 +184,9 @@ model User {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  memberships Membership[]
+  memberships                  Membership[]
+  createdFinancialTransactions FinancialTransaction[] @relation("CreatedTransactions")
+  approvedFinancialTransactions FinancialTransaction[] @relation("ApprovedTransactions")
 
   @@index([createdAt])
   @@index([isLocked])
@@ -181,8 +222,10 @@ model Customer {
   deletedAt       DateTime?
 
   lake            Lake             @relation(fields: [lakeId], references: [id])
-  fishingSessions FishingSession[]
-  invoices        Invoice[]
+  fishingSessions       FishingSession[]
+  invoices              Invoice[]
+  debts                 Debt[]
+  financialTransactions FinancialTransaction[]
 
   @@unique([lakeId, phoneNormalized])
   @@index([lakeId, createdAt])
@@ -386,8 +429,10 @@ model Invoice {
   lake           Lake            @relation(fields: [lakeId], references: [id])
   customer       Customer?       @relation(fields: [customerId], references: [id])
   fishingSession FishingSession? @relation(fields: [fishingSessionId], references: [id])
-  lines          InvoiceLine[]
-  payments       Payment[]
+  lines                 InvoiceLine[]
+  payments              Payment[]
+  debts                 Debt[]
+  financialTransactions FinancialTransaction[]
 
   @@unique([lakeId, fishingSessionId])
   @@index([lakeId, status])
@@ -425,8 +470,9 @@ model Payment {
   lake       Lake      @relation(fields: [lakeId], references: [id])
   invoice    Invoice?  @relation(fields: [invoiceId], references: [id])
   expense    Expense?  @relation(fields: [expenseId], references: [id])
-  reversalOf Payment?  @relation("PaymentReversals", fields: [reversalOfId], references: [id])
-  reversals  Payment[] @relation("PaymentReversals")
+  reversalOf            Payment?               @relation("PaymentReversals", fields: [reversalOfId], references: [id])
+  reversals             Payment[]              @relation("PaymentReversals")
+  financialTransactions FinancialTransaction[]
 
   @@unique([lakeId, idempotencyKey])
   @@unique([lakeId, reversalOfId])
@@ -441,8 +487,9 @@ model Expense {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  lake     Lake      @relation(fields: [lakeId], references: [id])
-  payments Payment[]
+  lake                  Lake                   @relation(fields: [lakeId], references: [id])
+  payments              Payment[]
+  financialTransactions FinancialTransaction[]
 
   @@index([lakeId, createdAt])
 }
@@ -601,5 +648,251 @@ model OtpDeliveryLog {
   @@index([phone])
   @@index([createdAt])
   @@index([status])
+}
+
+// -----------------------------------------------------------------------------
+// SAAS FINANCIAL MANAGEMENT (PHÂN HỆ QUẢN LÝ TÀI CHÍNH & THU CHI)
+// -----------------------------------------------------------------------------
+
+model FinancialCategory {
+  id           String           @id @default(uuid())
+  lakeId       String
+  type         PaymentDirection // IN = Thu, OUT = Chi
+  name         String
+  code         String?
+  color        String?          @default("#0284c7")
+  icon         String?          @default("Tag")
+  parentId     String?
+  isSystem     Boolean          @default(false)
+  isActive     Boolean          @default(true)
+  displayOrder Int              @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  lake         Lake                 @relation(fields: [lakeId], references: [id])
+  parent       FinancialCategory?   @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     FinancialCategory[]  @relation("CategoryHierarchy")
+  transactions FinancialTransaction[]
+
+  @@unique([lakeId, type, name])
+  @@index([lakeId, type, isActive])
+  @@index([lakeId, createdAt])
+}
+
+model FinancialAccount {
+  id                 String               @id @default(uuid())
+  lakeId             String
+  name               String
+  accountType        FinancialAccountType @default(CASH)
+  accountNumber      String?
+  bankName           String?
+  initialBalanceVnd  Int                  @default(0)
+  currentBalanceVnd  Int                  @default(0)
+  isDefault          Boolean              @default(false)
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  lake               Lake                 @relation(fields: [lakeId], references: [id])
+  transactions       FinancialTransaction[]
+  transfersFrom      FundTransfer[]       @relation("TransferFromAccount")
+  transfersTo        FundTransfer[]       @relation("TransferToAccount")
+  reconciliations    ReconciliationRecord[]
+
+  @@unique([lakeId, name])
+  @@index([lakeId, isActive])
+  @@index([lakeId, createdAt])
+}
+
+model FinancialTransaction {
+  id               String                     @id @default(uuid())
+  lakeId           String
+  code             String                     // PT-xxx or PC-xxx
+  type             FinancialTransactionType   // RECEIPT, EXPENSE
+  amountVnd        Int
+  paymentMethod    PaymentMethod              @default(CASH)
+  status           FinancialTransactionStatus @default(APPROVED)
+  categoryId       String?
+  accountId        String?
+  customerId       String?
+  supplierName     String?
+  payerOrReceiver  String?
+  description      String
+  note             String?
+  invoiceId        String?
+  expenseId        String?
+  paymentId        String?
+  idempotencyKey   String?
+  attachments      String?                    // JSON array of file URLs
+  createdById      String
+  approvedById     String?
+  cancelledById    String?
+  cancelledReason  String?
+  transactionDate  DateTime                   @default(now())
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+
+  lake             Lake                       @relation(fields: [lakeId], references: [id])
+  category         FinancialCategory?         @relation(fields: [categoryId], references: [id])
+  account          FinancialAccount?          @relation(fields: [accountId], references: [id])
+  customer         Customer?                  @relation(fields: [customerId], references: [id])
+  invoice          Invoice?                   @relation(fields: [invoiceId], references: [id])
+  expense          Expense?                   @relation(fields: [expenseId], references: [id])
+  payment          Payment?                   @relation(fields: [paymentId], references: [id])
+  createdBy        User                       @relation("CreatedTransactions", fields: [createdById], references: [id])
+  approvedBy       User?                      @relation("ApprovedTransactions", fields: [approvedById], references: [id])
+  debtPayments     DebtPayment[]
+
+  @@unique([lakeId, code])
+  @@unique([lakeId, idempotencyKey])
+  @@index([lakeId, type, status])
+  @@index([lakeId, transactionDate])
+  @@index([lakeId, createdAt])
+  @@index([lakeId, categoryId])
+  @@index([lakeId, accountId])
+  @@index([lakeId, customerId])
+}
+
+model FundTransfer {
+  id             String               @id @default(uuid())
+  lakeId         String
+  code           String               // CK-xxx
+  fromAccountId  String
+  toAccountId    String
+  amountVnd      Int
+  feeAmountVnd   Int                  @default(0)
+  note           String?
+  transferredAt  DateTime             @default(now())
+  createdById    String
+  createdAt      DateTime             @default(now())
+
+  lake           Lake                 @relation(fields: [lakeId], references: [id])
+  fromAccount    FinancialAccount     @relation("TransferFromAccount", fields: [fromAccountId], references: [id])
+  toAccount      FinancialAccount     @relation("TransferToAccount", fields: [toAccountId], references: [id])
+
+  @@unique([lakeId, code])
+  @@index([lakeId, transferredAt])
+  @@index([lakeId, createdAt])
+}
+
+model Debt {
+  id                 String        @id @default(uuid())
+  lakeId             String
+  code               String        // CN-xxx
+  type               DebtType      // RECEIVABLE, PAYABLE
+  customerId         String?
+  supplierName       String?
+  title              String
+  invoiceId          String?
+  totalAmountVnd     Int
+  paidAmountVnd      Int           @default(0)
+  remainingAmountVnd Int
+  dueDate            DateTime?
+  status             DebtStatus    @default(PENDING)
+  note               String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  lake               Lake          @relation(fields: [lakeId], references: [id])
+  customer           Customer?     @relation(fields: [customerId], references: [id])
+  invoice            Invoice?      @relation(fields: [invoiceId], references: [id])
+  payments           DebtPayment[]
+
+  @@unique([lakeId, code])
+  @@index([lakeId, type, status])
+  @@index([lakeId, customerId])
+  @@index([lakeId, dueDate])
+  @@index([lakeId, createdAt])
+}
+
+model DebtPayment {
+  id            String                @id @default(uuid())
+  lakeId        String
+  debtId        String
+  transactionId String?
+  amountVnd     Int
+  paymentMethod PaymentMethod         @default(CASH)
+  paymentDate   DateTime              @default(now())
+  note          String?
+  createdById   String
+  createdAt     DateTime              @default(now())
+
+  debt          Debt                  @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  transaction   FinancialTransaction? @relation(fields: [transactionId], references: [id])
+
+  @@index([lakeId, debtId])
+  @@index([lakeId, paymentDate])
+  @@index([lakeId, createdAt])
+}
+
+model FinancialPeriod {
+  id          String    @id @default(uuid())
+  lakeId      String
+  name        String    // Kỳ tài chính: "Tháng 10/2026"
+  startDate   DateTime
+  endDate     DateTime
+  isLocked    Boolean   @default(false)
+  lockedAt    DateTime?
+  lockedById  String?
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  lake        Lake      @relation(fields: [lakeId], references: [id])
+
+  @@unique([lakeId, name])
+  @@index([lakeId, isLocked])
+  @@index([lakeId, startDate, endDate])
+}
+
+model ReconciliationRecord {
+  id               String           @id @default(uuid())
+  lakeId           String
+  accountId        String
+  systemBalanceVnd Int
+  actualBalanceVnd Int
+  differenceVnd    Int
+  reason           String?
+  checkedAt        DateTime         @default(now())
+  checkedById      String
+  createdAt        DateTime         @default(now())
+
+  lake             Lake             @relation(fields: [lakeId], references: [id])
+  account          FinancialAccount @relation(fields: [accountId], references: [id])
+
+  @@index([lakeId, accountId])
+  @@index([lakeId, checkedAt])
+  @@index([lakeId, createdAt])
+}
+
+// -----------------------------------------------------------------------------
+// PRINT JOBS (Cloud Print Spooler cho trạm in bàn)
+// -----------------------------------------------------------------------------
+
+enum PrintJobStatus {
+  PENDING
+  PRINTED
+  FAILED
+  EXPIRED
+}
+
+model PrintJob {
+  id          String         @id @default(uuid())
+  lakeId      String
+  jobType     String         // "SESSION_TICKET" | "PAYMENT_RECEIPT" | "TEST"
+  targetName  String?        // Tên vé / số hóa đơn (ví dụ: "Vé #A1 - Ca 5h")
+  payloadJson String         // Dữ liệu vé/hóa đơn theo định dạng SessionTicketData hoặc PaymentReceiptData
+  status      PrintJobStatus @default(PENDING)
+  createdById String?
+  createdByName String?
+  printedAt   DateTime?
+  printedBy   String?        // Tên trạm in bàn đã nhận lệnh
+  error       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  lake        Lake           @relation(fields: [lakeId], references: [id])
+
+  @@index([lakeId, status, createdAt])
 }
 

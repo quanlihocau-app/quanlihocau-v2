@@ -66,7 +66,7 @@ export function RetailPosForm({
     products: initialProducts,
 }: RetailPosFormProps) {
     const router = useRouter();
-    const { isConnected, printPaymentReceipt } = usePrinter();
+    const { config: printerConfig, templateConfig, printPaymentReceipt } = usePrinter();
     const { isOnline } = useNetworkStatus();
 
     // Customer state
@@ -296,7 +296,7 @@ export function RetailPosForm({
             setCompletedReceipt(data.receiptData);
 
             // Auto-print receipt if printer is connected
-            if (isConnected && data.receiptData) {
+            if (printerConfig && templateConfig.autoPrintPayment && data.receiptData) {
                 printPaymentReceipt(data.receiptData).catch(() => {
                     // Non-blocking
                 });

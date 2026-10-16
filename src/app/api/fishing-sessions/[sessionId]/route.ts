@@ -474,7 +474,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                     .reduce((s, l) => s + l.totalVnd, 0),
                             );
                             const settleAmount = parsed.data.settlement?.amountVnd ?? 0;
-                            const prepaidAmount = Math.max(0, pTotal - settleAmount);
+                            const priorPaidAmount = Math.max(0, pTotal - settleAmount);
+                            const packagePrepaidAmount = Math.min(pkgTotal, priorPaidAmount);
 
                             receiptData = {
                                 invoiceId: finalInvoice.id,
@@ -496,9 +497,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                 extensionsTotalVnd: extTotal,
                                 overtimeTotalVnd: otTotal,
                                 fishBuybackTotalVnd: fishTotal,
-                                prepaidAmountVnd: prepaidAmount,
+                                prepaidAmountVnd: packagePrepaidAmount,
                                 supplementaryAmountVnd: settleAmount,
-                                totalAmountVnd: gTotal,
+                                totalAmountVnd: Math.max(0, gTotal - fishTotal),
+                                invoiceTotalVnd: gTotal,
                                 paidAmountVnd: pTotal,
                                 paymentAmountVnd: settleAmount,
                                 remainingVnd: Math.max(0, gTotal - pTotal),
@@ -616,11 +618,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 export async function GET(_request: Request, { params }: RouteParams) {
     try {
         const { sessionId } = await params;
-        const tenantContext = await requireTenantContext([
-            Role.OWNER,
-            Role.MANAGER,
-            Role.STAFF,
-        ]);
+        const tenantContext = await requireTenantContext();
 
         const session = await prisma.fishingSession.findFirst({
             where: {
@@ -668,6 +666,16 @@ export async function GET(_request: Request, { params }: RouteParams) {
             return NextResponse.json(
                 { error: "Không tìm thấy phiên câu trong hồ này." },
                 { status: 404 },
+            );
+        }
+
+        // Kiểm tra quyền truy cập: OWNER/MANAGER/STAFF hoặc khách hàng của phiên
+        const isAllowedRole = [Role.OWNER, Role.MANAGER, Role.STAFF].includes(tenantContext.role);
+        const isCustomer = session.customerId === tenantContext.userId;
+        if (!isAllowedRole && !isCustomer) {
+            return NextResponse.json(
+                { error: "Bạn không có quyền xem phiên câu này." },
+                { status: 403 },
             );
         }
 
@@ -802,6 +810,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
                 fishBuybackTotalVnd: fishBuybackTotal,
                 otherTotalVnd: otherTotal,
                 grossChargeVnd: grossCharge,
+                invoiceTotalVnd: lines.reduce((sum, line) => sum + line.totalVnd, 0),
                 totalPaidVnd: totalPaid,
                 totalDeductionsVnd: totalDeductions,
                 netBalanceVnd: netBalance,

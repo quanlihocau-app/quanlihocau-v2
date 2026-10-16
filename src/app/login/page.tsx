@@ -2,9 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { loginUser } from '@/app/actions/auth'
-import { signIn } from 'next-auth/react'
+import { signIn, signOut } from 'next-auth/react'
 import { clearCatalogCache } from '@/lib/query-client'
 import { safeRedirectPath } from '@/lib/navigation'
 import { Suspense } from 'react'
@@ -19,33 +18,23 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLegacyLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setErrorMsg('')
-
     try {
-      // 1. Gọi Server Action loginUser (set HTTP-only cookie qa_session ngay trên server)
-      const res = await loginUser({ email, password })
-      if (!res.success) {
-        setErrorMsg(res.message)
+      const result = await loginUser({ email, password })
+      if (!result.success) {
+        setErrorMsg(result.message)
         setLoading(false)
         return
       }
-
-      // 2. Đồng bộ thêm NextAuth session client-side nếu có
       try {
-        await signIn('credentials', {
-          redirect: false,
-          email,
-          password,
-        })
+        const authResult = await signIn('credentials', { redirect: false, email, password })
+        if (authResult?.error) await signOut({ redirect: false })
       } catch {
-        // Bỏ qua lỗi client vì cookie qa_session đã được thiết lập thành công
+        await signOut({ redirect: false }).catch(() => undefined)
       }
-
-      // 3. Chuyển hướng vào trang quản trị
       clearCatalogCache()
       router.push(safeRedirectPath(redirectUrl))
       router.refresh()
@@ -53,6 +42,14 @@ function LoginForm() {
       setErrorMsg('Không thể kết nối đến hệ thống.')
       setLoading(false)
     }
+  }
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true)
+    setErrorMsg('')
+    await signIn('google', {
+      callbackUrl: `/api/auth/sync-session?next=${encodeURIComponent(redirectUrl)}`,
+    })
   }
 
   return (
@@ -76,9 +73,19 @@ function LoginForm() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Quản lý Hồ Câu</h1>
-          <p className="text-sm text-slate-500 mt-1">Đăng nhập vào hệ thống quản trị</p>
+          <p className="text-sm text-slate-500 mt-1">Tài khoản mới dùng Google; tài khoản hiện có vẫn đăng nhập như trước</p>
         </div>
 
+        {searchParams.get('registered') === '1' && (
+          <div className="mb-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 font-medium">
+            Tạo tài khoản thành công. Hãy đăng nhập bằng Google có cùng địa chỉ email đã đăng ký.
+          </div>
+        )}
+        {searchParams.get('error') && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-600 font-medium">
+            Không thể đăng nhập. Hãy dùng Google đã đăng ký với hệ thống hoặc liên hệ quản trị viên hồ.
+          </div>
+        )}
 
         {/* Thông báo lỗi nếu có */}
         {errorMsg && (
@@ -87,63 +94,47 @@ function LoginForm() {
           </div>
         )}
 
-        {/* Form chính */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-              Email đăng nhập
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="vidu@gmail.com"
-              className="w-full h-11 px-4 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition"
-            />
-          </div>
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          className="flex w-full h-12 items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60 cursor-pointer"
+        >
+          <svg aria-hidden="true" viewBox="0 0 48 48" className="h-5 w-5">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z" />
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.72 7.18l7.62 5.91c4.45-4.11 7.14-10.16 7.14-17.56Z" />
+            <path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.53 2.56 10.78l7.97-6.19Z" />
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.89l-7.62-5.91c-2.12 1.42-4.84 2.27-8.28 2.27-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z" />
+          </svg>
+          {loading ? 'Đang chuyển đến Google...' : 'Tiếp tục với Google'}
+        </button>
+        <p className="mt-3 text-center text-xs text-slate-500">
+          Google sẽ tạo hồ dùng thử khi bạn đăng nhập lần đầu.
+        </p>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                Mật khẩu
-              </label>
-              <Link
-                href="/login"
-                onClick={() => alert('Vui lòng liên hệ quản trị viên hoặc sử dụng số điện thoại để nhận mã OTP khôi phục.')}
-                className="text-xs text-emerald-600 hover:underline font-medium"
-              >
-                Quên mật khẩu?
-              </Link>
-            </div>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full h-11 px-4 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition"
-            />
-          </div>
+        <div className="my-6 flex items-center gap-3 text-xs text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          <span>TÀI KHOẢN ĐANG SỬ DỤNG</span>
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
-          >
-            {loading ? 'Đang xác thực...' : 'Đăng nhập'}
+        <form onSubmit={handleLegacyLogin} className="space-y-4">
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-700">Email</label>
+            <input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vidu@gmail.com" className="h-11 w-full rounded-xl border border-slate-300 px-4 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20" />
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-700">Mật khẩu</label>
+            <input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="h-11 w-full rounded-xl border border-slate-300 px-4 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20" />
+          </div>
+          <button type="submit" disabled={loading} className="h-11 w-full rounded-xl bg-emerald-600 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50 cursor-pointer">
+            {loading ? 'Đang xác thực...' : 'Đăng nhập tài khoản hiện có'}
           </button>
         </form>
 
-        {/* Chuyển nhanh sang đăng ký cho người mới */}
-        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-          <p className="text-xs text-slate-500">
-            Chưa có tài khoản quản lý hồ?{' '}
-            <Link href="/register" className="text-emerald-600 font-semibold hover:underline">
-              Đăng ký dùng thử
-            </Link>
-          </p>
-        </div>
+        <p className="mt-6 border-t border-slate-100 pt-5 text-center text-xs text-slate-500">
+          Đăng nhập lần đầu bằng Google sẽ tự tạo tài khoản hồ câu dùng thử.
+        </p>
       </div>
     </div>
   )

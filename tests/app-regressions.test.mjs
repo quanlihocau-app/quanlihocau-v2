@@ -29,8 +29,8 @@ function authModule(user = { email: "owner@example.com", systemRole: "USER", ses
     const auth = loadModule("../src/lib/auth.ts", {
         crypto,
         "next/headers": { cookies: async () => ({ get: () => ({ value: cookie }), set: (_name, token) => { cookie = token; } }) },
-        bcryptjs: {}, "next-auth/providers/credentials": () => ({}),
-        zod: { z: { string: () => ({ trim() { return this; }, min() { return this; } }), object: () => ({}) } },
+        bcryptjs: {}, "next-auth/providers/credentials": () => ({}), "next-auth/providers/google": () => ({}),
+        zod: { z: { string: () => ({ trim() { return this; }, min() { return this; }, email() { return this; } }), object: () => ({}) } },
         "@/generated/prisma/client": { SystemRole: {} }, "@/lib/phone": {},
         "@/lib/prisma": { prisma: { user: { findUnique: async () => user } } },
     });
@@ -44,6 +44,21 @@ test("Login redirects cannot escape to an external origin", () => {
         assert.equal(navigation.safeRedirectPath(value), "/dashboard");
     }
     assert.equal(navigation.safeRedirectPath("/sessions?tab=active#list"), "/sessions?tab=active#list");
+});
+
+test("Google sign-in requires a verified email and accepts an existing unlocked account", async () => {
+    const { auth } = authModule();
+    const callback = auth.authOptions.callbacks.signIn;
+    assert.equal(await callback({
+        user: { email: "owner@example.com" },
+        account: { provider: "google" },
+        profile: { email_verified: true },
+    }), true);
+    assert.equal(await callback({
+        user: { email: "owner@example.com" },
+        account: { provider: "google" },
+        profile: { email_verified: false },
+    }), false);
 });
 
 test("Signed sessions reject tampering, expired tokens and malformed extra segments", () => {
@@ -164,6 +179,7 @@ test("Account changes discard catalog cache even if browser storage is blocked",
 
 test("Registration validates input and normalizes phone numbers before writing", async () => {
     let writtenPhone;
+    let registrationCreatedSession = false;
     const phone = loadModule("../src/lib/phone.ts", {});
     const actions = loadModule("../src/app/actions/auth.ts", {
         "@/lib/prisma": { prisma: {
@@ -176,7 +192,7 @@ test("Registration validates input and normalizes phone numbers before writing",
             }),
         } },
         bcryptjs: { hash: async () => "hash" },
-        "@/lib/auth": { setSessionCookie: async () => {} },
+        "@/lib/auth": { setSessionCookie: async () => { registrationCreatedSession = true; } },
         "next/navigation": {}, "@/lib/phone": phone, zod: { z },
     }, { console });
     assert.equal((await actions.registerUser({ email: 12 })).success, false);
@@ -184,6 +200,85 @@ test("Registration validates input and normalizes phone numbers before writing",
     const result = await actions.registerUser({ email: " owner@example.com ", password: "Password123!", name: "Owner", phone: "090 123 4567" });
     assert.equal(result.success, true);
     assert.equal(writtenPhone, "+84901234567");
+    assert.equal(registrationCreatedSession, false, "Registration must continue to Google sign-in instead of silently creating a session");
+});
+
+test("Existing staff can log in by email while phone-number login is disabled", async () => {
+    const lookups = [];
+    let session;
+    const user = { id: "staff-1", email: "staff@example.com", name: "Staff", phone: "+84901234567", passwordHash: "hash", systemRole: "USER", isLocked: false };
+    const actions = loadModule("../src/app/actions/auth.ts", {
+        "@/lib/prisma": { prisma: { user: {
+            findUnique: async (args) => { lookups.push(args); return args.where.email === user.email ? user : null; },
+            update: async () => user,
+        } } },
+        bcryptjs: { compare: async () => true },
+        "@/lib/auth": { setSessionCookie: async (value) => { session = value; } },
+        "next/navigation": {}, "@/lib/phone": {}, zod: { z },
+    }, { console });
+    const result = await actions.loginUser({ email: " Staff@Example.com ", password: "valid-password" });
+    assert.equal(result.success, true);
+    assert.deepEqual(JSON.parse(JSON.stringify(lookups[0])), { where: { email: "staff@example.com" } });
+    assert.equal(session.userId, "staff-1");
+    const phoneLogin = await actions.loginUser({ email: "0901234567", password: "valid-password" });
+    assert.equal(phoneLogin.success, false);
+    assert.deepEqual(JSON.parse(JSON.stringify(lookups[1])), { where: { email: "0901234567" } });
+});
+
+test("Tenant data follows qa_session when an older NextAuth account cookie remains", async () => {
+    let membershipQuery;
+    const employee = {
+        user: { id: "staff-1", email: "staff@example.com", name: "Staff", phone: null, phoneVerified: true, systemRole: "USER", isLocked: false },
+        lake: { id: "lake-old", name: "Existing Lake", organization: { id: "org-old", name: "Existing Organization" } },
+        role: "STAFF",
+    };
+    const tenant = loadModule("../src/lib/tenant.ts", {
+        "next/headers": { cookies: async () => ({ has: (name) => name === "qa_session", get: () => undefined }) },
+        "next/navigation": { redirect: (path) => { throw new Error(`redirect:${path}`); } },
+        "next-auth": { getServerSession: async () => ({ user: { email: "old-admin@example.com", systemRole: "SUPER_ADMIN" } }) },
+        "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
+        "@/lib/auth": { authOptions: {}, getSessionCookie: async () => ({ email: "staff@example.com", role: "USER" }) },
+        "@/lib/prisma": { prisma: { membership: { findFirst: async (args) => { membershipQuery = args; return employee; } }, user: {} } },
+    }, { process: { env: {} } });
+    const context = await tenant.getTenantContext();
+    assert.equal(membershipQuery.where.user.email, "staff@example.com");
+    assert.equal(context.userId, "staff-1");
+    assert.equal(context.lakeId, "lake-old");
+    assert.equal(context.role, "STAFF");
+});
+
+test("An expired qa_session falls back to a valid regular NextAuth account", async () => {
+    let membershipQuery;
+    const employee = {
+        user: { id: "staff-1", email: "staff@example.com", name: "Staff", phone: null, phoneVerified: false, systemRole: "USER", isLocked: false },
+        lake: { id: "lake-old", name: "Existing Lake", organization: { id: "org-old", name: "Existing Organization" } },
+        role: "STAFF",
+    };
+    const tenant = loadModule("../src/lib/tenant.ts", {
+        "next/headers": { cookies: async () => ({ has: (name) => name === "qa_session", get: () => undefined }) },
+        "next/navigation": { redirect: (path) => { throw new Error(`redirect:${path}`); } },
+        "next-auth": { getServerSession: async () => ({ user: { email: "staff@example.com", systemRole: "USER" } }) },
+        "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
+        "@/lib/auth": { authOptions: {}, getSessionCookie: async () => null },
+        "@/lib/prisma": { prisma: { membership: { findFirst: async (args) => { membershipQuery = args; return employee; } }, user: {} } },
+    }, { process: { env: {} } });
+    const context = await tenant.getTenantContext();
+    assert.equal(membershipQuery.where.user.email, "staff@example.com");
+    assert.equal(context.userId, "staff-1");
+    assert.equal(context.lakeId, "lake-old");
+    assert.equal(context.role, "STAFF");
+});
+
+test("An invalid qa_session cannot use a SUPER_ADMIN NextAuth cookie", async () => {
+    const tenant = loadModule("../src/lib/tenant.ts", {
+        "next/headers": { cookies: async () => ({ has: (name) => name === "qa_session", get: () => undefined }) },
+        "next/navigation": { redirect: (path) => { throw new Error(`redirect:${path}`); } },
+        "next-auth": { getServerSession: async () => ({ user: { email: "admin@example.com", systemRole: "SUPER_ADMIN" } }) },
+        "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
+        "@/lib/auth": { authOptions: {}, getSessionCookie: async () => null },
+        "@/lib/prisma": { prisma: { membership: { findFirst: async () => { throw new Error("must not query tenant"); } }, user: {} } },
+    }, { process: { env: {} } });
+    assert.equal(await tenant.getTenantContext(), null);
 });
 
 const roles = { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" };

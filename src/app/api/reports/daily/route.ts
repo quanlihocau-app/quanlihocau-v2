@@ -1,6 +1,7 @@
+import { summarizeMoney, summarizeRevenue } from "@/lib/finance";
 import { NextResponse } from "next/server";
 
-import { PaymentDirection, PaymentMethod, Role } from "@/generated/prisma/client";
+import { Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -121,6 +122,7 @@ export async function GET() {
             where: {
                 invoice: {
                     lakeId,
+                    status: { not: "VOIDED" },
                     createdAt: {
                         gte: shiftStart,
                         lte: shiftEnd,
@@ -129,6 +131,8 @@ export async function GET() {
             },
             select: {
                 productId: true,
+                fishBuybackId: true,
+                invoice: { select: { fishingSessionId: true } },
                 name: true,
                 quantity: true,
                 totalVnd: true,
@@ -205,33 +209,14 @@ export async function GET() {
                 amountVnd: true,
                 method: true,
                 direction: true,
+                expenseId: true,
             },
         });
 
-        let cashIn = 0;
-        let cashOut = 0;
-        let transferIn = 0;
-        let transferOut = 0;
-
-        for (const p of payments) {
-            if (p.method === PaymentMethod.CASH) {
-                if (p.direction === PaymentDirection.IN) {
-                    cashIn += p.amountVnd;
-                } else {
-                    cashOut += p.amountVnd;
-                }
-            } else if (p.method === PaymentMethod.BANK_TRANSFER) {
-                if (p.direction === PaymentDirection.IN) {
-                    transferIn += p.amountVnd;
-                } else {
-                    transferOut += p.amountVnd;
-                }
-            }
-        }
-
-        const netCash = Math.max(0, cashIn - cashOut);
-        const netTransfer = Math.max(0, transferIn - transferOut);
-        const totalRevenue = isClosed && shiftClose ? shiftClose.totalRevenueVnd : netCash + netTransfer;
+        const totals = summarizeMoney(payments);
+        const { cashIn, cashOut, transferIn, transferOut, netCash, netTransfer } = totals;
+        const totalRevenue = isClosed && shiftClose ? shiftClose.totalRevenueVnd :
+            summarizeRevenue(invoiceLines.map(line => ({ fishingSessionId: line.invoice.fishingSessionId, lines: [line] }))).totalRevenue;
 
         // 5. Fish Buybacks aggregation
         const fishBuybacksAgg = await prisma.fishBuyback.aggregate({
@@ -289,7 +274,7 @@ export async function GET() {
                 transferInVnd: transferIn,
                 transferOutVnd: transferOut,
                 totalPaidInVnd: cashIn + transferIn,
-                totalRefundVnd: cashOut + transferOut,
+                totalRefundVnd: totals.refunds,
             },
             inventory: {
                 inCount: invInCount,

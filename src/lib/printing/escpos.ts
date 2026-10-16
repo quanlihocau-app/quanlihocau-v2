@@ -80,6 +80,18 @@ export class EscPosBuilder {
         return this;
     }
 
+    /** ESC M n — Font B uses 9 x 17 dots on compatible 203 dpi printers. */
+    font(font: "A" | "B"): this {
+        this.buffer.push(0x1b, 0x4d, font === "B" ? 1 : 0);
+        return this;
+    }
+
+    /** ESC 3 n — Set line spacing in printer dots. */
+    lineSpacing(dots = 24): this {
+        this.buffer.push(0x1b, 0x33, Math.max(1, Math.min(255, Math.round(dots))));
+        return this;
+    }
+
     /**
      * Invert colors (white on black)
      */

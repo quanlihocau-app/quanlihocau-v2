@@ -16,6 +16,7 @@ const protectedPrefixes = [
   '/fish-buybacks',
   '/customers',
   '/expenses',
+  '/cashbook',
   '/invoices',
   '/admin',
 ]
@@ -142,7 +143,9 @@ export function proxy(request: NextRequest) {
 
   // Nếu chưa đăng nhập, điều hướng sang /login kèm param redirect
   const loginUrl = new URL('/login', request.url)
-  loginUrl.searchParams.set('redirect', pathname)
+  const redirectPath = pathname === '/settings/printer' && request.nextUrl.searchParams.get('setup') === 'windows'
+    ? `${pathname}?setup=windows` : pathname
+  loginUrl.searchParams.set('redirect', redirectPath)
   return NextResponse.redirect(loginUrl)
 }
 

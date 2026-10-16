@@ -1,11 +1,8 @@
+import { summarizeMoney, summarizeRevenue } from "@/lib/finance";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import {
-    PaymentDirection,
-    PaymentMethod,
-    Role,
-} from "@/generated/prisma/client";
+import { Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -180,33 +177,20 @@ export async function POST(request: Request) {
                                 amountVnd: true,
                                 method: true,
                                 direction: true,
+                                expenseId: true,
                             },
                         });
 
-                        let cashIn = 0;
-                        let cashOut = 0;
-                        let transferIn = 0;
-                        let transferOut = 0;
-
-                        for (const p of payments) {
-                            if (p.method === PaymentMethod.CASH) {
-                                if (p.direction === PaymentDirection.IN) {
-                                    cashIn += p.amountVnd;
-                                } else {
-                                    cashOut += p.amountVnd;
-                                }
-                            } else if (p.method === PaymentMethod.BANK_TRANSFER) {
-                                if (p.direction === PaymentDirection.IN) {
-                                    transferIn += p.amountVnd;
-                                } else {
-                                    transferOut += p.amountVnd;
-                                }
-                            }
-                        }
-
-                        const totalCashVnd = Math.max(0, cashIn - cashOut);
-                        const totalTransferVnd = Math.max(0, transferIn - transferOut);
-                        const totalRevenueVnd = totalCashVnd + totalTransferVnd;
+                        const totals = summarizeMoney(payments);
+                        const totalCashVnd = totals.netCash;
+                        const totalTransferVnd = totals.netTransfer;
+                        const revenueLines = await tx.invoiceLine.findMany({
+                            where: { invoice: { lakeId, status: { not: "VOIDED" }, createdAt: { gte: startTime, lte: endTime } } },
+                            include: { invoice: { select: { fishingSessionId: true } } },
+                        });
+                        const totalRevenueVnd = summarizeRevenue(revenueLines.map(line => ({
+                            fishingSessionId: line.invoice.fishingSessionId, lines: [line],
+                        }))).totalRevenue;
 
                         // 2. Calculate Fish Buybacks
                         const fishBuybacksAgg = await tx.fishBuyback.aggregate({

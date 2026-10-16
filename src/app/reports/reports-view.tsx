@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -9,7 +10,7 @@ import { DateFilterState, DateRangePicker } from "@/components/reports/date-rang
 import { AdvancedFilterSheet, AdvancedFilterValues } from "@/components/reports/advanced-filter-sheet";
 import { DrilldownDrawer } from "@/components/reports/drilldown-drawer";
 import { AnalyticsChart } from "@/components/reports/analytics-chart";
-import { CompareMode, DatePreset, DeltaComparison, formatVnd } from "@/lib/reports/date-utils";
+import { CompareMode, DatePreset, DeltaComparison, formatVnd, formatVnDateInput, formatVnTimeInput, getDateRangeForPreset } from "@/lib/reports/date-utils";
 
 interface ReportsViewProps {
     lakeName: string;
@@ -149,7 +150,7 @@ interface AnalyticsDataResponse {
 
 const STORAGE_KEY = "qlhc_report_filter_v2";
 
-export function ReportsView({ lakeName }: ReportsViewProps) {
+export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -180,84 +181,60 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
         };
     });
 
-    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterValues>({});
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterValues>(() => Object.fromEntries(["areaId", "hutId", "customerId", "employeeId", "packageId", "productId", "paymentMethod", "sessionStatus"].flatMap(k => searchParams.get(k) ? [[k, searchParams.get(k)!]] : [])));
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
     // Active drilldown metric
-    const [drilldownMetric, setDrilldownMetric] = useState<string | null>(null);
+    const [drilldownMetric, setDrilldownMetric] = useState<string | null>(() => searchParams.get("metric"));
 
     // Active reporting tab
-    const [activeTab, setActiveTab] = useState<"overview" | "revenue" | "operations" | "facilities" | "inventory" | "customers" | "system">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "revenue" | "operations" | "facilities" | "inventory" | "customers" | "system">(() => { const tab = searchParams.get("tab"); return ["overview", "revenue", "operations", "facilities", "inventory", "customers", "system"].includes(tab || "") ? tab as "overview" : "overview"; });
 
-    // Analytics data state
-    const [analyticsData, setAnalyticsData] = useState<AnalyticsDataResponse | null>(null);
-    const [error, setError] = useState<string | null>(null);
-
-    // 2. Fetch Analytics Data
+    const [exportError, setExportError] = useState<string | null>(null);
+    const [exporting, setExporting] = useState(false);
+    const reportParams = new URLSearchParams({ preset: filterState.preset, compare: filterState.compare });
+    for (const key of ["from", "to", "fromTime", "toTime", "compareFrom", "compareTo"] as const) {
+        const value = filterState[key]; if (value) reportParams.set(key, value);
+    }
+    for (const [key, value] of Object.entries(advancedFilters)) if (value) reportParams.set(key, String(value));
+    const paramsString = reportParams.toString();
+    const navigationParams = new URLSearchParams(reportParams); navigationParams.set("tab", activeTab);
+    const reportNavigation = `/reports?${navigationParams}`;
+    const { data: analyticsData, error: reportError, isFetching, isPending, refetch } = useQuery<AnalyticsDataResponse>({
+        queryKey: ["reports", lakeId, paramsString],
+        queryFn: async ({ signal }) => {
+            const r = await fetch(`/api/reports/analytics?${paramsString}`, { signal, cache: "no-store" });
+            if (!r.ok) throw new Error("Không thể tải báo cáo. Vui lòng thử lại.");
+            return r.json();
+        },
+        staleTime: 10000, refetchOnWindowFocus: true,
+    });
+    const error = exportError || reportError?.message;
     useEffect(() => {
-        let isCancelled = false;
-
-        const load = async () => {
-            try {
-                const params = new URLSearchParams({
-                    preset: filterState.preset,
-                    compare: filterState.compare,
-                });
-                if (filterState.from) params.set("from", filterState.from);
-                if (filterState.to) params.set("to", filterState.to);
-                if (filterState.fromTime) params.set("fromTime", filterState.fromTime);
-                if (filterState.toTime) params.set("toTime", filterState.toTime);
-
-                // Add advanced filters
-                if (advancedFilters.areaId) params.set("areaId", advancedFilters.areaId);
-                if (advancedFilters.hutId) params.set("hutId", advancedFilters.hutId);
-                if (advancedFilters.employeeId) params.set("employeeId", advancedFilters.employeeId);
-                if (advancedFilters.packageId) params.set("packageId", advancedFilters.packageId);
-                if (advancedFilters.productId) params.set("productId", advancedFilters.productId);
-                if (advancedFilters.paymentMethod) params.set("paymentMethod", advancedFilters.paymentMethod);
-                if (advancedFilters.sessionStatus) params.set("sessionStatus", advancedFilters.sessionStatus);
-
-                const res = await fetch(`/api/reports/analytics?${params.toString()}`);
-                if (!res.ok) throw new Error("Không thể tải báo cáo từ máy chủ");
-                const data = (await res.json()) as AnalyticsDataResponse;
-
-                if (!isCancelled) {
-                    setAnalyticsData(data);
-                    setError(null);
-
-                    // Sync with LocalStorage
-                    if (typeof window !== "undefined") {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(filterState));
-                    }
-                }
-            } catch (err: unknown) {
-                if (!isCancelled) {
-                    const msg = err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải dữ liệu báo cáo";
-                    console.error(err);
-                    setError(msg);
-                }
-            }
-        };
-
-        void load();
-
-        return () => {
-            isCancelled = true;
-        };
-    }, [filterState, advancedFilters]);
-
-    // Handle export report
-    const handleExport = (format: "csv" | "excel") => {
-        const params = new URLSearchParams({
-            format,
-            preset: filterState.preset,
-        });
-        if (filterState.from) params.set("from", filterState.from);
-        if (filterState.to) params.set("to", filterState.to);
-        if (filterState.fromTime) params.set("fromTime", filterState.fromTime);
-        if (filterState.toTime) params.set("toTime", filterState.toTime);
-
-        window.open(`/api/reports/export?${params.toString()}`, "_blank");
+        window.history.replaceState(null, "", reportNavigation);
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(filterState)); } catch { /* Storage can be disabled. */ }
+    }, [reportNavigation, filterState]);
+    function cashbookHref(method?: string, direction?: string, scope = "all") {
+        const range = analyticsData?.timeWindow || getDateRangeForPreset(filterState.preset, new Date(), filterState.from, filterState.to, filterState.fromTime, filterState.toTime);
+        const from = new Date(range.from), to = new Date(range.to);
+        const params = new URLSearchParams({ scope, from: formatVnDateInput(from), to: formatVnDateInput(to),
+            fromTime: formatVnTimeInput(from), toTime: formatVnTimeInput(to), returnTo: reportNavigation });
+        if (method || advancedFilters.paymentMethod) params.set("method", method || advancedFilters.paymentMethod!);
+        if (direction) params.set("direction", direction);
+        for (const [key, value] of Object.entries(advancedFilters)) if (value && key !== "paymentMethod") params.set(key, value);
+        return `/cashbook?${params}`;
+    }
+    const handleExport = async () => {
+        setExporting(true); setExportError(null);
+        try {
+            const params = new URLSearchParams(reportParams); params.set("format", "csv");
+            const r = await fetch(`/api/reports/export?${params}`);
+            if (!r.ok) throw new Error("Không thể xuất báo cáo. Vui lòng thử lại.");
+            const blobUrl = URL.createObjectURL(await r.blob());
+            const a = document.createElement("a"); a.href = blobUrl; a.download = "Bao-cao.csv"; a.click();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        } catch (e) { setExportError(e instanceof Error ? e.message : "Không thể xuất báo cáo."); }
+        finally { setExporting(false); }
     };
 
     const s = analyticsData?.summary;
@@ -290,13 +267,13 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
     };
 
     return (
-        <div className="mobile-pos-shell font-serif">
+        <div className="finance-ui mobile-pos-shell font-sans">
             <div className="mobile-pos-frame has-bottom-nav">
                 {/* App Header */}
                 <MobileAppHeader lakeName={lakeName} roleBadge="Báo cáo" />
 
                 {/* Standardized Green Gradient Banner (Đồng bộ trang Đang câu) */}
-                <div className="px-3 pt-3 pb-1 font-serif w-full">
+                <div className="px-3 pt-3 pb-1 font-sans w-full">
                     <div className="w-full rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3 shadow-2xs">
                         <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
                             <div className="flex items-center gap-2">
@@ -325,11 +302,11 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                                 {/* Export / Print dropdown */}
                                 <button
                                     type="button"
-                                    onClick={() => handleExport("excel")}
+                                    disabled={exporting} onClick={() => void handleExport()}
                                     className="inline-flex h-7 items-center justify-center rounded-xl border border-[#BBF7D0] bg-[#DCFCE7] px-2.5 text-xs font-bold text-[#16A34A] hover:bg-[#BBF7D0] transition-colors shadow-2xs cursor-pointer"
-                                    title="Xuất Excel"
+                                    title="Xuất CSV"
                                 >
-                                    Xuất Excel
+                                    {exporting ? "Đang xuất…" : "Xuất CSV"}
                                 </button>
                                 <button
                                     type="button"
@@ -365,8 +342,11 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     </div>
                 </div>
 
+                <div className="px-3 pt-2"><button type="button" onClick={() => router.push(cashbookHref())} className="w-full rounded-xl border bg-white p-3 text-sm font-bold text-[#102A43]">Sổ thu chi · Tiền mặt và chuyển khoản →</button></div>
                 {/* Main Content Area */}
                 <main className="w-full px-3 pt-3 space-y-4 font-serif">
+                    <div role="status" className="text-xs text-slate-500">{isPending ? "Đang tải báo cáo…" : isFetching ? "Đang cập nhật số liệu…" : "Doanh thu theo hóa đơn · Dòng tiền theo giao dịch thanh toán"}</div>
+                    {reportError && <button type="button" onClick={() => void refetch()} className="rounded-xl border bg-white px-3 py-2 text-sm">Thử tải lại</button>}
                     {error && (
                         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 shadow-2xs">
                             {error}
@@ -377,11 +357,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         {/* Total Revenue */}
                         <div
-                            onClick={() => setDrilldownMetric("totalRevenue")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("totalRevenue"); } }} onClick={() => setDrilldownMetric("totalRevenue")}
                             className="cursor-pointer rounded-2xl border border-emerald-700 bg-gradient-to-br from-[#1B3224] to-[#244632] p-3 text-white shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
-                                <span>1. Doanh thu tổng</span>
+                                <span>
+                                    Doanh thu tổng</span>
                                 <span>🔍</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif sm:text-lg tabular-nums">
@@ -395,7 +376,8 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                             className="rounded-2xl border border-slate-800 bg-[#0F172A] p-3 text-white shadow-2xs"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-                                <span>7. Lợi nhuận tạm tính</span>
+                                <span>
+                                    Lợi nhuận tạm tính</span>
                                 <span>📊</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif sm:text-lg tabular-nums">
@@ -406,11 +388,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
                         {/* Ticket Revenue */}
                         <div
-                            onClick={() => setDrilldownMetric("ticketRevenue")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("ticketRevenue"); } }} onClick={() => setDrilldownMetric("ticketRevenue")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>2. Doanh thu vé</span>
+                                <span>
+                                    Doanh thu vé</span>
                                 <span>🔍</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
@@ -421,11 +404,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
                         {/* Retail / Product Revenue */}
                         <div
-                            onClick={() => setDrilldownMetric("productRevenue")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("productRevenue"); } }} onClick={() => setDrilldownMetric("productRevenue")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>3. Tiền sản phẩm</span>
+                                <span>
+                                    Tiền sản phẩm</span>
                                 <span>🔍</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
@@ -436,11 +420,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
                         {/* Overtime Revenue */}
                         <div
-                            onClick={() => setDrilldownMetric("overtimeRevenue")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("overtimeRevenue"); } }} onClick={() => setDrilldownMetric("overtimeRevenue")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>4. Tiền thêm giờ</span>
+                                <span>
+                                    Tiền thêm giờ</span>
                                 <span>🔍</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif text-[#D48806] tabular-nums">
@@ -451,11 +436,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
                         {/* Fish Buyback */}
                         <div
-                            onClick={() => setDrilldownMetric("totalFishBuyback")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("totalFishBuyback"); } }} onClick={() => setDrilldownMetric("totalFishBuyback")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>5. Tiền thu mua cá</span>
+                                <span>
+                                    Tiền thu mua cá</span>
                                 <span>🔍</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
@@ -466,11 +452,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
                         {/* Total Expenses */}
                         <div
-                            onClick={() => setDrilldownMetric("totalExpense")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("totalExpense"); } }} onClick={() => setDrilldownMetric("totalExpense")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>6. Tổng phiếu chi</span>
+                                <span>
+                                    Tổng phiếu chi</span>
                                 <span>🔍</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif text-[#9E2A2B] tabular-nums">
@@ -481,11 +468,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
                     {/* Receivable Debt */}
                     <div
-                        onClick={() => setDrilldownMetric("totalReceivableDebt")}
+                        role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("totalReceivableDebt"); } }} onClick={() => setDrilldownMetric("totalReceivableDebt")}
                         className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs hover:border-emerald-300 hover:shadow-sm transition-all active:scale-98"
                     >
                         <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                            <span>8. Công nợ chưa thu</span>
+                            <span>
+                                    Công nợ chưa thu</span>
                             <span>🔍</span>
                         </div>
                         <div className="mt-1 text-base font-bold text-amber-600 sm:text-lg">
@@ -564,43 +552,49 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {activeTab === "overview" && (
                         <div className="pt-3 space-y-3">
                             <h4 className="text-xs font-bold uppercase text-slate-500">
-                                12-17. Chỉ số Phiên câu & Thời lượng
+                                    Chỉ số Phiên câu & Thời lượng
                             </h4>
                             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                 <div
-                                    onClick={() => setDrilldownMetric("sessions")}
+                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("sessions"); } }} onClick={() => setDrilldownMetric("sessions")}
                                     className="cursor-pointer rounded-xl bg-slate-50 p-3 hover:bg-slate-100 transition-colors"
                                 >
-                                    <span className="text-[11px] text-slate-500 block">12. Số vé đã tạo</span>
+                                    <span className="text-[11px] text-slate-500 block">
+                                    Số vé đã tạo</span>
                                     <span className="text-base font-bold text-slate-800">{s?.totalSessions ?? 0}</span>
                                 </div>
                                 <div
-                                    onClick={() => setDrilldownMetric("activeSessions")}
+                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("activeSessions"); } }} onClick={() => setDrilldownMetric("activeSessions")}
                                     className="cursor-pointer rounded-xl bg-emerald-50/60 p-3 hover:bg-emerald-100/60 transition-colors"
                                 >
-                                    <span className="text-[11px] text-emerald-800 block">13. Vé đang câu</span>
+                                    <span className="text-[11px] text-emerald-800 block">
+                                    Vé đang câu</span>
                                     <span className="text-base font-bold text-emerald-800">{s?.activeSessions ?? 0}</span>
                                 </div>
                                 <div
-                                    onClick={() => setDrilldownMetric("completedSessions")}
+                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("completedSessions"); } }} onClick={() => setDrilldownMetric("completedSessions")}
                                     className="cursor-pointer rounded-xl bg-blue-50/60 p-3 hover:bg-blue-100/60 transition-colors"
                                 >
-                                    <span className="text-[11px] text-blue-800 block">14. Vé đã hoàn thành</span>
+                                    <span className="text-[11px] text-blue-800 block">
+                                    Vé đã hoàn thành</span>
                                     <span className="text-base font-bold text-blue-800">{s?.completedSessions ?? 0}</span>
                                 </div>
                                 <div
-                                    onClick={() => setDrilldownMetric("cancelledSessions")}
+                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("cancelledSessions"); } }} onClick={() => setDrilldownMetric("cancelledSessions")}
                                     className="cursor-pointer rounded-xl bg-rose-50/60 p-3 hover:bg-rose-100/60 transition-colors"
                                 >
-                                    <span className="text-[11px] text-rose-800 block">15. Vé đã hủy</span>
+                                    <span className="text-[11px] text-rose-800 block">
+                                    Vé đã hủy</span>
                                     <span className="text-base font-bold text-rose-800">{s?.cancelledSessions ?? 0}</span>
                                 </div>
                                 <div className="rounded-xl bg-slate-50 p-3">
-                                    <span className="text-[11px] text-slate-500 block">16. Số giờ câu ghi nhận</span>
+                                    <span className="text-[11px] text-slate-500 block">
+                                    Số giờ câu ghi nhận</span>
                                     <span className="text-base font-bold text-slate-800">{s?.totalFishingHours ?? 0} giờ</span>
                                 </div>
                                 <div className="rounded-xl bg-slate-50 p-3">
-                                    <span className="text-[11px] text-slate-500 block">17. Số giờ phụ trội thêm</span>
+                                    <span className="text-[11px] text-slate-500 block">
+                                    Số giờ phụ trội thêm</span>
                                     <span className="text-base font-bold text-amber-700">{s?.totalOvertimeHours ?? 0} giờ</span>
                                 </div>
                             </div>
@@ -615,11 +609,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                             </h4>
                             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                                 <div
-                                    onClick={() => setDrilldownMetric("cash")}
+                                    onClick={() => router.push(cashbookHref("CASH"))}
                                     className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-3 hover:bg-slate-100 transition-colors"
                                 >
                                     <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                                        <span>9. Tiền mặt (CASH)</span>
+                                        <span>
+                                    Tiền mặt</span>
                                         <span>🔍</span>
                                     </div>
                                     <div className="mt-1 text-base font-bold text-emerald-700">
@@ -631,11 +626,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                                 </div>
 
                                 <div
-                                    onClick={() => setDrilldownMetric("transfer")}
+                                    onClick={() => router.push(cashbookHref("BANK_TRANSFER"))}
                                     className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-3 hover:bg-slate-100 transition-colors"
                                 >
                                     <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                                        <span>10. Chuyển khoản (BANK_TRANSFER)</span>
+                                        <span>
+                                    Chuyển khoản</span>
                                         <span>🔍</span>
                                     </div>
                                     <div className="mt-1 text-base font-bold text-blue-700">
@@ -646,9 +642,9 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                                     </div>
                                 </div>
 
-                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                <div role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") router.push(cashbookHref(undefined, "IN", "manual")); }} onClick={() => router.push(cashbookHref(undefined, "IN", "manual"))} className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-3">
                                     <div className="text-xs font-semibold text-slate-700">
-                                        11. Doanh thu dịch vụ & Khác
+                                        Thu bán ngoài & dịch vụ
                                     </div>
                                     <div className="mt-1 text-base font-bold text-slate-800">
                                         {formatVnd(s?.otherRevenue ?? 0)}
@@ -657,7 +653,7 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
                                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                                     <div className="text-xs font-semibold text-slate-700">
-                                        30. Hoàn tiền & Giảm trừ hóa đơn
+                                    Hoàn tiền & Giảm trừ hóa đơn
                                     </div>
                                     <div className="mt-1 text-base font-bold text-rose-700">
                                         {formatVnd(s?.refundAmount ?? 0)} ({s?.refundCount ?? 0} lần)
@@ -671,12 +667,13 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {activeTab === "facilities" && (
                         <div className="pt-3 space-y-3">
                             <h4 className="text-xs font-bold uppercase text-slate-500">
-                                18-20. Doanh thu theo Khu vực & Ô câu
+                                    Doanh thu theo Khu vực & Ô câu
                             </h4>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 {/* By Area */}
                                 <div className="rounded-xl border border-slate-200 p-3">
-                                    <h5 className="text-xs font-bold text-slate-700 mb-2">19. Doanh thu theo Khu vực</h5>
+                                    <h5 className="text-xs font-bold text-slate-700 mb-2">
+                                    Doanh thu theo Khu vực</h5>
                                     <div className="space-y-2">
                                         {(analyticsData?.breakdown?.areas || []).length === 0 ? (
                                             <span className="text-xs text-slate-400">Chưa có dữ liệu</span>
@@ -696,7 +693,8 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
 
                                 {/* By Hut */}
                                 <div className="rounded-xl border border-slate-200 p-3">
-                                    <h5 className="text-xs font-bold text-slate-700 mb-2">20. Doanh thu theo Ô câu</h5>
+                                    <h5 className="text-xs font-bold text-slate-700 mb-2">
+                                    Doanh thu theo Ô câu</h5>
                                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                                         {(analyticsData?.breakdown?.huts || []).length === 0 ? (
                                             <span className="text-xs text-slate-400">Chưa có dữ liệu</span>
@@ -724,11 +722,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {activeTab === "inventory" && (
                         <div className="pt-3 space-y-3">
                             <h4 className="text-xs font-bold uppercase text-slate-500">
-                                21-23. Báo cáo Sản phẩm, Bán chạy & Tồn kho
+                                    Báo cáo Sản phẩm, Bán chạy & Tồn kho
                             </h4>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <div className="rounded-xl border border-slate-200 p-3">
-                                    <h5 className="text-xs font-bold text-slate-700 mb-2">23. Top Sản phẩm bán chạy</h5>
+                                    <h5 className="text-xs font-bold text-slate-700 mb-2">
+                                    Top Sản phẩm bán chạy</h5>
                                     <div className="space-y-2">
                                         {(analyticsData?.breakdown?.topProducts || []).length === 0 ? (
                                             <span className="text-xs text-slate-400">Chưa có doanh số sản phẩm</span>
@@ -747,7 +746,8 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                                 </div>
 
                                 <div className="rounded-xl border border-slate-200 p-3">
-                                    <h5 className="text-xs font-bold text-slate-700 mb-2">22. Biến động Kho</h5>
+                                    <h5 className="text-xs font-bold text-slate-700 mb-2">
+                                    Biến động Kho</h5>
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100">
                                             <span className="text-slate-600">Số lượt nhập / xuất kho:</span>
@@ -763,11 +763,12 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {activeTab === "customers" && (
                         <div className="pt-3 space-y-3">
                             <h4 className="text-xs font-bold uppercase text-slate-500">
-                                24-25. Khách hàng thân thiết & Đội ngũ nhân viên
+                                    Khách hàng thân thiết & Đội ngũ nhân viên
                             </h4>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <div className="rounded-xl border border-slate-200 p-3">
-                                    <h5 className="text-xs font-bold text-slate-700 mb-2">24. Top Khách hàng chi tiêu</h5>
+                                    <h5 className="text-xs font-bold text-slate-700 mb-2">
+                                    Top Khách hàng chi tiêu</h5>
                                     <div className="space-y-2">
                                         {(analyticsData?.breakdown?.topCustomers || []).length === 0 ? (
                                             <span className="text-xs text-slate-400">Chưa có dữ liệu khách hàng</span>
@@ -786,7 +787,8 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                                 </div>
 
                                 <div className="rounded-xl border border-slate-200 p-3">
-                                    <h5 className="text-xs font-bold text-slate-700 mb-2">25. Danh sách Nhân viên</h5>
+                                    <h5 className="text-xs font-bold text-slate-700 mb-2">
+                                    Danh sách Nhân viên</h5>
                                     <div className="space-y-2">
                                         {(analyticsData?.breakdown?.staff || []).map((st: StaffMember) => (
                                             <div key={st.id} className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5">
@@ -809,16 +811,16 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                     {activeTab === "system" && (
                         <div className="pt-3 space-y-3">
                             <h4 className="text-xs font-bold uppercase text-slate-500">
-                                26-28. Nhật ký thao tác & Gói SaaS
+                                    Nhật ký thao tác & Gói SaaS
                             </h4>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <div
-                                    onClick={() => setDrilldownMetric("auditEvents")}
+                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("auditEvents"); } }} onClick={() => setDrilldownMetric("auditEvents")}
                                     className="cursor-pointer rounded-xl border border-blue-200/80 bg-blue-50/50 p-3.5 hover:bg-blue-100/60 transition-all group"
                                 >
                                     <div className="flex items-center justify-between">
                                         <span className="text-[11px] font-semibold text-blue-700 block">
-                                            26. Nhật ký thao tác (Audit Logs)
+                                    Nhật ký thao tác (Audit Logs)
                                         </span>
                                         <span className="text-[10px] font-medium text-blue-600 bg-blue-100/80 px-2 py-0.5 rounded-full group-hover:bg-blue-200 transition-colors">
                                             Bấm xem chi tiết ↗
@@ -844,7 +846,8 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
                                 </div>
 
                                 <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-3.5">
-                                    <span className="text-[11px] font-semibold text-emerald-800 block">27-28. Gói cước SaaS</span>
+                                    <span className="text-[11px] font-semibold text-emerald-800 block">
+                                    Gói cước SaaS</span>
                                     <span className="text-xl font-bold text-emerald-800 mt-1 block">
                                         {analyticsData?.lake?.plan || "TRIAL"}
                                     </span>
@@ -873,10 +876,14 @@ export function ReportsView({ lakeName }: ReportsViewProps) {
             {/* Drilldown Drawer on KPI click */}
             {drilldownMetric && (
                 <DrilldownDrawer
+                    key={`${drilldownMetric}-${paramsString}`}
                     isOpen={Boolean(drilldownMetric)}
                     onClose={() => setDrilldownMetric(null)}
                     metric={drilldownMetric}
                     filterState={filterState}
+                    lakeId={lakeId}
+                    advancedFilters={advancedFilters}
+                    returnTo={`${reportNavigation}&metric=${drilldownMetric}`}
                 />
             )}
 

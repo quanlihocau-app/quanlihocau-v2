@@ -48,6 +48,7 @@ interface SettlementPreviewData {
         fishBuybackTotalVnd?: number;
         otherTotalVnd: number;
         grossChargeVnd: number;
+        invoiceTotalVnd?: number;
         totalPaidVnd: number;
         totalDeductionsVnd?: number;
         netBalanceVnd?: number;
@@ -74,7 +75,7 @@ export function SettlementCheckoutModal({
     onCompleted,
 }: SettlementCheckoutModalProps) {
     const router = useRouter();
-    const { isConnected, printPaymentReceipt } = usePrinter();
+    const { config: printerConfig, templateConfig, printPaymentReceipt } = usePrinter();
     const { isOnline } = useNetworkStatus();
 
     const [loading, setLoading] = useState(true);
@@ -153,24 +154,16 @@ export function SettlementCheckoutModal({
             isReprint,
         };
 
-        if (isConnected) {
-            setIsPrinting(true);
-            try {
-                const res = await printPaymentReceipt(receiptToPrint, {
-                    jobId: `checkout-${completedReceipt.sessionId || sessionId}-${Date.now()}`,
-                    manual: true,
-                });
-                if (!res.success) {
-                    window.print();
-                }
-            } catch {
-                window.print();
-            } finally {
-                setIsPrinting(false);
-            }
-        } else {
-            window.print();
-        }
+        setIsPrinting(true);
+        try {
+            const result = await printPaymentReceipt(receiptToPrint, {
+                jobId: `checkout-reprint-${completedReceipt.invoiceId}-${Date.now()}`,
+                manual: true,
+            });
+            if (!result.success) setSubmitError(result.error || "Không gửi được hóa đơn đến máy in.");
+        } catch (error) {
+            setSubmitError(error instanceof Error ? error.message : "Không gửi được hóa đơn đến máy in.");
+        } finally { setIsPrinting(false); }
     }
 
     async function handleConfirmCheckout() {
@@ -234,11 +227,17 @@ export function SettlementCheckoutModal({
             if (result.receiptData) {
                 setCompletedReceipt(result.receiptData);
                 // Attempt auto-print if printer is connected
-                if (isConnected) {
-                    printPaymentReceipt(result.receiptData, {
-                        jobId: `auto-checkout-${sessionId}-${Date.now()}`,
-                        manual: false,
-                    }).catch(() => {});
+                if (printerConfig && templateConfig.autoPrintPayment) {
+                    setIsPrinting(true);
+                    try {
+                        const printResult = await printPaymentReceipt(result.receiptData, {
+                            jobId: `auto-checkout-${sessionId}-${result.receiptData.invoiceId}`,
+                            manual: false,
+                        });
+                        if (!printResult.success) setSubmitError(`Ca câu đã kết thúc. ${printResult.error || "Chưa in được hóa đơn."}`);
+                    } catch (error) {
+                        setSubmitError(`Ca câu đã kết thúc. ${error instanceof Error ? error.message : "Chưa in được hóa đơn."}`);
+                    } finally { setIsPrinting(false); }
                 }
             } else {
                 // Fallback close if no receiptData
@@ -385,103 +384,94 @@ export function SettlementCheckoutModal({
                                 <InlineAlert type="error" message={submitError} />
                             )}
 
-                            {/* Authoritative Financial Breakdown Card */}
-                            <div className="rounded-xs border border-[#CCCCCC] bg-[#FAFAF7] p-3 space-y-2 text-xs font-serif">
-                                <div className="border-b border-[#E0E0E0] pb-1.5">
+                            {/* Bill cuoi - Bang quyet toan */}
+                            <div className="rounded-xs border border-[#CCCCCC] bg-[#FAFAF7] p-3 space-y-1.5 text-xs font-serif">
+                                <div className="border-b border-[#E0E0E0] pb-1.5 mb-1">
                                     <span className="font-bold text-[#1A1A1A] uppercase tracking-wider text-[11px]">
-                                        BẢNG KÊ CHI PHÍ &amp; QUYẾT TOÁN
+                                        BẢNG QUYẾT TOÁN PHIÊN CÂU
                                     </span>
                                 </div>
 
+                                {/* (+) Tien gio cau = goi + gia han + qua gio */}
                                 <div className="flex justify-between text-[#1A1A1A]">
-                                    <span>Tiền gói ({preview.session.packageName}):</span>
-                                    <span className="font-bold font-serif">{formatVnd(preview.financials.packageTotalVnd)}</span>
+                                    <span className="text-[#555555]">
+                                        🎣 Tiền giờ câu ({preview.session.packageName})
+                                        {(preview.financials.overtimeMinutes ?? 0) > 0 && (
+                                            <span className="ml-1 text-[#8C5C00] font-semibold">
+                                                +{preview.financials.overtimeMinutes}p quá giờ
+                                            </span>
+                                        )}
+                                    </span>
+                                    <span className="font-bold font-serif text-[#1A1A1A]">
+                                        {formatVnd(
+                                            preview.financials.packageTotalVnd +
+                                            preview.financials.extensionsTotalVnd +
+                                            (preview.financials.overtimeTotalVnd ?? 0)
+                                        )}
+                                    </span>
                                 </div>
 
+                                {/* (+) Tien san pham */}
                                 {preview.financials.itemsTotalVnd > 0 && (
                                     <div className="flex justify-between text-[#1A1A1A]">
-                                        <span>Hàng hóa / Nước / Mồi câu:</span>
-                                        <span className="font-bold font-serif">{formatVnd(preview.financials.itemsTotalVnd)}</span>
+                                        <span className="text-[#555555]">🛒 Tiền sản phẩm / mồi câu</span>
+                                        <span className="font-bold font-serif">+{formatVnd(preview.financials.itemsTotalVnd)}</span>
                                     </div>
                                 )}
 
-                                {preview.financials.extensionsTotalVnd > 0 && (
-                                    <div className="flex justify-between text-[#1A1A1A]">
-                                        <span>Phí gia hạn thêm giờ:</span>
-                                        <span className="font-bold font-serif">{formatVnd(preview.financials.extensionsTotalVnd)}</span>
-                                    </div>
-                                )}
-
-                                {(preview.financials.overtimeTotalVnd ?? 0) > 0 && (
-                                    <div className="flex justify-between text-[#8C5C00] font-semibold">
-                                        <span>⏱️ Phụ thu quá giờ {preview.financials.overtimeMinutes ? `(+${preview.financials.overtimeMinutes}p)` : ""}:</span>
-                                        <span className="font-serif font-bold">+{formatVnd(preview.financials.overtimeTotalVnd!)}</span>
-                                    </div>
-                                )}
-
+                                {/* (+) Phu thu khac */}
                                 {preview.financials.otherTotalVnd > 0 && (
                                     <div className="flex justify-between text-[#1A1A1A]">
-                                        <span>Phụ thu / Khoản khác:</span>
-                                        <span className="font-bold font-serif">{formatVnd(preview.financials.otherTotalVnd)}</span>
+                                        <span className="text-[#555555]">📋 Phụ thu khác</span>
+                                        <span className="font-bold font-serif">+{formatVnd(preview.financials.otherTotalVnd)}</span>
                                     </div>
                                 )}
 
-                                <div className="border-t border-[#E0E0E0] pt-1.5 flex justify-between font-bold text-xs text-[#1A1A1A]">
-                                    <span>Tổng tiền dịch vụ:</span>
-                                    <span className="text-[#2C4C3B] font-serif font-bold">{formatVnd(preview.financials.grossChargeVnd)}</span>
-                                </div>
-
-                                {/* Các khoản giảm trừ / Đã thu trước */}
-                                <div className="border-t border-[#E0E0E0] pt-1.5 pb-0.5">
-                                    <span className="font-bold text-[#1A1A1A] uppercase tracking-wider text-[11px]">
-                                        Các khoản cấn trừ &amp; Tạm tính
-                                    </span>
-                                </div>
-
-                                {preview.financials.totalPaidVnd > 0 && (
-                                    <div className="flex justify-between text-[#555555]">
-                                        <span>Đã thu trước (Tạm tính / Cọc):</span>
-                                        <span className="font-bold text-[#2C4C3B] font-serif">- {formatVnd(preview.financials.totalPaidVnd)}</span>
-                                    </div>
-                                )}
-
+                                {/* Cash buyback is credited to the invoice; show it before the invoice total. */}
                                 {(preview.financials.fishBuybackTotalVnd ?? 0) > 0 && (
                                     <div className="flex justify-between text-[#9E2A2B]">
-                                        <span>Tiền cá thu lại từ khách:</span>
-                                        <span className="font-bold text-[#9E2A2B] font-serif">- {formatVnd(preview.financials.fishBuybackTotalVnd!)}</span>
+                                        <span>🐟 Tiền cá thu lại từ khách</span>
+                                        <span className="font-bold font-serif">− {formatVnd(preview.financials.fishBuybackTotalVnd!)}</span>
                                     </div>
                                 )}
 
-                                {/* Outstanding Balance Display */}
-                                <div className="border-t border-[#E0E0E0] pt-2">
+                                <div className="flex justify-between border-t border-dashed border-[#CCCCCC] pt-1.5 text-[#1A1A1A] font-semibold">
+                                    <span>Tổng hóa đơn sau cấn trừ</span>
+                                    <span className="font-bold text-[#2C4C3B] font-serif">{formatVnd(preview.financials.invoiceTotalVnd ?? preview.financials.grossChargeVnd - (preview.financials.fishBuybackTotalVnd ?? 0))}</span>
+                                </div>
+
+                                {/* Paid amount is shown for clarity and deducted only once from the full invoice total. */}
+                                {preview.financials.totalPaidVnd > 0 && (
+                                    <div className="flex justify-between text-[#555555]">
+                                        <span>💰 Đã thanh toán trước</span>
+                                        <span className="font-bold text-[#2C4C3B] font-serif">{formatVnd(preview.financials.totalPaidVnd)}</span>
+                                    </div>
+                                )}
+
+                                {/* = Ket qua cuoi */}
+                                <div className="border-t-2 border-[#1A1A1A] pt-2 mt-1">
                                     {preview.financials.netDueVnd > 0 ? (
-                                        <div className="rounded-xs bg-[#FDF7EB] border border-[#E8D1A3] p-2.5 text-[#8C5C00] space-y-0.5">
+                                        <div className="rounded-xs bg-[#FDF7EB] border border-[#E8D1A3] p-2.5 text-[#8C5C00]">
                                             <div className="flex items-center justify-between">
-                                                <span className="font-bold text-xs">CẦN THU THÊM CỦA KHÁCH:</span>
+                                                <span className="font-bold text-xs">= KHÁCH CẦN THANH TOÁN THÊM:</span>
                                                 <span className="text-base font-bold text-[#8C5C00] font-serif tabular-nums">
                                                     +{formatVnd(preview.financials.netDueVnd)}
                                                 </span>
                                             </div>
-                                            <p className="text-[10px] text-[#8C5C00]/80">
-                                                Tổng tiền dịch vụ ({formatVnd(preview.financials.grossChargeVnd)}) lớn hơn tiền tạm tính &amp; thu cá ({formatVnd((preview.financials.totalPaidVnd || 0) + (preview.financials.fishBuybackTotalVnd || 0))})
-                                            </p>
                                         </div>
                                     ) : preview.financials.refundVnd > 0 ? (
-                                        <div className="rounded-xs bg-[#FBEBEB] border border-[#E9B6B7] p-2.5 text-[#9E2A2B] space-y-0.5">
+                                        <div className="rounded-xs bg-[#FBEBEB] border border-[#E9B6B7] p-2.5 text-[#9E2A2B]">
                                             <div className="flex items-center justify-between">
-                                                <span className="font-bold text-xs uppercase tracking-wide">HỒ THỐI LẠI TIỀN CHO KHÁCH:</span>
+                                                <span className="font-bold text-xs uppercase tracking-wide">= THỐI LẠI CHO KHÁCH:</span>
                                                 <span className="text-base font-bold text-[#9E2A2B] font-serif tabular-nums">
-                                                    -{formatVnd(preview.financials.refundVnd)}
+                                                    −{formatVnd(preview.financials.refundVnd)}
                                                 </span>
                                             </div>
-                                            <p className="text-[10px] text-[#555555]">
-                                                Tiền cá thu lại &amp; tạm tính ({formatVnd((preview.financials.totalPaidVnd || 0) + (preview.financials.fishBuybackTotalVnd || 0))}) lớn hơn tiền dịch vụ ({formatVnd(preview.financials.grossChargeVnd)})
-                                            </p>
                                         </div>
                                     ) : (
                                         <div className="flex items-center justify-between rounded-xs bg-[#EAEFEA] border border-[#B8CEB8] p-2 text-[#2C4C3B]">
-                                            <span className="font-bold text-xs">Trạng thái số dư:</span>
-                                            <span className="font-bold font-serif">Đã thanh toán đủ (0 đ)</span>
+                                            <span className="font-bold text-xs">= THANH TOÁN ĐỦ</span>
+                                            <span className="font-bold font-serif">0 đ ✓</span>
                                         </div>
                                     )}
                                 </div>

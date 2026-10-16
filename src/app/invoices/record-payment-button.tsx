@@ -27,7 +27,7 @@ export function RecordPaymentButton({
     size = "md",
 }: RecordPaymentButtonProps) {
     const router = useRouter();
-    const { isConnected, printPaymentReceipt } = usePrinter();
+    const { config: printerConfig, templateConfig, printPaymentReceipt } = usePrinter();
 
     const [isOpen, setIsOpen] = useState(false);
     const [amountVnd, setAmountVnd] = useState<number | string>(
@@ -166,7 +166,7 @@ export function RecordPaymentButton({
             setLastReceiptData(receiptData);
 
             // Auto print if printer is connected
-            if (isConnected) {
+            if (printerConfig && templateConfig.autoPrintPayment) {
                 printPaymentReceipt(receiptData, {
                     jobId: `pay-${invoiceId}-${Date.now()}`,
                 }).then((printResult) => {

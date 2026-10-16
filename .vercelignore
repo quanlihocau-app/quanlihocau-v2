@@ -10,3 +10,7 @@ scratch
 .codex
 .windsurf
 src/generated/prisma
+*.rar
+*.zip
+*.7z
+tests

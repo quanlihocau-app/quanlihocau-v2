@@ -19,7 +19,7 @@ export async function registerUser(input: RegisterInput) {
   try {
     const parsed = z.object({
       email: z.string().trim().pipe(z.email('Email không hợp lệ.')),
-      password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự.').max(128),
+      password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự.').max(128),
       name: z.string().trim().min(1, 'Vui lòng nhập họ tên.').max(100),
       phone: z.string().nullable().optional(),
       lakeName: z.string().trim().max(200).nullable().optional(),
@@ -35,10 +35,6 @@ export async function registerUser(input: RegisterInput) {
 
     if (!email || !password || !name) {
       return { success: false, message: 'Vui lòng điền đầy đủ thông tin bắt buộc.' }
-    }
-
-    if (password.length < 6) {
-      return { success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự.' }
     }
 
     // 1. Check existing user (non-transaction quick read)
@@ -120,17 +116,9 @@ export async function registerUser(input: RegisterInput) {
       }
     })
 
-    // 4. Set HTTP-only session cookie ngay sau khi đăng ký thành công
-    await setSessionCookie({
-      userId: newUser.id,
-      email: newUser.email,
-      role: newUser.systemRole,
-      name: newUser.name || '',
-    })
-
     return {
       success: true,
-      message: 'Đăng ký tài khoản thành công!',
+      message: 'Đăng ký tài khoản thành công! Hãy đăng nhập bằng Google đã đăng ký.',
       data: {
         id: newUser.id,
         email: newUser.email,
@@ -153,7 +141,7 @@ export async function loginUser(input: { email: string; password: string }) {
     const { password } = input
 
     if (!email || !password) {
-      return { success: false, message: 'Vui lòng nhập đầy đủ email và mật khẩu.' }
+      return { success: false, message: 'Vui lòng nhập email và mật khẩu.' }
     }
 
     const user = await prisma.user.findUnique({

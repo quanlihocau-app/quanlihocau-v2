@@ -3,10 +3,10 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { z } from "zod";
 
 import { SystemRole } from "@/generated/prisma/client";
-import { normalizeVietnamesePhone } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 
 declare module "next-auth" {
@@ -44,8 +44,8 @@ declare module "next-auth/jwt" {
 }
 
 const loginSchema = z.object({
-    email: z.string().trim().min(3),
-    password: z.string().min(1),
+    email: z.string().trim().email({ message: 'Email không hợp lệ' }),
+    password: z.string().min(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' }),
 });
 
 export const authOptions: NextAuthOptions = {
@@ -56,6 +56,68 @@ export const authOptions: NextAuthOptions = {
         signIn: "/login",
     },
     callbacks: {
+        async signIn({ user, account, profile }) {
+            if (account?.provider !== "google") return true;
+
+            const email = user.email?.trim().toLowerCase();
+            const googleProfile = profile as { email_verified?: unknown } | null;
+            if (!email || googleProfile?.email_verified !== true) return false;
+
+            let dbUser = await prisma.user.findUnique({
+                where: { email },
+                select: { isLocked: true },
+            });
+            if (!dbUser) {
+                const now = new Date();
+                const trialExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const ownerName = (user.name?.trim() || email.split("@")[0] || "Chủ hồ").slice(0, 100);
+                const lakeName = `Hồ câu của ${ownerName}`;
+
+                try {
+                    await prisma.$transaction(async (tx) => {
+                        const organization = await tx.organization.create({
+                            data: {
+                                name: `Doanh nghiệp ${lakeName}`,
+                                subscriptionPlan: "TRIAL",
+                                validUntil: trialExpiresAt,
+                            },
+                        });
+                        const lake = await tx.lake.create({
+                            data: {
+                                organizationId: organization.id,
+                                name: lakeName,
+                                subscriptionStatus: "TRIAL",
+                                subscriptionPlan: "TRIAL",
+                                subscriptionExpiresAt: trialExpiresAt,
+                            },
+                        });
+                        const owner = await tx.user.create({
+                            data: {
+                                email,
+                                name: ownerName,
+                                systemRole: "USER",
+                                phoneVerified: false,
+                            },
+                        });
+                        await tx.membership.create({
+                            data: { userId: owner.id, lakeId: lake.id, role: "OWNER" },
+                        });
+                    });
+                } catch {
+                    // A simultaneous first sign-in may have created this email.
+                    // Re-read it and continue without duplicating tenant data.
+                }
+
+                dbUser = await prisma.user.findUnique({
+                    where: { email },
+                    select: { isLocked: true },
+                });
+            }
+
+            // Existing users are matched by verified Google email; locked
+            // accounts keep their restriction. No existing records are changed.
+            return Boolean(dbUser && !dbUser.isLocked);
+        },
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
@@ -109,14 +171,18 @@ export const authOptions: NextAuthOptions = {
         },
     },
     providers: [
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+        }),
         CredentialsProvider({
             id: "credentials",
-            name: "Email hoặc Số điện thoại",
+            name: "Email",
             credentials: {
                 email: {
-                    label: "Tài khoản",
-                    type: "text",
-                    placeholder: "Email hoặc Số điện thoại",
+                    label: "Email",
+                    type: "email",
+                    placeholder: "Email đăng nhập",
                 },
                 password: {
                     label: "Mật khẩu",
@@ -130,23 +196,10 @@ export const authOptions: NextAuthOptions = {
                     return null;
                 }
 
-                const identifier = parsed.data.email.trim();
-                let normalizedPhone: string | null = null;
-                try {
-                    normalizedPhone = normalizeVietnamesePhone(identifier);
-                } catch {
-                    normalizedPhone = null;
-                }
-
                 let user;
                 try {
-                    user = await prisma.user.findFirst({
-                        where: {
-                            OR: [
-                                { email: identifier.toLowerCase() },
-                                ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
-                            ],
-                        },
+                    user = await prisma.user.findUnique({
+                        where: { email: parsed.data.email.trim().toLowerCase() },
                     });
                 } catch (dbErr: unknown) {
                     console.error("[auth] Database query error during authorize:", dbErr);
@@ -172,7 +225,7 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 if (!user.passwordHash) {
-                    throw new Error("Tài khoản chưa được tạo mật khẩu. Vui lòng đăng nhập qua mã OTP hoặc liên hệ hỗ trợ.");
+                    throw new Error("Tài khoản chưa được tạo mật khẩu. Vui lòng liên hệ quản trị viên hồ để được hỗ trợ.");
                 }
 
                 const passwordMatches = await bcrypt.compare(
@@ -211,10 +264,15 @@ export const authOptions: NextAuthOptions = {
 // -----------------------------------------------------------------------------
 // LIGHTWEIGHT SESSION COOKIE UTILITIES (HMAC-SHA256)
 // -----------------------------------------------------------------------------
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.SESSION_SECRET && !process.env.NEXTAUTH_SECRET) {
+    throw new Error('SESSION_SECRET or NEXTAUTH_SECRET must be set in production');
+  }
+}
 const SESSION_SECRET =
     process.env.SESSION_SECRET ||
     process.env.NEXTAUTH_SECRET ||
-    "quanlihocau-secret-key-change-in-prod-32chars!";
+    (process.env.NODE_ENV === 'production' ? '' : 'dev-secret-change-in-production');
 export const COOKIE_NAME = "qa_session";
 
 export interface SessionPayload {
@@ -303,7 +361,17 @@ export async function getSession(): Promise<SessionPayload | null> {
 export async function clearSessionCookie() {
     try {
         const cookieStore = await cookies();
-        cookieStore.delete(COOKIE_NAME);
+        for (const name of [
+            COOKIE_NAME,
+            "next-auth.session-token",
+            "__Secure-next-auth.session-token",
+            "next-auth.csrf-token",
+            "__Host-next-auth.csrf-token",
+            "next-auth.callback-url",
+            "__Secure-next-auth.callback-url",
+        ]) {
+            cookieStore.delete(name);
+        }
     } catch {
         // Safe ignore
     }

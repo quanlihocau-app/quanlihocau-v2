@@ -11,6 +11,7 @@ import {
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
+import { safeRedirectPath } from "@/lib/navigation";
 
 import { InvoiceLinesSection } from "./invoice-lines-section";
 import { PrintReceiptButton } from "./print-receipt-button";
@@ -63,6 +64,7 @@ function getPaymentMethodLabel(method: PaymentMethod): string {
 }
 
 interface InvoiceDetailPageProps {
+    searchParams: Promise<{ returnTo?: string }>;
     params: Promise<{
         invoiceId: string;
     }>;
@@ -70,7 +72,9 @@ interface InvoiceDetailPageProps {
 
 export default async function InvoiceDetailPage({
     params,
+    searchParams,
 }: InvoiceDetailPageProps) {
+    const backHref = safeRedirectPath((await searchParams).returnTo ?? "/invoices", "/invoices");
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
@@ -202,7 +206,7 @@ export default async function InvoiceDetailPage({
                     </div>
                     <div className="pt-2">
                         <Link
-                            href="/invoices"
+                            href={backHref}
                             className="inline-flex h-11 items-center justify-center rounded-xl bg-[#102A43] px-5 text-xs font-bold text-white shadow-sm transition hover:bg-[#1E3A5F]"
                         >
                             Quay lại danh sách hóa đơn
@@ -325,7 +329,7 @@ export default async function InvoiceDetailPage({
                     <PageHeader
                         title={getInvoiceTitle(invoice.status)}
                         subtitle={`Hồ câu: ${tenantContext.lakeName}`}
-                        backHref="/invoices"
+                        backHref={backHref}
                         backLabel="Danh sách hóa đơn"
                         badge={<InvoiceStatusBadge status={invoice.status} />}
                         action={<PrintReceiptButton receiptData={printableReceiptData} />}

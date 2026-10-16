@@ -141,54 +141,13 @@ test("Auth: Đăng nhập thành công với Email + Password đúng & truy cậ
     assert.equal(meData.lake.id, lakeId);
 });
 
-test("Auth: Đăng nhập phone-otp không được cấp session", async () => {
-    const phone = testUser.phone;
-
-    // 1. Yêu cầu gửi OTP
-    const sendOtpRes = await fetch(`${BASE_URL}/api/auth/send-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
-    });
-    const sendOtpData = await sendOtpRes.json();
-    assert.ok(
-        sendOtpRes.status === 200 || (sendOtpRes.status === 502 && sendOtpData.devOtp),
-        `Send OTP failed: ${JSON.stringify(sendOtpData)}`
-    );
-
-    // 2. Tra cứu OTP code từ DB (Mock provider/hash)
-    const otpRow = await pool.query(
-        `SELECT code FROM "OtpCode" WHERE phone = $1 OR phone = $2 LIMIT 1`,
-        [phone, `+84${phone.replace(/^0/, "")}`]
-    );
-    assert.ok(otpRow.rows[0], "Phải có bản ghi OTP tạo trong database");
-
-    // Trong dev/mock provider, OTP code mặc định có thể là code hash
-    // Kiểm tra thử nhập sai mã OTP
-    const csrfRes = await fetch(`${BASE_URL}/api/auth/csrf`);
-    const { csrfToken } = await csrfRes.json();
-    const cookies = csrfRes.headers.get("set-cookie") || "";
-
-    const failOtpLogin = await fetch(`${BASE_URL}/api/auth/callback/phone-otp`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            Cookie: cookies,
-        },
-        body: new URLSearchParams({
-            csrfToken,
-            phone,
-            code: "000000", // Wrong code
-            redirect: "false",
-            json: "true",
-        }),
-    });
-
-    const setCookies = failOtpLogin.headers.getSetCookie
-        ? failOtpLogin.headers.getSetCookie()
-        : [failOtpLogin.headers.get("set-cookie")];
-    const sessionCookie = setCookies.find((c) => c && c.includes("session-token"));
-    assert.equal(sessionCookie, undefined, "Nhập sai OTP không được đăng nhập");
+test("Auth: Google OAuth is enabled and legacy credentials remain available", async () => {
+    const providersRes = await fetch(`${BASE_URL}/api/auth/providers`);
+    assert.equal(providersRes.status, 200);
+    const providers = await providersRes.json();
+    assert.ok(providers.google, "Google OAuth is available for new and existing Google-linked users");
+    assert.ok(providers.credentials, "Email/password provider remains available");
+    assert.equal(providers["phone-otp"], undefined, "Phone OTP login is disabled");
 });
 
 // =============================================================================

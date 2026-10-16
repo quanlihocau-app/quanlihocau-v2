@@ -63,8 +63,9 @@ export function verifyOtpHash(
  */
 export function getOtpProvider(): OtpProvider {
     const configured = process.env.OTP_PROVIDER?.toUpperCase();
+    const isProduction = process.env.NODE_ENV === "production";
 
-    if (configured === "MOCK" || process.env.NODE_ENV === "test") {
+    if (process.env.NODE_ENV === "test" || (configured === "MOCK" && !isProduction)) {
         return new MockOtpProvider();
     }
 
@@ -77,6 +78,12 @@ export function getOtpProvider(): OtpProvider {
         configured === "SPEEDSMS" ||
         Boolean(process.env.SPEEDSMS_AUTH_TOKEN || process.env.SMS_PROVIDER_API_KEY)
     ) {
+        return new SpeedSmsProvider();
+    }
+
+    // Never report a mock OTP as delivered in production. Without a configured
+    // provider, SpeedSmsProvider returns a clear configuration error instead.
+    if (isProduction) {
         return new SpeedSmsProvider();
     }
 

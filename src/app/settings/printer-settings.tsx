@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { usePrinter } from "@/lib/printing/use-printer";
 import {
@@ -20,6 +20,8 @@ import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 export function PrinterSettingsSection() {
     const {
         status,
+        isNative,
+        connectWithConsent,
         config,
         templateConfig,
         isConnected,
@@ -31,6 +33,8 @@ export function PrinterSettingsSection() {
         disconnect,
         saveTemplateConfig,
         printTest,
+        isStation,
+        setDeskStation,
     } = usePrinter();
 
     // Local form states for template settings
@@ -85,6 +89,37 @@ export function PrinterSettingsSection() {
         if (successMsg) {
             setAlertMessage({ type: "success", text: successMsg });
             setTimeout(() => setAlertMessage(null), 3000);
+        }
+    }
+
+    useEffect(() => {
+        if (isNative) return;
+        const setupUrl = new URL(window.location.href);
+        if (setupUrl.searchParams.get("setup") !== "windows") return;
+        setupUrl.searchParams.delete("setup");
+        window.history.replaceState(window.history.state, "", setupUrl.pathname + setupUrl.search + setupUrl.hash);
+        void connectWithConsent("USB").then((connected) => {
+            if (connected) {
+                setPaperWidthMm(58);
+                setAlertMessage({ type: "success", text: "Đã thiết lập MP210 USB. App sẽ tự nối lại máy in cho các lần sau." });
+            }
+        }).catch((error) => {
+            setAlertMessage({ type: "error", text: error instanceof Error ? error.message : "Chưa kết nối được máy in USB." });
+        });
+        // The installer URL is consumed once; ordinary renders must not request consent.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isNative]);
+
+    async function handleWindowsConnect(connectionType?: "USB" | "BLUETOOTH") {
+        setAlertMessage(null);
+        try {
+            const connected = await connectWithConsent(connectionType);
+            if (connected) {
+                setPaperWidthMm(58);
+                setAlertMessage({ type: "success", text: "Đã mở kết nối máy in. Khổ giấy 58 mm đã được chọn; bạn có thể bấm In thử." });
+            }
+        } catch (error) {
+            setAlertMessage({ type: "error", text: error instanceof Error ? error.message : "Không thể kết nối máy in." });
         }
     }
 
@@ -278,7 +313,7 @@ export function PrinterSettingsSection() {
                     Máy in nhiệt & Mẫu vé
                 </h2>
                 <p className="text-xs text-[#766F67] mt-0.5">
-                    Hỗ trợ in nhiệt thật trên Android qua Bluetooth, USB-OTG hoặc Wi-Fi/LAN ESC/POS.
+                    Kết nối MP210 khổ 58 mm trên Windows và Android để gửi vé trực tiếp.
                 </p>
             </div>
 
@@ -362,6 +397,7 @@ export function PrinterSettingsSection() {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => {
+                                        if (!isNative) { void handleWindowsConnect(); return; }
                                         if (config.connectionType === "BLUETOOTH") handleConnectBluetooth(config.device);
                                         else if (config.connectionType === "USB") handleConnectUsb(config.device);
                                         else if (config.connectionType === "WIFI") connectWifi(config.device.address, config.device.port);
@@ -374,6 +410,152 @@ export function PrinterSettingsSection() {
                     </div>
                 )}
 
+                {/* Trạm in quầy (Hàng đợi in đám mây cho điện thoại) */}
+                <div className="rounded-2xl border-2 border-[#1E40AF]/30 bg-gradient-to-b from-[#EFF6FF] to-[#F8FAFC] p-5 space-y-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1E40AF] text-white text-xs font-bold">📡</span>
+                                <h3 className="text-sm font-bold text-[#1E3A8A] tracking-tight">
+                                    Chế độ: Trạm in quầy bàn (In từ xa qua Điện thoại)
+                                </h3>
+                            </div>
+                            <p className="text-xs text-[#334155] leading-relaxed">
+                                Khi bật chế độ này trên Laptop/PC đặt ở bàn: <strong>Chủ hồ & nhân viên cầm điện thoại đi quanh hồ bấm in vé hoặc hóa đơn</strong> thì máy in tại quầy bàn này sẽ <strong>tự động nhả vé ngay lập tức</strong> mà không cần thao tác thêm.
+                            </p>
+                        </div>
+                        <Badge variant={isStation ? "success" : "neutral"} className="shrink-0">
+                            {isStation ? "Đang trực nhận in" : "Đang tắt"}
+                        </Badge>
+                    </div>
+
+                    <div className="rounded-xl bg-white p-3.5 border border-[#BFDBFE] flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="text-xs text-[#1E3A8A]">
+                            <p className="font-semibold flex items-center gap-1.5">
+                                {isStation ? (
+                                    <>
+                                        <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        Thiết bị này đang làm <strong>Trạm in quầy tự động</strong>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="inline-block h-2 w-2 rounded-full bg-slate-400"></span>
+                                        Chưa bật nhận lệnh in từ điện thoại của nhân viên
+                                    </>
+                                )}
+                            </p>
+                            <p className="text-[11px] text-[#64748B] mt-0.5">
+                                {isStation
+                                    ? "Máy in đang lắng nghe liên tục. Mọi lệnh in từ di động quanh hồ sẽ được in ra đây."
+                                    : "Bật công tắc bên cạnh nếu đây là Laptop/PC để ở quầy có cắm máy in."}
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant={isStation ? "danger" : "primary"}
+                            onClick={() => {
+                                const next = !isStation;
+                                setDeskStation(next);
+                                setAlertMessage({
+                                    type: next ? "success" : "info",
+                                    text: next
+                                        ? "Đã kích hoạt Trạm in quầy! Điện thoại của nhân viên bấm in sẽ tự động nhả vé tại máy in này."
+                                        : "Đã tắt chế độ Trạm in quầy.",
+                                });
+                            }}
+                            className="w-full sm:w-auto shrink-0 font-bold"
+                        >
+                            {isStation ? "Tắt nhận in tự động" : "Bật Trạm in quầy"}
+                        </Button>
+                    </div>
+                </div>
+
+                {!isNative && (
+                    <div className="rounded-2xl border-2 border-[#2D6A4F]/30 bg-gradient-to-b from-[#EBF5EE] to-[#F4F9F5] p-5 space-y-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2D6A4F] text-white text-xs font-bold">⚡</span>
+                                    <h3 className="text-sm font-bold text-[#1B4332] tracking-tight">
+                                        Kết nối 1 bước: Máy in PT-210 / MP-210 (Cáp USB)
+                                    </h3>
+                                </div>
+                                <p className="text-xs text-[#40534C] leading-relaxed">
+                                    Bật nguồn máy in PT-210, cắm dây USB vào máy tính này và bấm nút bên dưới để kết nối ngay lập tức.
+                                </p>
+                            </div>
+                            {isConnected && config?.connectionType === "USB" ? (
+                                <Badge variant="success" className="shrink-0">Sẵn sàng in</Badge>
+                            ) : null}
+                        </div>
+
+                        {isConnected && config?.connectionType === "USB" ? (
+                            <div className="rounded-xl bg-white p-3.5 border border-[#B7E4C7] flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="text-xs text-[#2D6A4F]">
+                                    <p className="font-semibold flex items-center gap-1.5">
+                                        <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        Đã kết nối thật với: <strong>{config.device.name || "PT-210 (USB)"}</strong>
+                                    </p>
+                                    <p className="text-[11px] text-[#52796F] mt-0.5">
+                                        Khổ giấy 58 mm (ESC/POS) • Sẵn sàng in vé câu & hóa đơn
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 w-full sm:w-auto">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="primary"
+                                        isLoading={testingPrint}
+                                        loadingText="Đang in thử…"
+                                        onClick={handleTestPrint}
+                                        className="w-full sm:w-auto"
+                                    >
+                                        🖨️ In thử vé ngay
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={handleDisconnect}
+                                        className="shrink-0"
+                                    >
+                                        Ngắt kết nối
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="flex flex-col sm:flex-row gap-2.5">
+                                    <Button
+                                        type="button"
+                                        size="lg"
+                                        variant="primary"
+                                        className="w-full sm:flex-1 font-bold text-sm bg-[#2D6A4F] hover:bg-[#1B4332] shadow-sm"
+                                        isLoading={status === "connecting"}
+                                        loadingText="Đang kết nối PT-210…"
+                                        onClick={() => handleWindowsConnect("USB")}
+                                    >
+                                        ⚡ Bấm kết nối máy in PT-210 (1 bước)
+                                    </Button>
+                                </div>
+                                <div className="rounded-lg bg-white/70 p-2.5 border border-[#D8E2DC] text-[11px] text-[#52796F] flex items-center justify-between flex-wrap gap-2">
+                                    <span>
+                                        💡 <em>Nếu máy tính chưa có công cụ hỗ trợ:</em>
+                                    </span>
+                                    <a
+                                        href="/downloads/QuanLiHoCau-PrintBridge.exe"
+                                        download
+                                        className="font-semibold text-[#2D6A4F] underline hover:text-[#1B4332]"
+                                    >
+                                        Tải công cụ hỗ trợ in 1 lần (QuanLiHoCau-PrintBridge.exe)
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* Connection Transport Selection Grid */}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 pt-1">
                     <Button
@@ -381,11 +563,12 @@ export function PrinterSettingsSection() {
                         size="lg"
                         variant={config?.connectionType === "BLUETOOTH" ? "primary" : "outline"}
                         onClick={() => {
+                            if (!isNative) { void handleWindowsConnect("BLUETOOTH"); return; }
                             setActiveTab("BLUETOOTH");
                             handleScanBluetooth();
                         }}
                     >
-                        Quét Bluetooth
+                        {isNative ? "Quét Bluetooth" : "Kết nối Bluetooth"}
                     </Button>
 
                     <Button
@@ -393,11 +576,12 @@ export function PrinterSettingsSection() {
                         size="lg"
                         variant={config?.connectionType === "USB" ? "primary" : "outline"}
                         onClick={() => {
+                            if (!isNative) { void handleWindowsConnect("USB"); return; }
                             setActiveTab("USB");
                             handleListUsb();
                         }}
                     >
-                        Quét USB-OTG
+                        {isNative ? "Quét USB-OTG" : "Kết nối USB"}
                     </Button>
 
                     <Button

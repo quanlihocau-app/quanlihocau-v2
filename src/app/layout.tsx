@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { PageProgressBar } from "@/components/ui/page-progress-bar";
 import { PwaInstallPrompt } from "@/components/pwa/pwa-install-prompt";
 import { Providers } from "./providers";
+import { QuickActions } from "@/components/layout/quick-actions";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -125,13 +126,6 @@ const jsonLdSchema = {
             "applicationSubCategory": "Fishing Pond POS & Management System",
             "description": "Phần mềm quản lý hồ câu dịch vụ chuyên nghiệp và app cho chủ hồ: tính tiền phiên câu theo giờ, tự động tính phụ thu quá giờ, bán lẻ đồ câu, kiểm soát thất thoát và báo cáo doanh thu.",
             "url": "https://quanlihocau.com",
-            "aggregateRating": {
-                "@type": "AggregateRating",
-                "ratingValue": "4.9",
-                "reviewCount": "98",
-                "bestRating": "5",
-                "worstRating": "1",
-            },
             "featureList": [
                 "Đồng hồ đếm ngược phiên câu theo thời gian thực từng giây",
                 "Tự động tính tiền phụ thu khi cần thủ câu lố thời gian quy định",
@@ -221,6 +215,9 @@ export default function RootLayout({
                         <PageProgressBar />
                     </Suspense>
                     {children}
+                    <Suspense fallback={null}>
+                        <QuickActions />
+                    </Suspense>
                     <PwaInstallPrompt />
                 </Providers>
             </body>

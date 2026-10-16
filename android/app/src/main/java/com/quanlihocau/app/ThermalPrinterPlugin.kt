@@ -26,6 +26,8 @@ import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
+import com.getcapacitor.PermissionState
+import com.getcapacitor.annotation.PermissionCallback
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.getcapacitor.annotation.Permission
 import java.io.OutputStream
@@ -37,6 +39,7 @@ import java.util.concurrent.Executors
 @CapacitorPlugin(
     name = "ThermalPrinter",
     permissions = [
+        Permission(alias = "nearby", strings = [Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN]),
         Permission(
             alias = "bluetooth",
             strings = [
@@ -73,9 +76,29 @@ class ThermalPrinterPlugin : Plugin() {
     private var tcpSocket: Socket? = null
     private var tcpOutputStream: OutputStream? = null
 
+    private fun ensureBluetoothPermission(call: PluginCall): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
+        if (getPermissionState("nearby") == PermissionState.GRANTED) return true
+        requestPermissionForAlias("nearby", call, "bluetoothPermissionResult")
+        return false
+    }
+
+    @PermissionCallback
+    private fun bluetoothPermissionResult(call: PluginCall) {
+        if (getPermissionState("nearby") != PermissionState.GRANTED) {
+            call.reject("Cần cho phép quyền thiết bị ở gần để kết nối máy in.")
+            return
+        }
+        when (call.methodName) {
+            "scanBluetooth" -> scanBluetooth(call)
+            "connectBluetooth" -> connectBluetooth(call)
+        }
+    }
+
     @SuppressLint("MissingPermission")
     @PluginMethod
     fun scanBluetooth(call: PluginCall) {
+        if (!ensureBluetoothPermission(call)) return
         val context = context ?: return call.reject("Android context unavailable.")
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
         val bluetoothAdapter = bluetoothManager?.adapter
@@ -117,6 +140,7 @@ class ThermalPrinterPlugin : Plugin() {
     @SuppressLint("MissingPermission")
     @PluginMethod
     fun connectBluetooth(call: PluginCall) {
+        if (!ensureBluetoothPermission(call)) return
         val address = call.getString("address") ?: return call.reject("Thiếu địa chỉ MAC của máy in.")
         val context = context ?: return call.reject("Android context unavailable.")
 
@@ -237,7 +261,10 @@ class ThermalPrinterPlugin : Plugin() {
                     throw Exception("Không tìm thấy Bulk Out Endpoint trên máy in USB này.")
                 }
 
-                connection.claimInterface(selectedInterface, true)
+                if (!connection.claimInterface(selectedInterface, true)) {
+                    connection.close()
+                    throw Exception("Không thể chiếm giao tiếp máy in USB.")
+                }
 
                 usbDevice = device
                 usbConnection = connection
@@ -308,9 +335,12 @@ class ThermalPrinterPlugin : Plugin() {
                     "USB" -> {
                         val conn = usbConnection ?: throw Exception("Chưa kết nối USB.")
                         val ep = usbEndpoint ?: throw Exception("Không có USB Endpoint.")
-                        val transferred = conn.bulkTransfer(ep, rawBytes, rawBytes.size, 5000)
-                        if (transferred < 0) {
-                            throw Exception("Gửi dữ liệu qua USB thất bại (code $transferred).")
+                        var offset = 0
+                        while (offset < rawBytes.size) {
+                            val size = minOf(4096, rawBytes.size - offset)
+                            val transferred = conn.bulkTransfer(ep, rawBytes, offset, size, 5000)
+                            if (transferred <= 0) throw Exception("Gửi dữ liệu qua USB thất bại (code $transferred).")
+                            offset += transferred
                         }
                     }
                     "WIFI" -> {

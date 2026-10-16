@@ -123,7 +123,7 @@ export default function TermsOfServicePage() {
                             Trách Nhiệm Của Người Sử Dụng
                         </h2>
                         <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-[#5A524A]">
-                            <li>Khai báo thông tin chính xác (Tên hồ, họ tên, số điện thoại, email) để nhận mã xác thực OTP và hỗ trợ tài khoản.</li>
+                            <li>Khai báo thông tin chính xác (Tên hồ, họ tên, email và số điện thoại liên hệ nếu có) để quản lý tài khoản và hỗ trợ khi cần.</li>
                             <li>Tự chịu trách nhiệm bảo mật mật khẩu và quyền truy cập của nhân viên thu ngân tại quầy.</li>
                             <li>Không sử dụng phần mềm vào mục đích vi phạm pháp luật, gian lận thương mại hoặc xâm phạm dữ liệu hồ khác.</li>
                         </ul>

@@ -1,5 +1,54 @@
 @import "tailwindcss";
 
+.finance-ui button, .finance-ui a { touch-action: manipulation; }
+
+/* Keep cashbook controls clear of phone notches, status bars and the bottom navigation. */
+.cashbook-main {
+  width: 100%;
+  min-width: 0;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  padding-left: calc(env(safe-area-inset-left, 0px) + 16px);
+  padding-right: calc(env(safe-area-inset-right, 0px) + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+}
+.cashbook-header {
+  padding: 8px 0 12px;
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+}
+.cashbook-page input, .cashbook-page select {
+  min-width: 0;
+  max-width: 100%;
+}
+.cashbook-page main button span { overflow-wrap: anywhere; }
+.cashbook-sheet {
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px) !important;
+}
+.quick-actions-anchor {
+  left: calc(env(safe-area-inset-left, 0px) + 16px);
+  right: calc(env(safe-area-inset-right, 0px) + 16px);
+  max-width: 440px;
+  margin-inline: auto;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+}
+@media (min-width: 768px) {
+  .quick-actions-anchor { left: auto; width: 280px; }
+}
+@media print {
+  .quick-actions { display: none !important; }
+}
+/* Reserve room for both the floating shortcut and the navigation at the end of each page. */
+@media screen {
+  body:has(.quick-actions) main {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 208px) !important;
+  }
+}
+/* Keep shortcuts behind dialogs and out of the way while staff enter data. */
+body:has([role="dialog"][aria-modal="true"]) .quick-actions {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 :root {
   --background: #F8FAFC;
   --foreground: #0F172A;

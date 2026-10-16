@@ -1,5 +1,6 @@
 
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import test, { after, before } from "node:test";
 import bcrypt from "bcryptjs";
 import pg from "pg";
@@ -14,6 +15,7 @@ let staffCookie = "";
 
 let superAdminId = "";
 let ownerId = "";
+let ownerEmail = "";
 let staffId = "";
 let targetUserId = "";
 let testLakeId = "";
@@ -52,7 +54,7 @@ before(async () => {
         superAdminId = saRes.rows[0].id;
 
         // 3. Create Normal Owner User
-        const ownerEmail = `owner_${timestamp}@quanlihocau.test`;
+        ownerEmail = `owner_${timestamp}@quanlihocau.test`;
         const ownerRes = await client.query(
             `INSERT INTO "User" ("id", "email", "name", "passwordHash", "systemRole", "phoneVerified", "sessionVersion", "createdAt", "updatedAt")
              VALUES (gen_random_uuid(), $1, 'Owner Test', $2, 'USER', true, 1, NOW(), NOW()) RETURNING "id"`,
@@ -169,6 +171,35 @@ test("Security: OWNER không được phép truy cập Admin User API (403)", as
     const data = await res.json();
     assert.equal(data.ok, false);
     assert.equal(data.error.code, "FORBIDDEN");
+});
+
+test("Security: session SUPER_ADMIN cũ không được dùng cùng cookie của tài khoản OWNER", async () => {
+    const payload = Buffer.from(JSON.stringify({
+        userId: ownerId,
+        email: ownerEmail,
+        name: "Owner Test",
+        role: "USER",
+        sessionVersion: 1,
+        expiresAt: Date.now() + 60_000,
+    })).toString("base64url");
+    const secret = process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET || "quanlihocau-secret-key-change-in-prod-32chars!";
+    const signature = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+    const staleAdminAndCurrentOwner = `${superAdminCookie}; qa_session=${payload}.${signature}`;
+
+    const apiRes = await fetch(`${BASE_URL}/api/admin/users`, {
+        headers: { Cookie: staleAdminAndCurrentOwner },
+    });
+    assert.equal(apiRes.status, 403);
+
+    const pageRes = await fetch(`${BASE_URL}/admin/users`, {
+        headers: { Cookie: staleAdminAndCurrentOwner },
+        redirect: "manual",
+    });
+    const pageBody = await pageRes.text();
+    assert.ok(pageRes.status === 200 || pageRes.status === 307);
+    assert.ok(pageBody.includes("/403"), "Admin page must redirect to the forbidden page");
+    assert.equal(pageBody.includes(ownerEmail), false, "Admin data must not be present in the streamed response");
+    assert.equal(pageBody.includes("QUẢN TRỊ NỀN TẢNG SAAS"), false);
 });
 
 test("Security: STAFF không được phép truy cập Admin User API (403)", async () => {

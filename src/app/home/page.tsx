@@ -44,6 +44,7 @@ export default async function AppHomePage() {
         prisma.invoice.findMany({
             where: {
                 lakeId: tenantContext.lakeId,
+                NOT: { lines: { some: { name: { startsWith: "Thu khác: " } } } },
                 createdAt: { gte: todayStart },
                 status: InvoiceStatus.PAID,
             },

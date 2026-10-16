@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState } from "react";
 import { usePrinter } from "@/lib/printing/use-printer";
 import { PaymentReceiptData } from "@/lib/printing/types";
@@ -10,11 +11,11 @@ interface PrintReceiptButtonProps {
 }
 
 export function PrintReceiptButton({ receiptData }: PrintReceiptButtonProps) {
-    const { isConnected, printPaymentReceipt } = usePrinter();
+    const { printPaymentReceipt } = usePrinter();
     const [printing, setPrinting] = useState(false);
 
     async function handlePrint() {
-        if (isConnected && receiptData) {
+        if (receiptData) {
             setPrinting(true);
             try {
                 const res = await printPaymentReceipt(receiptData, {
@@ -22,11 +23,10 @@ export function PrintReceiptButton({ receiptData }: PrintReceiptButtonProps) {
                     manual: true,
                 });
                 if (!res.success) {
-                    // Fallback to browser print if thermal print fails
-                    window.print();
+                    toast.error(res.error || "Không gửi được hóa đơn đến máy in.");
                 }
-            } catch {
-                window.print();
+            } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Không gửi được hóa đơn đến máy in.");
             } finally {
                 setPrinting(false);
             }

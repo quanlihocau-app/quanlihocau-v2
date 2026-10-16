@@ -431,7 +431,7 @@ test("Test 5: Thu mua cá tính vào bill phiên câu: (Gói câu + SP) - (Tạm
     assert.equal(invCheck.rows[0].status, "PAID");
 });
 
-test("Test 6: Tính phụ thu quá giờ tự động khi đồng hồ hết giờ và chốt vào hóa đơn khi kết thúc ca", async () => {
+test("Test 6: Phiên quá giờ không tự cộng phụ thu và vẫn kết thúc đúng hóa đơn đã ghi nhận", async () => {
     // Tạo ô câu riêng cho test
     const hutRes = await pool.query(
         `INSERT INTO "Hut" ("id", "lakeId", "areaId", "name", "updatedAt")
@@ -477,9 +477,9 @@ test("Test 6: Tính phụ thu quá giờ tự động khi đồng hồ hết gi�
     assert.equal(previewRes.status, 200);
     const previewData = await previewRes.json();
 
-    // Với giá quá giờ 50.000đ/h, lố 30 phút -> phụ thu 25.000đ
-    assert.ok(previewData.financials.overtimeTotalVnd >= 24000 && previewData.financials.overtimeTotalVnd <= 26000);
-    assert.ok(previewData.financials.overtimeMinutes >= 29);
+    // Quá giờ không tự tạo khoản thu; chỉ khoản đã ghi nhận mới được đưa vào hóa đơn.
+    assert.equal(previewData.financials.overtimeTotalVnd, 0);
+    assert.equal(previewData.financials.overtimeMinutes, 0);
     assert.equal(
         previewData.financials.grossChargeVnd,
         previewData.financials.packageTotalVnd + previewData.financials.overtimeTotalVnd,
@@ -503,13 +503,12 @@ test("Test 6: Tính phụ thu quá giờ tự động khi đồng hồ hết gi�
     });
     assert.equal(completeRes.status, 200);
 
-    // 5. Kiểm tra DB: phải có dòng InvoiceLine "Thêm giờ: Quá giờ..."
+    // 5. Không tạo dòng thu quá giờ ngoài xác nhận của nhân viên.
     const lineRes = await pool.query(
         `SELECT "name", "totalVnd", "unitPrice" FROM "InvoiceLine" WHERE "invoiceId" = $1 AND "name" LIKE '%Thêm giờ%'`,
         [invoiceId],
     );
-    assert.equal(lineRes.rows.length, 1);
-    assert.ok(lineRes.rows[0].totalVnd >= 24000);
+    assert.equal(lineRes.rows.length, 0);
 
     // Ô câu được giải phóng
     const hutCheck = await pool.query(`SELECT "currentSessionId" FROM "Hut" WHERE "id" = $1`, [overtimeHutId]);

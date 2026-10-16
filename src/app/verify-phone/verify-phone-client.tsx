@@ -1,9 +1,9 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { logoutUser } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
@@ -257,7 +257,7 @@ export function VerifyPhoneClient({
                     </span>
                     <button
                         type="button"
-                        onClick={() => signOut({ callbackUrl: "/login" })}
+                        onClick={() => void logoutUser()}
                         className="text-[#8B1E1E] hover:underline font-semibold cursor-pointer"
                     >
                         Đăng xuất

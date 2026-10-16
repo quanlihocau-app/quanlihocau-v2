@@ -4,8 +4,8 @@
 > Ngày cập nhật: 2026-09-05  
 > Chủ sản phẩm: Trần Anh Huân  
 > Hồ pilot: Hồ Câu Kim Thông  
-> Trạng thái: Baseline hoàn thiện Vận hành, Gói cước SaaS, VietQR Techcombank & Xác thực SĐT OTP  
-> Phạm vi ưu tiên: Tạo vé → Đang câu → Kết thúc → Thanh toán → SaaS Subscription → Auth OTP
+> Trạng thái: Baseline hoàn thiện Vận hành, Gói cước SaaS, VietQR Techcombank & Google OAuth
+> Phạm vi ưu tiên: Tạo vé → Đang câu → Kết thúc → Thanh toán → SaaS Subscription → Google OAuth
 
 ## 0. Cách dùng tài liệu này trong dự án
 
@@ -247,36 +247,24 @@ Hệ thống cung cấp 3 hạng gói cước dịch vụ cho các hồ câu:
      - Mỗi log phải có: `lakeId`, thời gian timestamp, người thực hiện (`actorId` / tên nhân viên), loại hành động (`action`), đối tượng liên quan (`entityType`/`entityId`), payload chi tiết trước/sau và lý do nếu có.
      - Bộ lọc nghiệp vụ: Lọc theo khoảng ngày, nhân viên, khách hàng, mã đơn/vé, loại hoạt động và trạng thái. Backend kiểm tra tenant guard và RBAC nghiêm ngặt.
 
-### 4.5 Xác thực & Định danh Chủ hồ bằng Số điện thoại & OTP
+### 4.5 Xác thực & Định danh bằng Google
 
-Nhằm đơn giản hóa tối đa quy trình tiếp cận cho chủ hồ câu, hệ thống hỗ trợ đăng ký và đăng nhập nhanh bằng Số điện thoại di động Việt Nam kết hợp mã OTP 6 chữ số:
+Chủ hồ và nhân viên đăng nhập vào giao diện bằng tài khoản Google để giảm thao tác nhập mật khẩu. Số điện thoại, nếu có, chỉ là thông tin liên hệ; không dùng làm điều kiện xác minh hay đăng nhập.
 
-1. **Chuẩn hóa số điện thoại**:
-   - Tất cả số điện thoại đầu vào được chuẩn hóa về định dạng E.164 (`+84xxxxxxxxx`) theo dải đầu số di động Việt Nam (03, 05, 07, 08, 09).
-   - Ràng buộc `User.phone` là duy nhất (`@unique`) trong hệ thống.
-   - Thêm cờ `User.phoneVerified (Boolean)` để xác định tài khoản đã được kích hoạt và xác thực số điện thoại chính chủ.
+1. **Đăng ký và ghép tài khoản**:
+   - Lần đầu đăng nhập bằng Google với email đã xác minh sẽ tạo User, Organization, Lake mặc định, gói dùng thử 7 ngày và Membership OWNER trong một transaction.
+   - Tên hồ mặc định dựa trên tên Google và có thể chỉnh sau khi đăng nhập.
+   - Email khớp với tài khoản hiện có thì đăng nhập vào đúng tài khoản và tenant đó; không tạo tài khoản hay tenant trùng lặp.
+   - Tài khoản bị khóa bị từ chối. Tài khoản hiện hữu tiếp tục hỗ trợ cách đăng nhập cũ để không gián đoạn nhân viên đang làm việc.
 
-2. **Cơ chế OTP (Bảng `OtpCode`)**:
-   - Lưu trữ tạm thời: `phone (unique, indexed)`, `code` (6 số ngẫu nhiên), `expiresAt` (5 phút), `attempts` (số lần thử sai, tối đa 5 lần).
-   - Mỗi số điện thoại chỉ tồn tại tối đa 1 bản ghi OTP hợp lệ tại một thời điểm (upsert ghi đè mã cũ khi yêu cầu gửi lại).
+2. **Phiên đăng nhập**:
+   - NextAuth Google OAuth xác thực danh tính; callback đồng bộ tài khoản nội bộ vào cookie phiên của app.
+   - Các kiểm tra membership, vai trò, tenant, khóa tài khoản và thu hồi phiên tiếp tục áp dụng như trước.
+   - Cấu hình `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_URL` và `NEXTAUTH_SECRET` trong môi trường triển khai; đăng ký redirect URI `/api/auth/callback/google` tại Google Cloud Console.
 
-3. **Luồng API**:
-   - `POST /api/auth/send-otp`:
-     - Nhận số điện thoại, chuẩn hóa định dạng.
-     - Rate-limiting chống spam: Tối đa 3 lần gửi / 5 phút cho mỗi số điện thoại.
-     - Sinh mã 6 số ngẫu nhiên qua `crypto.randomInt`, lưu hạn 5 phút và gửi tin nhắn SMS OTP.
-   - `POST /api/auth/verify-otp`:
-     - Kiểm tra hạn dùng (5 phút) và giới hạn 5 lần nhập sai.
-     - Nếu đúng: Xóa mã OTP đã dùng.
-     - **Tài khoản đã có**: Cập nhật `phoneVerified = true`.
-     - **Tài khoản mới**: Tự động kích hoạt luồng khởi tạo trọn gói trong 1 database transaction Serializable: Tạo `User` (phoneVerified: true), tạo `Organization` (kèm 30 ngày `TRIAL`), tạo `Lake` (kèm 30 ngày `TRIAL`), và gán quyền `Membership` với vai trò `OWNER`.
-
-4. **Tích hợp NextAuth**:
-   - Provider `phone-otp` hỗ trợ `signIn("phone-otp", { phone, code })` để cấp session JWT cookie đồng bộ và bảo mật, cho phép chủ hồ duy trì đăng nhập mà không cần mật khẩu.
-
-5. **Trải nghiệm người dùng (Mobile-First UI)**:
-   - Màn hình `/login`: Mặc định ưu tiên tab **Số điện thoại (OTP)** với bàn phím số tự động, tự động xác thực ngay khi nhập đủ 6 chữ số OTP, có đếm ngược 60s gửi lại mã và tùy chọn đổi số. Đồng thời giữ tab Email & Mật khẩu cho quản trị viên.
-   - Trang `/settings`: Hiển thị rõ ràng số điện thoại đã xác minh của chủ hồ kèm huy hiệu `[✓ Đã xác thực SĐT]`.
+3. **OTP SMS**:
+   - Luồng gửi và xác minh OTP SMS không còn là phương thức đăng nhập hoặc điều kiện sử dụng app.
+   - Dữ liệu số điện thoại/xác minh cũ được giữ để tương thích bản ghi hiện hữu; không dùng để chặn người dùng.
 
 ---
 
@@ -1085,14 +1073,11 @@ Hệ thống đã hoàn thành 100% các cột mốc nền tảng và tính năn
   - Chặn tạo nhân sự thứ 2 trên gói Bạc tại `/api/members` và `/api/memberships` (HTTP 403).
   - Nâng cấp lên gói Vàng mở khóa không giới hạn ngay lập tức.
 
-- [x] **9. Đăng ký & Xác thực Chủ hồ bằng Số điện thoại & OTP**:
-  - Chuẩn hóa số điện thoại di động Việt Nam E.164 (`+84xxxxxxxxx`).
-  - Lưu mã OTP 6 số (5 phút, tối đa 5 lần thử sai) trong bảng `OtpCode`.
-  - API `send-otp` (có rate-limit chống spam) và `verify-otp`.
-  - Tự động đăng ký chủ hồ mới kèm hồ câu và gói TRIAL 30 ngày khi xác thực SĐT mới.
-  - Tích hợp NextAuth provider `phone-otp` cấp session JWT cookie bảo mật.
-  - Màn hình `/login` mobile-first hỗ trợ nhập SĐT, nhận OTP và tự động vào Dashboard.
-  - Trang `/settings` hiển thị SĐT chủ hồ với huy hiệu `[✓ Đã xác thực SĐT]`.
+- [x] **9. Đăng ký và đăng nhập bằng Google**:
+  - Chủ hồ tiếp tục tạo tài khoản, hồ câu và gói TRIAL 7 ngày qua biểu mẫu đăng ký hiện có.
+  - Đăng nhập qua Google với email đã xác minh, khớp tài khoản đã đăng ký; tài khoản bị khóa không được cấp phiên.
+  - Google OAuth đồng bộ phiên NextAuth với cookie phiên app để giữ nguyên tenant guard, RBAC và thu hồi phiên.
+  - OTP SMS không còn dùng để đăng nhập hay bắt buộc xác minh; giữ dữ liệu cũ để tương thích và tra cứu lịch sử.
 
 ### 18.2 Tình trạng Kiểm thử Tự động (Automated Test Suite)
 

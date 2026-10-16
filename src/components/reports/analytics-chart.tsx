@@ -39,7 +39,7 @@ export function AnalyticsChart({ data }: AnalyticsChartProps) {
         ...data.map((d) => {
             if (activeMetric === "revenue") return d.revenue;
             if (activeMetric === "expense") return d.expense;
-            if (activeMetric === "profit") return Math.max(0, d.profit);
+            if (activeMetric === "profit") return Math.abs(d.profit);
             if (activeMetric === "sessions") return d.sessions;
             if (activeMetric === "overtime") return d.overtimeVnd;
             return Math.max(d.revenue, d.expense, d.profit);
@@ -49,6 +49,8 @@ export function AnalyticsChart({ data }: AnalyticsChartProps) {
     const svgHeight = 160;
     const paddingBottom = 24;
     const chartHeight = svgHeight - paddingBottom;
+    const hasLoss = data.some(d => d.profit < 0);
+    const profitZero = activeMetric === "profit" && hasLoss ? chartHeight / 2 : chartHeight;
     const barGroupWidth = 100 / data.length;
 
     return (
@@ -60,7 +62,7 @@ export function AnalyticsChart({ data }: AnalyticsChartProps) {
                         Biểu đồ phân tích xu hướng
                     </h3>
                     <p className="text-[11px] text-slate-500">
-                        Chạm vào cột để xem chi tiết mốc thời gian
+                        Chạm hoặc di chuột để xem số liệu theo thời gian
                     </p>
                 </div>
 
@@ -145,6 +147,7 @@ export function AnalyticsChart({ data }: AnalyticsChartProps) {
                     <line x1="0" y1="0" x2="100" y2="0" stroke="#f1f5f9" strokeWidth="0.5" />
                     <line x1="0" y1={chartHeight * 0.5} x2="100" y2={chartHeight * 0.5} stroke="#f1f5f9" strokeWidth="0.5" />
                     <line x1="0" y1={chartHeight} x2="100" y2={chartHeight} stroke="#cbd5e1" strokeWidth="0.75" />
+                    {activeMetric === "profit" && hasLoss && <line x1="0" y1={profitZero} x2="100" y2={profitZero} stroke="#94a3b8" strokeWidth="0.75" />}
 
                     {/* Bars for each data point */}
                     {data.map((d, index) => {
@@ -154,12 +157,17 @@ export function AnalyticsChart({ data }: AnalyticsChartProps) {
                         // Calculate bar heights
                         const revH = (d.revenue / maxVal) * chartHeight;
                         const expH = (d.expense / maxVal) * chartHeight;
-                        const profH = (Math.max(0, d.profit) / maxVal) * chartHeight;
+                        const profH = (Math.abs(d.profit) / maxVal) * (activeMetric === "profit" && hasLoss ? chartHeight / 2 : chartHeight);
                         const sessH = (d.sessions / maxVal) * chartHeight;
 
                         return (
                             <g
                                 key={d.key}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`${d.label}: doanh thu ${formatVnd(d.revenue)}, chi phí ${formatVnd(d.expense)}, lợi nhuận ${formatVnd(d.profit)}`}
+                                onFocus={() => setHoveredPoint(d)}
+                                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setHoveredPoint(d); } }}
                                 onMouseEnter={() => setHoveredPoint(d)}
                                 onClick={() => setHoveredPoint(d)}
                                 className="cursor-pointer group"
@@ -217,10 +225,10 @@ export function AnalyticsChart({ data }: AnalyticsChartProps) {
                                 ) : activeMetric === "profit" ? (
                                     <rect
                                         x={x + 0.5}
-                                        y={chartHeight - profH}
+                                        y={d.profit < 0 ? profitZero : profitZero - profH}
                                         width={w}
-                                        height={Math.max(1, profH)}
-                                        fill="#3b82f6"
+                                        height={d.profit === 0 ? 0 : Math.max(0.5, profH)}
+                                        fill={d.profit < 0 ? "#f43f5e" : "#3b82f6"}
                                         rx="0.5"
                                     />
                                 ) : (

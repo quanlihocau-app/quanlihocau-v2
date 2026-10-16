@@ -1,15 +1,21 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { formatVnd } from "@/lib/reports/date-utils";
-import { DrilldownItem } from "@/app/api/reports/drilldown/route";
+import type { DrilldownItem } from "@/app/api/reports/drilldown/route";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
+import type { AdvancedFilterValues } from "./advanced-filter-sheet";
 
 interface DrilldownDrawerProps {
     isOpen: boolean;
     onClose: () => void;
     metric: string;
+    lakeId: string;
+    returnTo: string;
+    advancedFilters?: AdvancedFilterValues;
     filterState: {
         preset: string;
         from?: string;
@@ -24,93 +30,25 @@ export function DrilldownDrawer({
     onClose,
     metric,
     filterState,
+    lakeId,
+    returnTo,
+    advancedFilters,
 }: DrilldownDrawerProps) {
-    const [loading, setLoading] = useState(false);
-    const [data, setData] = useState<{
-        title: string;
-        totalCount: number;
-        items: DrilldownItem[];
-        page: number;
-        totalPages: number;
-    } | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
-
-    const fetchDrilldown = useCallback(async (page: number) => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams({
-                metric,
-                preset: filterState.preset,
-                page: String(page),
-                limit: "30",
-            });
-            if (filterState.from) params.set("from", filterState.from);
-            if (filterState.to) params.set("to", filterState.to);
-            if (filterState.fromTime) params.set("fromTime", filterState.fromTime);
-            if (filterState.toTime) params.set("toTime", filterState.toTime);
-
-            const res = await fetch(`/api/reports/drilldown?${params.toString()}`);
-            if (!res.ok) throw new Error("Failed to load drilldown data");
-            const json = (await res.json()) as {
-                title: string;
-                totalCount: number;
-                items: DrilldownItem[];
-                page: number;
-                totalPages: number;
-            };
-            setData(json);
-            setCurrentPage(page);
-        } catch (err) {
-            console.error("Error loading drilldown:", err);
-        } finally {
-            setLoading(false);
-        }
-    }, [metric, filterState.preset, filterState.from, filterState.to, filterState.fromTime, filterState.toTime]);
-
-    useEffect(() => {
-        if (!isOpen || !metric) return;
-        let isCancelled = false;
-
-        const loadInitial = async () => {
-            try {
-                const params = new URLSearchParams({
-                    metric,
-                    preset: filterState.preset,
-                    page: "1",
-                    limit: "30",
-                });
-                if (filterState.from) params.set("from", filterState.from);
-                if (filterState.to) params.set("to", filterState.to);
-                if (filterState.fromTime) params.set("fromTime", filterState.fromTime);
-                if (filterState.toTime) params.set("toTime", filterState.toTime);
-
-                const res = await fetch(`/api/reports/drilldown?${params.toString()}`);
-                if (!res.ok) throw new Error("Failed to load drilldown data");
-                const json = (await res.json()) as {
-                    title: string;
-                    totalCount: number;
-                    items: DrilldownItem[];
-                    page: number;
-                    totalPages: number;
-                };
-                if (!isCancelled) {
-                    setData(json);
-                    setCurrentPage(1);
-                    setLoading(false);
-                }
-            } catch (err) {
-                console.error("Error loading drilldown:", err);
-                if (!isCancelled) setLoading(false);
-            }
-        };
-
-        void loadInitial();
-
-        return () => {
-            isCancelled = true;
-        };
-    }, [isOpen, metric, filterState.preset, filterState.from, filterState.to, filterState.fromTime, filterState.toTime]);
+    const params = new URLSearchParams({ metric, preset: filterState.preset, page: String(currentPage), limit: "30" });
+    for (const key of ["from", "to", "fromTime", "toTime"] as const) if (filterState[key]) params.set(key, filterState[key]!);
+    for (const [key, value] of Object.entries(advancedFilters || {})) if (value) params.set(key, value);
+    const { data, isFetching: loading, error, refetch } = useQuery<{
+        title: string; totalCount: number; items: DrilldownItem[]; page: number; totalPages: number;
+    }>({
+        queryKey: ["report-detail", lakeId, params.toString()], enabled: isOpen && Boolean(metric),
+        queryFn: async ({ signal }) => {
+            const r = await fetch(`/api/reports/drilldown?${params}`, { signal, cache: "no-store" });
+            if (!r.ok) throw new Error("Không thể tải chi tiết báo cáo.");
+            return r.json();
+        }, staleTime: 10000, refetchOnWindowFocus: true,
+    });
 
     useModalDismiss({
         isOpen,
@@ -131,7 +69,7 @@ export function DrilldownDrawer({
     });
 
     return (
-        <div className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif">
+        <div className="finance-ui fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif">
             {/* Backdrop */}
             <div className="absolute inset-0" onClick={onClose} />
 
@@ -150,9 +88,10 @@ export function DrilldownDrawer({
                     <button
                         type="button"
                         onClick={onClose}
+                        aria-label="Đóng chi tiết"
                         className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
                     >
-                        ✕
+                        <span aria-hidden="true">✕</span>
                     </button>
                 </div>
 
@@ -160,13 +99,14 @@ export function DrilldownDrawer({
                 <div className="my-2.5">
                     <input
                         type="text"
-                        placeholder="Tìm theo mã, khách hàng, nội dung..."
+                        aria-label="Tìm trong trang hiện tại" placeholder="Tìm trong trang hiện tại…"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full min-h-12 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                 </div>
 
+                {error && <div role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error.message}<button type="button" onClick={() => void refetch()} className="ml-3 underline">Thử lại</button></div>}
                 {/* Items List */}
                 <div className="flex-1 overflow-y-auto divide-y divide-slate-100 pr-1">
                     {loading ? (
@@ -184,6 +124,7 @@ export function DrilldownDrawer({
                     ) : (
                         filteredItems.map((item) => (
                             <div key={item.id} className="py-2.5 text-xs">
+                                {item.href && <Link href={`${item.href}${item.href.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(returnTo)}`} className="mb-1 block font-semibold text-emerald-700 underline">Mở chứng từ #{item.code} →</Link>}
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-1.5">
@@ -223,7 +164,7 @@ export function DrilldownDrawer({
                         <button
                             type="button"
                             disabled={currentPage <= 1 || loading}
-                            onClick={() => fetchDrilldown(currentPage - 1)}
+                            onClick={() => setCurrentPage(p => p - 1)}
                             className="min-h-12 px-3 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 disabled:opacity-40"
                         >
                             ← Trang trước
@@ -234,7 +175,7 @@ export function DrilldownDrawer({
                         <button
                             type="button"
                             disabled={currentPage >= data.totalPages || loading}
-                            onClick={() => fetchDrilldown(currentPage + 1)}
+                            onClick={() => setCurrentPage(p => p + 1)}
                             className="min-h-12 px-3 rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600 disabled:opacity-40"
                         >
                             Trang sau →

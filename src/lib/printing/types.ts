@@ -114,6 +114,8 @@ export interface PaymentReceiptData {
     overtimeTotalVnd?: number;
     fishBuybackTotalVnd?: number;
     totalAmountVnd: number;
+    /** Invoice amount due after line item credits such as fish buyback. */
+    invoiceTotalVnd?: number;
     prepaidAmountVnd?: number;
     paidAmountVnd: number;
     paymentAmountVnd?: number;

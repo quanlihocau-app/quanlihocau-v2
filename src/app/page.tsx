@@ -66,13 +66,6 @@ const homeJsonLd = {
             "description":
                 "Phần mềm quản lý hồ câu dịch vụ toàn diện và app cho chủ hồ trên điện thoại: tính giờ phiên câu theo thời gian thực, tự động tính phụ thu lố giờ, bán mồi nước ăn uống, thu mua cá và kiểm soát ca làm việc từ xa.",
             "url": "https://quanlihocau.com",
-            "aggregateRating": {
-                "@type": "AggregateRating",
-                "ratingValue": "4.9",
-                "reviewCount": "98",
-                "bestRating": "5",
-                "worstRating": "1",
-            },
             "featureList": [
                 "Đồng hồ đếm ngược phiên câu theo thời gian thực từng giây",
                 "Tự động tính tiền phụ thu khi cần thủ câu lố thời gian quy định",

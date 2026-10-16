@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
 import { Role } from "@/generated/prisma/client";
@@ -34,17 +33,6 @@ export class ForbiddenError extends Error {
     }
 }
 
-export class PhoneVerificationRequiredError extends ForbiddenError {
-    public code = "PHONE_VERIFICATION_REQUIRED";
-
-    constructor(
-        message = "Số điện thoại chưa được xác thực bằng OTP. Vui lòng xác thực số điện thoại để sử dụng phần mềm và gói dịch vụ.",
-    ) {
-        super(message);
-        this.name = "PhoneVerificationRequiredError";
-    }
-}
-
 export async function requireSuperAdmin(): Promise<{ id: string; email: string; name: string }> {
     const session = await getServerSession(authOptions);
 
@@ -61,6 +49,17 @@ export async function requireSuperAdmin(): Promise<{ id: string; email: string; 
         throw new ForbiddenError("Tài khoản đã bị tạm khóa hoặc không tồn tại.");
     }
 
+    // The app issues both a qa_session and a NextAuth session. If both are
+    // present, bind this privileged request to the same account so an older
+    // administrator cookie cannot outlive an account switch.
+    const cookieStore = await cookies();
+    if (cookieStore.has("qa_session")) {
+        const appSession = await getSessionCookie();
+        if (!appSession || appSession.email.toLowerCase() !== user.email.toLowerCase()) {
+            throw new ForbiddenError("Phiên đăng nhập không khớp với tài khoản hiện tại.");
+        }
+    }
+
     if (user.systemRole !== "SUPER_ADMIN") {
         throw new ForbiddenError("Yêu cầu quyền Quản trị viên hệ thống (SUPER_ADMIN).");
     }
@@ -72,12 +71,29 @@ export async function requireSuperAdmin(): Promise<{ id: string; email: string; 
     };
 }
 
-export async function getTenantContext(options?: {
-    allowUnverifiedPhone?: boolean;
-}): Promise<TenantContext | null> {
+export async function getTenantContext(): Promise<TenantContext | null> {
     const session = await getServerSession(authOptions);
-    const sessionCookie = !session?.user?.email ? await getSessionCookie() : null;
-    const userEmail = session?.user?.email || sessionCookie?.email;
+    // qa_session is issued by the app's login action. When both auth systems
+    // have cookies, use that signed app identity so a stale NextAuth cookie
+    // cannot silently select another account's lake and hide the user's data.
+    const cookieStore = await cookies();
+    const hasAppSession = cookieStore.has("qa_session");
+    const sessionCookie = hasAppSession || !session?.user?.email
+        ? await getSessionCookie()
+        : null;
+    // Older app cookies can become stale after a deployment or database
+    // reconnect. Preserve a valid regular NextAuth session so users retain
+    // access to their existing lake membership and records.
+    if (
+        hasAppSession &&
+        !sessionCookie &&
+        (!session?.user?.email || session.user.systemRole === "SUPER_ADMIN")
+    ) {
+        return null;
+    }
+    const userEmail = hasAppSession && sessionCookie
+        ? sessionCookie.email
+        : session?.user?.email || sessionCookie?.email;
 
     if (!userEmail) {
         return null;
@@ -184,13 +200,7 @@ export async function getTenantContext(options?: {
         return null;
     }
 
-    const isSuperAdmin = membership.user.systemRole === "SUPER_ADMIN";
     const isPhoneVerified = Boolean(membership.user.phoneVerified);
-    const requireSms = process.env.REQUIRE_SMS_VERIFICATION === "true";
-
-    if (requireSms && !options?.allowUnverifiedPhone && !isSuperAdmin && !isPhoneVerified) {
-        redirect("/verify-phone");
-    }
 
     return {
         userId: membership.user.id,
@@ -208,24 +218,38 @@ export async function getTenantContext(options?: {
 
 export async function requireTenantContext(
     allowedRoles?: Role[],
-    options?: { allowUnverifiedPhone?: boolean },
 ): Promise<TenantContext> {
     const session = await getServerSession(authOptions);
-    const sessionCookie = !session?.user?.email ? await getSessionCookie() : null;
-    const userEmail = session?.user?.email || sessionCookie?.email;
+    const cookieStore = await cookies();
+    const hasAppSession = cookieStore.has("qa_session");
+    const sessionCookie = hasAppSession || !session?.user?.email
+        ? await getSessionCookie()
+        : null;
+    const userEmail = hasAppSession && sessionCookie
+        ? sessionCookie.email
+        : session?.user?.email || sessionCookie?.email;
 
     if (!userEmail) {
         throw new AuthenticationError("Chưa đăng nhập.");
     }
+    if (
+        hasAppSession &&
+        !sessionCookie &&
+        session?.user?.systemRole === "SUPER_ADMIN"
+    ) {
+        throw new AuthenticationError("Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.");
+    }
 
-    const context = await getTenantContext(options);
+    const context = await getTenantContext();
     if (!context) {
         throw new ForbiddenError(
             "Không tìm thấy thông tin hồ câu hoặc quyền truy cập đã bị vô hiệu hóa.",
         );
     }
 
-    const isSuperAdmin = (session?.user?.systemRole || sessionCookie?.role) === "SUPER_ADMIN";
+    const isSuperAdmin = (hasAppSession && !sessionCookie
+        ? false
+        : sessionCookie?.role || session?.user?.systemRole) === "SUPER_ADMIN";
 
     if (
         !isSuperAdmin &&

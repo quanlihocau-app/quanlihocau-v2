@@ -84,7 +84,7 @@ export default function PrivacyPolicyPage() {
                             Thông Tin Chúng Tôi Thu Thập
                         </h2>
                         <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-[#5A524A]">
-                            <li><strong>Thông tin tài khoản chủ hồ:</strong> Họ tên, số điện thoại di động, địa chỉ email, mật khẩu (đã mã hóa) và tên hồ câu. Dùng để đăng nhập và gửi mã OTP xác thực.</li>
+                            <li><strong>Thông tin tài khoản chủ hồ:</strong> Họ tên, số điện thoại liên hệ (nếu cung cấp), địa chỉ email, mật khẩu (đã mã hóa) và tên hồ câu. Email dùng để đăng nhập; số điện thoại được lưu làm thông tin liên hệ.</li>
                             <li><strong>Dữ liệu vận hành hồ:</strong> Danh mục gói câu, khu vực, ô/chòi, hàng hóa dịch vụ, bảng giá thu mua cá và các phiên câu thực tế.</li>
                             <li><strong>Thông tin thiết bị in ấn:</strong> Cấu hình địa chỉ IP máy in nhiệt LAN/Wi-Fi hoặc tên thiết bị Bluetooth được lưu trữ cục bộ trên trình duyệt để phục vụ việc in vé.</li>
                         </ul>

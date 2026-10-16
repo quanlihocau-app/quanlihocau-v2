@@ -1,3 +1,5 @@
+import { financialScope } from "@/lib/reports/financial-scope";
+import { summarizeMoney, summarizeRevenue } from "@/lib/finance";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
@@ -32,6 +34,7 @@ interface InvoiceSummaryItem {
     lines: Array<{
         productId: string | null;
         name: string;
+        fishBuybackId: string | null;
         totalVnd: number;
         quantity: Prisma.Decimal | number;
     }>;
@@ -73,7 +76,7 @@ interface WindowMetrics {
     sessions: SessionSummaryItem[];
     invoices: InvoiceSummaryItem[];
     expenses: Array<{ createdAt: Date; amountVnd: number }>;
-    fishBuybacks: unknown[];
+    fishBuybacks: Array<{ createdAt: Date; totalVnd: number }>;
 }
 
 export async function GET(request: NextRequest) {
@@ -128,26 +131,23 @@ export async function GET(request: NextRequest) {
             customCompareTo
         );
 
+        const scope = await financialScope(lakeId, searchParams);
+
         // 3. Helper to aggregate financial & operational data for a given window
         async function fetchMetricsForWindow(range: { from: Date; to: Date }): Promise<WindowMetrics> {
             const { from, to } = range;
 
             // Invoices in range
             const invoiceWhere: Prisma.InvoiceWhereInput = {
-                lakeId,
+                ...scope.invoice,
                 createdAt: { gte: from, lte: to },
             };
             if (filterCustomerId) invoiceWhere.customerId = filterCustomerId;
 
-            const invoices = await prisma.invoice.findMany({
+            const invoicesQuery = prisma.invoice.findMany({
                 where: invoiceWhere,
                 include: {
-                    lines: {
-                        include: {
-                            product: true,
-                            fishBuyback: true,
-                        },
-                    },
+                    lines: true,
                     payments: true,
                     fishingSession: {
                         include: {
@@ -165,35 +165,35 @@ export async function GET(request: NextRequest) {
 
             // Payments in range
             const paymentWhere: Prisma.PaymentWhereInput = {
-                lakeId,
+                ...scope.payment,
                 createdAt: { gte: from, lte: to },
             };
             if (filterPaymentMethod) paymentWhere.method = filterPaymentMethod;
 
-            const payments = await prisma.payment.findMany({
+            const paymentsQuery = prisma.payment.findMany({
                 where: paymentWhere,
             });
 
             // Expenses in range
-            const expenses = await prisma.expense.findMany({
+            const expensesQuery = prisma.expense.findMany({
                 where: {
-                    lakeId,
+                    ...scope.expense,
                     createdAt: { gte: from, lte: to },
                 },
             });
 
             // Fish buybacks in range
-            const fishBuybacks = await prisma.fishBuyback.findMany({
+            const fishBuybacksQuery = prisma.fishBuyback.findMany({
                 where: {
-                    lakeId,
+                    ...scope.buyback,
                     createdAt: { gte: from, lte: to },
                 },
-                include: { fishType: true },
+
             });
 
             // Fishing sessions created in range
             const sessionWhere: Prisma.FishingSessionWhereInput = {
-                lakeId,
+                ...scope.session,
                 createdAt: { gte: from, lte: to },
             };
             if (filterCustomerId) sessionWhere.customerId = filterCustomerId;
@@ -205,7 +205,7 @@ export async function GET(request: NextRequest) {
                 sessionWhere.hutLinks = { some: { hut: { areaId: filterAreaId } } };
             }
 
-            const sessions = await prisma.fishingSession.findMany({
+            const sessionsQuery = prisma.fishingSession.findMany({
                 where: sessionWhere,
                 include: {
                     hutLinks: {
@@ -220,71 +220,20 @@ export async function GET(request: NextRequest) {
                 },
             });
 
+            const [invoices, payments, expenses, fishBuybacks, sessions] = await Promise.all([invoicesQuery, paymentsQuery, expensesQuery, fishBuybacksQuery, sessionsQuery]);
+
             // Calculate metrics strictly according to formula
-            let ticketRevenue = 0;
-            let productRevenue = 0;
-            let overtimeRevenue = 0;
-            let otherRevenue = 0;
-            let refundAmount = 0;
-            let refundCount = 0;
-            let totalReceivableDebt = 0;
-
-            for (const inv of invoices) {
-                // Ignore VOIDED
-                if (inv.status === InvoiceStatus.VOIDED) continue;
-
-                // Debt: If DRAFT or PARTIALLY_PAID
-                const paidSum = inv.payments.reduce((acc, p) => {
-                    return p.direction === PaymentDirection.IN ? acc + p.amountVnd : acc - p.amountVnd;
-                }, 0);
-
-                if (inv.status === InvoiceStatus.DRAFT || inv.status === InvoiceStatus.PARTIALLY_PAID) {
-                    const remaining = Math.max(0, inv.totalAmountVnd - paidSum);
-                    totalReceivableDebt += remaining;
-                }
-
-                for (const line of inv.lines) {
-                    if (filterProductId && line.productId !== filterProductId) continue;
-
-                    if (line.totalVnd < 0) {
-                        // Negative line indicates refund or discount or buyback deduction
-                        refundAmount += Math.abs(line.totalVnd);
-                        refundCount++;
-                    } else if (line.productId) {
-                        productRevenue += line.totalVnd;
-                    } else if (line.name.toLowerCase().includes("thêm giờ") || line.name.toLowerCase().includes("phụ trội")) {
-                        overtimeRevenue += line.totalVnd;
-                    } else if (inv.fishingSessionId) {
-                        ticketRevenue += line.totalVnd;
-                    } else {
-                        otherRevenue += line.totalVnd;
-                    }
-                }
-            }
-
-            const totalRevenue = Math.max(
-                0,
-                ticketRevenue + productRevenue + overtimeRevenue + otherRevenue - refundAmount
+            const validInvoices = invoices.filter(inv => inv.status !== InvoiceStatus.VOIDED);
+            const { ticketRevenue, productRevenue, overtimeRevenue, otherRevenue, refundAmount, refundCount, totalRevenue } = summarizeRevenue(
+                validInvoices.map(inv => ({ ...inv, lines: inv.lines.filter(line => !filterProductId || line.productId === filterProductId) }))
             );
-
-            // Cash and Bank Transfer from payments
-            let cashIn = 0;
-            let cashOut = 0;
-            let transferIn = 0;
-            let transferOut = 0;
-
-            for (const p of payments) {
-                if (p.method === PaymentMethod.CASH) {
-                    if (p.direction === PaymentDirection.IN) cashIn += p.amountVnd;
-                    else cashOut += p.amountVnd;
-                } else if (p.method === PaymentMethod.BANK_TRANSFER) {
-                    if (p.direction === PaymentDirection.IN) transferIn += p.amountVnd;
-                    else transferOut += p.amountVnd;
-                }
+            let totalReceivableDebt = 0;
+            for (const inv of validInvoices) {
+                const paidSum = inv.payments.reduce((acc, p) => p.direction === PaymentDirection.IN ? acc + p.amountVnd : acc - p.amountVnd, 0);
+                if (inv.status === InvoiceStatus.DRAFT || inv.status === InvoiceStatus.PARTIALLY_PAID)
+                    totalReceivableDebt += Math.max(0, inv.totalAmountVnd - paidSum);
             }
-
-            const netCash = cashIn - cashOut;
-            const netTransfer = transferIn - transferOut;
+            const { cashIn, cashOut, transferIn, transferOut, netCash, netTransfer } = summarizeMoney(payments);
 
             // Total expenses
             const totalExpense = expenses.reduce((acc, exp) => acc + exp.amountVnd, 0);
@@ -448,15 +397,14 @@ export async function GET(request: NextRequest) {
             }
 
             const pt = chartPointsMap.get(bucketKey)!;
-            const invTotal = inv.lines.reduce((acc, l) => acc + l.totalVnd, 0);
-            pt.revenue += Math.max(0, invTotal);
+            pt.revenue += summarizeRevenue([{ ...inv, lines: inv.lines.filter(l => !filterProductId || l.productId === filterProductId) }]).totalRevenue;
 
             const otLine = inv.lines.find((l) => l.name.toLowerCase().includes("thêm giờ") || l.name.toLowerCase().includes("phụ trội"));
             if (otLine) pt.overtimeVnd += otLine.totalVnd;
         }
 
         // Populate expenses into chart buckets
-        for (const exp of primaryData.expenses) {
+        for (const exp of [...primaryData.expenses, ...primaryData.fishBuybacks.map(f => ({ createdAt: f.createdAt, amountVnd: f.totalVnd }))]) {
             const p = getVnParts(exp.createdAt);
             let bucketKey = "";
             let bucketLabel = "";

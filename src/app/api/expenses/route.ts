@@ -15,20 +15,22 @@ const createExpenseSchema = z
             .string({
                 message: "Nội dung chi phí là bắt buộc.",
             })
-            .min(1, "Nội dung chi phí không được để trống.")
+            .trim().min(1, "Nội dung chi phí không được để trống.")
             .max(255, "Nội dung chi phí không được vượt quá 255 ký tự."),
         amountVnd: z
             .number({
                 message: "Số tiền chi phí phải là số.",
             })
             .int("Số tiền chi phí phải là số nguyên VNĐ.")
-            .positive("Số tiền chi phí phải là số nguyên dương lớn hơn 0."),
+            .positive("Số tiền chi phí phải là số nguyên dương lớn hơn 0.")
+            .max(2147483647, "Số tiền vượt quá giới hạn cho một phiếu."),
         category: z.string().max(50).optional(),
         paymentMethod: z.enum(["CASH", "BANK_TRANSFER"]).optional(),
     })
     .strict();
 
 interface ExpenseRequestIdentity {
+    type: string;
     lakeId: string;
     description: string;
     amountVnd: number;
@@ -40,16 +42,20 @@ interface IdempotencyEnvelope {
 }
 
 const READ_ROLES = [Role.OWNER, Role.MANAGER, Role.STAFF];
-const WRITE_ROLES = [Role.OWNER, Role.MANAGER];
+const WRITE_ROLES = [Role.OWNER, Role.MANAGER, Role.STAFF];
 const MAX_RETRIES = 3;
 
 function handleExistingKey(
     keyRecord: { responseStatus: number; responseBody: string },
+    identity: ExpenseRequestIdentity,
 ) {
     try {
         const envelope = JSON.parse(
             keyRecord.responseBody,
         ) as IdempotencyEnvelope;
+        if (JSON.stringify(envelope.request) !== JSON.stringify(identity)) {
+            return NextResponse.json({ error: "Mã yêu cầu đã dùng cho nội dung khác." }, { status: 409 });
+        }
         return NextResponse.json(envelope.response, {
             status: keyRecord.responseStatus,
         });
@@ -66,10 +72,10 @@ export async function GET(request: Request) {
         const tenantContext = await requireTenantContext(READ_ROLES);
         const { searchParams } = new URL(request.url);
 
-        const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+        const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
         const limit = Math.min(
             50,
-            Math.max(1, parseInt(searchParams.get("limit") || "20", 10)),
+            Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20),
         );
         const skip = (page - 1) * limit;
 
@@ -171,7 +177,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: firstError }, { status: 400 });
         }
 
-        const { description, amountVnd, category, paymentMethod } = parsed.data;
+        const { description, amountVnd, category } = parsed.data;
+        const paymentMethod = parsed.data.paymentMethod ?? "CASH";
 
         // Format clean full description
         let fullDescription = description.trim();
@@ -189,6 +196,7 @@ export async function POST(request: Request) {
         }
 
         const currentRequestIdentity: ExpenseRequestIdentity = {
+            type: "EXPENSE",
             lakeId,
             description: fullDescription,
             amountVnd,
@@ -205,7 +213,7 @@ export async function POST(request: Request) {
         });
 
         if (existingKey) {
-            return handleExistingKey(existingKey);
+            return handleExistingKey(existingKey, currentRequestIdentity);
         }
 
         // 4. Retry loop with Serializable isolation level
@@ -237,6 +245,11 @@ export async function POST(request: Request) {
                                 description: fullDescription,
                                 amountVnd,
                             },
+                        });
+
+                        await tx.payment.create({
+                            data: { lakeId, expenseId: createdExpense.id, amountVnd,
+                                method: paymentMethod, direction: "OUT", idempotencyKey },
                         });
 
                         // Record AuditEvent
@@ -295,7 +308,7 @@ export async function POST(request: Request) {
                 return handleExistingKey({
                     responseStatus: result.responseStatus,
                     responseBody: result.responseBody,
-                });
+                }, currentRequestIdentity);
             } catch (txError: unknown) {
                 // Unique conflict on idempotency key
                 const isUniqueConflict =
@@ -315,7 +328,7 @@ export async function POST(request: Request) {
                     });
 
                     if (concurrentKey) {
-                        return handleExistingKey(concurrentKey);
+                        return handleExistingKey(concurrentKey, currentRequestIdentity);
                     }
                 }
 
@@ -350,7 +363,7 @@ export async function POST(request: Request) {
         }
         if (error instanceof ForbiddenError) {
             return NextResponse.json(
-                { error: "Chỉ Chủ hồ hoặc Quản lý mới có quyền tạo chi phí." },
+                { error: "Tài khoản không có quyền tạo chi phí." },
                 { status: 403 },
             );
         }

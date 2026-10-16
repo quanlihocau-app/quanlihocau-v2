@@ -126,7 +126,7 @@ export default async function SettingsPage() {
                 </div>
             </div>
 
-            {/* ── Owner Account & Phone Verification Card ────────────── */}
+            {/* ── Account Information Card ────────────── */}
             {currentUser && (
                 <div className="mb-4 rounded-2xl border border-[#E3E8E3] bg-white p-4 shadow-xs">
                     <div className="flex items-center justify-between">
@@ -140,21 +140,11 @@ export default async function SettingsPage() {
                             </div>
                         </div>
 
-                        {currentUser.phoneVerified ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[#EBF6ED] border border-[#3E9B4F]/20 px-2.5 py-0.5 text-[11px] font-bold text-[#3E9B4F]">
-                                <span className="h-1.5 w-1.5 rounded-full bg-[#3E9B4F]" />
-                                ✓ Đã xác thực SĐT
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[#FDF6E9] border border-[#D99A32]/30 px-2.5 py-0.5 text-[11px] font-semibold text-[#D99A32]">
-                                Chưa xác thực SĐT
-                            </span>
-                        )}
                     </div>
 
                     {currentUser.phone && (
                         <div className="mt-3 flex items-center justify-between border-t border-[#E3E8E3] pt-2.5 text-xs">
-                            <span className="text-[#66716A]">Số điện thoại đăng ký:</span>
+                            <span className="text-[#66716A]">Số điện thoại liên hệ:</span>
                             <span className="font-mono font-bold text-[#17201A]">{currentUser.phone}</span>
                         </div>
                     )}
@@ -219,6 +209,14 @@ export default async function SettingsPage() {
                         <p className="text-[12px] text-[#66716A] mt-0.5">
                             Cẩm nang 10 phút cho nhân viên & quản lý mới
                         </p>
+                    </div>
+                    <ChevronRight />
+                </Link>
+
+                <Link href="/cashbook" className="menu-row">
+                    <div>
+                        <p className="text-[14px] font-semibold text-[#17201A]">Thu chi riêng</p>
+                        <p className="text-[12px] text-[#66716A] mt-0.5">Bán gà, bán máy · Điện, nước, internet, tiền hàng shipper</p>
                     </div>
                     <ChevronRight />
                 </Link>

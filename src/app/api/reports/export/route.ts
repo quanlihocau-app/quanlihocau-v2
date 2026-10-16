@@ -1,3 +1,5 @@
+import { financialScope } from "@/lib/reports/financial-scope";
+import { csvCell, summarizeRevenue } from "@/lib/finance";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
         const lakeId = tenantContext.lakeId;
         const { searchParams } = new URL(request.url);
 
-        const format = searchParams.get("format") || "csv"; // csv, excel
+        const scope = await financialScope(lakeId, searchParams);
         const preset = (searchParams.get("preset") as DatePreset) || "today";
         const customFrom = searchParams.get("from") || undefined;
         const customTo = searchParams.get("to") || undefined;
@@ -53,9 +55,9 @@ export async function GET(request: NextRequest) {
         const lakeName = lake?.name || "Hồ câu";
 
         // Fetch invoices in range
-        const invoices = await prisma.invoice.findMany({
+        const invoicesQuery = prisma.invoice.findMany({
             where: {
-                lakeId,
+                ...scope.invoice,
                 createdAt: { gte: dateRange.from, lte: dateRange.to },
                 status: { not: InvoiceStatus.VOIDED },
             },
@@ -69,9 +71,9 @@ export async function GET(request: NextRequest) {
         });
 
         // Fetch expenses in range
-        const expenses = await prisma.expense.findMany({
+        const expensesQuery = prisma.expense.findMany({
             where: {
-                lakeId,
+                ...scope.expense,
                 createdAt: { gte: dateRange.from, lte: dateRange.to },
             },
             include: { payments: true },
@@ -79,31 +81,19 @@ export async function GET(request: NextRequest) {
         });
 
         // Fetch fish buybacks in range
-        const fishBuybacks = await prisma.fishBuyback.findMany({
+        const fishBuybacksQuery = prisma.fishBuyback.findMany({
             where: {
-                lakeId,
+                ...scope.buyback,
                 createdAt: { gte: dateRange.from, lte: dateRange.to },
             },
             include: { fishType: true },
             orderBy: { createdAt: "desc" },
         });
 
+        const [invoices, expenses, fishBuybacks] = await Promise.all([invoicesQuery, expensesQuery, fishBuybacksQuery]);
+
         // Compute summaries
-        let ticketRevenue = 0;
-        let productRevenue = 0;
-        let overtimeRevenue = 0;
-        let otherRevenue = 0;
-
-        for (const inv of invoices) {
-            for (const line of inv.lines) {
-                if (line.productId) productRevenue += line.totalVnd;
-                else if (line.name.toLowerCase().includes("thêm giờ") || line.name.toLowerCase().includes("phụ trội")) overtimeRevenue += line.totalVnd;
-                else if (inv.fishingSessionId) ticketRevenue += line.totalVnd;
-                else otherRevenue += line.totalVnd;
-            }
-        }
-
-        const totalRevenue = ticketRevenue + productRevenue + overtimeRevenue + otherRevenue;
+        const { ticketRevenue, productRevenue, overtimeRevenue, otherRevenue, totalRevenue, refundAmount } = summarizeRevenue(invoices.map(inv => ({ ...inv, lines: inv.lines.filter(l => !scope.productId || l.productId === scope.productId) })));
         const totalExpense = expenses.reduce((acc, e) => acc + e.amountVnd, 0);
         const totalFishBuyback = fishBuybacks.reduce((acc, f) => acc + f.totalVnd, 0);
         const netProfit = totalRevenue - totalExpense - totalFishBuyback;
@@ -111,8 +101,7 @@ export async function GET(request: NextRequest) {
         // Build CSV rows with proper UTF-8 BOM
         const escapeCsv = (str: string | number | null | undefined) => {
             if (str === null || str === undefined) return '""';
-            const s = String(str).replace(/"/g, '""');
-            return `"${s}"`;
+            return csvCell(str);
         };
 
         const rows: string[] = [];
@@ -132,6 +121,7 @@ export async function GET(request: NextRequest) {
         rows.push([escapeCsv("2. Doanh thu sản phẩm & dịch vụ"), escapeCsv(productRevenue)].join(","));
         rows.push([escapeCsv("3. Tiền thêm giờ phụ trội"), escapeCsv(overtimeRevenue)].join(","));
         rows.push([escapeCsv("4. Thu khác"), escapeCsv(otherRevenue)].join(","));
+        rows.push([escapeCsv("Giảm trừ hóa đơn"), escapeCsv(refundAmount)].join(","));
         rows.push([escapeCsv("TỔNG DOANH THU"), escapeCsv(totalRevenue)].join(","));
         rows.push([escapeCsv("5. Tổng phiếu chi (Chi phí vận hành)"), escapeCsv(totalExpense)].join(","));
         rows.push([escapeCsv("6. Tổng tiền thu mua cá cần thủ"), escapeCsv(totalFishBuyback)].join(","));
@@ -175,7 +165,7 @@ export async function GET(request: NextRequest) {
         ].join(","));
 
         for (const exp of expenses) {
-            const m = exp.payments[0]?.method === PaymentMethod.CASH ? "Tiền mặt" : "Chuyển khoản";
+            const m = !exp.payments.length ? "Chưa xác định" : exp.payments[0].method === PaymentMethod.CASH ? "Tiền mặt" : "Chuyển khoản";
             rows.push([
                 escapeCsv(exp.id.substring(0, 8).toUpperCase()),
                 escapeCsv(formatVnDateTimeDisplay(exp.createdAt)),
@@ -195,7 +185,7 @@ export async function GET(request: NextRequest) {
                 entityId: preset,
                 action: "EXPORT_REPORT",
                 payload: JSON.stringify({
-                    format,
+                    format: "csv",
                     dateRange: {
                         from: dateRange.from.toISOString(),
                         to: dateRange.to.toISOString(),
@@ -211,7 +201,7 @@ export async function GET(request: NextRequest) {
 
         const fromStr = formatVnDateDisplay(dateRange.from).replace(/\//g, "-");
         const toStr = formatVnDateDisplay(dateRange.to).replace(/\//g, "-");
-        const fileName = `Bao-cao-doanh-thu_${fromStr}_den_${toStr}.${format === "excel" ? "xlsx" : "csv"}`;
+        const fileName = `Bao-cao-doanh-thu_${fromStr}_den_${toStr}.csv`;
 
         return new NextResponse(csvContent, {
             status: 200,

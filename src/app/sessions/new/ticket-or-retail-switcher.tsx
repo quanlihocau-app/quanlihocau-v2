@@ -1,7 +1,6 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
 
 import {
     OpenSessionForm,
@@ -41,8 +40,12 @@ export function TicketOrRetailSwitcher({
     cashierName,
 }: TicketOrRetailSwitcherProps) {
     const searchParams = useSearchParams();
-    const initialTab = searchParams.get("tab") === "retail" ? "retail" : "ticket";
-    const [activeTab, setActiveTab] = useState<"ticket" | "retail">(initialTab);
+    const activeTab = searchParams.get("tab") === "retail" ? "retail" : "ticket";
+    function setActiveTab(tab: "ticket" | "retail") {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("tab", tab);
+        window.history.replaceState(null, "", `${window.location.pathname}?${params}`);
+    }
 
     return (
         <div className="space-y-4">

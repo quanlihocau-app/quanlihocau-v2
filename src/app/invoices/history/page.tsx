@@ -56,6 +56,7 @@ export default async function InvoiceHistoryPage({
         prisma.invoice.findMany({
             where: {
                 lakeId: tenantContext.lakeId,
+                NOT: { lines: { some: { name: { startsWith: "Thu khác: " } } } },
             },
             include: {
                 customer: {
