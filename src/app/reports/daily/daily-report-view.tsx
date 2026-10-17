@@ -168,7 +168,7 @@ export function DailyReportView({
 
                 <main className="flex-1 overflow-y-auto p-4 space-y-4 has-bottom-nav">
                     {/* ── Standardized Green Gradient Banner (Đồng bộ trang Đang câu) ── */}
-                    <div className="w-full mb-4 rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3.5 shadow-2xs font-serif">
+                    <div className="w-full mb-4 rounded-2xl border border-emerald-200/90 bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3.5 shadow-2xs font-serif">
                         <div className="flex items-center justify-between gap-3 w-full">
                             <div className="flex items-center gap-2">
                                 <div className="h-4.5 w-1.5 rounded-full bg-[#16A34A] shrink-0" />

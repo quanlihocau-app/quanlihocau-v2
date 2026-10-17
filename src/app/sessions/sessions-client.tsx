@@ -426,7 +426,7 @@ export function SessionsClient({
                     aria-label="Tùy chỉnh phiên câu"
                     onClick={onActionModalBackdropClick}
                 >
-                    <div className="relative my-auto w-full max-w-lg rounded-[24px] bg-white border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] modal-content-animate">
+                    <div className="relative my-auto w-full max-w-lg rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] modal-content-animate">
                         {/* Header Modal Tùy chỉnh */}
                         <div className="flex items-center justify-between border-b border-slate-100 bg-[#F0FDF4] px-4 py-3 shrink-0">
                             <div>
