@@ -181,7 +181,6 @@ function SessionGridCardComponent({
     onSelect,
     onLongPress,
     onSettlement,
-    onExtend,
 }: SessionGridCardProps) {
     const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
     const didLongPressRef = useRef<boolean>(false);
@@ -194,14 +193,10 @@ function SessionGridCardComponent({
 
     const hutLabel = s.hutLinks.map((hl) => hl.hut.name).join(" + ") || "—";
     const {
-        productLines,
-        fishBuybackTotal,
         productCount,
         extensionHours,
         liveOvertimeMinutes,
         liveOvertimeVnd,
-        totalCharges,
-        totalPaid,
         netBalance,
     } = computeSessionFinancials(s, nowMs);
 
@@ -252,94 +247,57 @@ function SessionGridCardComponent({
                     onSelect(s.id);
                 }
             }}
-            className={`flex flex-col justify-between rounded-2xl bg-white p-3.5 text-left transition-all select-none cursor-pointer border font-serif shadow-2xs ${
+            className={`group relative flex flex-col justify-between rounded-xl p-2 sm:p-2.5 text-left transition-all select-none cursor-pointer border font-serif ${
                 isSelected
                     ? "border-2 border-[#16A34A] bg-[#F0FDF4] ring-2 ring-[#16A34A]/20 shadow-md"
-                    : "border-slate-200/80 hover:border-[#16A34A] hover:shadow-xs"
+                    : "border-slate-200/90 bg-white hover:border-[#16A34A]/60 hover:bg-slate-50/40 shadow-2xs"
             }`}
         >
-            {/* Hàng 1: Mã ô & Thời lượng & Trạng thái thu tiền */}
+            {/* Top row: Hut label, Payment status, Package duration */}
             <div>
-                <div className="flex items-start justify-between gap-1.5 mb-1.5">
-                    <span className="text-sm font-bold text-[#0F172A] leading-tight truncate font-serif">
+                <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="text-xs sm:text-sm font-bold text-[#0F172A] leading-tight truncate">
                         {hutLabel}
                     </span>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                         {s.paymentTiming === "PREPAID" ? (
-                            <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-[10px] font-bold text-[#16A34A] border border-[#BBF7D0]">
+                            <span className="rounded-full bg-[#DCFCE7] px-1.5 py-0.2 text-[9px] font-bold text-[#16A34A] border border-[#BBF7D0]">
                                 Đã thu trước
                             </span>
                         ) : (
-                            <span className="rounded-full bg-[#FFFBEB] px-2 py-0.5 text-[10px] font-bold text-[#D97706] border border-[#FDE68A]">
+                            <span className="rounded-full bg-[#FFFBEB] px-1.5 py-0.2 text-[9px] font-bold text-[#D97706] border border-[#FDE68A]">
                                 Thu sau
                             </span>
                         )}
-                        <span className="text-[11px] font-semibold text-slate-500">
+                        <span className="text-[10px] font-semibold text-slate-500">
                             {formatDuration(s.package.durationMinutes)}
                         </span>
                     </div>
                 </div>
 
-                {/* Hàng 2: Tên khách hàng */}
-                <p className="text-xs font-bold text-[#1A1A1A] truncate mb-1.5 font-serif">
-                    {s.customer?.name ?? (
-                        <span className="font-normal text-[#555555]">
-                            Khách lẻ
-                        </span>
-                    )}
+                {/* Customer name */}
+                <p className="text-[11px] font-semibold text-[#1A1A1A] truncate mb-1">
+                    {s.customer?.name ?? <span className="font-normal text-slate-400">Khách lẻ</span>}
                 </p>
             </div>
 
-            {/* Hàng 3: Đồng hồ đếm ngược + cảnh báo hết giờ */}
-            <div className="my-1">
+            {/* Middle: Countdown timer */}
+            <div className="my-0.5">
                 <SessionCountdown plannedEndAt={s.plannedEndAt} />
                 {isPriceFreezed && (
-                    <div className="mt-1 flex items-center gap-1 rounded-xs border border-red-300 bg-red-50 px-1.5 py-0.5">
+                    <div className="mt-1 flex items-center gap-1 rounded-xs border border-red-300 bg-red-50 px-1 py-0.5">
                         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500 animate-pulse" />
-                        <span className="text-[10px] font-bold text-red-700 leading-tight">
-                            HẾT GIỜ — Giá đang giữ nguyên. Vui lòng kết thúc hoặc gia hạn.
+                        <span className="text-[9px] font-bold text-red-700 leading-tight truncate">
+                            HẾT GIỜ — Chờ kết thúc/gia hạn
                         </span>
                     </div>
                 )}
             </div>
 
-            {/* Hàng 4: Chi tiết bill & Kết quả */}
-            <div className="mt-1.5 pt-1.5 border-t border-[#E0E0E0] font-serif">
-                {fishBuybackTotal > 0 || totalPaid > 0 || liveOvertimeVnd > 0 ? (
-                    <div className="space-y-0.5 text-[10px] text-[#555555] mb-1 bg-[#FAFAF7] p-1.5 rounded-xs border border-[#E0E0E0] font-serif">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[#555555]">Tổng chi phí:</span>
-                            <span className="font-serif text-[#1A1A1A] font-bold">+{formatVnd(totalCharges)}</span>
-                        </div>
-                        {liveOvertimeVnd > 0 && (
-                            <div className="flex items-center justify-between text-[#8C5C00] font-bold">
-                                <span>⏱️ Quá giờ {liveOvertimeMinutes > 0 ? `(+${formatOvertimeDuration(liveOvertimeMinutes)})` : ""}:</span>
-                                <span className="font-serif">+{formatVnd(liveOvertimeVnd)}</span>
-                            </div>
-                        )}
-                        {totalPaid > 0 && (
-                            <div className="flex items-center justify-between text-[#2C4C3B]">
-                                <span>Đã thu trước:</span>
-                                <span className="font-serif font-medium">-{formatVnd(totalPaid)}</span>
-                            </div>
-                        )}
-                        {fishBuybackTotal > 0 && (
-                            <div className="flex items-center justify-between text-[#9E2A2B]">
-                                <span className="font-semibold">Tiền thu cá:</span>
-                                <span className="font-serif font-bold">-{formatVnd(fishBuybackTotal)}</span>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-[#555555] font-normal">Tiền gói:</span>
-                        <span className="font-serif font-bold text-[#1A1A1A]">+{formatVnd(totalCharges)}</span>
-                    </div>
-                )}
-
-                {/* Kết quả quyết toán */}
+            {/* Bottom: Financial summary & mini tags */}
+            <div className="mt-1 pt-1 border-t border-slate-100/90">
                 <div
-                    className={`rounded-xs px-2 py-0.5 border flex items-center justify-between font-serif ${
+                    className={`rounded-xs px-1.5 py-0.5 border flex items-center justify-between font-serif text-[11px] ${
                         netBalance < 0
                             ? "bg-[#FBEBEB] border-[#E9B6B7] text-[#9E2A2B]"
                             : netBalance === 0
@@ -347,22 +305,10 @@ function SessionGridCardComponent({
                             : "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
                     }`}
                 >
-                    <span className="text-[11px] font-bold">
-                        {netBalance < 0
-                            ? "Thối lại:"
-                            : netBalance === 0
-                            ? "Đã đủ:"
-                            : "Cần thu:"}
+                    <span className="text-[10px] font-bold">
+                        {netBalance < 0 ? "Thối lại:" : netBalance === 0 ? "Đã đủ:" : "Cần thu:"}
                     </span>
-                    <span
-                        className={`font-serif font-bold text-[11px] sm:text-xs ${
-                            netBalance < 0
-                                ? "text-[#9E2A2B]"
-                                : netBalance === 0
-                                ? "text-[#2C4C3B]"
-                                : "text-[#8C5C00]"
-                        }`}
-                    >
+                    <span className="font-bold">
                         {netBalance < 0
                             ? `-${formatVnd(Math.abs(netBalance))}`
                             : netBalance === 0
@@ -371,73 +317,55 @@ function SessionGridCardComponent({
                     </span>
                 </div>
 
-                {/* Badges tóm tắt món / gia hạn / quá giờ */}
+                {/* Mini chips if items, extension, or overtime exist */}
                 {(productCount > 0 || extensionHours > 0 || liveOvertimeVnd > 0) && (
                     <div className="flex flex-wrap gap-1 mt-1">
                         {liveOvertimeVnd > 0 && (
-                            <span className="inline-flex items-center rounded-xs bg-[#FDF7EB] border border-[#E8D1A3] px-1.5 py-0.2 text-[10px] font-bold text-[#8C5C00]">
-                                ⏱️ +{formatOvertimeDuration(liveOvertimeMinutes)} quá giờ
+                            <span className="inline-flex items-center rounded-xs bg-[#FDF7EB] border border-[#E8D1A3] px-1 py-0.2 text-[9px] font-bold text-[#8C5C00]">
+                                ⏱️ +{formatOvertimeDuration(liveOvertimeMinutes)}
                             </span>
                         )}
                         {productCount > 0 && (
-                            <span className="inline-flex items-center rounded-xs bg-[#F2F2F0] border border-[#CCCCCC] px-1.5 py-0.2 text-[10px] font-bold text-[#1A1A1A]">
+                            <span className="inline-flex items-center rounded-xs bg-slate-100 border border-slate-200 px-1 py-0.2 text-[9px] font-bold text-slate-700">
                                 +{productCount} món
                             </span>
                         )}
                         {extensionHours > 0 && (
-                            <span className="inline-flex items-center rounded-xs bg-[#EAEFEA] border border-[#B8CEB8] px-1.5 py-0.2 text-[10px] font-bold text-[#2C4C3B]">
-                                +{extensionHours} gia hạn
+                            <span className="inline-flex items-center rounded-xs bg-[#EAEFEA] border border-[#B8CEB8] px-1 py-0.2 text-[9px] font-bold text-[#2C4C3B]">
+                                +{extensionHours}h gh
                             </span>
                         )}
                     </div>
                 )}
 
-                {/* Tên món mới nhất */}
-                {productLines.length > 0 && (
-                    <p className="text-[11px] text-[#555555] truncate mt-1 font-serif">
-                        {productLines[0].name}
-                        {productLines.length > 1 ? ` +${productLines.length - 1}` : ""}
-                    </p>
-                )}
-
-                {/* Nút Thanh toán & In bill trực tiếp trên ô */}
-                {canComplete && isExpired ? (
-                    <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2" onPointerDown={(e) => e.stopPropagation()}>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); onSettlement(s.id); }}
-                            className="rounded-xs bg-[#9E2A2B] px-2 py-2 text-[11px] font-bold text-white hover:bg-[#832324]">
-                            Kết thúc
-                        </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); onExtend(s.id); }}
-                            className="rounded-xs bg-[#2C4C3B] px-2 py-2 text-[11px] font-bold text-white hover:bg-[#233D2F]">
-                            Gia hạn thêm giờ
+                {/* Quick settlement button for instant settlement */}
+                {canComplete && (
+                    <div className="mt-1.5" onPointerDown={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSettlement(s.id);
+                            }}
+                            className={`flex w-full items-center justify-center gap-1 rounded-xs py-1 px-1.5 text-[10px] sm:text-[11px] font-bold text-white transition-all cursor-pointer font-serif active:scale-[0.98] ${
+                                isExpired
+                                    ? "bg-[#9E2A2B] hover:bg-[#832324]"
+                                    : netBalance < 0
+                                    ? "bg-[#9E2A2B] hover:bg-[#832324]"
+                                    : "bg-[#2C4C3B] hover:bg-[#233D2F]"
+                            }`}
+                        >
+                            <span>
+                                {isExpired
+                                    ? "Kết thúc / Thu tiền"
+                                    : netBalance < 0
+                                    ? `Thối -${formatVnd(Math.abs(netBalance))}`
+                                    : netBalance > 0
+                                    ? `Thu +${formatVnd(netBalance)}`
+                                    : "Kết thúc & In"}
+                            </span>
                         </button>
                     </div>
-                ) : canComplete && (
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onSettlement(s.id);
-                        }}
-                        className={`mt-2 flex w-full items-center justify-center gap-1.5 rounded-xs py-2 px-2 text-[11px] sm:text-xs font-bold text-white transition-colors cursor-pointer font-serif active:translate-y-px ${
-                            netBalance < 0
-                                ? "bg-[#9E2A2B] hover:bg-[#832324]"
-                                : netBalance === 0
-                                ? "bg-[#2C4C3B] hover:bg-[#233D2F]"
-                                : "bg-[#2C4C3B] hover:bg-[#233D2F]"
-                        }`}
-                    >
-                        <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6H2.25m0 0H3m-1.5 0h1.5m0 0v10.5m0 0h1.5m-1.5 0H2.25m0 0a.75.75 0 0 0 .75.75h.75m10.5-12v.75a.75.75 0 0 1-.75.75h-.75m0 0h.75m-1.5 0h1.5m0 0v10.5m0 0h1.5m-1.5 0h-.75m0 0a.75.75 0 0 0 .75.75h.75M6 10.5h12m-12 3h12" />
-                        </svg>
-                        <span className="truncate">
-                            {netBalance < 0
-                                ? `Thối -${formatVnd(Math.abs(netBalance))} & In`
-                                : netBalance > 0
-                                ? `Thu +${formatVnd(netBalance)} & In`
-                                : `Kết thúc & In bill`}
-                        </span>
-                    </button>
                 )}
             </div>
         </div>

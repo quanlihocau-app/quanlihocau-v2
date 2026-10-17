@@ -147,6 +147,14 @@ export function SessionsClient({
         onClose: () => setDetailSession(null),
     });
 
+    // Modal Tùy chỉnh phóng to giữa màn hình khi bấm chọn ô
+    const [isActionModalOpen, setIsActionModalOpen] = useState<boolean>(false);
+
+    const { onBackdropClick: onActionModalBackdropClick } = useModalDismiss({
+        isOpen: isActionModalOpen,
+        onClose: () => setIsActionModalOpen(false),
+    });
+
     // ── Đồng hồ thời gian thực đồng bộ máy chủ để tính phụ thu quá giờ ───────
     const { isOnline, serverOffsetMs } = useNetworkStatus();
     const [nowMs, setNowMs] = useState(() => Date.now() + (serverOffsetMs || 0));
@@ -207,6 +215,7 @@ export function SessionsClient({
 
     const handleSelect = useCallback((id: string) => {
         setSelectedId(id);
+        setIsActionModalOpen(true);
     }, []);
 
     // ── Cảnh báo chuông & rung khi phiên câu sắp hết giờ / lố giờ ──────────────
@@ -386,8 +395,8 @@ export function SessionsClient({
 
     return (
         <div className="font-serif">
-            {/* Lưới thẻ phiên (2 cột) */}
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+            {/* Lưới thẻ phiên (2 cột trên mobile, 3-5 cột trên tablet/desktop nhỏ gọn ~ 1/3) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2.5">
                 {sessions.map((s) => (
                     <SessionGridCard
                         key={s.id}
@@ -403,24 +412,107 @@ export function SessionsClient({
                 ))}
             </div>
 
-            {/* Gợi ý nhấn giữ */}
-            <p className="text-center text-[11px] text-[#555555] font-medium mt-2.5 font-serif">
-                💡 Nhấn giữ 1 ô câu để xem chi tiết đầy đủ của phiên
+            {/* Gợi ý thao tác */}
+            <p className="text-center text-[11px] text-slate-500 font-medium mt-2 font-serif">
+                💡 Bấm vào ô để mở bảng tùy chỉnh phóng to giữa màn hình · Nhấn giữ để xem thông tin chi tiết ca câu
             </p>
 
-            {/* Thanh thao tác nhanh (Quick Action Toolbar) */}
+            {/* ── Modal Tùy Chỉnh Phóng To Ra Giữa Màn Hình Khi Bấm Chọn Phiên Câu ── */}
+            {isActionModalOpen && selectedSession && (
+                <div
+                    className="fixed inset-0 z-90 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-2xs modal-backdrop-animate font-serif"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Tùy chỉnh phiên câu"
+                    onClick={onActionModalBackdropClick}
+                >
+                    <div className="relative my-auto w-full max-w-lg rounded-[24px] bg-white border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] modal-content-animate">
+                        {/* Header Modal Tùy chỉnh */}
+                        <div className="flex items-center justify-between border-b border-slate-100 bg-[#F0FDF4] px-4 py-3 shrink-0">
+                            <div>
+                                <h3 className="text-sm font-bold text-[#0F172A] uppercase flex items-center gap-1.5 font-serif">
+                                    <span>🎣 {selectedSession.hutLinks.map((hl) => hl.hut.name).join(" + ") || "—"}</span>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]">
+                                        {formatDuration(selectedSession.package.durationMinutes)}
+                                    </span>
+                                </h3>
+                                <p className="text-xs text-slate-600 font-medium mt-0.5 font-serif">
+                                    Khách: <strong className="text-slate-900">{selectedSession.customer?.name ?? "Khách lẻ"}</strong>
+                                    {selectedSession.customer?.phoneNormalized ? ` (${selectedSession.customer.phoneNormalized})` : ""}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsActionModalOpen(false)}
+                                className="h-8 w-8 rounded-full bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-800 flex items-center justify-center font-bold transition-colors cursor-pointer border border-slate-200"
+                            >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Nội dung các tùy chỉnh phóng to giữa màn hình */}
+                        <div className="p-3.5 sm:p-4 overflow-y-auto space-y-3 font-serif">
+                            <SessionActions
+                                key={selectedSession.id}
+                                sessionId={selectedSession.id}
+                                canComplete={canComplete}
+                                canCancel={canCancel}
+                                invoiceId={selectedSession.invoices[0]?.id ?? null}
+                                packages={packages}
+                                fishTypes={fishTypes}
+                                netBalance={selectedSessionFinancials?.netBalance}
+                                onOptimisticAddProduct={handleOptimisticAddProduct}
+                                onOptimisticExtend={handleOptimisticExtend}
+                                extensionRequested={extensionSessionId === selectedSession.id}
+                                onExtensionRequestHandled={handleExtensionRequestHandled}
+                                onOptimisticFishBuyback={handleOptimisticFishBuyback}
+                            />
+                        </div>
+
+                        {/* Footer Modal Tùy chỉnh */}
+                        <div className="p-3 border-t border-slate-100 bg-slate-50 flex items-center gap-2 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsActionModalOpen(false);
+                                    setDetailSession(selectedSession);
+                                }}
+                                className="mobile-pos-btn mobile-pos-btn-secondary flex-1 py-2 text-xs font-semibold"
+                            >
+                                📋 Xem chi tiết ca câu
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsActionModalOpen(false)}
+                                className="mobile-pos-btn flex-1 py-2 text-xs bg-slate-800 text-white hover:bg-slate-900 font-semibold"
+                            >
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Thanh thao tác nhanh (Quick Action Toolbar ở dưới cho ai muốn dùng trực tiếp) */}
             {selectedSession && (
                 <div className="mt-3 pt-2.5 border-t border-slate-100 font-serif">
                     <div className="mb-2.5 text-center">
-                        <span className="inline-block text-xs font-bold text-[#16A34A] bg-[#DCFCE7] border border-[#BBF7D0] rounded-full px-4 py-1 shadow-2xs font-serif">
+                        <button
+                            type="button"
+                            onClick={() => setIsActionModalOpen(true)}
+                            className="inline-block text-xs font-bold text-[#16A34A] bg-[#DCFCE7] border border-[#BBF7D0] rounded-full px-4 py-1 shadow-2xs font-serif hover:bg-[#BBF7D0] transition-colors cursor-pointer"
+                        >
                             🎣 Đang chọn:{" "}
                             {selectedSession.hutLinks
                                 .map((hl) => hl.hut.name)
                                 .join(" + ")}
                             {selectedSession.customer?.name
                                 ? ` · ${selectedSession.customer.name}`
-                                : ""}
-                        </span>
+                                : ""}{" "}
+                            (Bấm để phóng to 🔍)
+                        </button>
                     </div>
 
                     <SessionActions
@@ -653,6 +745,7 @@ export function SessionsClient({
 
                         {/* Footer Modal */}
                         <div className="p-3 border-t border-[#EAE4D7] bg-white flex items-center gap-2">
+
                             <button
                                 type="button"
                                 onClick={() => setDetailSession(null)}
