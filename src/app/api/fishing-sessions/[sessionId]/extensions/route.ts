@@ -17,11 +17,13 @@ interface RouteParams {
 
 const extendSessionSchema = z.object({
     packageId: z.string().uuid("ID gói câu không hợp lệ."),
+    quantity: z.number().int().min(1).max(24).default(1).optional(),
 });
 
 interface ExtensionRequestIdentity {
     sessionId: string;
     packageId: string;
+    quantity?: number;
 }
 
 interface IdempotencyEnvelope {
@@ -44,7 +46,7 @@ function handleExistingExtensionKey(
         if (
             envelope.request &&
             (envelope.request.sessionId !== currentRequest.sessionId ||
-                envelope.request.packageId !== currentRequest.packageId)
+                envelope.request.packageId !== currentRequest.packageId || (envelope.request.quantity ?? 1) !== (currentRequest.quantity ?? 1))
         ) {
             return NextResponse.json(
                 {
@@ -109,10 +111,12 @@ export async function POST(request: Request, { params }: RouteParams) {
             return NextResponse.json({ error: firstError }, { status: 400 });
         }
 
-        const { packageId } = parsed.data;
+        const { packageId, quantity: rawQty } = parsed.data;
+        const quantity = rawQty ?? 1;
         const currentRequestIdentity: ExtensionRequestIdentity = {
             sessionId,
             packageId,
+            quantity,
         };
 
         // Check if idempotency key already processed
@@ -202,9 +206,10 @@ export async function POST(request: Request, { params }: RouteParams) {
                         // Extensions always continue from the previous deadline,
                         // including the time spent waiting for staff confirmation.
                         const baseTime = session.plannedEndAt;
+                        const addedMinutes = pkg.durationMinutes * quantity;
+                        const totalExtensionPrice = pkg.priceVnd * quantity;
                         const newPlannedEndAt = new Date(
-                            baseTime.getTime() +
-                                pkg.durationMinutes * 60 * 1000,
+                            baseTime.getTime() + addedMinutes * 60 * 1000,
                         );
 
                         // 5. Update session plannedEndAt
@@ -220,10 +225,10 @@ export async function POST(request: Request, { params }: RouteParams) {
                         const line = await tx.invoiceLine.create({
                             data: {
                                 invoiceId: invoice.id,
-                                name: `Gia hạn: ${pkg.name} (${pkg.durationMinutes} phút)`,
+                                name: quantity > 1 ? `Gia hạn: ${pkg.name} x${quantity} (${addedMinutes} phút)` : `Gia hạn: ${pkg.name} (${pkg.durationMinutes} phút)`,
                                 unitPrice: pkg.priceVnd,
-                                quantity: 1,
-                                totalVnd: pkg.priceVnd,
+                                quantity,
+                                totalVnd: totalExtensionPrice,
                             },
                         });
 
@@ -283,8 +288,9 @@ export async function POST(request: Request, { params }: RouteParams) {
                             extension: {
                                 packageId: pkg.id,
                                 packageName: pkg.name,
-                                durationMinutes: pkg.durationMinutes,
-                                priceVnd: pkg.priceVnd,
+                                durationMinutes: addedMinutes,
+                                    priceVnd: totalExtensionPrice,
+                                    quantity,
                             },
                             invoice: {
                                 id: invoice.id,

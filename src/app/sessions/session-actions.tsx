@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { SerializableInvoiceLine } from "./sessions-client";
 
 import { Button } from "@/components/ui/button";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { usePrinter } from "@/lib/printing/use-printer";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 import { getCachedProducts, type Product } from "./add-product-modal";
@@ -107,6 +108,7 @@ export function SessionActions({
     const [selectedPackageId, setSelectedPackageId] = useState<string>(
         packages[0]?.id ?? "",
     );
+    const [extensionQuantity, setExtensionQuantity] = useState<number>(1);
     const [isExtending, setIsExtending] = useState(false);
     const [extensionError, setExtensionError] = useState("");
     const [extensionSuccess, setExtensionSuccess] = useState("");
@@ -234,6 +236,7 @@ export function SessionActions({
         if (packages.length > 0 && !selectedPackageId) {
             setSelectedPackageId(packages[0].id);
         }
+        setExtensionQuantity(1);
         setIsExtensionModalOpen(true);
     }
 
@@ -265,6 +268,7 @@ export function SessionActions({
                     },
                     body: JSON.stringify({
                         packageId: selectedPackageId,
+                        quantity: extensionQuantity,
                     }),
                 },
             );
@@ -510,180 +514,211 @@ export function SessionActions({
 
             {/* ── Extension Modal ────────────────────────────────────────────────── */}
             {isExtensionModalOpen && (
-                <div
-                    className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif"
-                    onClick={onExtensionBackdropClick}
-                >
-                    <div className="relative my-auto w-full max-w-sm rounded-[28px] bg-white border border-slate-100 p-4 sm:p-5 space-y-3 shadow-2xl max-h-[90dvh] overflow-y-auto modal-content-animate font-serif">
-                        {/* Header */}
-                        <div className="flex items-center justify-between border-b border-[#E0E0E0] pb-2.5">
-                            <div className="flex items-center gap-2">
-                                <div className="flex h-7 w-7 items-center justify-center rounded-xs bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]">
-                                    <svg
-                                        className="h-4 w-4"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        strokeWidth={2}
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                        />
-                                    </svg>
+                <ModalPortal>
+                    <div
+                        className="fixed inset-0 z-150 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs modal-backdrop-animate font-serif"
+                        onClick={onExtensionBackdropClick}
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <div
+                            className="relative my-auto w-full max-w-md rounded-[28px] bg-white border border-slate-200 shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden modal-content-animate font-serif"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header: Sticky top */}
+                            <div className="flex items-center justify-between border-b border-[#E0E0E0] bg-[#FAFAF7] px-4 py-3 shrink-0">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]">
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm sm:text-base font-extrabold text-[#1A1A1A] uppercase tracking-wide">
+                                            Gia hạn phiên câu
+                                        </h3>
+                                        <p className="text-[11px] text-[#666666]">
+                                            Bấm 1 cái = 1 ca, bấm 2 cái = 2 ca (x2, x3…)
+                                        </p>
+                                    </div>
                                 </div>
-                                <h3 className="text-sm font-bold text-[#1A1A1A] uppercase tracking-wide">
-                                    Gia hạn phiên câu
-                                </h3>
-                            </div>
-                            <button
-                                type="button"
-                                disabled={isExtending}
-                                onClick={() => setIsExtensionModalOpen(false)}
-                                className="h-7 w-7 rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] flex items-center justify-center text-[#1A1A1A] hover:bg-[#EAEAE6] transition-colors cursor-pointer"
-                            >
-                                <svg
-                                    className="h-4 w-4"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={2}
-                                    stroke="currentColor"
+                                <button
+                                    type="button"
+                                    disabled={isExtending}
+                                    onClick={() => setIsExtensionModalOpen(false)}
+                                    className="h-8 w-8 rounded-full border border-[#CCCCCC] bg-white flex items-center justify-center text-[#1A1A1A] hover:bg-[#F2F2F0] transition-colors cursor-pointer"
                                 >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Error or Success notification */}
-                        <p className="text-xs text-slate-600">
-                            Gia hạn nối từ giờ kết thúc phiên cũ, bao gồm thời gian chờ xác nhận. Tiền gói được cộng ngay vào bill.
-                        </p>
-                        {extensionError && (
-                            <div className="rounded-xs border border-[#FFCCC7] bg-[#FFF1F0] p-2.5 text-xs text-[#A8071A] font-semibold">
-                                {extensionError}
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             </div>
-                        )}
-                        {extensionSuccess && (
-                            <div className="rounded-xs border border-[#B7EB8F] bg-[#F6FFED] p-2.5 text-xs text-[#2C4C3B] font-semibold">
-                                {extensionSuccess}
-                            </div>
-                        )}
 
-                        {/* Package List */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-[#1A1A1A]">
-                                Chọn gói câu gia hạn:
-                            </label>
-                            {packages.length === 0 ? (
-                                <div className="rounded-xs bg-[#FAFAF7] border border-[#CCCCCC] p-3 text-center text-xs text-[#666666]">
-                                    Không có gói câu nào đang hoạt động.
-                                </div>
-                            ) : (
-                                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                                    {packages.map((pkg) => {
-                                        const isSelected =
-                                            selectedPackageId === pkg.id;
-                                        return (
-                                            <div
-                                                key={pkg.id}
-                                                onClick={() => {
-                                                    if (!isExtending) setSelectedPackageId(pkg.id);
-                                                }}
-                                                className={`cursor-pointer rounded-xs border p-2.5 flex items-center justify-between transition-colors ${
-                                                    isSelected
-                                                        ? "border-[#2C4C3B] bg-[#EAEFEA]"
-                                                        : "border-[#CCCCCC] bg-white hover:bg-[#FAFAF7]"
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <div
-                                                        className={`h-3.5 w-3.5 rounded-xs border flex items-center justify-center shrink-0 ${
-                                                            isSelected
-                                                                ? "border-[#2C4C3B] bg-[#2C4C3B]"
-                                                                : "border-[#CCCCCC] bg-white"
-                                                        }`}
-                                                    >
-                                                        {isSelected && (
-                                                            <div className="h-1.5 w-1.5 rounded-[1px] bg-white" />
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs font-bold text-[#1A1A1A]">
-                                                            {pkg.name}
-                                                        </p>
-                                                        <p className="text-[11px] text-[#555555]">
-                                                            +
-                                                            {
-                                                                pkg.durationMinutes
-                                                            }{" "}
-                                                            phút
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <span className="text-xs font-bold text-[#2C4C3B] tabular-nums font-serif">
-                                                    {formatPrice(
-                                                        pkg.priceVnd,
-                                                    )}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
+                            {/* Notifications */}
+                            {extensionError && (
+                                <div className="mx-4 mt-3 rounded-xl border border-[#FFCCC7] bg-[#FFF1F0] p-2.5 text-xs text-[#A8071A] font-semibold">
+                                    ⚠️ {extensionError}
                                 </div>
                             )}
-                        </div>
+                            {extensionSuccess && (
+                                <div className="mx-4 mt-3 rounded-xl border border-[#B7EB8F] bg-[#F6FFED] p-2.5 text-xs text-[#2C4C3B] font-semibold">
+                                    ✅ {extensionSuccess}
+                                </div>
+                            )}
 
-                        {/* Summary */}
-                        {selectedPkg && (
-                            <div className="rounded-xs bg-[#FAFAF7] border border-[#CCCCCC] p-2.5 text-xs flex items-center justify-between">
-                                <span className="text-[#555555]">
-                                    Thời gian thêm:{" "}
-                                    <span className="font-bold text-[#1A1A1A]">
-                                        +{selectedPkg.durationMinutes} phút
-                                    </span>
-                                </span>
-                                <span className="font-bold text-[#2C4C3B] tabular-nums font-serif">
-                                    +{formatPrice(selectedPkg.priceVnd)}
-                                </span>
+                            {/* Package list: Scrollable */}
+                            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+                                {/* Hướng dẫn trực quan gia hạn giờ */}
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-2.5 text-xs text-slate-700 font-serif">
+                                    <p className="font-bold text-[#16A34A] mb-1">👉 Hướng dẫn cộng thêm giờ:</p>
+                                    <div className="space-y-0.5 text-[11px] text-slate-600">
+                                        <p>• <strong>Bấm chọn gói câu</strong> khách muốn câu thêm.</p>
+                                        <p>• Bấm tiếp nếu muốn nhân đôi số ca (x2, x3...).</p>
+                                        <p>• Giờ câu mới sẽ <strong>tự động nối tiếp</strong> từ giờ kết thúc cũ.</p>
+                                    </div>
+                                </div>
+
+                                <label className="text-xs font-bold text-[#1A1A1A] block pt-1">
+                                    Chọn gói câu gia hạn:
+                                </label>
+
+                                {packages.length === 0 ? (
+                                    <div className="rounded-xl bg-[#FAFAF7] border border-[#CCCCCC] p-4 text-center text-xs text-[#666666]">
+                                        Không có gói câu nào đang hoạt động.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {packages.map((pkg) => {
+                                            const isSelected = selectedPackageId === pkg.id;
+                                            return (
+                                                <div
+                                                    key={pkg.id}
+                                                    onClick={() => {
+                                                        if (isExtending) return;
+                                                        if (selectedPackageId === pkg.id) {
+                                                            setExtensionQuantity((q) => Math.min(24, q + 1));
+                                                        } else {
+                                                            setSelectedPackageId(pkg.id);
+                                                            setExtensionQuantity(1);
+                                                        }
+                                                    }}
+                                                    className={`cursor-pointer rounded-2xl border p-3 flex items-center justify-between transition-all select-none active:scale-[0.99] ${
+                                                        isSelected
+                                                            ? "border-[#2C4C3B] bg-[#EAEFEA] shadow-xs ring-1 ring-[#2C4C3B]/30"
+                                                            : "border-[#DDDDDD] bg-white hover:border-[#2C4C3B] hover:bg-[#FAFAF7]"
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        <div
+                                                            className={`h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                                                isSelected
+                                                                    ? "border-[#2C4C3B] bg-[#2C4C3B]"
+                                                                    : "border-[#CCCCCC] bg-white"
+                                                            }`}
+                                                        >
+                                                            {isSelected && (
+                                                                <div className="h-2 w-2 rounded-full bg-white" />
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-bold text-[#1A1A1A] truncate">
+                                                                {pkg.name}
+                                                            </p>
+                                                            <p className="text-[11px] text-[#555555]">
+                                                                +{pkg.durationMinutes} phút / ca
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        {isSelected && (
+                                                            <div
+                                                                className="flex items-center gap-1 bg-white border border-[#2C4C3B] rounded-lg p-0.5 shadow-2xs"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={extensionQuantity <= 1 || isExtending}
+                                                                    onClick={() => setExtensionQuantity((q) => Math.max(1, q - 1))}
+                                                                    className="h-6 w-6 rounded-md text-[#2C4C3B] hover:bg-slate-100 flex items-center justify-center font-bold text-xs disabled:opacity-30 cursor-pointer"
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <span className="w-5 text-center text-xs font-extrabold text-[#2C4C3B]">
+                                                                    {extensionQuantity}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={extensionQuantity >= 24 || isExtending}
+                                                                    onClick={() => setExtensionQuantity((q) => Math.min(24, q + 1))}
+                                                                    className="h-6 w-6 rounded-md bg-[#2C4C3B] text-white hover:bg-[#233D2F] flex items-center justify-center font-bold text-xs disabled:opacity-30 cursor-pointer"
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                        <span className="text-xs font-extrabold text-[#2C4C3B] tabular-nums font-serif">
+                                                            {formatPrice(pkg.priceVnd * (isSelected ? extensionQuantity : 1))}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
-                        )}
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 pt-1">
-                            <Button
-                                type="button"
-                                size="md"
-                                variant="outline"
-                                disabled={isExtending}
-                                onClick={() =>
-                                    setIsExtensionModalOpen(false)
-                                }
-                                className="flex-1"
-                            >
-                                Hủy
-                            </Button>
-                            <Button
-                                type="button"
-                                size="md"
-                                variant="primary"
-                                isLoading={isExtending}
-                                loadingText="Đang ghi sổ…"
-                                disabled={
-                                    !selectedPackageId ||
-                                    packages.length === 0
-                                }
-                                onClick={handleConfirmExtension}
-                                className="flex-2"
-                            >
-                                Xác nhận gia hạn
-                            </Button>
+                            {/* Summary Box */}
+                            {selectedPkg && (
+                                <div className="border-t border-[#E0E0E0] bg-[#FAFAF7] px-4 py-2.5 shrink-0 text-xs flex items-center justify-between">
+                                    <div>
+                                        <span className="text-[#555555]">Gia hạn: </span>
+                                        <strong className="text-[#1A1A1A]">
+                                            {selectedPkg.name} {extensionQuantity > 1 ? `(x${extensionQuantity})` : ""}
+                                        </strong>
+                                        <div className="text-[11px] text-[#2C4C3B] font-semibold">
+                                            +{selectedPkg.durationMinutes * extensionQuantity} phút ({(selectedPkg.durationMinutes * extensionQuantity / 60).toFixed(1)}h)
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[11px] text-[#555555] block">Tiền cộng vào bill</span>
+                                        <span className="text-sm font-extrabold text-[#2C4C3B] tabular-nums font-serif">
+                                            +{formatPrice(selectedPkg.priceVnd * extensionQuantity)}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STICKY FOOTER: ALWAYS VISIBLE */}
+                            <div className="border-t border-[#E0E0E0] bg-white px-4 py-3 shrink-0 flex items-center gap-2.5 shadow-lg">
+                                <Button
+                                    type="button"
+                                    size="md"
+                                    variant="outline"
+                                    disabled={isExtending}
+                                    onClick={() => setIsExtensionModalOpen(false)}
+                                    className="flex-1 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                                >
+                                    Hủy thao tác
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="md"
+                                    variant="primary"
+                                    isLoading={isExtending}
+                                    loadingText="Đang ghi sổ…"
+                                    disabled={!selectedPackageId || packages.length === 0 || isExtending}
+                                    onClick={handleConfirmExtension}
+                                    className="flex-2 text-xs sm:text-sm font-bold bg-[#2C4C3B] hover:bg-[#233D2F] text-white shadow-md disabled:opacity-50"
+                                >
+                                    {selectedPkg
+                                        ? `Xác nhận (+${selectedPkg.durationMinutes * extensionQuantity}p • +${formatPrice(selectedPkg.priceVnd * extensionQuantity)})`
+                                        : "Xác nhận gia hạn"}
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </ModalPortal>
             )}
 
             {/* ── Settlement Checkout Modal ─────────────────────────────────────── */}

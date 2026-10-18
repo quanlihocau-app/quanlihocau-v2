@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
@@ -288,9 +289,18 @@ export default async function SessionsPage() {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                                 <SessionAlarmButton />
-                                <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] border border-[#BBF7D0] shadow-2xs font-serif whitespace-nowrap">
+                                <span className="hidden xs:inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] border border-[#BBF7D0] shadow-2xs font-serif whitespace-nowrap">
                                     {serializedSessions.length} vé · {activeHutCount} ô
                                 </span>
+                                {canOpenSession && (
+                                    <Link
+                                        href="/sessions/new"
+                                        className="inline-flex items-center gap-1 rounded-xl bg-[#16A34A] hover:bg-[#15803D] px-2.5 py-1 text-xs font-bold text-white shadow-xs font-serif shrink-0 active:scale-95 transition-all"
+                                    >
+                                        <span>＋</span>
+                                        <span>Tạo vé</span>
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     </div>

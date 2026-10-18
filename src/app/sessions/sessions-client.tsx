@@ -150,6 +150,24 @@ export function SessionsClient({
     // Modal Tùy chỉnh phóng to giữa màn hình khi bấm chọn ô
     const [isActionModalOpen, setIsActionModalOpen] = useState<boolean>(false);
 
+    // Hướng dẫn nhanh cho người mới (mặc định mở, có thể thu gọn)
+    const [isGuideOpen, setIsGuideOpen] = useState<boolean>(true);
+
+    useEffect(() => {
+        const saved = localStorage.getItem("pos_sessions_guide_open");
+        if (saved !== null) {
+            setIsGuideOpen(saved === "true");
+        }
+    }, []);
+
+    const toggleGuide = () => {
+        setIsGuideOpen((prev) => {
+            const next = !prev;
+            localStorage.setItem("pos_sessions_guide_open", String(next));
+            return next;
+        });
+    };
+
     const { onBackdropClick: onActionModalBackdropClick } = useModalDismiss({
         isOpen: isActionModalOpen,
         onClose: () => setIsActionModalOpen(false),
@@ -358,7 +376,7 @@ export function SessionsClient({
     if (sessions.length === 0) {
         return (
             <div className="flex min-h-[calc(100vh-240px)] items-center justify-center font-serif">
-                <div className="w-full rounded-2xl border-2 border-dashed border-emerald-200 bg-[#F0FDF4]/80 p-8 text-center shadow-2xs">
+                <div className="w-full max-w-md rounded-3xl border-2 border-dashed border-emerald-200 bg-[#F0FDF4]/90 p-6 sm:p-8 text-center shadow-xs">
                     <div className="mx-auto mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#DCFCE7] text-[#16A34A] shadow-xs">
                         <svg
                             className="h-7 w-7"
@@ -375,17 +393,36 @@ export function SessionsClient({
                         </svg>
                     </div>
                     <p className="text-base font-bold text-[#0F172A] font-serif">
-                        Hiện không có phiên đang câu
+                        Hiện chưa có khách nào đang câu
                     </p>
-                    <p className="mt-1 text-xs text-slate-500 font-serif">
-                        Bấm &quot;Tạo vé mới&quot; để bắt đầu một phiên câu cho khách.
-                    </p>
+                    
+                    {/* Hướng dẫn 3 bước cực dễ hiểu cho người mới */}
+                    <div className="my-3.5 text-left bg-white rounded-2xl p-3.5 border border-emerald-100 shadow-2xs space-y-2 font-serif">
+                        <p className="text-xs font-bold text-[#16A34A] uppercase tracking-wide">
+                            👉 Cách mở ca câu mới (3 bước siêu nhanh):
+                        </p>
+                        <div className="space-y-1.5 text-xs text-slate-700">
+                            <p className="flex items-start gap-2">
+                                <span className="font-bold text-[#16A34A] shrink-0">1.</span>
+                                <span>Bấm nút xanh <strong>&quot;+ Tạo vé mới ngay&quot;</strong> bên dưới.</span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                                <span className="font-bold text-[#16A34A] shrink-0">2.</span>
+                                <span>Chọn <strong>ô chòi câu</strong> (ô màu xanh lá) và <strong>gói giờ câu</strong> của khách.</span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                                <span className="font-bold text-[#16A34A] shrink-0">3.</span>
+                                <span>Bấm <strong>&quot;Tạo vé&quot;</strong> &rarr; Máy sẽ tự in vé câu và bắt đầu tính giờ ngay!</span>
+                            </p>
+                        </div>
+                    </div>
+
                     {canOpenSession && (
                         <Link
                             href="/sessions/new"
-                            className="inline-flex items-center justify-center rounded-2xl bg-[#16A34A] hover:bg-[#15803D] mt-4 px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all font-serif"
+                            className="inline-flex items-center justify-center rounded-2xl bg-[#16A34A] hover:bg-[#15803D] px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all font-serif"
                         >
-                            + Tạo vé mới
+                            + Tạo vé mới ngay
                         </Link>
                     )}
                 </div>
@@ -395,6 +432,79 @@ export function SessionsClient({
 
     return (
         <div className="font-serif">
+            {/* ── Bảng Hướng Dẫn Trực Quan Cho Người Mới (Dễ hiểu cho học sinh lớp 5) ── */}
+            <div className="mb-3 rounded-2xl border border-emerald-200/90 bg-linear-to-r from-emerald-50/80 via-white to-emerald-50/80 p-3 shadow-2xs font-serif transition-all">
+                <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#16A34A] flex items-center gap-1.5 uppercase tracking-wide">
+                        <span>📖 Hướng dẫn nhanh cho người mới</span>
+                    </span>
+                    <button
+                        type="button"
+                        onClick={toggleGuide}
+                        className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 underline cursor-pointer transition-colors"
+                    >
+                        {isGuideOpen ? "Thu gọn ▲" : "Xem chi tiết ▼"}
+                    </button>
+                </div>
+
+                {isGuideOpen ? (
+                    <div className="mt-2.5 space-y-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                            <div className="bg-white rounded-xl p-2.5 border border-emerald-100 shadow-2xs space-y-1">
+                                <div className="flex items-center gap-1.5 font-bold text-[#0F172A]">
+                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[#16A34A] text-[11px] font-bold">1</span>
+                                    <span>Khách mới vào</span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 leading-relaxed">
+                                    - Bấm nút <strong>&quot;+ Tạo vé&quot;</strong> ở góc trên để chọn chòi và gói giờ.
+                                </p>
+                            </div>
+
+                            <div className="bg-white rounded-xl p-2.5 border border-emerald-100 shadow-2xs space-y-1">
+                                <div className="flex items-center gap-1.5 font-bold text-[#0F172A]">
+                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[#16A34A] text-[11px] font-bold">2</span>
+                                    <span>Đang câu</span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 leading-relaxed">
+                                    - <strong>Chạm vào ô câu</strong> của khách để thêm nước ngọt, mồi câu, hoặc cộng thêm giờ.
+                                </p>
+                            </div>
+
+                            <div className="bg-white rounded-xl p-2.5 border border-emerald-100 shadow-2xs space-y-1">
+                                <div className="flex items-center gap-1.5 font-bold text-[#0F172A]">
+                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[#16A34A] text-[11px] font-bold">3</span>
+                                    <span>Khách về</span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 leading-relaxed">
+                                    - Chạm nút đỏ <strong>&quot;Tính tiền&quot;</strong> trên ô câu để chốt tiền và in hóa đơn (bill).
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Mẹo xem màu sắc trực quan */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 border-t border-emerald-200/60 text-[11px] text-slate-600">
+                            <span className="font-bold text-slate-700">🎨 Mẹo nhìn màu ô câu:</span>
+                            <span className="inline-flex items-center gap-1">
+                                <span className="h-2.5 w-2.5 rounded-full bg-[#16A34A] ring-2 ring-emerald-200" />
+                                <span>Xanh lá = Còn nhiều giờ</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                                <span className="h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-amber-200" />
+                                <span>Vàng = Sắp hết giờ (&lt;15 phút)</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                                <span className="h-2.5 w-2.5 rounded-full bg-rose-600 ring-2 ring-rose-200" />
+                                <span>Đỏ = Đã hết giờ (đang tính phụ thu)</span>
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    <p className="mt-1 text-[11px] text-slate-500 font-medium">
+                        💡 <strong>Mẹo:</strong> Chạm vào ô câu để mở menu phóng to · Nhấn giữ để xem chi tiết ca câu · Nút đỏ để tính tiền
+                    </p>
+                )}
+            </div>
+
             {/* Lưới thẻ phiên (2 cột trên mobile, 3-5 cột trên tablet/desktop nhỏ gọn ~ 1/3) */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2.5">
                 {sessions.map((s) => (
@@ -412,9 +522,9 @@ export function SessionsClient({
                 ))}
             </div>
 
-            {/* Gợi ý thao tác */}
-            <p className="text-center text-[11px] text-slate-500 font-medium mt-2 font-serif">
-                💡 Bấm vào ô để mở bảng tùy chỉnh phóng to giữa màn hình · Nhấn giữ để xem thông tin chi tiết ca câu
+            {/* Gợi ý thao tác dưới chân lưới */}
+            <p className="text-center text-[11px] text-slate-500 font-medium mt-2.5 font-serif">
+                💡 Chạm vào ô để chỉnh giờ &amp; thêm món · Nhấn giữ để xem chi tiết lịch sử ca câu
             </p>
 
             {/* ── Modal Tùy Chỉnh Phóng To Ra Giữa Màn Hình Khi Bấm Chọn Phiên Câu ── */}

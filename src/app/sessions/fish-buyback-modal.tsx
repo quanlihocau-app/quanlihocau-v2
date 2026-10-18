@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 function formatPrice(vnd: number): string {
@@ -153,8 +154,9 @@ export function FishBuybackModal({
     }
 
     return (
+        <ModalPortal>
         <div
-            className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif"
+            className="fixed inset-0 z-150 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/60 backdrop-blur-xs modal-backdrop-animate font-serif"
             onClick={onBackdropClick}
         >
             <div className="relative my-auto w-full max-w-sm rounded-[28px] bg-white border border-slate-100 p-4 sm:p-5 space-y-3.5 shadow-2xl max-h-[90dvh] overflow-y-auto modal-content-animate font-serif">
@@ -305,5 +307,6 @@ export function FishBuybackModal({
                 </div>
             </div>
         </div>
+        </ModalPortal>
     );
 }

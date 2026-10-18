@@ -693,9 +693,8 @@ export function OpenSessionForm({
             toast.dismiss(loadingId);
             toast.success("Bắt đầu ca câu thành công (Thu sau)!");
 
-            // Print ticket for postpaid session
-            if (printerConfig && templateConfig.autoPrintSession) {
-                printSessionTicket(
+            // In ra vé câu tự động mà không cần hỏi
+            printSessionTicket(
                     {
                         sessionId: ticketData.sessionId,
                         ticketCode: ticketData.ticketCode,
@@ -718,7 +717,6 @@ export function OpenSessionForm({
                 ).then((result) => {
                     if (!result.success) toast.error(result.error || "Đã tạo ca câu, nhưng chưa in được vé. Có thể in lại trong chi tiết ca.");
                 }).catch(() => toast.error("Đã tạo ca câu, nhưng chưa in được vé."));
-            }
 
             setTimeout(() => {
                 router.push("/sessions");
@@ -952,9 +950,9 @@ export function OpenSessionForm({
             toast.dismiss(loadingId);
             toast.success("Thanh toán thành công & Bắt đầu ca câu!");
 
-            // Print prepaid ticket
+            // In ra vé câu tự động mà không cần hỏi
             try {
-                if (printerConfig && templateConfig.autoPrintSession) {
+                void (async () => {
                     const printResult = await printSessionTicket(
                         {
                             sessionId: ticketData.sessionId,
@@ -979,7 +977,7 @@ export function OpenSessionForm({
                     );
                     if (printResult.success) toast.success("Đã gửi vé đến máy in!");
                     else toast.error(printResult.error || "Thanh toán đã ghi nhận, nhưng chưa in được vé. Có thể in lại trong chi tiết ca.");
-                }
+                })();
             } catch (err: unknown) {
                 console.error("Print prepaid ticket failed:", err);
                 toast.error("Thanh toán thành công, in bill thất bại. Bạn có thể in lại trong chi tiết ca câu.");
@@ -1043,11 +1041,49 @@ export function OpenSessionForm({
                 </div>
             )}
 
+            {/* ── Hướng Dẫn 3 Bước Mở Vé Trực Quan (Dễ hiểu cho học sinh lớp 5) ── */}
+            <div className="rounded-2xl border border-emerald-200 bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] p-3.5 shadow-2xs font-serif">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#16A34A] flex items-center gap-1.5">
+                        <span>🎣 3 Bước tạo vé câu siêu nhanh:</span>
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]">
+                        In vé tự động
+                    </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                    <div className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-emerald-100 shadow-2xs">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[11px] font-bold text-[#16A34A]">1</span>
+                        <div>
+                            <p className="font-bold text-slate-800">Chọn ô câu</p>
+                            <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Chạm vào ô màu xanh lá (ô còn trống).</p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-emerald-100 shadow-2xs">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[11px] font-bold text-[#16A34A]">2</span>
+                        <div>
+                            <p className="font-bold text-slate-800">Chọn gói câu</p>
+                            <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Bấm chọn số tiếng khách muốn câu.</p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-emerald-100 shadow-2xs">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[11px] font-bold text-[#16A34A]">3</span>
+                        <div>
+                            <p className="font-bold text-slate-800">Bắt đầu câu</p>
+                            <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Bấm nút xanh ở cuối &rarr; Vé tự in ra ngay!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* 1. KHÁCH HÀNG */}
             <Card className="space-y-2.5 bg-white border-[#E3E8E3] rounded-2xl shadow-xs p-3.5">
                 <div className="flex items-center justify-between">
                     <span className="section-title">1. Khách hàng</span>
                 </div>
+                <p className="text-[11px] text-slate-500 font-serif -mt-1">
+                    👉 Tìm tên hoặc số điện thoại nếu là khách quen. Nếu là khách lẻ vãng lai có thể để trống và bấm sang bước 2.
+                </p>
 
                 {/* Customer Selection or Single-line Integrated Search */}
                 {selectedCustomerId ? (
@@ -1196,25 +1232,30 @@ export function OpenSessionForm({
 
             {/* 2. CHỌN Ô CÂU */}
             <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
-                <div className="flex items-center justify-between">
-                    <span className="section-title">2. Chọn ô câu <span className="text-rose-500">*</span></span>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-[#246B38]">
-                            {selectedHutIds.length > 0
-                                ? `Đã chọn ${selectedHutIds.length} ô`
-                                : `Còn ${availableHuts.length} ô trống`}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => setIsHutSheetOpen(true)}
-                            className="inline-flex items-center gap-1 rounded-xl bg-[#E8F3E5] px-2.5 py-1 text-xs font-bold text-[#246B38] border border-[#D1E5CE] hover:bg-[#DDF0D8] transition-colors cursor-pointer"
-                        >
-                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            <span>Thêm ô câu</span>
-                        </button>
+                <div>
+                    <div className="flex items-center justify-between">
+                        <span className="section-title">2. Chọn ô câu <span className="text-rose-500">*</span></span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-[#246B38]">
+                                {selectedHutIds.length > 0
+                                    ? `Đã chọn ${selectedHutIds.length} ô`
+                                    : `Còn ${availableHuts.length} ô trống`}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setIsHutSheetOpen(true)}
+                                className="inline-flex items-center gap-1 rounded-xl bg-[#E8F3E5] px-2.5 py-1 text-xs font-bold text-[#246B38] border border-[#D1E5CE] hover:bg-[#DDF0D8] transition-colors cursor-pointer"
+                            >
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                                <span>Thêm ô câu</span>
+                            </button>
+                        </div>
                     </div>
+                    <p className="text-[11px] text-slate-500 font-serif mt-1">
+                        👉 Ô màu trắng/xanh lá là ô trống sẵn sàng đón khách. Ô màu xám là đang có người câu.
+                    </p>
                 </div>
 
                 {/* Dải Chips hiển thị các ô đã chọn kèm nút Thùng rác xóa nhanh */}
@@ -1314,18 +1355,23 @@ export function OpenSessionForm({
 
             {/* 3. CHỌN GÓI CÂU */}
             <Card className="space-y-3 bg-white border-[#E3E8E3] rounded-2xl shadow-xs">
-                <div className="flex items-center justify-between">
-                    <span className="section-title">3. Chọn gói câu <span className="text-rose-500">*</span></span>
-                    <button
-                        type="button"
-                        onClick={() => setIsPackageSheetOpen(true)}
-                        className="inline-flex items-center gap-1 rounded-xl bg-[#DCFCE7] px-2.5 py-1 text-xs font-bold text-[#16A34A] border border-[#BBF7D0] hover:bg-emerald-100 transition-colors cursor-pointer"
-                    >
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                        </svg>
-                        <span>Tạo nhanh gói</span>
-                    </button>
+                <div>
+                    <div className="flex items-center justify-between">
+                        <span className="section-title">3. Chọn gói câu <span className="text-rose-500">*</span></span>
+                        <button
+                            type="button"
+                            onClick={() => setIsPackageSheetOpen(true)}
+                            className="inline-flex items-center gap-1 rounded-xl bg-[#DCFCE7] px-2.5 py-1 text-xs font-bold text-[#16A34A] border border-[#BBF7D0] hover:bg-emerald-100 transition-colors cursor-pointer"
+                        >
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            <span>Tạo nhanh gói</span>
+                        </button>
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-serif mt-1">
+                        👉 Chạm vào gói câu khách chọn. Giờ câu và số tiền sẽ được tự động áp dụng.
+                    </p>
                 </div>
 
                 {packageList.length === 0 ? (
