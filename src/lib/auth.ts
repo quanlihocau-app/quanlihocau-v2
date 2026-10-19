@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { SystemRole } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { seedSampleLakeData } from "@/lib/onboarding/seed-sample-lake";
 
 declare module "next-auth" {
     interface Session {
@@ -102,6 +103,8 @@ export const authOptions: NextAuthOptions = {
                         await tx.membership.create({
                             data: { userId: owner.id, lakeId: lake.id, role: "OWNER" },
                         });
+                        // Khởi tạo bộ dữ liệu mẫu cho tài khoản Google mới
+                        await seedSampleLakeData(tx, lake.id, ownerName, owner.id);
                     });
                 } catch {
                     // A simultaneous first sign-in may have created this email.

@@ -12,7 +12,7 @@ export interface ButtonProps
         | "outline"
         | "ghost"
         | "secondary";
-    size?: "sm" | "md" | "lg";
+    size?: "sm" | "md" | "lg" | "xl";
     isLoading?: boolean;
     loadingText?: string;
     icon?: React.ReactNode;
@@ -40,6 +40,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             sm: "h-9 px-3 text-xs min-w-9 rounded-xl",
             md: "h-11 px-4 text-xs min-w-10 rounded-2xl",
             lg: "h-12 px-5 text-sm min-w-11 rounded-[20px]", // Standard modern mobile touch target
+            xl: "min-h-[56px] h-14 sm:h-16 px-6 text-sm sm:text-base min-w-12 rounded-[22px]", // Outdoor large touch target 56px-64px
         }[size];
 
         const variantClasses = {

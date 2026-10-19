@@ -288,12 +288,17 @@ export async function GET() {
                 startTime: currentShift.startTime.toISOString(),
                 endTime: currentShift.endTime?.toISOString() ?? null,
                 isClosed,
+                openingCashVnd: (currentShift as { openingCashVnd?: number }).openingCashVnd ?? 0,
             },
             summary: {
                 revenueVnd: totalRevenue,
                 expenseVnd: totalExpense,
                 cashVnd: isClosed && shiftClose ? shiftClose.totalCashVnd : netCash,
+                cashInVnd: cashIn,
+                cashOutVnd: cashOut,
                 transferVnd: isClosed && shiftClose ? shiftClose.totalTransferVnd : netTransfer,
+                transferInVnd: transferIn,
+                transferOutVnd: transferOut,
                 fishBuybackVnd: fishBuybackTotal,
                 otherExpenseVnd: otherExpenseTotal,
                 netProfitVnd: netProfit,
@@ -303,8 +308,12 @@ export async function GET() {
                 ? {
                       id: shiftClose.id,
                       closedBy: shiftClose.closedBy,
+                      receivedBy: (shiftClose as { receivedBy?: string | null }).receivedBy ?? null,
                       closedAt: shiftClose.createdAt.toISOString(),
                       note: shiftClose.note,
+                      actualCashVnd: (shiftClose as { actualCashVnd?: number | null }).actualCashVnd ?? null,
+                      cashDifferenceVnd: (shiftClose as { cashDifferenceVnd?: number }).cashDifferenceVnd ?? 0,
+                      differenceReason: (shiftClose as { differenceReason?: string | null }).differenceReason ?? null,
                   }
                 : null,
         });

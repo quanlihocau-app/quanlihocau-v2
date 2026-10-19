@@ -13,6 +13,9 @@ import {
 const closeShiftBodySchema = z
     .object({
         note: z.string().max(500).optional(),
+        actualCashVnd: z.number().int().min(0).optional(),
+        differenceReason: z.string().max(500).optional(),
+        receivedBy: z.string().max(100).optional(),
     })
     .optional();
 
@@ -80,11 +83,17 @@ export async function POST(request: Request) {
 
         // 2. Parse optional body
         let note: string | undefined;
+        let actualCashVnd: number | undefined;
+        let differenceReason: string | undefined;
+        let receivedBy: string | undefined;
         try {
             const body = await request.json();
             const parsedBody = closeShiftBodySchema.safeParse(body);
             if (parsedBody.success && parsedBody.data) {
                 note = parsedBody.data.note;
+                actualCashVnd = parsedBody.data.actualCashVnd;
+                differenceReason = parsedBody.data.differenceReason;
+                receivedBy = parsedBody.data.receivedBy;
             }
         } catch {
             // Body is optional
@@ -223,13 +232,24 @@ export async function POST(request: Request) {
                         const otherExpenseVnd = expensesAgg._sum.amountVnd ?? 0;
                         const totalExpenseVnd = fishBuybackVnd + otherExpenseVnd;
 
-                        // 4. Update Shift endTime
+                        // 4. Calculate cash difference
+                        const expectedCashVnd = totalCashVnd + (currentShift.openingCashVnd ?? 0);
+                        const cashDifferenceVnd = actualCashVnd !== undefined
+                            ? actualCashVnd - expectedCashVnd
+                            : 0;
+
+                        // 5. Validate: if there's a discrepancy, reason is required
+                        if (actualCashVnd !== undefined && cashDifferenceVnd !== 0 && !differenceReason?.trim()) {
+                            throw new Error("DIFFERENCE_REASON_REQUIRED");
+                        }
+
+                        // 6. Update Shift endTime
                         await tx.shift.update({
                             where: { id: currentShift.id },
                             data: { endTime },
                         });
 
-                        // 5. Create ShiftClose snapshot
+                        // 7. Create ShiftClose snapshot
                         const shiftClose = await tx.shiftClose.create({
                             data: {
                                 shiftId: currentShift.id,
@@ -239,12 +259,25 @@ export async function POST(request: Request) {
                                 totalExpenseVnd,
                                 fishBuybackVnd,
                                 otherExpenseVnd,
+                                actualCashVnd: actualCashVnd ?? null,
+                                cashDifferenceVnd,
+                                differenceReason: differenceReason?.trim() || null,
                                 closedBy: tenantContext.userName,
+                                receivedBy: receivedBy?.trim() || null,
                                 note: note ?? null,
                             },
                         });
 
-                        // 6. Record AuditEvent
+                        // 8. Create new shift for next period (auto-open)
+                        await tx.shift.create({
+                            data: {
+                                lakeId,
+                                startTime: endTime,
+                                openingCashVnd: actualCashVnd ?? expectedCashVnd,
+                            },
+                        });
+
+                        // 9. Record AuditEvent
                         await tx.auditEvent.create({
                             data: {
                                 lakeId,
@@ -262,7 +295,11 @@ export async function POST(request: Request) {
                                     totalTransferVnd,
                                     fishBuybackVnd,
                                     otherExpenseVnd,
+                                    actualCashVnd: actualCashVnd ?? null,
+                                    cashDifferenceVnd,
+                                    differenceReason: differenceReason?.trim() || null,
                                     closedBy: tenantContext.userName,
+                                    receivedBy: receivedBy?.trim() || null,
                                     note: note ?? null,
                                 }),
                                 createdBy: tenantContext.userId,
@@ -289,8 +326,12 @@ export async function POST(request: Request) {
                             shiftClose: {
                                 id: shiftClose.id,
                                 closedBy: tenantContext.userName,
+                                receivedBy: shiftClose.receivedBy,
                                 closedAt: shiftClose.createdAt.toISOString(),
                                 note: shiftClose.note,
+                                actualCashVnd: shiftClose.actualCashVnd,
+                                cashDifferenceVnd: shiftClose.cashDifferenceVnd,
+                                differenceReason: shiftClose.differenceReason,
                             },
                         };
 
@@ -331,6 +372,16 @@ export async function POST(request: Request) {
                     return NextResponse.json(
                         { error: "Ca hiện tại đã được chốt trước đó." },
                         { status: 409 },
+                    );
+                }
+
+                if (
+                    txError instanceof Error &&
+                    txError.message === "DIFFERENCE_REASON_REQUIRED"
+                ) {
+                    return NextResponse.json(
+                        { error: "Tiền mặt thực tế chênh lệch. Vui lòng nhập lý do." },
+                        { status: 422 },
                     );
                 }
 

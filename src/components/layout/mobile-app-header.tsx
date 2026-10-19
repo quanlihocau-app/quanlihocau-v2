@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { OnboardingModal, openGuideModal } from "@/components/guide/onboarding-modal";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
+import { useOutdoorMode } from "@/hooks/use-outdoor-mode";
 import { HeaderClock } from "./header-clock";
 
 interface MobileAppHeaderProps {
@@ -25,6 +26,7 @@ export function MobileAppHeader({
 }: MobileAppHeaderProps) {
     const router = useRouter();
     const { isOnline: autoOnline, isReconnecting } = useNetworkStatus();
+    const { isOutdoorMode, toggleOutdoorMode } = useOutdoorMode();
     const effectiveOnline = isOnlineProp !== undefined ? isOnlineProp : autoOnline;
 
     return (
@@ -74,6 +76,24 @@ export function MobileAppHeader({
                             Offline
                         </span>
                     )}
+
+                    {/* Outdoor High-Contrast Mode Toggle Button */}
+                    <button
+                        type="button"
+                        onClick={toggleOutdoorMode}
+                        className={`inline-flex h-8 items-center gap-1 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer font-serif active:scale-95 ${
+                            isOutdoorMode
+                                ? "bg-amber-400 text-black border-black ring-2 ring-black font-extrabold shadow-sm"
+                                : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300"
+                        }`}
+                        aria-label={isOutdoorMode ? "Tắt chế độ ngoài trời tương phản cao" : "Bật chế độ ngoài trời tương phản cao"}
+                        title={isOutdoorMode ? "Đang bật chế độ ngoài trời (nắng gắt)" : "Bật chế độ tương phản cao dưới nắng gắt"}
+                    >
+                        <span>☀️</span>
+                        <span className="hidden xs:inline text-[10px] uppercase tracking-tight">
+                            {isOutdoorMode ? "Nắng: Bật" : "Nắng gắt"}
+                        </span>
+                    </button>
 
                     {/* Guide Help Trigger Button */}
                     <button

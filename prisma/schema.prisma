@@ -499,12 +499,13 @@ model Expense {
 // -----------------------------------------------------------------------------
 
 model Shift {
-  id        String    @id @default(uuid())
-  lakeId    String
-  startTime DateTime
-  endTime   DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  lakeId         String
+  startTime      DateTime
+  endTime        DateTime?
+  openingCashVnd Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   lake   Lake         @relation(fields: [lakeId], references: [id])
   closes ShiftClose[]
@@ -513,17 +514,21 @@ model Shift {
 }
 
 model ShiftClose {
-  id               String   @id @default(uuid())
-  shiftId          String
-  totalCashVnd     Int      @default(0)
-  totalTransferVnd Int      @default(0)
-  totalRevenueVnd  Int      @default(0)
-  totalExpenseVnd  Int      @default(0)
-  fishBuybackVnd   Int      @default(0)
-  otherExpenseVnd  Int      @default(0)
-  closedBy         String?
-  note             String?
-  createdAt        DateTime @default(now())
+  id                String   @id @default(uuid())
+  shiftId           String
+  totalCashVnd      Int      @default(0)
+  totalTransferVnd  Int      @default(0)
+  totalRevenueVnd   Int      @default(0)
+  totalExpenseVnd   Int      @default(0)
+  fishBuybackVnd    Int      @default(0)
+  otherExpenseVnd   Int      @default(0)
+  actualCashVnd     Int?
+  cashDifferenceVnd Int      @default(0)
+  differenceReason  String?
+  closedBy          String?
+  receivedBy        String?
+  note              String?
+  createdAt         DateTime @default(now())
 
   shift Shift @relation(fields: [shiftId], references: [id])
 }

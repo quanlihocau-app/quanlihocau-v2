@@ -26,6 +26,7 @@ import {
 import { RetailProduct } from "./retail-pos-form";
 import { BANK_CONFIG, generateVietQrUrl } from "@/lib/vietqr";
 import { CheckInTimeSection, type CheckInTimeState } from "./check-in-time-section";
+import { useOutdoorMode } from "@/hooks/use-outdoor-mode";
 
 export interface SelectCustomer {
     id: string;
@@ -136,6 +137,7 @@ export function OpenSessionForm({
     const router = useRouter();
     const toast = useToast();
     const { config: printerConfig, templateConfig, printSessionTicket } = usePrinter();
+    const { isOutdoorMode } = useOutdoorMode();
 
     // Customer state
     const [customerList, setCustomerList] =
@@ -166,6 +168,10 @@ export function OpenSessionForm({
     // Hut state
     const [hutList, setHutList] = useState<SelectHut[]>(initialHuts);
     const [selectedHutIds, setSelectedHutIds] = useState<string[]>([]);
+
+    // Quick open state (1 chạm mở vé tại chòi)
+    const quickOpenInFlightRef = useRef(false);
+    const [isQuickOpening, setIsQuickOpening] = useState(false);
 
     // Product items state (Mục 5)
     const [productList, setProductList] = useState<RetailProduct[]>(initialProducts);
@@ -404,13 +410,153 @@ export function OpenSessionForm({
     }, [customerList, customerSearch]);
 
     function toggleHut(hutId: string) {
-        setSelectedHutIds((prev) =>
-            prev.includes(hutId)
+        setSelectedHutIds((prev) => {
+            const next = prev.includes(hutId)
                 ? prev.filter((id) => id !== hutId)
                 : prev.length < 10
                   ? [...prev, hutId]
-                  : prev,
+                  : prev;
+            // Tự động gán gói mặc định hợp lệ nếu chưa chọn gói nào
+            if (!selectedPackageId && packageList.length > 0) {
+                setSelectedPackageId(packageList[0].id);
+            }
+            return next;
+        });
+        setFormError("");
+    }
+
+    // ── Luồng Mở Vé Nhanh (1 chạm chọn chòi -> 1 chạm mở vé tính giờ ngay) ──────
+    async function handleQuickOpen() {
+        if (isSubmitting || isQuickOpening || quickOpenInFlightRef.current) return;
+
+        // 1. Kiểm tra chòi đã chọn
+        if (selectedHutIds.length === 0) {
+            setFormError("Vui lòng chạm chọn ít nhất một ô câu còn trống.");
+            return;
+        }
+
+        // Kiểm tra xem có chòi nào đang bận không
+        const occupiedHuts = hutList.filter(
+            (h) => selectedHutIds.includes(h.id) && h.currentSessionId !== null,
         );
+        if (occupiedHuts.length > 0) {
+            setFormError(
+                `Ô câu "${occupiedHuts.map((h) => h.name).join(", ")}" đã có khách đang câu. Vui lòng chọn ô trống khác.`,
+            );
+            return;
+        }
+
+        // 2. Kiểm tra gói câu mặc định
+        const targetPackage =
+            packageList.find((p) => p.id === selectedPackageId) ||
+            packageList[0];
+
+        if (!targetPackage) {
+            setFormError(
+                "Chưa có gói câu nào được cấu hình cho hồ câu. Vui lòng tạo gói câu trước khi mở vé.",
+            );
+            return;
+        }
+
+        setFormError("");
+        quickOpenInFlightRef.current = true;
+        setIsQuickOpening(true);
+        setIsSubmitting(true);
+        const loadingId = toast.loading("Đang mở vé nhanh (bắt đầu tính giờ ngay)...");
+
+        try {
+            const idempotencyKey = crypto.randomUUID();
+            const response = await fetch("/api/fishing-sessions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Idempotency-Key": idempotencyKey,
+                },
+                body: JSON.stringify({
+                    clientMutationId: idempotencyKey,
+                    customerId: selectedCustomerId || null,
+                    packageId: targetPackage.id,
+                    hutIds: selectedHutIds,
+                    customer: { mode: "GUEST" },
+                    paymentTiming: "POSTPAID",
+                    paymentMode: "POSTPAID",
+                }),
+            });
+
+            const result = (await response.json().catch(() => ({}))) as {
+                ok?: boolean;
+                id?: string;
+                startTime?: string;
+                plannedEndAt?: string;
+                error?: string | { message?: string };
+                data?: { session?: { id: string; startTime?: string; endTime?: string } };
+            };
+
+            if (!response.ok || result.error) {
+                const errMsg =
+                    typeof result.error === "object"
+                        ? result.error?.message || "Không thể mở vé câu."
+                        : (result.error || "Không thể mở vé câu.");
+                toast.dismiss(loadingId);
+                toast.error(errMsg);
+                setFormError(errMsg);
+                quickOpenInFlightRef.current = false;
+                setIsQuickOpening(false);
+                setIsSubmitting(false);
+                return;
+            }
+
+            const resolvedSessionId = result.id || result.data?.session?.id || "";
+            const resolvedStartTime = result.startTime || result.data?.session?.startTime || new Date().toISOString();
+            const resolvedPlannedEnd = result.plannedEndAt || result.data?.session?.endTime || null;
+
+            toast.dismiss(loadingId);
+            toast.success(`Đã mở vé thành công cho ${selectedHutIds.length} ô câu! Bắt đầu tính giờ ngay.`);
+
+            // In vé tự động nếu thiết lập
+            try {
+                const selectedHutsInfo = hutList
+                    .filter((h) => selectedHutIds.includes(h.id))
+                    .map((h) => ({ name: h.name, areaName: h.area?.name || undefined }));
+                printSessionTicket(
+                    {
+                        sessionId: resolvedSessionId,
+                        ticketCode: resolvedSessionId.slice(0, 8).toUpperCase(),
+                        lakeName: lakeName || "Hồ câu dịch vụ",
+                        huts: selectedHutsInfo,
+                        packageName: targetPackage.name,
+                        packagePriceVnd: targetPackage.priceVnd,
+                        durationMinutes: targetPackage.durationMinutes,
+                        customerName: selectedCustomer?.name || "Khách lẻ",
+                        customerPhone: selectedCustomer?.phoneNormalized || null,
+                        startAt: resolvedStartTime,
+                        plannedEndAt: resolvedPlannedEnd,
+                        cashierName: cashierName || "Thu ngân",
+                        note: null,
+                        paymentTiming: "POSTPAID",
+                        balanceDueVnd: targetPackage.priceVnd * selectedHutIds.length,
+                        prepaidAmountVnd: 0,
+                    },
+                    { manual: false, jobId: `quick-open-${resolvedSessionId}` },
+                ).catch(() => {});
+            } catch {
+                // Non-blocking print error
+            }
+
+            clearDraft();
+            setTimeout(() => {
+                router.push("/sessions");
+                router.refresh();
+            }, 400);
+        } catch (err) {
+            toast.dismiss(loadingId);
+            const msg = err instanceof Error ? err.message : "Đã có lỗi kết nối khi mở vé nhanh.";
+            toast.error(msg);
+            setFormError(msg);
+            quickOpenInFlightRef.current = false;
+            setIsQuickOpening(false);
+            setIsSubmitting(false);
+        }
     }
 
     const refreshHuts = useCallback(async () => {
@@ -1041,40 +1187,6 @@ export function OpenSessionForm({
                 </div>
             )}
 
-            {/* ── Hướng Dẫn 3 Bước Mở Vé Trực Quan (Dễ hiểu cho học sinh lớp 5) ── */}
-            <div className="rounded-2xl border border-emerald-200 bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] p-3.5 shadow-2xs font-serif">
-                <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[#16A34A] flex items-center gap-1.5">
-                        <span>🎣 3 Bước tạo vé câu siêu nhanh:</span>
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]">
-                        In vé tự động
-                    </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                    <div className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-emerald-100 shadow-2xs">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[11px] font-bold text-[#16A34A]">1</span>
-                        <div>
-                            <p className="font-bold text-slate-800">Chọn ô câu</p>
-                            <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Chạm vào ô màu xanh lá (ô còn trống).</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-emerald-100 shadow-2xs">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[11px] font-bold text-[#16A34A]">2</span>
-                        <div>
-                            <p className="font-bold text-slate-800">Chọn gói câu</p>
-                            <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Bấm chọn số tiếng khách muốn câu.</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-emerald-100 shadow-2xs">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DCFCE7] text-[11px] font-bold text-[#16A34A]">3</span>
-                        <div>
-                            <p className="font-bold text-slate-800">Bắt đầu câu</p>
-                            <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Bấm nút xanh ở cuối &rarr; Vé tự in ra ngay!</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* 1. KHÁCH HÀNG */}
             <Card className="space-y-2.5 bg-white border-[#E3E8E3] rounded-2xl shadow-xs p-3.5">
@@ -1313,7 +1425,7 @@ export function OpenSessionForm({
                                     <p className="text-[11px] font-semibold text-[#66716A] uppercase tracking-wide">
                                         {areaName}
                                     </p>
-                                    <div className="grid grid-cols-5 gap-1.5">
+                                    <div className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 sm:gap-2.5">
                                         {areaHuts.map((h) => {
                                             const isOccupied =
                                                 h.currentSessionId !== null;
@@ -1328,18 +1440,27 @@ export function OpenSessionForm({
                                                     onClick={() =>
                                                         toggleHut(h.id)
                                                     }
-                                                    className={`h-9.5 rounded-xl text-[11px] font-bold transition-all flex flex-col items-center justify-center cursor-pointer px-1 ${
+                                                    className={`min-h-[56px] h-14 sm:h-16 rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex flex-col items-center justify-center cursor-pointer px-1.5 shadow-2xs select-none ${
                                                         isSelected
-                                                            ? "bg-[#16A34A] text-white border-2 border-[#15803D] shadow-xs"
+                                                            ? "bg-[#16A34A] text-white border-2 border-[#15803D] ring-2 ring-[#16A34A]/30 hut-selected-outdoor shadow-xs active:scale-95"
                                                             : isOccupied
-                                                              ? "bg-slate-100 text-slate-400 border border-[#E3E8E3] opacity-60 cursor-not-allowed"
-                                                              : "bg-white border border-[#E3E8E3] text-[#17201A] hover:bg-[#F0FDF4] hover:border-[#16A34A]"
+                                                              ? "bg-slate-200 text-slate-500 border-2 border-slate-300 opacity-70 cursor-not-allowed hut-occupied-outdoor"
+                                                              : "bg-white border-2 border-[#16A34A]/80 text-[#0F172A] hover:bg-[#F0FDF4] hover:border-[#16A34A] active:scale-95 hut-available-outdoor"
                                                     }`}
+                                                    aria-label={`${h.name} - ${isOccupied ? "Đang có khách" : isSelected ? "Đang chọn" : "Còn trống"}`}
                                                 >
-                                                    <span className="truncate w-full text-center leading-tight">{h.name}</span>
-                                                    {isOccupied && (
-                                                        <span className="text-[8px] font-normal text-slate-400 leading-none">
-                                                            Có khách
+                                                    <span className="truncate w-full text-center leading-tight font-black tracking-tight">{h.name}</span>
+                                                    {isOccupied ? (
+                                                        <span className="text-[9px] font-bold text-slate-600 leading-none mt-1">
+                                                             CÓ KHÁCH
+                                                        </span>
+                                                    ) : isSelected ? (
+                                                        <span className="text-[9px] font-bold text-emerald-100 leading-none mt-1">
+                                                            ✓ ĐÃ CHỌN
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[9px] font-bold text-[#16A34A] leading-none mt-1">
+                                                            TRỐNG
                                                         </span>
                                                     )}
                                                 </button>
@@ -1349,6 +1470,62 @@ export function OpenSessionForm({
                                 </div>
                             ),
                         )}
+                    </div>
+                )}
+
+                {/* ── Khung Mở Vé Nhanh (1 Chạm) khi đã chọn ô câu ── */}
+                {selectedHutIds.length > 0 && (
+                    <div className="mt-3 rounded-2xl border-2 border-[#16A34A] bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] p-3.5 sm:p-4 space-y-2.5 shadow-md">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#16A34A] text-white text-xs font-black">
+                                    ⚡
+                                </span>
+                                <span className="text-xs font-black uppercase tracking-wide text-[#0F172A]">
+                                    Mở vé nhanh 1 chạm (Tính giờ ngay)
+                                </span>
+                            </div>
+                            <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]">
+                                {selectedHutIds.length} ô đang chọn
+                            </span>
+                        </div>
+
+                        <div className="text-xs text-slate-700 space-y-1">
+                            <p className="font-medium">
+                                Chòi: <strong className="text-slate-900 font-extrabold">{hutList.filter((h) => selectedHutIds.includes(h.id)).map((h) => h.name).join(", ")}</strong>
+                            </p>
+                            <p className="text-slate-600">
+                                Gói áp dụng: <strong className="text-[#16A34A] font-extrabold">{packageList.find((p) => p.id === selectedPackageId)?.name || packageList[0]?.name || "Chưa có gói"}</strong>
+                                {" · "}
+                                Thời lượng: <strong className="text-slate-800">{formatDuration(packageList.find((p) => p.id === selectedPackageId)?.durationMinutes || packageList[0]?.durationMinutes || 0)}</strong>
+                                {" · "}
+                                Tạm tính: <strong className="font-mono font-extrabold text-[#16A34A]">{formatPrice((packageList.find((p) => p.id === selectedPackageId)?.priceVnd || packageList[0]?.priceVnd || 0) * selectedHutIds.length)}</strong>
+                            </p>
+                        </div>
+
+                        {/* Nút Mở Vé Nhanh: Chiều cao chuẩn 56px-64px cho ngón tay ướt/thính */}
+                        <button
+                            type="button"
+                            disabled={isSubmitting || isQuickOpening || !isOnline}
+                            onClick={handleQuickOpen}
+                            className="w-full min-h-[58px] h-15 sm:h-16 rounded-2xl bg-[#16A34A] hover:bg-[#15803D] active:bg-[#166534] text-white font-extrabold text-sm sm:text-base flex items-center justify-between px-4 sm:px-5 shadow-lg shadow-emerald-700/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none border-2 border-[#15803D]"
+                        >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <span className="text-2xl shrink-0">⚡</span>
+                                <div className="text-left min-w-0">
+                                    <div className="font-black uppercase tracking-wide leading-tight truncate">
+                                        {isQuickOpening ? "ĐANG MỞ VÉ & TÍNH GIỜ…" : "MỞ VÉ NHANH NGAY"}
+                                    </div>
+                                    <div className="text-[11px] font-semibold text-emerald-100 leading-tight truncate">
+                                        Không cần điền tên · Thu sau · Tính giờ tức thì
+                                    </div>
+                                </div>
+                            </div>
+                            <span className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 text-xs sm:text-sm font-black text-[#16A34A] shrink-0 shadow-2xs">
+                                <span>Bắt đầu</span>
+                                <span>➔</span>
+                            </span>
+                        </button>
                     </div>
                 )}
             </Card>
@@ -1393,35 +1570,37 @@ export function OpenSessionForm({
                                 <div
                                     key={p.id}
                                     onClick={() => setSelectedPackageId(p.id)}
-                                    className={`cursor-pointer rounded-2xl border p-3 flex items-center justify-between transition-colors ${
+                                    className={`cursor-pointer min-h-[58px] sm:min-h-[64px] rounded-2xl border-2 p-3.5 sm:p-4 flex items-center justify-between transition-all select-none active:scale-[0.99] ${
                                         isSelected
-                                            ? "border-[#16A34A] bg-[#F0FDF4] shadow-xs"
-                                            : "border-[#E3E8E3] bg-white hover:bg-[#F7F9F5]"
+                                            ? "border-[#16A34A] bg-[#F0FDF4] shadow-xs ring-2 ring-[#16A34A]/20"
+                                            : "border-[#E3E8E3] bg-white hover:bg-[#F7F9F5] hover:border-slate-300"
                                     }`}
+                                    role="radio"
+                                    aria-checked={isSelected}
                                 >
-                                    <div className="flex items-center gap-2.5">
+                                    <div className="flex items-center gap-3">
                                         <div
-                                            className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                            className={`h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
                                                 isSelected
                                                     ? "border-[#16A34A] bg-[#16A34A]"
-                                                    : "border-[#E3E8E3] bg-white"
+                                                    : "border-slate-300 bg-white"
                                             }`}
                                         >
                                             {isSelected && (
-                                                <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                                                <div className="h-2 w-2 rounded-full bg-white" />
                                             )}
                                         </div>
                                         <div>
-                                            <p className="text-xs font-bold text-[#17201A]">
+                                            <p className="text-xs sm:text-sm font-extrabold text-[#0F172A] leading-tight">
                                                 {p.name}
                                             </p>
-                                            <p className="text-[11px] text-[#66716A]">
-                                                Thời lượng: <span className="font-semibold text-[#17201A]">{formatDuration(p.durationMinutes)}</span>
+                                            <p className="text-[11px] font-medium text-slate-500 mt-0.5">
+                                                Thời lượng: <span className="font-bold text-[#0F172A]">{formatDuration(p.durationMinutes)}</span>
                                             </p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs font-bold font-mono text-[#16A34A] tabular-nums">
+                                        <span className="text-xs sm:text-sm font-black font-mono text-[#16A34A] tabular-nums">
                                             {formatPrice(p.priceVnd)}
                                         </span>
                                     </div>
@@ -1662,7 +1841,7 @@ export function OpenSessionForm({
             {/* SUBMIT BUTTON */}
             <Button
                 type="submit"
-                size="lg"
+                size="xl"
                 variant="primary"
                 isLoading={isSubmitting}
                 loadingText="Đang tạo vé…"
@@ -1672,7 +1851,7 @@ export function OpenSessionForm({
                     availableHuts.length === 0 ||
                     (checkInState ? !checkInState.isValid : false)
                 }
-                className="w-full shadow-md font-bold"
+                className="w-full min-h-[56px] h-14 sm:h-16 shadow-lg shadow-emerald-700/20 font-black text-sm sm:text-base tracking-wide uppercase border-2 border-[#15803D]"
             >
                 {!isOnline
                     ? "Mất mạng — Không thể mở vé"

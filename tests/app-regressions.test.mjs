@@ -33,6 +33,7 @@ function authModule(user = { email: "owner@example.com", systemRole: "USER", ses
         zod: { z: { string: () => ({ trim() { return this; }, min() { return this; }, email() { return this; } }), object: () => ({}) } },
         "@/generated/prisma/client": { SystemRole: {} }, "@/lib/phone": {},
         "@/lib/prisma": { prisma: { user: { findUnique: async () => user } } },
+        "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
     });
     return { auth, user, setCookie: (token) => { cookie = token; } };
 }
@@ -193,6 +194,7 @@ test("Registration validates input and normalizes phone numbers before writing",
         } },
         bcryptjs: { hash: async () => "hash" },
         "@/lib/auth": { setSessionCookie: async () => { registrationCreatedSession = true; } },
+        "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
         "next/navigation": {}, "@/lib/phone": phone, zod: { z },
     }, { console });
     assert.equal((await actions.registerUser({ email: 12 })).success, false);
@@ -214,6 +216,7 @@ test("Existing staff can log in by email while phone-number login is disabled", 
         } } },
         bcryptjs: { compare: async () => true },
         "@/lib/auth": { setSessionCookie: async (value) => { session = value; } },
+        "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
         "next/navigation": {}, "@/lib/phone": {}, zod: { z },
     }, { console });
     const result = await actions.loginUser({ email: " Staff@Example.com ", password: "valid-password" });

@@ -36,6 +36,22 @@
 }
 @media print {
   .quick-actions { display: none !important; }
+  /* Hide all app chrome when printing */
+  .mobile-pos-shell > .mobile-pos-frame > header,
+  .mobile-pos-shell > .mobile-pos-frame > nav,
+  [data-bottom-nav],
+  .has-bottom-nav ~ nav,
+  .mobile-bottom-nav,
+  [class*="MobileBottomNav"],
+  [class*="MobileAppHeader"] { display: none !important; }
+  /* Only show the print receipt */
+  .print-only { display: block !important; }
+  /* Hide screen-only content */
+  .mobile-pos-frame > main { display: none !important; }
+  body { background: white !important; }
+}
+@media screen {
+  .print-only { display: none !important; }
 }
 /* Reserve room for both the floating shortcut and the navigation at the end of each page. */
 @media screen {
@@ -600,3 +616,121 @@ nav button:active, nav a:active {
   background: #16A34A;
   flex-shrink: 0;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CHẾ ĐỘ NGOÀI TRỜI ĐỘ TƯƠNG PHẢN CAO (OUTDOOR HIGH-CONTRAST MODE)
+   Tối ưu cho nhân viên thao tác dưới ánh nắng gắt, tay ướt hoặc dính thính:
+   - Nền sáng chữ đen đậm (#000000)
+   - Viền dày 2px-3px đen tuyền
+   - Trạng thái hover, focus, disabled, lỗi hiển thị cực kỳ rõ nét
+   ──────────────────────────────────────────────────────────────────────── */
+.outdoor-high-contrast {
+  --background: #FFFFFF;
+  --foreground: #000000;
+  --muted-foreground: #1E293B;
+  --card: #FFFFFF;
+  --card-foreground: #000000;
+  --border: #000000;
+  --input: #000000;
+  --ring: #000000;
+  color: #000000 !important;
+}
+
+.outdoor-high-contrast body,
+.outdoor-high-contrast .mobile-pos-shell,
+.outdoor-high-contrast .mobile-pos-frame {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+}
+
+/* Thẻ và Khung viền sắc nét */
+.outdoor-high-contrast .card,
+.outdoor-high-contrast [class*="rounded-2xl"],
+.outdoor-high-contrast [class*="rounded-3xl"] {
+  border-color: #000000 !important;
+  border-width: 2px !important;
+  box-shadow: none !important;
+}
+
+/* Văn bản đậm nét dưới nắng chói */
+.outdoor-high-contrast p,
+.outdoor-high-contrast span,
+.outdoor-high-contrast label,
+.outdoor-high-contrast h1,
+.outdoor-high-contrast h2,
+.outdoor-high-contrast h3,
+.outdoor-high-contrast h4 {
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+/* Nút bấm ở chế độ ngoài trời: viền đen dày, tương phản cực mạnh */
+.outdoor-high-contrast button,
+.outdoor-high-contrast [role="button"] {
+  border-color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+.outdoor-high-contrast button:focus-visible,
+.outdoor-high-contrast [role="button"]:focus-visible,
+.outdoor-high-contrast input:focus-visible {
+  outline: 3px solid #000000 !important;
+  outline-offset: 2px !important;
+}
+
+/* Trạng thái lỗi (Error) ngoài trời: viền đỏ đậm, chữ đỏ đen rõ ràng */
+.outdoor-high-contrast .bg-red-50,
+.outdoor-high-contrast .bg-rose-50,
+.outdoor-high-contrast [class*="border-red"],
+.outdoor-high-contrast [class*="border-rose"] {
+  background-color: #FEF2F2 !important;
+  border-color: #B91C1C !important;
+  border-width: 2px !important;
+  color: #7F1D1D !important;
+}
+
+/* Trạng thái vô hiệu hóa (Disabled): vân sọc hoặc viền đứt đoạn rõ nét */
+.outdoor-high-contrast button:disabled,
+.outdoor-high-contrast [aria-disabled="true"],
+.outdoor-high-contrast button[disabled] {
+  opacity: 0.8 !important;
+  background-color: #E2E8F0 !important;
+  border: 2px dashed #475569 !important;
+  color: #334155 !important;
+  cursor: not-allowed !important;
+}
+
+/* Chòi/Ô câu đang chọn ở chế độ ngoài trời */
+.outdoor-high-contrast .hut-selected-outdoor {
+  background-color: #15803D !important;
+  color: #FFFFFF !important;
+  border: 3px solid #000000 !important;
+  box-shadow: 0 0 0 2px #15803D !important;
+}
+
+.outdoor-high-contrast .hut-selected-outdoor span {
+  color: #FFFFFF !important;
+}
+
+/* Chòi/Ô câu trống ở chế độ ngoài trời */
+.outdoor-high-contrast .hut-available-outdoor {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+}
+
+.outdoor-high-contrast .hut-available-outdoor span {
+  color: #000000 !important;
+}
+
+/* Chòi/Ô câu bận ở chế độ ngoài trời */
+.outdoor-high-contrast .hut-occupied-outdoor {
+  background-color: #CBD5E1 !important;
+  color: #334155 !important;
+  border: 2px solid #64748B !important;
+}
+
+.outdoor-high-contrast .hut-occupied-outdoor span {
+  color: #334155 !important;
+}
+

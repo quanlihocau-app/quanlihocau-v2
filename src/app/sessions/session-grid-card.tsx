@@ -181,6 +181,7 @@ function SessionGridCardComponent({
     onSelect,
     onLongPress,
     onSettlement,
+    onExtend,
 }: SessionGridCardProps) {
     const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
     const didLongPressRef = useRef<boolean>(false);
@@ -338,8 +339,31 @@ function SessionGridCardComponent({
                     </div>
                 )}
 
-                {/* Quick settlement button for instant settlement */}
-                {canComplete && (
+                {/* Quick settlement / extension button */}
+                {canComplete && isExpired ? (
+                    <div className="mt-1.5 grid grid-cols-2 gap-1" onPointerDown={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSettlement(s.id);
+                            }}
+                            className="flex items-center justify-center rounded-xl bg-[#DC2626] py-1.5 px-2 text-[11px] font-bold text-white hover:bg-[#B91C1C] transition-all cursor-pointer font-serif active:scale-[0.98]"
+                        >
+                            Kết thúc
+                        </button>
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onExtend(s.id);
+                            }}
+                            className="flex items-center justify-center rounded-xl bg-[#16A34A] py-1.5 px-2 text-[11px] font-bold text-white hover:bg-[#15803D] transition-all cursor-pointer font-serif active:scale-[0.98]"
+                        >
+                            Gia hạn thêm giờ
+                        </button>
+                    </div>
+                ) : canComplete && (
                     <div className="mt-1.5" onPointerDown={(e) => e.stopPropagation()}>
                         <button
                             type="button"
@@ -347,18 +371,14 @@ function SessionGridCardComponent({
                                 e.stopPropagation();
                                 onSettlement(s.id);
                             }}
-                            className={`flex w-full items-center justify-center gap-1 rounded-xs py-1 px-1.5 text-[10px] sm:text-[11px] font-bold text-white transition-all cursor-pointer font-serif active:scale-[0.98] ${
-                                isExpired
-                                    ? "bg-[#9E2A2B] hover:bg-[#832324]"
-                                    : netBalance < 0
-                                    ? "bg-[#9E2A2B] hover:bg-[#832324]"
-                                    : "bg-[#2C4C3B] hover:bg-[#233D2F]"
+                            className={`flex w-full items-center justify-center gap-1 rounded-xl py-1.5 px-2 text-[11px] font-bold text-white transition-all cursor-pointer font-serif active:scale-[0.98] ${
+                                netBalance < 0
+                                    ? "bg-[#DC2626] hover:bg-[#B91C1C]"
+                                    : "bg-[#16A34A] hover:bg-[#15803D]"
                             }`}
                         >
                             <span>
-                                {isExpired
-                                    ? "Kết thúc / Thu tiền"
-                                    : netBalance < 0
+                                {netBalance < 0
                                     ? `Thối -${formatVnd(Math.abs(netBalance))}`
                                     : netBalance > 0
                                     ? `Thu +${formatVnd(netBalance)}`

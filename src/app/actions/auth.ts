@@ -6,6 +6,7 @@ import { setSessionCookie, clearSessionCookie } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { normalizeVietnamesePhone } from '@/lib/phone'
 import { z } from 'zod'
+import { seedSampleLakeData } from '@/lib/onboarding/seed-sample-lake'
 
 export interface RegisterInput {
   email: string
@@ -108,6 +109,9 @@ export async function registerUser(input: RegisterInput) {
           role: 'OWNER',
         }
       })
+
+      // Khởi tạo bộ dữ liệu mẫu (10 chòi, 3 món nước, 2 loại thính, 1 bảng giá) cho tài khoản mới
+      await seedSampleLakeData(tx, lake.id, name.trim(), user.id)
 
       return {
         ...user,
