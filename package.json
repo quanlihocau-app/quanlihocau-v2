@@ -15,8 +15,8 @@
   "dependencies": {
     "@capacitor/core": "^8.5.0",
     "@google/genai": "^2.30.0",
-    "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "7.10.0",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "7.10.1",
     "@tanstack/query-sync-storage-persister": "^5.102.8",
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-query-persist-client": "^5.102.8",
@@ -38,7 +38,7 @@
     "dotenv": "17.4.2",
     "eslint": "^9",
     "eslint-config-next": "^16.4.1",
-    "prisma": "^7.10.0",
+    "prisma": "^7.10.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
