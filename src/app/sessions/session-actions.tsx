@@ -162,6 +162,16 @@ export function SessionActions({
                 customerPhone: data.session.customerPhone,
                 startAt: data.session.startTime,
                 plannedEndAt: data.session.endTime,
+                items: Array.isArray(data.invoice?.lines)
+                    ? data.invoice.lines
+                          .filter((l: any) => Boolean(l.productId))
+                          .map((l: any) => ({
+                              name: l.name,
+                              quantity: Number(l.quantity) || 1,
+                              unitPrice: l.unitPrice,
+                              totalVnd: l.totalVnd,
+                          }))
+                    : undefined,
                 prepaidAmountVnd: data.financials.totalPaidVnd,
                 balanceDueVnd: data.financials.netDueVnd,
                 isReprint: true,

@@ -72,13 +72,17 @@ export function buildSessionTicketEscPos(
     if (data.note) line(`Ghi chu: ${data.note}`);
     if (data.items?.length) {
         builder.divider("-");
+        line("SAN PHAM / DICH VU:");
         for (const item of data.items) {
-            line(`${item.name} x${item.quantity}: ${formatVnd(item.totalVnd)}`);
+            builder.twoCols(`${item.name} x${item.quantity}`, formatVnd(item.totalVnd));
         }
     }
     builder.divider("-");
-    const paidAmount = data.prepaidAmountVnd ?? (isPrepaid ? data.packagePriceVnd : 0);
-    const remainingAmount = data.balanceDueVnd ?? Math.max(0, data.packagePriceVnd - paidAmount);
+    const itemsTotal = data.items?.reduce((sum, item) => sum + item.totalVnd, 0) || 0;
+    const totalBill = data.packagePriceVnd + itemsTotal;
+    builder.bold(true).twoCols("Tong cong:", formatVnd(totalBill)).bold(false);
+    const paidAmount = data.prepaidAmountVnd ?? (isPrepaid ? totalBill : 0);
+    const remainingAmount = data.balanceDueVnd ?? Math.max(0, totalBill - paidAmount);
     builder.twoCols("Da thu:", formatVnd(paidAmount));
     builder.bold(true).twoCols("Con thu:", formatVnd(remainingAmount)).bold(false);
     if (data.paymentMethod) {

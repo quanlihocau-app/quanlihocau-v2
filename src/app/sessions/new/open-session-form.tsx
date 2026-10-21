@@ -107,6 +107,7 @@ export interface CreatedSessionTicket {
     plannedEndAt?: string | null;
     cashierName: string;
     note?: string | null;
+    items?: Array<{ name: string; quantity: number; unitPrice: number; totalVnd: number }>;
 }
 
 const quickCustomerSchema = z.object({
@@ -802,6 +803,13 @@ export function OpenSessionForm({
                 .filter((h) => selectedHutIds.includes(h.id))
                 .map((h) => ({ name: h.name, areaName: h.area.name }));
 
+            const ticketItems = selectedItems.map((it) => ({
+                name: it.name,
+                quantity: it.quantity,
+                unitPrice: it.priceVnd,
+                totalVnd: it.priceVnd * it.quantity,
+            }));
+
             const ticketData: CreatedSessionTicket = {
                 sessionId: resolvedSessionId,
                 ticketCode: `#${resolvedSessionId.slice(0, 8).toUpperCase()}`,
@@ -829,6 +837,7 @@ export function OpenSessionForm({
                 plannedEndAt: resolvedEndTime || null,
                 cashierName: cashierName || "Thu ngân",
                 note: note.trim() || null,
+                items: ticketItems.length > 0 ? ticketItems : undefined,
             };
 
             clearDraft();
@@ -855,6 +864,7 @@ export function OpenSessionForm({
                         plannedEndAt: ticketData.plannedEndAt,
                         cashierName: ticketData.cashierName,
                         note: ticketData.note,
+                        items: ticketData.items,
                         paymentTiming: "POSTPAID",
                         balanceDueVnd: grandTotalPrice,
                         prepaidAmountVnd: 0,
@@ -1058,6 +1068,13 @@ export function OpenSessionForm({
                 .filter((h) => selectedHutIds.includes(h.id))
                 .map((h) => ({ name: h.name, areaName: h.area.name }));
 
+            const ticketItems = selectedItems.map((it) => ({
+                name: it.name,
+                quantity: it.quantity,
+                unitPrice: it.priceVnd,
+                totalVnd: it.priceVnd * it.quantity,
+            }));
+
             const ticketData: CreatedSessionTicket = {
                 sessionId: resolvedSessionId,
                 ticketCode: `#${resolvedSessionId.slice(0, 8).toUpperCase()}`,
@@ -1085,6 +1102,7 @@ export function OpenSessionForm({
                 plannedEndAt: resolvedEndTime || null,
                 cashierName: cashierName || "Thu ngân",
                 note: note.trim() || null,
+                items: ticketItems.length > 0 ? ticketItems : undefined,
             };
 
             clearDraft();
@@ -1114,8 +1132,9 @@ export function OpenSessionForm({
                             plannedEndAt: ticketData.plannedEndAt,
                             cashierName: ticketData.cashierName,
                             note: ticketData.note,
+                            items: ticketData.items,
                             paymentTiming: "PREPAID",
-                            prepaidAmountVnd: packagePriceTotal,
+                            prepaidAmountVnd: grandTotalPrice,
                             balanceDueVnd: 0,
                             paymentMethod: paymentMethodChoice === "VIETQR" ? "BANK_TRANSFER" : paymentMethodChoice === "SPLIT" ? "CASH" : paymentMethodChoice,
                         },
@@ -1440,7 +1459,7 @@ export function OpenSessionForm({
                                                     onClick={() =>
                                                         toggleHut(h.id)
                                                     }
-                                                    className={`min-h-[56px] h-14 sm:h-16 rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex flex-col items-center justify-center cursor-pointer px-1.5 shadow-2xs select-none ${
+                                                    className={`min-h-14 h-14 sm:h-16 rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex flex-col items-center justify-center cursor-pointer px-1.5 shadow-2xs select-none ${
                                                         isSelected
                                                             ? "bg-[#16A34A] text-white border-2 border-[#15803D] ring-2 ring-[#16A34A]/30 hut-selected-outdoor shadow-xs active:scale-95"
                                                             : isOccupied
@@ -1508,7 +1527,7 @@ export function OpenSessionForm({
                             type="button"
                             disabled={isSubmitting || isQuickOpening || !isOnline}
                             onClick={handleQuickOpen}
-                            className="w-full min-h-[58px] h-15 sm:h-16 rounded-2xl bg-[#16A34A] hover:bg-[#15803D] active:bg-[#166534] text-white font-extrabold text-sm sm:text-base flex items-center justify-between px-4 sm:px-5 shadow-lg shadow-emerald-700/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none border-2 border-[#15803D]"
+                            className="w-full min-h-14.5 h-15 sm:h-16 rounded-2xl bg-[#16A34A] hover:bg-[#15803D] active:bg-[#166534] text-white font-extrabold text-sm sm:text-base flex items-center justify-between px-4 sm:px-5 shadow-lg shadow-emerald-700/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none border-2 border-[#15803D]"
                         >
                             <div className="flex items-center gap-2.5 min-w-0">
                                 <span className="text-2xl shrink-0">⚡</span>
@@ -1570,7 +1589,7 @@ export function OpenSessionForm({
                                 <div
                                     key={p.id}
                                     onClick={() => setSelectedPackageId(p.id)}
-                                    className={`cursor-pointer min-h-[58px] sm:min-h-[64px] rounded-2xl border-2 p-3.5 sm:p-4 flex items-center justify-between transition-all select-none active:scale-[0.99] ${
+                                    className={`cursor-pointer min-h-14.5 sm:min-h-16 rounded-2xl border-2 p-3.5 sm:p-4 flex items-center justify-between transition-all select-none active:scale-[0.99] ${
                                         isSelected
                                             ? "border-[#16A34A] bg-[#F0FDF4] shadow-xs ring-2 ring-[#16A34A]/20"
                                             : "border-[#E3E8E3] bg-white hover:bg-[#F7F9F5] hover:border-slate-300"
@@ -1851,7 +1870,7 @@ export function OpenSessionForm({
                     availableHuts.length === 0 ||
                     (checkInState ? !checkInState.isValid : false)
                 }
-                className="w-full min-h-[56px] h-14 sm:h-16 shadow-lg shadow-emerald-700/20 font-black text-sm sm:text-base tracking-wide uppercase border-2 border-[#15803D]"
+                className="w-full min-h-14 h-14 sm:h-16 shadow-lg shadow-emerald-700/20 font-black text-sm sm:text-base tracking-wide uppercase border-2 border-[#15803D]"
             >
                 {!isOnline
                     ? "Mất mạng — Không thể mở vé"
@@ -2241,11 +2260,19 @@ export function OpenSessionForm({
                                 </span>
                             </div>
                             {itemsPriceTotal > 0 && (
-                                <div className="flex justify-between">
-                                    <span className="text-[#66716A]">Sản phẩm ({selectedItems.length} món):</span>
-                                    <span className="font-semibold font-mono text-[#17201A]">
-                                        +{formatPrice(itemsPriceTotal)}
-                                    </span>
+                                <div className="space-y-1 pt-1 border-t border-dashed border-[#E3E8E3]">
+                                    <div className="flex justify-between text-[#66716A] font-semibold">
+                                        <span>Sản phẩm ({selectedItems.length} món):</span>
+                                        <span className="font-mono font-semibold text-[#17201A]">+{formatPrice(itemsPriceTotal)}</span>
+                                    </div>
+                                    <div className="space-y-0.5 pl-2">
+                                        {selectedItems.map((it) => (
+                                            <div key={it.productId} className="flex justify-between text-[11px] text-[#4E5A51]">
+                                                <span>• {it.name} (x{it.quantity})</span>
+                                                <span className="font-mono">{formatPrice(it.priceVnd * it.quantity)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                             <div className="border-t border-dashed border-[#E3E8E3] pt-2 flex justify-between items-center">
