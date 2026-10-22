@@ -1,4 +1,5 @@
 import { summarizeMoney, summarizeRevenue } from "@/lib/finance";
+import { formatShiftCloseNote } from "@/lib/shift-helper";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -250,12 +251,13 @@ export async function POST(request: Request) {
                             data: { endTime },
                         });
 
-                        const closeNoteParts: string[] = [];
-                        if (note) closeNoteParts.push(note);
-                        if (actualCashVnd !== undefined) closeNoteParts.push(`Tiền đếm thực tế: ${actualCashVnd} đ`);
-                        if (cashDifferenceVnd !== 0) closeNoteParts.push(`Chênh lệch: ${cashDifferenceVnd} đ (Lý do: ${differenceReason || "Không"})`);
-                        if (receivedBy) closeNoteParts.push(`Người nhận bàn giao: ${receivedBy}`);
-                        const compositeNote = closeNoteParts.length > 0 ? closeNoteParts.join(" | ") : null;
+                        const compositeNote = formatShiftCloseNote({
+                            note,
+                            actualCashVnd,
+                            cashDifferenceVnd,
+                            differenceReason,
+                            receivedBy,
+                        });
 
                         // 7. Create ShiftClose snapshot
                         const shiftClose = await tx.shiftClose.create({

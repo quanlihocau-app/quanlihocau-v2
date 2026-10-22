@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
@@ -38,6 +38,15 @@ export interface DailyReportBreakdown {
             count: number;
             totalVnd: number;
         }>;
+        activeList?: Array<{
+            id: string;
+            customerName: string;
+            hutName: string;
+            startTime: string;
+            pendingAmountVnd: number;
+            packageName: string;
+        }>;
+        totalActivePendingVnd?: number;
     };
     products: {
         totalQuantity: number;
@@ -72,9 +81,11 @@ export interface ShiftInfo {
     endTime: string | null;
     isClosed: boolean;
     openingCashVnd?: number;
+    expectedCashVnd?: number;
 }
 
 export interface ShiftCloseInfo {
+    id?: string;
     closedAt: string;
     closedBy: string | null;
     receivedBy?: string | null;
@@ -84,6 +95,16 @@ export interface ShiftCloseInfo {
     differenceReason?: string | null;
 }
 
+export interface RecentShiftItem {
+    id: string;
+    startTime: string;
+    endTime: string | null;
+    isClosed: boolean;
+    revenueVnd: number;
+    cashVnd: number;
+    closedBy?: string | null;
+}
+
 interface DailyReportViewProps {
     shift: ShiftInfo;
     summary: DailyReportSummary;
@@ -91,6 +112,7 @@ interface DailyReportViewProps {
     shiftClose: ShiftCloseInfo | null;
     canCloseShift: boolean;
     lakeName: string;
+    recentShifts?: RecentShiftItem[];
 }
 
 // ─────────────────────────────────────────────
@@ -176,7 +198,7 @@ function PrintReceipt({
 
             {/* Cash reconciliation */}
             <div style={{ borderBottom: "1px dashed #000", paddingBottom: "4px", marginBottom: "4px" }}>
-                <div style={{ fontWeight: "bold", marginBottom: "2px" }}>ĐỐI SOÁT TIỀN MẶT</div>
+                <div style={{ fontWeight: "bold", marginBottom: "2px" }}>ĐỐI SOÁT TIỀN MẶT KÉT</div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span>Tiền đầu ca:</span>
                     <span>{formatVnd(shift.openingCashVnd ?? 0)}</span>
@@ -191,14 +213,8 @@ function PrintReceipt({
                         <span>-{formatVnd(summary.cashOutVnd ?? 0)}</span>
                     </div>
                 )}
-                {summary.fishBuybackVnd > 0 && (
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>Thu mua cá:</span>
-                        <span>-{formatVnd(summary.fishBuybackVnd)}</span>
-                    </div>
-                )}
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", borderTop: "1px solid #000", marginTop: "2px", paddingTop: "2px" }}>
-                    <span>Dự kiến bàn giao:</span>
+                    <span>Dự kiến trong két:</span>
                     <span>{formatVnd(expectedCashVnd)}</span>
                 </div>
                 {actualCashVnd !== undefined && (
@@ -226,7 +242,7 @@ function PrintReceipt({
 
             {/* Chuyển khoản */}
             <div style={{ borderBottom: "1px dashed #000", paddingBottom: "4px", marginBottom: "4px" }}>
-                <div style={{ fontWeight: "bold", marginBottom: "2px" }}>CHUYỂN KHOẢN</div>
+                <div style={{ fontWeight: "bold", marginBottom: "2px" }}>CHUYỂN KHOẢN (NGÂN HÀNG)</div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span>CK thu trong ca:</span>
                     <span>{formatVnd(summary.transferInVnd ?? summary.transferVnd)}</span>
@@ -249,7 +265,7 @@ function PrintReceipt({
                     <span>{formatVnd(summary.expenseVnd)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                    <span>Lợi nhuận:</span>
+                    <span>Lợi nhuận ròng:</span>
                     <span>{formatVnd(summary.netProfitVnd)}</span>
                 </div>
             </div>
@@ -290,14 +306,26 @@ function PrintReceipt({
 // ─────────────────────────────────────────────
 
 export function DailyReportView({
-    shift,
-    summary,
-    breakdown,
-    shiftClose,
+    shift: initialShift,
+    summary: initialSummary,
+    breakdown: initialBreakdown,
+    shiftClose: initialShiftClose,
     canCloseShift,
     lakeName,
+    recentShifts = [],
 }: DailyReportViewProps) {
     const router = useRouter();
+
+    // Live state
+    const [shift, setShift] = useState<ShiftInfo>(initialShift);
+    const [summary, setSummary] = useState<DailyReportSummary>(initialSummary);
+    const [breakdown, setBreakdown] = useState<DailyReportBreakdown | null | undefined>(initialBreakdown);
+    const [shiftClose, setShiftClose] = useState<ShiftCloseInfo | null>(initialShiftClose);
+    const [shiftsHistory, setShiftsHistory] = useState<RecentShiftItem[]>(recentShifts);
+
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+    const [selectedShiftId, setSelectedShiftId] = useState<string>(initialShift.id);
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -317,13 +345,71 @@ export function DailyReportView({
         closeOnEscape: !isSubmitting,
     });
 
+    // ── Fetch Live Data Function ──────────────────────────────
+    const fetchLiveData = useCallback(async (targetShiftId?: string, isManual = false) => {
+        if (isManual) setIsRefreshing(true);
+        try {
+            const shiftParam = targetShiftId ? `?shiftId=${targetShiftId}` : "";
+            const res = await fetch(`/api/reports/daily${shiftParam}`, { credentials: "same-origin" });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.shift) setShift(data.shift);
+                if (data.summary) setSummary(data.summary);
+                if (data.breakdown) setBreakdown(data.breakdown);
+                setShiftClose(data.shiftClose || null);
+                if (data.recentShifts) setShiftsHistory(data.recentShifts);
+                setLastUpdated(new Date());
+            }
+        } catch (err) {
+            console.error("Lỗi cập nhật số ca realtime:", err);
+        } finally {
+            if (isManual) setIsRefreshing(false);
+        }
+    }, []);
+
+    // ── Realtime Auto-Polling (mỗi 5 giây khi ca đang mở) ─────
+    useEffect(() => {
+        // Chỉ auto-poll nếu đang xem ca đang mở
+        if (shift.isClosed) return;
+
+        const doFetch = () => {
+            if (document.visibilityState === "visible") {
+                fetchLiveData(selectedShiftId === shift.id && !shift.isClosed ? undefined : selectedShiftId);
+            }
+        };
+
+        const interval = setInterval(doFetch, 5000);
+
+        // Resume poll ngay khi tab được active lại
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible") {
+                doFetch();
+            }
+        };
+        document.addEventListener("visibilitychange", handleVisibility);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener("visibilitychange", handleVisibility);
+        };
+    }, [shift.isClosed, shift.id, selectedShiftId, fetchLiveData]);
+
+    // ── Xử lý chuyển đổi ca lịch sử ──────────────────────────
+    function handleSelectShift(shiftId: string) {
+        setSelectedShiftId(shiftId);
+        fetchLiveData(shiftId, true);
+    }
+
     // ── Derived values ──────────────────────────────────────
     const openingCash = shift.openingCashVnd ?? 0;
     const cashIn = summary.cashInVnd ?? summary.cashVnd;
     const cashOut = summary.cashOutVnd ?? 0;
     const transferIn = summary.transferInVnd ?? summary.transferVnd;
-    // Expected cash at handover = opening + cash collected - cash spent - fish buyback paid in cash
-    const expectedCashVnd = openingCash + cashIn - cashOut - summary.fishBuybackVnd;
+
+    // Accurate expected cash in drawer = opening + cash collected - cash refunded/spent
+    const expectedCashVnd = shift.expectedCashVnd !== undefined
+        ? shift.expectedCashVnd
+        : openingCash + cashIn - cashOut;
 
     const actualCashParsed =
         actualCashInput.trim() !== ""
@@ -334,10 +420,16 @@ export function DailyReportView({
     const hasDifference = differenceVnd !== undefined && differenceVnd !== 0;
     const [differenceReason, setDifferenceReason] = useState("");
 
-    // ── Submit ─────────────────────────────────────────────
+    // Quick cash helper buttons
+    function setQuickCash(amount: number) {
+        setActualCashInput(amount.toString());
+        setError(null);
+    }
+
+    // ── Submit Chốt ca ──────────────────────────────────────
     async function handleConfirmClose() {
         if (hasDifference && !differenceReason.trim()) {
-            setError("Tiền mặt thực tế chênh lệch. Vui lòng nhập lý do chênh lệch.");
+            setError("Tiền mặt thực tế đếm được có chênh lệch. Bắt buộc phải nhập lý do giải trình.");
             return;
         }
 
@@ -345,7 +437,6 @@ export function DailyReportView({
         setError(null);
         setSuccessMessage(null);
 
-        // Generate idempotency key only once per open dialog session
         if (!idempotencyKeyRef.current) {
             idempotencyKeyRef.current = crypto.randomUUID();
         }
@@ -373,13 +464,14 @@ export function DailyReportView({
                 return;
             }
 
-            setSuccessMessage("Đã chốt ca thành công!");
+            setSuccessMessage("Đã chốt ca và bàn giao thành công! Hệ thống đã tạo ca mới.");
             setIsSubmitting(false);
 
             setTimeout(() => {
                 setIsModalOpen(false);
+                fetchLiveData(undefined, true);
                 router.refresh();
-            }, 800);
+            }, 1000);
         } catch {
             setError("Lỗi kết nối mạng khi chốt ca. Vui lòng thử lại.");
             setIsSubmitting(false);
@@ -389,11 +481,12 @@ export function DailyReportView({
     function openModal() {
         setError(null);
         setSuccessMessage(null);
-        idempotencyKeyRef.current = null; // reset so new key is generated for this attempt
+        idempotencyKeyRef.current = null;
+        setActualCashInput(expectedCashVnd > 0 ? expectedCashVnd.toString() : "");
+        setDifferenceReason("");
         setIsModalOpen(true);
     }
 
-    // ── Closed state: shiftClose values ───────────────────
     const closedExpectedCash =
         shiftClose && shift.isClosed
             ? (shiftClose.actualCashVnd !== undefined && shiftClose.actualCashVnd !== null
@@ -410,354 +503,429 @@ export function DailyReportView({
 
                 <main className="flex-1 overflow-y-auto p-4 space-y-4 has-bottom-nav">
 
-                    {/* ── Banner ─────────────────────────────────────── */}
-                    <div className="w-full mb-4 rounded-2xl border border-emerald-200/90 bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3.5 shadow-2xs font-serif">
-                        <div className="flex items-center justify-between gap-3 w-full">
+                    {/* ── Realtime Status Bar & Controls ──────────────── */}
+                    <div className="w-full rounded-2xl border border-emerald-200 bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3 shadow-xs">
+                        <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                                <div className="h-4.5 w-1.5 rounded-full bg-[#16A34A] shrink-0" />
+                                {!shift.isClosed ? (
+                                    <span className="relative flex h-2.5 w-2.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
+                                    </span>
+                                ) : (
+                                    <span className="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+                                )}
                                 <div>
-                                    <h1 className="text-xs sm:text-[13px] font-bold uppercase tracking-normal text-[#0F172A] font-serif leading-none whitespace-nowrap">
-                                        Sổ Ca &amp; Đối Soát Tiền Mặt
-                                    </h1>
-                                    <p className="text-[10px] text-[#64748B] mt-1 font-mono">
-                                        {formatDateTime(shift.startTime)}{shift.endTime ? ` — ${formatDateTime(shift.endTime)}` : ""}
+                                    <div className="flex items-center gap-1.5">
+                                        <h1 className="text-xs sm:text-sm font-black uppercase tracking-wide text-slate-800 font-serif">
+                                            Sổ Ca &amp; Đối Soát Tiền Mặt
+                                        </h1>
+                                        {!shift.isClosed && (
+                                            <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[9px] font-black text-emerald-800 tracking-wider">
+                                                REALTIME
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                        Cập nhật: {lastUpdated.toLocaleTimeString("vi-VN")}
                                     </p>
                                 </div>
                             </div>
-                            {shift.isClosed ? (
-                                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 border border-slate-200 shadow-2xs font-serif shrink-0 whitespace-nowrap">
-                                    ĐÃ CHỐT CA
-                                </span>
-                            ) : (
-                                <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] border border-[#BBF7D0] shadow-2xs font-serif shrink-0 whitespace-nowrap">
-                                    ĐANG MỞ CA
-                                </span>
-                            )}
+
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => fetchLiveData(selectedShiftId, true)}
+                                    disabled={isRefreshing}
+                                    title="Làm mới tức thời"
+                                    className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 shadow-2xs hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
+                                >
+                                    <svg
+                                        className={`h-3.5 w-3.5 text-emerald-700 ${isRefreshing ? "animate-spin" : ""}`}
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth={2.5}
+                                        stroke="currentColor"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                    </svg>
+                                    <span>Làm mới</span>
+                                </button>
+                            </div>
                         </div>
+
+                        {/* Shift Selector Pill Tabs */}
+                        {shiftsHistory.length > 0 && (
+                            <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">Chọn ca:</span>
+                                {shiftsHistory.map((s, idx) => {
+                                    const isCurrent = s.id === shift.id;
+                                    return (
+                                        <button
+                                            key={s.id}
+                                            type="button"
+                                            onClick={() => handleSelectShift(s.id)}
+                                            className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
+                                                isCurrent
+                                                    ? "bg-[#2C4C3B] text-white shadow-xs"
+                                                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                                            }`}
+                                        >
+                                            {!s.isClosed ? "🟢 Ca hiện tại" : `Ca ${formatTime(s.startTime)}`}
+                                            {idx === 0 && !s.isClosed ? "" : ` (${formatDateTime(s.startTime).split(" ")[1]})`}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
                     {successMessage && <InlineAlert type="success" message={successMessage} />}
 
-                    {/* ── Net Profit Hero ─────────────────────────────── */}
-                    <div className="rounded-xs bg-[#2C4C3B] p-4 text-white border border-[#2C4C3B] space-y-1">
-                        <p className="text-xs text-[#C8D6CF] font-bold uppercase tracking-wider">
-                            Lợi nhuận thuần (Thực thu ròng)
-                        </p>
-                        <p className="text-3xl font-bold font-serif text-white tabular-nums tracking-tight">
+                    {/* ── Hero: Lợi Nhuận Ròng Thuần Ca Này ───────────── */}
+                    <div className="rounded-2xl bg-linear-to-br from-[#1E3A2B] to-[#2C4C3B] p-4 text-white shadow-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200">
+                                Lợi nhuận ròng của ca
+                            </span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${shift.isClosed ? "bg-slate-200/20 text-slate-200" : "bg-emerald-400/20 text-emerald-300"}`}>
+                                {shift.isClosed ? "CA ĐÃ ĐÓNG" : "CA ĐANG MỞ"}
+                            </span>
+                        </div>
+                        <p className="text-3xl font-black font-serif text-white tabular-nums tracking-tight">
                             {formatVnd(summary.netProfitVnd)}
                         </p>
-                        <div className="flex gap-4 pt-1">
-                            <span className="text-[11px] text-[#C8D6CF]">
-                                Doanh thu: <span className="text-white font-bold">{formatVnd(summary.revenueVnd)}</span>
-                            </span>
-                            <span className="text-[11px] text-[#C8D6CF]">
-                                Chi phí: <span className="text-[#FCA5A5] font-bold">{formatVnd(summary.expenseVnd)}</span>
-                            </span>
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-emerald-700/60 text-xs">
+                            <div>
+                                <span className="text-[11px] text-emerald-200">Tổng doanh thu:</span>
+                                <p className="font-bold text-white text-sm">{formatVnd(summary.revenueVnd)}</p>
+                            </div>
+                            <div>
+                                <span className="text-[11px] text-emerald-200">Tổng chi phí:</span>
+                                <p className="font-bold text-red-300 text-sm">{formatVnd(summary.expenseVnd)}</p>
+                            </div>
                         </div>
                     </div>
 
-                    {/* ── Đối soát tiền mặt ──────────────────────────── */}
-                    <div className="space-y-1.5">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C4C3B] px-0.5">
-                            Đối soát tiền mặt ca này
-                        </p>
-                        <div className="rounded-xs border border-[#CCCCCC] bg-white divide-y divide-[#E0E0E0]">
-                            {/* Đầu ca */}
-                            <div className="flex items-center justify-between px-3.5 py-2.5 text-xs">
-                                <span className="text-[#555555]">Tiền mặt đầu ca (nhận bàn giao)</span>
-                                <span className="font-bold font-serif text-[#1A1A1A] tabular-nums">
+                    {/* ── KHỐI 1: ĐỐI SOÁT TIỀN MẶT TRONG KÉT (Cash in Drawer) ── */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-base">💼</span>
+                                <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                                    Đối Soát Tiền Mặt Trong Két
+                                </h2>
+                            </div>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                                Chuẩn POS
+                            </span>
+                        </div>
+
+                        <div className="divide-y divide-slate-100 text-xs font-serif">
+                            {/* Tiền đầu ca */}
+                            <div className="flex items-center justify-between py-2 text-slate-600">
+                                <span className="flex items-center gap-1.5">
+                                    <span className="text-slate-400">1.</span>
+                                    <span>Tiền mặt đầu ca (Bàn giao ca trước):</span>
+                                </span>
+                                <span className="font-bold text-slate-900 tabular-nums text-sm">
                                     {formatVnd(openingCash)}
                                 </span>
                             </div>
+
                             {/* Thu tiền mặt */}
-                            <div className="flex items-center justify-between px-3.5 py-2.5 text-xs bg-[#F0FDF4]">
-                                <span className="text-[#1A6B35]">↑ Thu tiền mặt trong ca</span>
-                                <span className="font-bold font-serif text-[#1A6B35] tabular-nums">
+                            <div className="flex items-center justify-between py-2 bg-emerald-50/60 px-2 rounded-lg text-emerald-800">
+                                <span className="flex items-center gap-1.5 font-bold">
+                                    <span className="text-emerald-500">2.</span>
+                                    <span>(+) Tổng thu tiền mặt trong ca:</span>
+                                </span>
+                                <span className="font-extrabold text-emerald-700 tabular-nums text-sm">
                                     +{formatVnd(cashIn)}
                                 </span>
                             </div>
+
                             {/* Chi tiền mặt */}
-                            {cashOut > 0 && (
-                                <div className="flex items-center justify-between px-3.5 py-2.5 text-xs bg-[#FFF7F7]">
-                                    <span className="text-[#9E2A2B]">↓ Chi tiền mặt trong ca</span>
-                                    <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">
-                                        −{formatVnd(cashOut)}
-                                    </span>
-                                </div>
-                            )}
-                            {/* Thu mua cá */}
-                            {summary.fishBuybackVnd > 0 && (
-                                <div className="flex items-center justify-between px-3.5 py-2.5 text-xs bg-[#FFF7F7]">
-                                    <span className="text-[#9E2A2B]">↓ Chi trả thu mua cá</span>
-                                    <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">
-                                        −{formatVnd(summary.fishBuybackVnd)}
-                                    </span>
-                                </div>
-                            )}
-                            {/* Dự kiến bàn giao */}
-                            <div className="flex items-center justify-between px-3.5 py-3 text-xs bg-[#F5F5F0] border-t-2 border-[#2C4C3B]">
-                                <span className="font-bold text-[#1A1A1A]">= Dự kiến bàn giao ca sau</span>
-                                <span className="text-base font-bold font-serif text-[#2C4C3B] tabular-nums">
-                                    {formatVnd(
-                                        shift.isClosed && shiftClose?.actualCashVnd !== undefined && shiftClose.actualCashVnd !== null
-                                            ? closedExpectedCash
-                                            : expectedCashVnd
-                                    )}
+                            <div className="flex items-center justify-between py-2 bg-red-50/60 px-2 rounded-lg text-red-800 mt-1">
+                                <span className="flex items-center gap-1.5 font-bold">
+                                    <span className="text-red-400">3.</span>
+                                    <span>(−) Tổng chi tiền mặt trong ca:</span>
+                                </span>
+                                <span className="font-extrabold text-red-600 tabular-nums text-sm">
+                                    −{formatVnd(cashOut)}
                                 </span>
                             </div>
-                            {/* Actual cash (if closed) */}
-                            {shift.isClosed && shiftClose?.actualCashVnd !== undefined && shiftClose.actualCashVnd !== null && (
-                                <>
-                                    <div className="flex items-center justify-between px-3.5 py-2.5 text-xs">
-                                        <span className="text-[#555555]">Tiền thực tế đếm được</span>
-                                        <span className="font-bold font-serif text-[#1A1A1A] tabular-nums">
+                            {cashOut > 0 && (
+                                <p className="text-[10px] text-slate-500 italic pl-5 py-1">
+                                    (Bao gồm chi mua lại cá trả tiền mặt, thối tiền thừa và chi phí khác)
+                                </p>
+                            )}
+
+                            {/* DỰ KIẾN TIỀN MẶT TRONG KÉT */}
+                            <div className="flex items-center justify-between py-3 px-3 rounded-xl bg-linear-to-r from-emerald-100/70 via-emerald-50 to-emerald-100/70 border border-emerald-300 mt-2">
+                                <div>
+                                    <span className="font-black text-slate-900 text-xs sm:text-sm">
+                                        = TIỀN MẶT DỰ KIẾN TRONG KÉT
+                                    </span>
+                                    <p className="text-[10px] text-emerald-800 font-sans mt-0.5">
+                                        (Đầu ca + Thu tiền mặt − Chi tiền mặt)
+                                    </p>
+                                </div>
+                                <span className="text-lg sm:text-xl font-black text-[#1E3A2B] tabular-nums">
+                                    {formatVnd(shift.isClosed && shiftClose?.actualCashVnd != null ? closedExpectedCash : expectedCashVnd)}
+                                </span>
+                            </div>
+
+                            {/* THỰC TẾ ĐẾM ĐƯỢC (Nếu đã chốt) */}
+                            {shift.isClosed && shiftClose?.actualCashVnd != null && (
+                                <div className="mt-2 pt-2 space-y-1.5">
+                                    <div className="flex items-center justify-between py-1 text-slate-800">
+                                        <span className="font-bold">Tiền thực tế kiểm đếm lúc chốt:</span>
+                                        <span className="text-base font-black text-slate-900 tabular-nums">
                                             {formatVnd(shiftClose.actualCashVnd)}
                                         </span>
                                     </div>
-                                    {(shiftClose.cashDifferenceVnd ?? 0) !== 0 && (
-                                        <div className={`flex items-center justify-between px-3.5 py-2.5 text-xs ${(shiftClose.cashDifferenceVnd ?? 0) < 0 ? "bg-[#FFF0F0]" : "bg-[#F0FDF4]"}`}>
-                                            <span className={`font-bold ${(shiftClose.cashDifferenceVnd ?? 0) < 0 ? "text-[#9E2A2B]" : "text-[#1A6B35]"}`}>
-                                                Chênh lệch
-                                            </span>
-                                            <span className={`font-bold font-serif tabular-nums ${(shiftClose.cashDifferenceVnd ?? 0) < 0 ? "text-[#9E2A2B]" : "text-[#1A6B35]"}`}>
-                                                {(shiftClose.cashDifferenceVnd ?? 0) > 0 ? "+" : ""}{formatVnd(shiftClose.cashDifferenceVnd ?? 0)}
-                                            </span>
+
+                                    {(shiftClose.cashDifferenceVnd ?? 0) === 0 ? (
+                                        <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 p-2 rounded-lg font-bold border border-emerald-200">
+                                            <span>✓</span>
+                                            <span>Khớp 100% tiền mặt (Không lệch)</span>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-1">
+                                            <div className="flex items-center justify-between text-xs bg-red-50 p-2 rounded-lg font-bold text-red-700 border border-red-200">
+                                                <span>Chênh lệch két tiền:</span>
+                                                <span className="text-sm font-black tabular-nums">
+                                                    {(shiftClose.cashDifferenceVnd ?? 0) > 0 ? "+" : ""}
+                                                    {formatVnd(shiftClose.cashDifferenceVnd ?? 0)}
+                                                </span>
+                                            </div>
+                                            {shiftClose.differenceReason && (
+                                                <p className="text-[11px] text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                                                    <strong>Lý do giải trình:</strong> {shiftClose.differenceReason}
+                                                </p>
+                                            )}
                                         </div>
                                     )}
-                                    {shiftClose.differenceReason && (
-                                        <div className="px-3.5 py-2.5 text-xs text-[#555555] bg-[#FFFBE6]">
-                                            <span className="font-bold text-[#D48806]">Lý do chênh lệch: </span>
-                                            {shiftClose.differenceReason}
-                                        </div>
-                                    )}
-                                </>
+                                </div>
                             )}
                         </div>
                     </div>
 
-                    {/* ── Chuyển khoản ───────────────────────────────── */}
-                    <div className="space-y-1.5">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C4C3B] px-0.5">
-                            Chuyển khoản
-                        </p>
-                        <div className="rounded-xs border border-[#CCCCCC] bg-white divide-y divide-[#E0E0E0]">
-                            <div className="flex items-center justify-between px-3.5 py-2.5 text-xs bg-[#F0FDF4]">
-                                <span className="text-[#1A6B35]">↑ Thu chuyển khoản trong ca</span>
-                                <span className="font-bold font-serif text-[#1A6B35] tabular-nums">
+                    {/* ── KHỐI 2: DÒNG TIỀN CHUYỂN KHOẢN (NGÂN HÀNG) ──────── */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-base">🏦</span>
+                                <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                                    Tài Khoản Ngân Hàng (Chuyển Khoản)
+                                </h2>
+                            </div>
+                            <span className="text-[10px] text-slate-500 italic">
+                                Chạy thẳng vào TK chủ hồ
+                            </span>
+                        </div>
+
+                        <div className="divide-y divide-slate-100 text-xs font-serif">
+                            <div className="flex items-center justify-between py-2 text-slate-700">
+                                <span>↑ Thu chuyển khoản (VietQR / App):</span>
+                                <span className="font-bold text-emerald-700 tabular-nums">
                                     +{formatVnd(transferIn)}
                                 </span>
                             </div>
                             {(summary.transferOutVnd ?? 0) > 0 && (
-                                <div className="flex items-center justify-between px-3.5 py-2.5 text-xs bg-[#FFF7F7]">
-                                    <span className="text-[#9E2A2B]">↓ Chi chuyển khoản</span>
-                                    <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">
+                                <div className="flex items-center justify-between py-2 text-slate-700">
+                                    <span>↓ Chi chuyển khoản:</span>
+                                    <span className="font-bold text-red-600 tabular-nums">
                                         −{formatVnd(summary.transferOutVnd ?? 0)}
                                     </span>
                                 </div>
                             )}
-                            <div className="flex items-center justify-between px-3.5 py-2.5 text-xs">
-                                <span className="font-bold text-[#1A1A1A]">Ròng chuyển khoản</span>
-                                <span className="font-bold font-serif text-[#1A1A1A] tabular-nums">
+                            <div className="flex items-center justify-between py-2.5 font-bold text-slate-900 bg-slate-50 px-2 rounded-lg mt-1">
+                                <span>Tổng ròng chuyển khoản:</span>
+                                <span className="font-black tabular-nums text-sm">
                                     {formatVnd(summary.transferVnd)}
                                 </span>
                             </div>
                         </div>
+                        <p className="text-[10px] text-slate-400 italic">
+                            * Lưu ý: Tiền chuyển khoản nằm trong tài khoản ngân hàng của hồ, không nằm trong két tiền mặt của nhân viên.
+                        </p>
                     </div>
 
-                    {/* ── Chi phí vận hành ───────────────────────────── */}
-                    {(summary.fishBuybackVnd > 0 || summary.otherExpenseVnd > 0) && (
-                        <div className="space-y-1.5">
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-[#9E2A2B] px-0.5">
-                                Chi phí vận hành
-                            </p>
-                            <div className="rounded-xs border border-[#CCCCCC] bg-white divide-y divide-[#E0E0E0]">
-                                {summary.fishBuybackVnd > 0 && (
-                                    <div className="flex items-center justify-between px-3.5 py-2.5 text-xs">
-                                        <span className="text-[#1A1A1A]">Chi trả thu mua cá</span>
-                                        <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">
-                                            −{formatVnd(summary.fishBuybackVnd)}
-                                        </span>
-                                    </div>
-                                )}
-                                {summary.otherExpenseVnd > 0 && (
-                                    <div className="flex items-center justify-between px-3.5 py-2.5 text-xs">
-                                        <span className="text-[#1A1A1A]">Chi phí khác</span>
-                                        <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">
-                                            −{formatVnd(summary.otherExpenseVnd)}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── Breakdown: Vé câu ──────────────────────────── */}
-                    {breakdown && (
-                        <div className="space-y-3.5">
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between px-0.5">
-                                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C4C3B]">
-                                        Vé câu &amp; Gói dịch vụ
-                                    </p>
-                                    <span className="text-xs text-[#555555]">
-                                        {breakdown.sessions.total} vé ({breakdown.sessions.completed} xong, {breakdown.sessions.active} đang câu{breakdown.sessions.cancelled > 0 ? `, ${breakdown.sessions.cancelled} hủy` : ""})
+                    {/* ── KHỐI 3: PHIÊN CÂU ĐANG DIỄN RA (realtime) ─────────────── */}
+                    {!shift.isClosed && breakdown && (breakdown.sessions.active > 0) && (
+                        <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between border-b border-amber-200 pb-2">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="relative flex h-2.5 w-2.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
                                     </span>
+                                    <h2 className="text-xs font-black uppercase tracking-wider text-amber-900">
+                                        Phiên câu đang diễn ra
+                                    </h2>
                                 </div>
-                                <div className="rounded-xs border border-[#CCCCCC] bg-white divide-y divide-[#E0E0E0] overflow-hidden">
-                                    {breakdown.sessions.packages.length > 0 ? (
-                                        breakdown.sessions.packages.map((pkg) => (
-                                            <div key={pkg.packageName} className="flex items-center justify-between px-3.5 py-2 text-xs hover:bg-[#FAFAF7] transition-colors">
-                                                <div>
-                                                    <span className="font-bold text-[#1A1A1A]">{pkg.packageName}</span>
-                                                    <span className="ml-2 text-[#555555]">({pkg.count} vé)</span>
-                                                </div>
-                                                <span className="font-bold font-serif text-[#1A1A1A] tabular-nums">
-                                                    {formatVnd(pkg.totalVnd)}
-                                                </span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="p-3.5 text-center text-xs text-[#777777]">
-                                            Chưa có vé câu nào trong ca này
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Hàng hóa & Gia hạn */}
-                            {(breakdown.products.items.length > 0 || breakdown.services.extensionsCount > 0) && (
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between px-0.5">
-                                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C4C3B]">
-                                            Hàng hóa &amp; Gia hạn
-                                        </p>
-                                        <span className="text-xs font-bold font-serif text-[#1A1A1A]">
-                                            {formatVnd(breakdown.products.totalVnd + breakdown.services.extensionsTotalVnd)}
-                                        </span>
-                                    </div>
-                                    <div className="rounded-xs border border-[#CCCCCC] bg-white divide-y divide-[#E0E0E0] overflow-hidden">
-                                        {breakdown.services.extensionsCount > 0 && (
-                                            <div className="flex items-center justify-between px-3.5 py-2 text-xs bg-[#FFFBE6]">
-                                                <div>
-                                                    <span className="font-bold text-[#D48806]">Gia hạn thêm giờ</span>
-                                                    <span className="ml-2 text-[#D48806]/80">({breakdown.services.extensionsCount} lần)</span>
-                                                </div>
-                                                <span className="font-bold font-serif text-[#D48806] tabular-nums">
-                                                    {formatVnd(breakdown.services.extensionsTotalVnd)}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {breakdown.products.items.map((prod) => (
-                                            <div key={prod.name} className="flex items-center justify-between px-3.5 py-2 text-xs hover:bg-[#FAFAF7] transition-colors">
-                                                <div>
-                                                    <span className="font-semibold text-[#1A1A1A]">{prod.name}</span>
-                                                    <span className="ml-2 text-[#555555]">(SL: {prod.quantity})</span>
-                                                </div>
-                                                <span className="font-bold font-serif text-[#1A1A1A] tabular-nums">
-                                                    {formatVnd(prod.totalVnd)}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Kho hàng */}
-                            <div className="space-y-1.5">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C4C3B] px-0.5">
-                                    Biến động kho hàng
-                                </p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="rounded-xs border border-[#CCCCCC] bg-white p-3">
-                                        <span className="text-xs font-medium text-[#555555]">Đã nhập kho</span>
-                                        <p className="mt-0.5 text-sm font-bold font-serif text-[#2C4C3B] tabular-nums">
-                                            +{breakdown.inventory.inCount} đơn vị
-                                        </p>
-                                    </div>
-                                    <div className="rounded-xs border border-[#CCCCCC] bg-white p-3">
-                                        <span className="text-xs font-medium text-[#555555]">Đã xuất bán</span>
-                                        <p className="mt-0.5 text-sm font-bold font-serif text-[#1A1A1A] tabular-nums">
-                                            -{breakdown.inventory.outCount} đơn vị
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── Thông tin chốt ca (if closed) ──────────────── */}
-                    {shift.isClosed && shiftClose && (
-                        <div className="border border-[#CCCCCC] bg-[#FAFAF7] p-3 space-y-2 text-xs text-[#1A1A1A] rounded-xs">
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-[#2C4C3B] mb-2">
-                                Thông tin chốt ca
-                            </p>
-                            <div className="flex items-center justify-between font-bold">
-                                <span>Thời gian chốt ca:</span>
-                                <span className="tabular-nums font-serif">{formatDateTime(shiftClose.closedAt)}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-[#555555]">Người bàn giao:</span>
-                                <span className="font-bold text-[#1A1A1A]">
-                                    {shiftClose.closedBy || "Quản trị viên"}
+                                <span className="rounded-full bg-amber-500 text-white text-[10px] font-black px-2 py-0.5">
+                                    {breakdown.sessions.active} đang câu
                                 </span>
                             </div>
-                            {shiftClose.receivedBy && (
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[#555555]">Người nhận bàn giao:</span>
-                                    <span className="font-bold text-[#1A1A1A]">{shiftClose.receivedBy}</span>
+                            <div className="space-y-1.5">
+                                {breakdown.sessions.activeList && breakdown.sessions.activeList.length > 0 ? (
+                                    breakdown.sessions.activeList.map((sess) => (
+                                        <div key={sess.id} className="flex items-center justify-between rounded-xl bg-white border border-amber-200 px-3 py-2 text-xs">
+                                            <div className="min-w-0">
+                                                <p className="font-black text-slate-900 truncate">{sess.customerName}</p>
+                                                <p className="text-slate-500 text-[10px] mt-0.5">
+                                                    🎣 {sess.hutName} · {sess.packageName}
+                                                </p>
+                                            </div>
+                                            <div className="text-right shrink-0 ml-2">
+                                                {sess.pendingAmountVnd > 0 ? (
+                                                    <span className="font-black text-amber-700 tabular-nums">
+                                                        Còn {formatVnd(sess.pendingAmountVnd)}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-emerald-600 font-bold">Đã thanh toán</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center text-xs text-amber-700 py-2">
+                                        {breakdown.sessions.active} phiên đang mở
+                                    </div>
+                                )}
+                            </div>
+                            {(breakdown.sessions.totalActivePendingVnd ?? 0) > 0 && (
+                                <div className="flex items-center justify-between rounded-xl bg-amber-100 border border-amber-300 px-3 py-2 text-xs">
+                                    <span className="font-bold text-amber-900">⚠ Tổng tiền chưa thu của ca:</span>
+                                    <span className="font-black text-amber-900 tabular-nums text-sm">
+                                        {formatVnd(breakdown.sessions.totalActivePendingVnd ?? 0)}
+                                    </span>
                                 </div>
                             )}
-                            {shiftClose.note && (
-                                <div className="pt-1 text-xs text-[#555555] border-t border-[#E0E0E0] mt-1">
-                                    Ghi chú: {shiftClose.note}
+                        </div>
+                    )}
+
+                    {/* ── KHỐI 4: CHI TIẾT VÉ CÂU & HÀNG HÓA ───────────────── */}
+                    {breakdown && (
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-base">🎣</span>
+                                    <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                                        Hoạt Động Vé Câu &amp; Dịch Vụ
+                                    </h2>
                                 </div>
-                            )}
+                                <span className="text-xs font-bold text-slate-600">
+                                    {breakdown.sessions.total} vé ({breakdown.sessions.completed} xong, {breakdown.sessions.active} đang câu)
+                                </span>
+                            </div>
+
+                            <div className="space-y-2 text-xs">
+                                {breakdown.sessions.packages.map((pkg) => (
+                                    <div key={pkg.packageName} className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50">
+                                        <div>
+                                            <span className="font-bold text-slate-800">{pkg.packageName}</span>
+                                            <span className="text-slate-500 ml-1.5">({pkg.count} vé)</span>
+                                        </div>
+                                        <span className="font-bold tabular-nums text-slate-900">
+                                            {formatVnd(pkg.totalVnd)}
+                                        </span>
+                                    </div>
+                                ))}
+
+                                {breakdown.services.extensionsCount > 0 && (
+                                    <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-amber-50 text-amber-900">
+                                        <div>
+                                            <span className="font-bold">Gia hạn thêm giờ câu</span>
+                                            <span className="text-amber-700 ml-1.5">({breakdown.services.extensionsCount} lần)</span>
+                                        </div>
+                                        <span className="font-bold tabular-nums">
+                                            {formatVnd(breakdown.services.extensionsTotalVnd)}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {breakdown.products.items.map((prod) => (
+                                    <div key={prod.name} className="flex items-center justify-between py-1.5 px-2.5 rounded-lg border border-slate-100">
+                                        <div>
+                                            <span className="font-medium text-slate-800">{prod.name}</span>
+                                            <span className="text-slate-400 ml-1.5">(SL: {prod.quantity})</span>
+                                        </div>
+                                        <span className="font-bold tabular-nums text-slate-900">
+                                            {formatVnd(prod.totalVnd)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── THÔNG TIN BÀN GIAO CA (Nếu đã chốt) ──────────────── */}
+                    {shift.isClosed && shiftClose && (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2 text-xs">
+                            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                                Biên Bản Bàn Giao Ca
+                            </h3>
+                            <div className="divide-y divide-slate-200">
+                                <div className="flex justify-between py-1.5">
+                                    <span className="text-slate-500">Thời gian chốt:</span>
+                                    <span className="font-bold text-slate-900">{formatDateTime(shiftClose.closedAt)}</span>
+                                </div>
+                                <div className="flex justify-between py-1.5">
+                                    <span className="text-slate-500">Nhân viên bàn giao:</span>
+                                    <span className="font-bold text-slate-900">{shiftClose.closedBy || "Quản trị viên"}</span>
+                                </div>
+                                {shiftClose.receivedBy && (
+                                    <div className="flex justify-between py-1.5">
+                                        <span className="text-slate-500">Nhân viên nhận ca:</span>
+                                        <span className="font-bold text-slate-900">{shiftClose.receivedBy}</span>
+                                    </div>
+                                )}
+                                {shiftClose.note && (
+                                    <div className="py-2 text-slate-600">
+                                        <p className="font-bold text-slate-700">Ghi chú bàn giao:</p>
+                                        <p className="mt-0.5 whitespace-pre-wrap">{shiftClose.note}</p>
+                                    </div>
+                                )}
+                            </div>
 
                             <button
                                 type="button"
                                 onClick={() => window.print()}
-                                className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-xs bg-[#2C4C3B] hover:bg-[#233D2F] py-2 px-3 text-xs font-bold text-white transition-colors cursor-pointer active:scale-[0.99]"
+                                className="w-full mt-2 rounded-xl bg-[#2C4C3B] hover:bg-[#233D2F] py-2.5 text-xs font-bold text-white shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98"
                             >
-                                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
-                                </svg>
-                                <span>In biên bản bàn giao ca</span>
+                                🖨️ In biên bản bàn giao ca
                             </button>
                         </div>
                     )}
 
-                    {/* ── Action Buttons ──────────────────────────────── */}
-                    <div className="space-y-2">
-                        {!shift.isClosed && (
-                            <div>
-                                {canCloseShift ? (
-                                    <Button
-                                        type="button"
-                                        size="lg"
-                                        variant="primary"
-                                        onClick={openModal}
-                                        className="w-full text-sm font-bold cursor-pointer"
-                                    >
-                                        Xem và chốt ca bàn giao
-                                    </Button>
-                                ) : (
-                                    <div className="rounded-xs border border-[#CCCCCC] bg-white px-3.5 py-2.5 text-center text-xs text-[#555555]">
-                                        Chỉ Chủ hồ hoặc Quản lý mới có quyền chốt ca.
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {!shift.isClosed && (
+                    {/* ── HÀNH ĐỘNG: CHỐT CA HÀNG NGÀY ────────────────────── */}
+                    <div className="pt-2 space-y-2">
+                        {!shift.isClosed ? (
+                            canCloseShift ? (
+                                <Button
+                                    type="button"
+                                    size="lg"
+                                    variant="primary"
+                                    onClick={openModal}
+                                    className="w-full text-sm font-black py-3.5 shadow-lg bg-[#2C4C3B] hover:bg-[#213B2E] text-white rounded-xl cursor-pointer active:scale-98"
+                                >
+                                    🔒 ĐỐI SOÁT &amp; CHỐT CA BÀN GIAO
+                                </Button>
+                            ) : (
+                                <div className="rounded-xl border border-slate-200 bg-white p-3 text-center text-xs text-slate-500">
+                                    Chỉ Chủ hồ hoặc Quản lý ca mới có quyền chốt ca.
+                                </div>
+                            )
+                        ) : (
                             <button
                                 type="button"
                                 onClick={() => window.print()}
-                                className="w-full flex items-center justify-center gap-1.5 rounded-xs border border-slate-300 bg-white hover:bg-slate-50 py-2 px-3 text-xs font-semibold text-slate-700 transition-colors cursor-pointer"
+                                className="w-full rounded-xl border border-slate-300 bg-white hover:bg-slate-50 py-3 text-xs font-bold text-slate-700 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
                             >
-                                <svg className="h-4 w-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
-                                </svg>
-                                <span>In phiếu đối soát tạm tính</span>
+                                🖨️ In lại phiếu ca này
                             </button>
                         )}
                     </div>
@@ -779,145 +947,165 @@ export function DailyReportView({
                     closedAt={shift.isClosed ? (shiftClose?.closedAt ?? undefined) : undefined}
                 />
 
-                {/* ── Chốt ca Modal ───────────────────────────────── */}
+                {/* ── CHỐT CA MODAL CHUYÊN NGHIỆP ─────────────────────── */}
                 {isModalOpen && (
                     <div
-                        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 modal-backdrop-animate font-serif"
+                        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-2xs modal-backdrop-animate font-serif"
                         onClick={onBackdropClick}
                     >
-                        <div className="w-full max-w-sm sm:rounded-xs rounded-t-2xl bg-white border border-[#CCCCCC] overflow-hidden flex flex-col modal-content-animate font-serif max-h-[90dvh] overflow-y-auto">
-                            {/* Header */}
-                            <div className="flex items-center justify-between border-b border-[#E0E0E0] p-4 sticky top-0 bg-white z-10">
+                        <div className="w-full max-w-md sm:rounded-2xl rounded-t-3xl bg-white border border-slate-200 overflow-hidden flex flex-col modal-content-animate font-serif max-h-[92dvh] overflow-y-auto shadow-2xl">
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between border-b border-slate-100 p-4 sticky top-0 bg-white z-10">
                                 <div className="flex items-center gap-2">
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-xs bg-[#EAEFEA] text-[#2C4C3B] border border-[#CCCCCC]">
-                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                        </svg>
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EAEFEA] text-[#2C4C3B]">
+                                        💰
                                     </div>
-                                    <h3 className="text-sm font-bold text-[#1A1A1A] uppercase tracking-wide">
-                                        Chốt Ca &amp; Bàn Giao
-                                    </h3>
+                                    <div>
+                                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                                            Chốt Ca &amp; Bàn Giao Két
+                                        </h3>
+                                        <p className="text-[11px] text-slate-500 font-sans">
+                                            Đối soát tiền mặt thực tế và bàn giao ca sau
+                                        </p>
+                                    </div>
                                 </div>
                                 <button
                                     type="button"
                                     disabled={isSubmitting}
                                     onClick={() => setIsModalOpen(false)}
-                                    className="h-7 w-7 rounded-xs border border-[#CCCCCC] bg-[#F2F2F0] flex items-center justify-center text-[#1A1A1A] hover:bg-[#EAEAE6] transition-colors cursor-pointer"
+                                    className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors cursor-pointer"
                                 >
-                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
+                                    ✕
                                 </button>
                             </div>
 
                             <div className="p-4 space-y-4">
                                 {error && <InlineAlert type="error" message={error} />}
 
-                                {/* Bảng đối soát trong modal */}
-                                <div className="rounded-xs border border-[#CCCCCC] bg-[#FAFAF7] divide-y divide-[#E0E0E0] text-xs overflow-hidden">
-                                    <div className="px-3 py-1.5 bg-[#2C4C3B]">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-white">Đối soát tiền mặt</span>
+                                {/* Bảng tóm tắt đối soát */}
+                                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 space-y-2 text-xs">
+                                    <div className="flex justify-between text-slate-600">
+                                        <span>Tiền mặt đầu ca:</span>
+                                        <span className="font-bold text-slate-900 tabular-nums">{formatVnd(openingCash)}</span>
                                     </div>
-                                    <div className="flex justify-between px-3 py-2">
-                                        <span className="text-[#555555]">Đầu ca</span>
-                                        <span className="font-bold font-serif tabular-nums">{formatVnd(openingCash)}</span>
+                                    <div className="flex justify-between text-emerald-700">
+                                        <span>(+) Thu tiền mặt trong ca:</span>
+                                        <span className="font-bold tabular-nums">+{formatVnd(cashIn)}</span>
                                     </div>
-                                    <div className="flex justify-between px-3 py-2 bg-[#F0FDF4]">
-                                        <span className="text-[#1A6B35]">+ Thu tiền mặt</span>
-                                        <span className="font-bold font-serif text-[#1A6B35] tabular-nums">+{formatVnd(cashIn)}</span>
+                                    <div className="flex justify-between text-red-600">
+                                        <span>(−) Chi tiền mặt trong ca:</span>
+                                        <span className="font-bold tabular-nums">−{formatVnd(cashOut)}</span>
                                     </div>
-                                    {cashOut > 0 && (
-                                        <div className="flex justify-between px-3 py-2 bg-[#FFF7F7]">
-                                            <span className="text-[#9E2A2B]">− Chi tiền mặt</span>
-                                            <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">−{formatVnd(cashOut)}</span>
-                                        </div>
-                                    )}
-                                    {summary.fishBuybackVnd > 0 && (
-                                        <div className="flex justify-between px-3 py-2 bg-[#FFF7F7]">
-                                            <span className="text-[#9E2A2B]">− Chi mua cá</span>
-                                            <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">−{formatVnd(summary.fishBuybackVnd)}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between px-3 py-2.5 bg-[#F0EFE6] font-bold border-t-2 border-[#2C4C3B]">
-                                        <span className="text-[#1A1A1A]">Dự kiến bàn giao</span>
-                                        <span className="font-serif tabular-nums text-[#2C4C3B]">{formatVnd(expectedCashVnd)}</span>
-                                    </div>
-                                    {/* Revenue */}
-                                    <div className="px-3 py-1.5 bg-[#2C4C3B] mt-0">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider text-white">Doanh thu ca</span>
-                                    </div>
-                                    <div className="flex justify-between px-3 py-2">
-                                        <span className="text-[#555555]">Doanh thu</span>
-                                        <span className="font-bold font-serif text-[#2C4C3B] tabular-nums">{formatVnd(summary.revenueVnd)}</span>
-                                    </div>
-                                    <div className="flex justify-between px-3 py-2">
-                                        <span className="text-[#555555]">Chi phí</span>
-                                        <span className="font-bold font-serif text-[#9E2A2B] tabular-nums">−{formatVnd(summary.expenseVnd)}</span>
-                                    </div>
-                                    <div className="flex justify-between px-3 py-2.5 font-bold">
-                                        <span>Lợi nhuận ròng</span>
-                                        <span className="font-serif tabular-nums text-[#2C4C3B]">{formatVnd(summary.netProfitVnd)}</span>
+                                    <div className="flex justify-between items-center pt-2 border-t border-slate-200 font-black text-slate-900">
+                                        <span className="text-xs uppercase">Dự kiến trong két:</span>
+                                        <span className="text-base text-emerald-800 tabular-nums">{formatVnd(expectedCashVnd)}</span>
                                     </div>
                                 </div>
 
-                                {/* Nhập tiền thực tế */}
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-[#1A1A1A]">
-                                        Tiền mặt thực tế đếm được
-                                        <span className="ml-1 text-[#777] font-normal">(để trống nếu không kiểm tiền)</span>
+                                {/* Cảnh báo phiên câu chưa thanh toán */}
+                                {breakdown && (breakdown.sessions.totalActivePendingVnd ?? 0) > 0 && (
+                                    <div className="rounded-xl bg-amber-50 border border-amber-300 p-3 text-xs">
+                                        <div className="flex items-center gap-1.5 font-black text-amber-900 mb-1">
+                                            <span>⚠</span>
+                                            <span>Cảnh báo: Còn phiên câu chưa thanh toán!</span>
+                                        </div>
+                                        <p className="text-amber-800">
+                                            Có <strong>{breakdown.sessions.active} phiên</strong> đang câu chưa kết thúc với tổng tiền chưa thu là{" "}
+                                            <strong>{formatVnd(breakdown.sessions.totalActivePendingVnd ?? 0)}</strong>.
+                                            Hãy chốt các phiên này trước hoặc ghi chú rõ trong phần bàn giao.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Nhập tiền thực tế đếm được */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-900 uppercase tracking-wider block">
+                                        Tiền mặt thực tế đếm trong két: <span className="text-red-500">*</span>
                                     </label>
                                     <div className="relative">
                                         <input
-                                            type="number"
-                                            min={0}
-                                            step={1000}
-                                            placeholder={`Dự kiến: ${expectedCashVnd.toLocaleString("vi-VN")}đ`}
-                                            value={actualCashInput}
+                                            type="text"
+                                            inputMode="numeric"
+                                            placeholder="0"
+                                            value={actualCashInput ? Number(actualCashInput).toLocaleString("vi-VN") : ""}
                                             onChange={(e) => {
-                                                setActualCashInput(e.target.value);
+                                                const raw = e.target.value.replace(/[^0-9]/g, "");
+                                                setActualCashInput(raw);
                                                 setError(null);
                                             }}
-                                            className="w-full rounded-xs border border-[#CCCCCC] bg-white p-2.5 pr-8 text-xs text-[#1A1A1A] focus:border-[#2C4C3B] focus:outline-none font-serif tabular-nums"
+                                            className="w-full rounded-xl border border-slate-300 bg-white p-3 pr-8 text-base font-black text-slate-900 focus:border-[#2C4C3B] focus:ring-2 focus:ring-emerald-100 focus:outline-none font-serif tabular-nums shadow-2xs"
                                         />
-                                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#777]">đ</span>
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">đ</span>
                                     </div>
-                                    {/* Real-time difference display */}
-                                    {differenceVnd !== undefined && (
-                                        <div className={`rounded-xs px-2.5 py-1.5 text-xs font-bold flex items-center justify-between ${differenceVnd === 0 ? "bg-[#DCFCE7] text-[#1A6B35]" : differenceVnd < 0 ? "bg-[#FEE2E2] text-[#9E2A2B]" : "bg-[#FEF9C3] text-[#854D0E]"}`}>
-                                            <span>
-                                                {differenceVnd === 0 ? "✓ Khớp tiền mặt" : differenceVnd < 0 ? "⚠ Thiếu" : "⚠ Thừa"}
-                                            </span>
-                                            <span className="font-serif tabular-nums">
-                                                {differenceVnd !== 0 ? `${differenceVnd > 0 ? "+" : ""}${formatVnd(differenceVnd)}` : "Không chênh lệch"}
+
+                                    {/* Nút bấm nhanh */}
+                                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuickCash(expectedCashVnd)}
+                                            className="rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                        >
+                                            = Khớp dự kiến ({formatVnd(expectedCashVnd)})
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuickCash(0)}
+                                            className="rounded-lg bg-slate-100 border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                                        >
+                                            0 đ
+                                        </button>
+                                    </div>
+
+                                    {/* Real-time Status Card */}
+                                    {actualCashParsed !== undefined && (
+                                        <div className={`rounded-xl p-3 text-xs font-bold flex items-center justify-between border ${
+                                            differenceVnd === 0
+                                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                                : differenceVnd! < 0
+                                                ? "bg-red-50 text-red-800 border-red-200"
+                                                : "bg-amber-50 text-amber-800 border-amber-200"
+                                        }`}>
+                                            <div className="flex items-center gap-1.5">
+                                                <span>{differenceVnd === 0 ? "✓" : "⚠"}</span>
+                                                <span>
+                                                    {differenceVnd === 0
+                                                        ? "Khớp 100% tiền mặt"
+                                                        : differenceVnd! < 0
+                                                        ? "Két thiếu tiền"
+                                                        : "Két thừa tiền"}
+                                                </span>
+                                            </div>
+                                            <span className="text-sm font-black tabular-nums">
+                                                {differenceVnd !== 0 ? `${differenceVnd! > 0 ? "+" : ""}${formatVnd(differenceVnd!)}` : "0 đ chênh lệch"}
                                             </span>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Lý do chênh lệch (bắt buộc khi lệch) */}
+                                {/* Lý do chênh lệch (Bắt buộc nếu lệch) */}
                                 {hasDifference && (
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-[#9E2A2B]">
-                                            Lý do chênh lệch <span className="text-red-600">*</span>
+                                    <div className="space-y-1.5 rounded-xl bg-red-50/50 p-3 border border-red-200">
+                                        <label className="text-xs font-black text-red-700 block">
+                                            Lý do chênh lệch tiền mặt <span className="text-red-600">*</span>
                                         </label>
                                         <textarea
                                             rows={2}
                                             maxLength={500}
-                                            placeholder="Bắt buộc nhập lý do khi có chênh lệch tiền mặt..."
+                                            placeholder="Bắt buộc giải trình lý do thừa/thiếu tiền két..."
                                             value={differenceReason}
                                             onChange={(e) => {
                                                 setDifferenceReason(e.target.value);
                                                 setError(null);
                                             }}
-                                            className="w-full rounded-xs border border-[#F87171] bg-white p-2.5 text-xs text-[#1A1A1A] focus:border-[#9E2A2B] focus:outline-none font-serif"
+                                            className="w-full rounded-xl border border-red-300 bg-white p-2.5 text-xs text-slate-900 focus:border-red-500 focus:outline-none font-serif"
                                         />
                                     </div>
                                 )}
 
-                                {/* Nhân viên nhận bàn giao */}
+                                {/* Nhân viên nhận bàn giao ca */}
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-[#1A1A1A]">
-                                        Nhân viên nhận bàn giao ca sau
+                                    <label className="text-xs font-bold text-slate-800">
+                                        Nhân viên nhận bàn giao ca sau:
                                     </label>
                                     <input
                                         type="text"
@@ -925,40 +1113,38 @@ export function DailyReportView({
                                         placeholder="Tên nhân viên nhận ca..."
                                         value={receivedBy}
                                         onChange={(e) => setReceivedBy(e.target.value)}
-                                        className="w-full rounded-xs border border-[#CCCCCC] bg-white p-2.5 text-xs text-[#1A1A1A] focus:border-[#2C4C3B] focus:outline-none font-serif"
+                                        className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs text-slate-900 focus:border-[#2C4C3B] focus:outline-none font-serif"
                                     />
                                 </div>
 
-                                {/* Ghi chú */}
+                                {/* Ghi chú bàn giao */}
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-[#1A1A1A]">
-                                        Ghi chú bàn giao
-                                        <span className="ml-1 text-[#777] font-normal">(tùy chọn)</span>
+                                    <label className="text-xs font-bold text-slate-800">
+                                        Ghi chú dặn dò ca sau (Tùy chọn):
                                     </label>
                                     <textarea
                                         rows={2}
                                         maxLength={500}
-                                        placeholder="Tình trạng hồ, sự cố đặc biệt, dặn dò ca sau..."
+                                        placeholder="Cá tồn, dặn dò đồ câu, dặn dò khách..."
                                         value={note}
                                         onChange={(e) => setNote(e.target.value)}
-                                        className="w-full rounded-xs border border-[#CCCCCC] bg-white p-2.5 text-xs text-[#1A1A1A] focus:border-[#2C4C3B] focus:outline-none font-serif"
+                                        className="w-full rounded-xl border border-slate-300 bg-white p-2.5 text-xs text-slate-900 focus:border-[#2C4C3B] focus:outline-none font-serif"
                                     />
                                 </div>
 
-                                <InlineAlert
-                                    type="warning"
-                                    message="Số liệu tài chính sẽ được khóa sau khi chốt ca. Hệ thống sẽ tự động mở ca mới."
-                                />
+                                <div className="rounded-xl bg-amber-50 p-3 border border-amber-200 text-[11px] text-amber-800">
+                                    ℹ️ <strong>Lưu ý:</strong> Sau khi chốt ca, toàn bộ số liệu của ca này sẽ được khóa. Hệ thống sẽ <strong>tự động mở ca mới</strong> và mang số tiền thực tế vừa bàn giao làm <strong>tiền đầu ca mới</strong>.
+                                </div>
 
-                                {/* Buttons */}
-                                <div className="flex items-center gap-2 pb-2">
+                                {/* Modal Actions */}
+                                <div className="flex items-center gap-2 pt-2">
                                     <Button
                                         type="button"
                                         size="md"
                                         variant="outline"
                                         disabled={isSubmitting}
                                         onClick={() => setIsModalOpen(false)}
-                                        className="flex-1"
+                                        className="flex-1 rounded-xl"
                                     >
                                         Hủy
                                     </Button>
@@ -969,9 +1155,9 @@ export function DailyReportView({
                                         isLoading={isSubmitting}
                                         loadingText="Đang chốt ca…"
                                         onClick={handleConfirmClose}
-                                        className="flex-2"
+                                        className="flex-2 rounded-xl bg-[#2C4C3B] hover:bg-[#20372A] font-bold text-white shadow-md"
                                     >
-                                        Xác nhận chốt ca
+                                        Xác nhận chốt &amp; Bàn giao
                                     </Button>
                                 </div>
                             </div>

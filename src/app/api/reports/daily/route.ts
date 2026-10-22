@@ -1,4 +1,5 @@
 import { summarizeMoney, summarizeRevenue } from "@/lib/finance";
+import { parseShiftCloseNote } from "@/lib/shift-helper";
 import { NextResponse } from "next/server";
 
 import { Role } from "@/generated/prisma/client";
@@ -11,33 +12,58 @@ import {
 
 const ALLOWED_ROLES = [Role.OWNER, Role.MANAGER, Role.STAFF];
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
         const tenantContext = await requireTenantContext(ALLOWED_ROLES);
         const lakeId = tenantContext.lakeId;
 
-        // 1. Find active open shift or most recent shift for this lake
-        let currentShift = await prisma.shift.findFirst({
-            where: {
-                lakeId,
-                endTime: null,
-            },
+        const url = new URL(request.url);
+        const requestedShiftId = url.searchParams.get("shiftId");
+
+        // Fetch recent shifts list for historical selector
+        const rawRecentShifts = await prisma.shift.findMany({
+            where: { lakeId },
             include: {
                 closes: {
+                    select: {
+                        id: true,
+                        closedBy: true,
+                        totalRevenueVnd: true,
+                        totalCashVnd: true,
+                        createdAt: true,
+                        note: true,
+                    },
                     orderBy: { createdAt: "desc" },
                     take: 1,
                 },
             },
-            orderBy: {
-                startTime: "desc",
-            },
+            orderBy: { startTime: "desc" },
+            take: 10,
         });
 
-        // If no open shift exists, find the most recent closed shift
+        let currentShift = null;
+
+        if (requestedShiftId) {
+            currentShift = await prisma.shift.findFirst({
+                where: {
+                    id: requestedShiftId,
+                    lakeId,
+                },
+                include: {
+                    closes: {
+                        orderBy: { createdAt: "desc" },
+                        take: 1,
+                    },
+                },
+            });
+        }
+
         if (!currentShift) {
+            // Find active open shift
             currentShift = await prisma.shift.findFirst({
                 where: {
                     lakeId,
+                    endTime: null,
                 },
                 include: {
                     closes: {
@@ -51,15 +77,46 @@ export async function GET() {
             });
         }
 
-        // If still no shift exists in database for this lake, create an initial open shift starting today
+        // If no open shift exists, find the most recent closed shift to calculate opening cash
+        const lastClosedShift = await prisma.shift.findFirst({
+            where: {
+                lakeId,
+                endTime: { not: null },
+            },
+            include: {
+                closes: {
+                    orderBy: { createdAt: "desc" },
+                    take: 1,
+                },
+            },
+            orderBy: {
+                endTime: "desc",
+            },
+        });
+
+        // Determine opening cash from last shift handover
+        let previousHandoverCash = 0;
+        if (lastClosedShift?.closes[0]) {
+            const parsedMeta = parseShiftCloseNote(lastClosedShift.closes[0].note);
+            previousHandoverCash = parsedMeta.actualCashVnd ?? lastClosedShift.closes[0].totalCashVnd ?? 0;
+        }
+
+        // If no active shift was requested or exists, automatically create a new active open shift starting now
         if (!currentShift) {
+            const now = new Date();
             const startOfToday = new Date();
             startOfToday.setHours(0, 0, 0, 0);
+
+            // If last closed shift was closed recently (under 12 hours), continue from that endTime; otherwise start from start of today
+            const shouldContinueFromLast =
+                lastClosedShift?.endTime &&
+                now.getTime() - lastClosedShift.endTime.getTime() < 12 * 60 * 60 * 1000;
+            const shiftStartTime = shouldContinueFromLast ? lastClosedShift.endTime! : startOfToday;
 
             currentShift = await prisma.shift.create({
                 data: {
                     lakeId,
-                    startTime: startOfToday,
+                    startTime: shiftStartTime,
                 },
                 include: {
                     closes: true,
@@ -68,7 +125,8 @@ export async function GET() {
         }
 
         const isClosed = currentShift.endTime !== null && currentShift.closes.length > 0;
-        const shiftClose = currentShift.closes[0] ?? null;
+        const rawShiftClose = currentShift.closes[0] ?? null;
+        const parsedCloseMeta = rawShiftClose ? parseShiftCloseNote(rawShiftClose.note) : null;
 
         const shiftStart = currentShift.startTime;
         const shiftEnd = currentShift.endTime ?? new Date();
@@ -86,36 +144,34 @@ export async function GET() {
                 hutLinks: {
                     select: { hut: { select: { name: true } } },
                 },
+                invoices: {
+                    where: { status: { not: "VOIDED" } },
+                    select: { totalAmountVnd: true, balanceDueVnd: true },
+                },
+                customer: {
+                    select: { name: true },
+                },
             },
         });
 
         const totalSessionsCount = shiftSessions.length;
-        const completedSessionsCount = shiftSessions.filter(
-            (s) => s.status === "COMPLETED",
-        ).length;
-        const activeSessionsCount = shiftSessions.filter(
-            (s) => s.status === "ACTIVE",
-        ).length;
-        const cancelledSessionsCount = shiftSessions.filter(
-            (s) => s.status === "CANCELLED",
-        ).length;
+        const completedSessionsCount = shiftSessions.filter((s) => s.status === "COMPLETED").length;
+        const activeSessionsCount = shiftSessions.filter((s) => s.status === "ACTIVE").length;
+        const cancelledSessionsCount = shiftSessions.filter((s) => s.status === "CANCELLED").length;
 
         const pkgMap = new Map<string, { count: number; totalVnd: number }>();
         for (const s of shiftSessions) {
             const pkgName = s.packageNameSnapshot || "Gói tiêu chuẩn";
             const cur = pkgMap.get(pkgName) || { count: 0, totalVnd: 0 };
             cur.count += 1;
-            cur.totalVnd +=
-                s.packagePriceVndSnapshot * Math.max(s.hutLinks.length, 1);
+            cur.totalVnd += s.packagePriceVndSnapshot * Math.max(s.hutLinks.length, 1);
             pkgMap.set(pkgName, cur);
         }
-        const packagesBreakdown = Array.from(pkgMap.entries()).map(
-            ([packageName, data]) => ({
-                packageName,
-                count: data.count,
-                totalVnd: data.totalVnd,
-            }),
-        );
+        const packagesBreakdown = Array.from(pkgMap.entries()).map(([packageName, data]) => ({
+            packageName,
+            count: data.count,
+            totalVnd: data.totalVnd,
+        }));
 
         // 2. Invoice Lines aggregation (Products sold & extensions)
         const invoiceLines = await prisma.invoiceLine.findMany({
@@ -139,10 +195,7 @@ export async function GET() {
             },
         });
 
-        const prodMap = new Map<
-            string,
-            { name: string; quantity: number; totalVnd: number }
-        >();
+        const prodMap = new Map<string, { name: string; quantity: number; totalVnd: number }>();
         let extensionsCount = 0;
         let extensionsTotalVnd = 0;
 
@@ -163,14 +216,8 @@ export async function GET() {
         }
 
         const productItems = Array.from(prodMap.values());
-        const totalProductQty = productItems.reduce(
-            (s, p) => s + p.quantity,
-            0,
-        );
-        const totalProductVnd = productItems.reduce(
-            (s, p) => s + p.totalVnd,
-            0,
-        );
+        const totalProductQty = productItems.reduce((s, p) => s + p.quantity, 0);
+        const totalProductVnd = productItems.reduce((s, p) => s + p.totalVnd, 0);
 
         // 3. Inventory movements in shift window
         const invMovements = await prisma.inventoryMovement.findMany({
@@ -215,8 +262,14 @@ export async function GET() {
 
         const totals = summarizeMoney(payments);
         const { cashIn, cashOut, transferIn, transferOut, netCash, netTransfer } = totals;
-        const totalRevenue = isClosed && shiftClose ? shiftClose.totalRevenueVnd :
-            summarizeRevenue(invoiceLines.map(line => ({ fishingSessionId: line.invoice.fishingSessionId, lines: [line] }))).totalRevenue;
+        const totalRevenue = isClosed && rawShiftClose
+            ? rawShiftClose.totalRevenueVnd
+            : summarizeRevenue(
+                  invoiceLines.map((line) => ({
+                      fishingSessionId: line.invoice.fishingSessionId,
+                      lines: [line],
+                  })),
+              ).totalRevenue;
 
         // 5. Fish Buybacks aggregation
         const fishBuybacksAgg = await prisma.fishBuyback.aggregate({
@@ -231,7 +284,9 @@ export async function GET() {
                 totalVnd: true,
             },
         });
-        const fishBuybackTotal = isClosed && shiftClose ? shiftClose.fishBuybackVnd : (fishBuybacksAgg._sum.totalVnd ?? 0);
+        const fishBuybackTotal = isClosed && rawShiftClose
+            ? rawShiftClose.fishBuybackVnd
+            : fishBuybacksAgg._sum.totalVnd ?? 0;
 
         // 6. Other Expenses aggregation
         const expensesAgg = await prisma.expense.aggregate({
@@ -246,10 +301,36 @@ export async function GET() {
                 amountVnd: true,
             },
         });
-        const otherExpenseTotal = isClosed && shiftClose ? shiftClose.otherExpenseVnd : (expensesAgg._sum.amountVnd ?? 0);
+        const otherExpenseTotal = isClosed && rawShiftClose
+            ? rawShiftClose.otherExpenseVnd
+            : expensesAgg._sum.amountVnd ?? 0;
 
-        const totalExpense = isClosed && shiftClose ? shiftClose.totalExpenseVnd : fishBuybackTotal + otherExpenseTotal;
+        const totalExpense = isClosed && rawShiftClose
+            ? rawShiftClose.totalExpenseVnd
+            : fishBuybackTotal + otherExpenseTotal;
         const netProfit = totalRevenue - totalExpense;
+
+        // Cash in drawer at start of shift
+        const openingCash = previousHandoverCash;
+        // Accurate expected cash in drawer = Opening cash + Cash In - Cash Out
+        const expectedCashInDrawer = openingCash + cashIn - cashOut;
+
+        // Active sessions detail list (for shift handover awareness)
+        const activeSessionsList = shiftSessions
+            .filter((s) => s.status === "ACTIVE")
+            .map((s) => {
+                const pendingVnd = s.invoices.reduce((sum, inv) => sum + inv.balanceDueVnd, 0);
+                const hutNames = s.hutLinks.map((hl: { hut: { name: string } }) => hl.hut.name).join(", ");
+                return {
+                    id: s.id,
+                    customerName: s.customer?.name || "Khách",
+                    hutName: hutNames || "—",
+                    startTime: s.startAt.toISOString(),
+                    pendingAmountVnd: Math.max(0, pendingVnd),
+                    packageName: s.packageNameSnapshot || "",
+                };
+            });
+        const totalActivePendingVnd = activeSessionsList.reduce((s, sess) => s + sess.pendingAmountVnd, 0);
 
         const breakdown = {
             sessions: {
@@ -258,6 +339,8 @@ export async function GET() {
                 active: activeSessionsCount,
                 cancelled: cancelledSessionsCount,
                 packages: packagesBreakdown,
+                activeList: activeSessionsList,
+                totalActivePendingVnd,
             },
             products: {
                 totalQuantity: totalProductQty,
@@ -282,21 +365,32 @@ export async function GET() {
             },
         };
 
+        const recentShiftsList = rawRecentShifts.map((s) => ({
+            id: s.id,
+            startTime: s.startTime.toISOString(),
+            endTime: s.endTime?.toISOString() ?? null,
+            isClosed: s.endTime !== null && s.closes.length > 0,
+            revenueVnd: s.closes[0]?.totalRevenueVnd ?? 0,
+            cashVnd: s.closes[0]?.totalCashVnd ?? 0,
+            closedBy: s.closes[0]?.closedBy ?? null,
+        }));
+
         return NextResponse.json({
             shift: {
                 id: currentShift.id,
                 startTime: currentShift.startTime.toISOString(),
                 endTime: currentShift.endTime?.toISOString() ?? null,
                 isClosed,
-                openingCashVnd: (currentShift as { openingCashVnd?: number }).openingCashVnd ?? 0,
+                openingCashVnd: openingCash,
+                expectedCashVnd: expectedCashInDrawer,
             },
             summary: {
                 revenueVnd: totalRevenue,
                 expenseVnd: totalExpense,
-                cashVnd: isClosed && shiftClose ? shiftClose.totalCashVnd : netCash,
+                cashVnd: isClosed && rawShiftClose ? rawShiftClose.totalCashVnd : netCash,
                 cashInVnd: cashIn,
                 cashOutVnd: cashOut,
-                transferVnd: isClosed && shiftClose ? shiftClose.totalTransferVnd : netTransfer,
+                transferVnd: isClosed && rawShiftClose ? rawShiftClose.totalTransferVnd : netTransfer,
                 transferInVnd: transferIn,
                 transferOutVnd: transferOut,
                 fishBuybackVnd: fishBuybackTotal,
@@ -304,18 +398,19 @@ export async function GET() {
                 netProfitVnd: netProfit,
             },
             breakdown,
-            shiftClose: shiftClose
+            shiftClose: rawShiftClose
                 ? {
-                      id: shiftClose.id,
-                      closedBy: shiftClose.closedBy,
-                      receivedBy: (shiftClose as { receivedBy?: string | null }).receivedBy ?? null,
-                      closedAt: shiftClose.createdAt.toISOString(),
-                      note: shiftClose.note,
-                      actualCashVnd: (shiftClose as { actualCashVnd?: number | null }).actualCashVnd ?? null,
-                      cashDifferenceVnd: (shiftClose as { cashDifferenceVnd?: number }).cashDifferenceVnd ?? 0,
-                      differenceReason: (shiftClose as { differenceReason?: string | null }).differenceReason ?? null,
+                      id: rawShiftClose.id,
+                      closedBy: rawShiftClose.closedBy,
+                      receivedBy: parsedCloseMeta?.receivedBy ?? null,
+                      closedAt: rawShiftClose.createdAt.toISOString(),
+                      note: parsedCloseMeta?.cleanNote ?? rawShiftClose.note,
+                      actualCashVnd: parsedCloseMeta?.actualCashVnd ?? rawShiftClose.totalCashVnd,
+                      cashDifferenceVnd: parsedCloseMeta?.cashDifferenceVnd ?? 0,
+                      differenceReason: parsedCloseMeta?.differenceReason ?? null,
                   }
                 : null,
+            recentShifts: recentShiftsList,
         });
     } catch (error) {
         if (error instanceof AuthenticationError) {

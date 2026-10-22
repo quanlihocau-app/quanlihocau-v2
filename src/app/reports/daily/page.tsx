@@ -8,11 +8,18 @@ import {
 } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { parseShiftCloseNote } from "@/lib/shift-helper";
 import { getTenantContext } from "@/lib/tenant";
 
 import { DailyReportView } from "./daily-report-view";
 
-export default async function DailyReportPage() {
+interface PageProps {
+    searchParams: Promise<{
+        shiftId?: string;
+    }>;
+}
+
+export default async function DailyReportPage({ searchParams }: PageProps) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
@@ -38,28 +45,52 @@ export default async function DailyReportPage() {
     }
 
     const lakeId = tenantContext.lakeId;
+    const { shiftId: requestedShiftId } = await searchParams;
 
-    // 1. Find active open shift or most recent shift for this lake
-    let currentShift = await prisma.shift.findFirst({
-        where: {
-            lakeId,
-            endTime: null,
-        },
+    // Fetch recent shifts list for historical selector
+    const rawRecentShifts = await prisma.shift.findMany({
+        where: { lakeId },
         include: {
             closes: {
+                select: {
+                    id: true,
+                    closedBy: true,
+                    totalRevenueVnd: true,
+                    totalCashVnd: true,
+                    createdAt: true,
+                    note: true,
+                },
                 orderBy: { createdAt: "desc" },
                 take: 1,
             },
         },
-        orderBy: {
-            startTime: "desc",
-        },
+        orderBy: { startTime: "desc" },
+        take: 10,
     });
 
+    let currentShift = null;
+
+    if (requestedShiftId) {
+        currentShift = await prisma.shift.findFirst({
+            where: {
+                id: requestedShiftId,
+                lakeId,
+            },
+            include: {
+                closes: {
+                    orderBy: { createdAt: "desc" },
+                    take: 1,
+                },
+            },
+        });
+    }
+
     if (!currentShift) {
+        // Find active open shift
         currentShift = await prisma.shift.findFirst({
             where: {
                 lakeId,
+                endTime: null,
             },
             include: {
                 closes: {
@@ -73,14 +104,43 @@ export default async function DailyReportPage() {
         });
     }
 
+    // Find last closed shift to determine opening cash
+    const lastClosedShift = await prisma.shift.findFirst({
+        where: {
+            lakeId,
+            endTime: { not: null },
+        },
+        include: {
+            closes: {
+                orderBy: { createdAt: "desc" },
+                take: 1,
+            },
+        },
+        orderBy: {
+            endTime: "desc",
+        },
+    });
+
+    let previousHandoverCash = 0;
+    if (lastClosedShift?.closes[0]) {
+        const parsedMeta = parseShiftCloseNote(lastClosedShift.closes[0].note);
+        previousHandoverCash = parsedMeta.actualCashVnd ?? lastClosedShift.closes[0].totalCashVnd ?? 0;
+    }
+
     if (!currentShift) {
+        const now = new Date();
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
+
+        const shouldContinueFromLast =
+            lastClosedShift?.endTime &&
+            now.getTime() - lastClosedShift.endTime.getTime() < 12 * 60 * 60 * 1000;
+        const shiftStartTime = shouldContinueFromLast ? lastClosedShift.endTime! : startOfToday;
 
         currentShift = await prisma.shift.create({
             data: {
                 lakeId,
-                startTime: startOfToday,
+                startTime: shiftStartTime,
             },
             include: {
                 closes: true,
@@ -88,9 +148,10 @@ export default async function DailyReportPage() {
         });
     }
 
-    const isClosed =
-        currentShift.endTime !== null && currentShift.closes.length > 0;
+    const isClosed = currentShift.endTime !== null && currentShift.closes.length > 0;
     const shiftClose = currentShift.closes[0] ?? null;
+    const parsedCloseMeta = shiftClose ? parseShiftCloseNote(shiftClose.note) : null;
+
     const shiftStart = currentShift.startTime;
     const shiftEnd = currentShift.endTime ?? new Date();
 
@@ -111,38 +172,30 @@ export default async function DailyReportPage() {
     });
 
     const totalSessionsCount = shiftSessions.length;
-    const completedSessionsCount = shiftSessions.filter(
-        (s) => s.status === "COMPLETED",
-    ).length;
-    const activeSessionsCount = shiftSessions.filter(
-        (s) => s.status === "ACTIVE",
-    ).length;
-    const cancelledSessionsCount = shiftSessions.filter(
-        (s) => s.status === "CANCELLED",
-    ).length;
+    const completedSessionsCount = shiftSessions.filter((s) => s.status === "COMPLETED").length;
+    const activeSessionsCount = shiftSessions.filter((s) => s.status === "ACTIVE").length;
+    const cancelledSessionsCount = shiftSessions.filter((s) => s.status === "CANCELLED").length;
 
     const pkgMap = new Map<string, { count: number; totalVnd: number }>();
     for (const s of shiftSessions) {
         const pkgName = s.packageNameSnapshot || "Gói tiêu chuẩn";
         const cur = pkgMap.get(pkgName) || { count: 0, totalVnd: 0 };
         cur.count += 1;
-        cur.totalVnd +=
-            s.packagePriceVndSnapshot * Math.max(s.hutLinks.length, 1);
+        cur.totalVnd += s.packagePriceVndSnapshot * Math.max(s.hutLinks.length, 1);
         pkgMap.set(pkgName, cur);
     }
-    const packagesBreakdown = Array.from(pkgMap.entries()).map(
-        ([packageName, data]) => ({
-            packageName,
-            count: data.count,
-            totalVnd: data.totalVnd,
-        }),
-    );
+    const packagesBreakdown = Array.from(pkgMap.entries()).map(([packageName, data]) => ({
+        packageName,
+        count: data.count,
+        totalVnd: data.totalVnd,
+    }));
 
     // 2. Invoice Lines aggregation (Products sold & extensions)
     const invoiceLines = await prisma.invoiceLine.findMany({
         where: {
             invoice: {
                 lakeId,
+                status: { not: "VOIDED" },
                 createdAt: {
                     gte: shiftStart,
                     lte: shiftEnd,
@@ -157,10 +210,7 @@ export default async function DailyReportPage() {
         },
     });
 
-    const prodMap = new Map<
-        string,
-        { name: string; quantity: number; totalVnd: number }
-    >();
+    const prodMap = new Map<string, { name: string; quantity: number; totalVnd: number }>();
     let extensionsCount = 0;
     let extensionsTotalVnd = 0;
 
@@ -181,14 +231,8 @@ export default async function DailyReportPage() {
     }
 
     const productItems = Array.from(prodMap.values());
-    const totalProductQty = productItems.reduce(
-        (s, p) => s + p.quantity,
-        0,
-    );
-    const totalProductVnd = productItems.reduce(
-        (s, p) => s + p.totalVnd,
-        0,
-    );
+    const totalProductQty = productItems.reduce((s, p) => s + p.quantity, 0);
+    const totalProductVnd = productItems.reduce((s, p) => s + p.totalVnd, 0);
 
     // 3. Inventory movements in shift window
     const invMovements = await prisma.inventoryMovement.findMany({
@@ -288,6 +332,9 @@ export default async function DailyReportPage() {
     const totalExpense = isClosed && shiftClose ? shiftClose.totalExpenseVnd : fishBuybackTotal + otherExpenseTotal;
     const netProfit = totalRevenue - totalExpense;
 
+    const openingCash = previousHandoverCash;
+    const expectedCashInDrawer = openingCash + cashIn - cashOut;
+
     const summary = {
         revenueVnd: totalRevenue,
         expenseVnd: totalExpense,
@@ -333,6 +380,16 @@ export default async function DailyReportPage() {
         },
     };
 
+    const recentShiftsList = rawRecentShifts.map((s) => ({
+        id: s.id,
+        startTime: s.startTime.toISOString(),
+        endTime: s.endTime?.toISOString() ?? null,
+        isClosed: s.endTime !== null && s.closes.length > 0,
+        revenueVnd: s.closes[0]?.totalRevenueVnd ?? 0,
+        cashVnd: s.closes[0]?.totalCashVnd ?? 0,
+        closedBy: s.closes[0]?.closedBy ?? null,
+    }));
+
     const canCloseShift =
         tenantContext.role === Role.OWNER ||
         tenantContext.role === Role.MANAGER;
@@ -344,25 +401,28 @@ export default async function DailyReportPage() {
                 startTime: currentShift.startTime.toISOString(),
                 endTime: currentShift.endTime?.toISOString() ?? null,
                 isClosed,
-                openingCashVnd: (currentShift as { openingCashVnd?: number }).openingCashVnd ?? 0,
+                openingCashVnd: openingCash,
+                expectedCashVnd: expectedCashInDrawer,
             }}
             summary={summary}
             breakdown={breakdown}
             shiftClose={
                 shiftClose
                     ? {
+                          id: shiftClose.id,
                           closedBy: shiftClose.closedBy,
-                          receivedBy: (shiftClose as { receivedBy?: string | null }).receivedBy ?? null,
+                          receivedBy: parsedCloseMeta?.receivedBy ?? null,
                           closedAt: shiftClose.createdAt.toISOString(),
-                          note: shiftClose.note,
-                          actualCashVnd: (shiftClose as { actualCashVnd?: number | null }).actualCashVnd ?? null,
-                          cashDifferenceVnd: (shiftClose as { cashDifferenceVnd?: number }).cashDifferenceVnd ?? 0,
-                          differenceReason: (shiftClose as { differenceReason?: string | null }).differenceReason ?? null,
+                          note: parsedCloseMeta?.cleanNote ?? shiftClose.note,
+                          actualCashVnd: parsedCloseMeta?.actualCashVnd ?? shiftClose.totalCashVnd,
+                          cashDifferenceVnd: parsedCloseMeta?.cashDifferenceVnd ?? 0,
+                          differenceReason: parsedCloseMeta?.differenceReason ?? null,
                       }
                     : null
             }
             canCloseShift={canCloseShift}
             lakeName={tenantContext.lakeName}
+            recentShifts={recentShiftsList}
         />
     );
 }
