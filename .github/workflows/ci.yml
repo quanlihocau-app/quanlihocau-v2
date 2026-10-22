@@ -99,12 +99,12 @@ jobs:
 
           TEST_DATABASE_URL="$DATABASE_URL" TEST_BASE_URL="http://localhost:3101" TEST_UNAVAILABLE_BASE_URL="http://localhost:3102" node --test tests/register.integration.test.mjs
 
-          cat > .env.test <<EOF
-DATABASE_URL=${DATABASE_URL}
-NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-NEXTAUTH_URL=${NEXTAUTH_URL}
-SESSION_SECRET=${SESSION_SECRET}
-BANK_WEBHOOK_SECRET=${BANK_WEBHOOK_SECRET}
-TEST_BASE_URL=http://localhost:3101
-EOF
+          {
+            echo "DATABASE_URL=${DATABASE_URL}"
+            echo "NEXTAUTH_SECRET=${NEXTAUTH_SECRET}"
+            echo "NEXTAUTH_URL=${NEXTAUTH_URL}"
+            echo "SESSION_SECRET=${SESSION_SECRET}"
+            echo "BANK_WEBHOOK_SECRET=${BANK_WEBHOOK_SECRET}"
+            echo "TEST_BASE_URL=http://localhost:3101"
+          } > .env.test
           npm test
