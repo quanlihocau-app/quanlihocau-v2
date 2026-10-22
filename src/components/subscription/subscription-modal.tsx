@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
+import { planCharge, type BillingCycle } from "@/lib/vietqr";
 
 interface SubscriptionModalProps {
     isOpen: boolean;
@@ -26,6 +27,10 @@ function SubscriptionModalContent({
     const router = useRouter();
     const [step, setStep] = useState<Step>("SELECT_PLAN");
     const [selectedPlan, setSelectedPlan] = useState<"SILVER" | "GOLD">("GOLD");
+    const [cycle, setCycle] = useState<BillingCycle>("MONTHLY");
+    const silverQuote = planCharge("SILVER", cycle);
+    const goldQuote = planCharge("GOLD", cycle);
+    const selectedQuote = selectedPlan === "SILVER" ? silverQuote : goldQuote;
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -124,7 +129,7 @@ function SubscriptionModalContent({
             const res = await fetch("/api/subscription/orders", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ plan: selectedPlan }),
+                body: JSON.stringify({ plan: selectedPlan, cycle }),
             });
 
             const data = await res.json();
@@ -165,13 +170,13 @@ function SubscriptionModalContent({
                             <span>👑</span>
                             <span>
                                 {step === "SELECT_PLAN" && "Gói Cước & Gia Hạn Hồ Câu"}
-                                {step === "QR_PAYMENT" && "Thanh Toán VietQR Tự Động"}
+                                {step === "QR_PAYMENT" && "Thanh toán VietQR đúng số tiền"}
                                 {step === "SUCCESS" && "Kích Hoạt Thành Công!"}
                             </span>
                         </h2>
                         <p className="text-xs text-[#766F67] mt-0.5">
                             {step === "SELECT_PLAN" && "Lựa chọn gói dịch vụ phù hợp với quy mô hồ của bạn"}
-                            {step === "QR_PAYMENT" && "Quét mã để kích hoạt tức thì sau 5-10 giây"}
+                            {step === "QR_PAYMENT" && "Chuyển đúng số tiền và đúng nội dung. Gói được kích hoạt khi khoản chuyển được xác nhận."}
                             {step === "SUCCESS" && "Cảm ơn bạn đã đồng hành cùng Quản Lý Hồ Câu"}
                         </p>
                     </div>
@@ -196,6 +201,22 @@ function SubscriptionModalContent({
                 {/* ── STEP 1: CHỌN GÓI ────────────────────────────────────────── */}
                 {step === "SELECT_PLAN" && (
                     <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#F7F9F5] p-1">
+                            <button
+                                type="button"
+                                onClick={() => setCycle("MONTHLY")}
+                                className={`rounded-lg px-3 py-2 text-xs font-bold ${cycle === "MONTHLY" ? "bg-white text-[#17201A] shadow-xs" : "text-[#66716A]"}`}
+                            >
+                                Theo tháng
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCycle("YEARLY")}
+                                className={`rounded-lg px-3 py-2 text-xs font-bold ${cycle === "YEARLY" ? "bg-white text-[#17201A] shadow-xs" : "text-[#66716A]"}`}
+                            >
+                                Theo năm (đóng 10 tháng)
+                            </button>
+                        </div>
                         {currentExpiresAt && (
                             <div className="rounded-xl bg-[#FAF8F5] border border-[#EBE6DF] px-3.5 py-2 text-xs flex items-center justify-between text-[#766F67]">
                                 <span>Gói đang dùng: <strong className="text-[#27231F]">{currentPlan}</strong></span>
@@ -223,8 +244,8 @@ function SubscriptionModalContent({
                                     <p className="text-xs text-[#66716A] mt-1">Phù hợp hồ có dưới 30 chòi/ô câu</p>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-lg font-black text-[#246B38]">99.000 đ</div>
-                                    <span className="text-[11px] text-[#66716A]">/ 30 ngày</span>
+                                    <div className="text-lg font-black text-[#246B38]">{silverQuote.amountVnd.toLocaleString("vi-VN")} đ</div>
+                                    <span className="text-[11px] text-[#66716A]">{cycle === "YEARLY" ? "/ 12 tháng" : "/ 30 ngày"}</span>
                                 </div>
                             </div>
 
@@ -235,7 +256,7 @@ function SubscriptionModalContent({
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <span className="text-emerald-600 font-bold">✓</span>
-                                    <span>Tối đa <strong>1 tài khoản nhân viên</strong></span>
+                                    <span>Chủ hồ và tối đa <strong>2 tài khoản nhân sự</strong></span>
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <span className="text-emerald-600 font-bold">✓</span>
@@ -269,8 +290,8 @@ function SubscriptionModalContent({
                                     <p className="text-xs text-[#66716A] mt-1">Dành cho hồ câu chuyên nghiệp, nhiều khu</p>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-lg font-black text-[#D97706]">179.000 đ</div>
-                                    <span className="text-[11px] text-[#66716A]">/ 30 ngày</span>
+                                    <div className="text-lg font-black text-[#D97706]">{goldQuote.amountVnd.toLocaleString("vi-VN")} đ</div>
+                                    <span className="text-[11px] text-[#66716A]">{cycle === "YEARLY" ? "/ 12 tháng" : "/ 30 ngày"}</span>
                                 </div>
                             </div>
 
@@ -285,7 +306,7 @@ function SubscriptionModalContent({
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <span className="text-emerald-600 font-bold">✓</span>
-                                    <span>Ưu tiên hỗ trợ kỹ thuật 24/7 &amp; sao lưu thời gian thực</span>
+                                    <span>Hỗ trợ qua Zalo/hotline. Cài đặt tận nơi chỉ dành cho Gói sáng lập.</span>
                                 </li>
                             </ul>
                         </div>
@@ -304,7 +325,7 @@ function SubscriptionModalContent({
                                 </>
                             ) : (
                                 <>
-                                    <span>Tiếp Tục Thanh Toán ({selectedPlan === "SILVER" ? "99.000 đ" : "179.000 đ"})</span>
+                                    <span>Tiếp tục thanh toán ({selectedQuote.amountVnd.toLocaleString("vi-VN")} đ)</span>
                                     <span>→</span>
                                 </>
                             )}
@@ -389,7 +410,7 @@ function SubscriptionModalContent({
                         <div className="rounded-xl bg-amber-50/80 border border-amber-200/80 p-3 text-xs text-amber-900 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500 animate-ping" />
-                                <span>Đang chờ chuyển khoản... (Tự động kích hoạt)</span>
+                                <span>Đang chờ chuyển khoản đúng số tiền</span>
                             </div>
                             <span className="text-[11px] font-bold text-amber-700">Mã: {orderData.order.orderCode}</span>
                         </div>
@@ -461,7 +482,7 @@ function SubscriptionModalContent({
                         <div>
                             <h3 className="text-lg font-bold text-[#27231F]">Gia Hạn Dịch Vụ Thành Công!</h3>
                             <p className="text-xs text-[#766F67] mt-1.5 max-w-sm mx-auto">
-                                Hệ thống đã tự động cộng dồn 30 ngày sử dụng vào tài khoản hồ câu của bạn mà không làm mất thời gian dùng thử.
+                                Hệ thống đã cộng thời hạn của gói vừa thanh toán vào hạn hiện tại của hồ. Hạn cũ còn lại không bị cắt.
                             </p>
                             {paidResult?.expiresAt && (
                                 <p className="text-xs font-bold text-[#17201A] mt-2">

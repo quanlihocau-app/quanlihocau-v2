@@ -257,7 +257,14 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
     };
 
     // Active drilldown metric
-    const [drilldownMetric, setDrilldownMetric] = useState<string | null>(() => searchParams.get("metric"));
+    const canExportReport = userRole === Role.OWNER || userRole === Role.MANAGER;
+    const [drilldownMetric, setDrilldownMetric] = useState<string | null>(() =>
+        (initialUserRole === Role.OWNER || initialUserRole === Role.MANAGER) ? searchParams.get("metric") : null,
+    );
+    const openDrilldown = (metric: string) => {
+        if (!canExportReport) return;
+        setDrilldownMetric(metric);
+    };
 
     // Active reporting tab
     const [activeTab, setActiveTab] = useState<"overview" | "revenue" | "operations" | "facilities" | "inventory" | "customers" | "system">(() => { const tab = searchParams.get("tab"); return ["overview", "revenue", "operations", "facilities", "inventory", "customers", "system"].includes(tab || "") ? tab as "overview" : "overview"; });
@@ -378,7 +385,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                                     Bộ lọc
                                 </button>
 
-                                {/* Export / Print dropdown */}
+                                {canExportReport && (
                                 <button
                                     type="button"
                                     disabled={exporting} onClick={() => void handleExport()}
@@ -387,6 +394,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                                 >
                                     {exporting ? "Đang xuất…" : "Xuất CSV"}
                                 </button>
+                                )}
                                 <button
                                     type="button"
                                     onClick={() => window.print()}
@@ -467,7 +475,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         {/* Total Revenue */}
                         <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("totalRevenue"); } }} onClick={() => setDrilldownMetric("totalRevenue")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalRevenue"); } }} onClick={() => openDrilldown("totalRevenue")}
                             title={`Doanh thu tổng: ${formatVnd(s?.totalRevenue ?? 0)}`} className="cursor-pointer rounded-2xl border border-emerald-700 bg-linear-to-br from-[#1B3224] to-[#244632] p-3 text-white shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
@@ -501,7 +509,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
 
                         {/* Ticket Revenue */}
                         <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("ticketRevenue"); } }} onClick={() => setDrilldownMetric("ticketRevenue")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("ticketRevenue"); } }} onClick={() => openDrilldown("ticketRevenue")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -517,7 +525,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
 
                         {/* Retail / Product Revenue */}
                         <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("productRevenue"); } }} onClick={() => setDrilldownMetric("productRevenue")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("productRevenue"); } }} onClick={() => openDrilldown("productRevenue")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -533,8 +541,8 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                         {/* Product Report Card */}
                         <div
                             role="button" tabIndex={0}
-                            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("productReport"); } }}
-                            onClick={() => setDrilldownMetric("productReport")}
+                            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("productReport"); } }}
+                            onClick={() => openDrilldown("productReport")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -549,7 +557,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
 
                         {/* Overtime Revenue */}
                         <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("overtimeRevenue"); } }} onClick={() => setDrilldownMetric("overtimeRevenue")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("overtimeRevenue"); } }} onClick={() => openDrilldown("overtimeRevenue")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -565,7 +573,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
 
                         {/* Fish Buyback */}
                         <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("totalFishBuyback"); } }} onClick={() => setDrilldownMetric("totalFishBuyback")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalFishBuyback"); } }} onClick={() => openDrilldown("totalFishBuyback")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -581,7 +589,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
 
                         {/* Total Expenses */}
                         <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("totalExpense"); } }} onClick={() => setDrilldownMetric("totalExpense")}
+                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalExpense"); } }} onClick={() => openDrilldown("totalExpense")}
                             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -597,7 +605,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
 
                     {/* Receivable Debt */}
                     <div
-                        role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("totalReceivableDebt"); } }} onClick={() => setDrilldownMetric("totalReceivableDebt")}
+                        role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalReceivableDebt"); } }} onClick={() => openDrilldown("totalReceivableDebt")}
                         className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs hover:border-emerald-300 hover:shadow-sm transition-all active:scale-98"
                     >
                         <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -754,7 +762,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                             </h4>
                             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                 <div
-                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("sessions"); } }} onClick={() => setDrilldownMetric("sessions")}
+                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("sessions"); } }} onClick={() => openDrilldown("sessions")}
                                     className="cursor-pointer rounded-xl bg-slate-50 p-3 hover:bg-slate-100 transition-colors"
                                 >
                                     <span className="text-[11px] text-slate-500 block">
@@ -762,7 +770,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                                     <span className="text-base font-bold text-slate-800">{s?.totalSessions ?? 0}</span>
                                 </div>
                                 <div
-                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("activeSessions"); } }} onClick={() => setDrilldownMetric("activeSessions")}
+                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("activeSessions"); } }} onClick={() => openDrilldown("activeSessions")}
                                     className="cursor-pointer rounded-xl bg-emerald-50/60 p-3 hover:bg-emerald-100/60 transition-colors"
                                 >
                                     <span className="text-[11px] text-emerald-800 block">
@@ -770,7 +778,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                                     <span className="text-base font-bold text-emerald-800">{s?.activeSessions ?? 0}</span>
                                 </div>
                                 <div
-                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("completedSessions"); } }} onClick={() => setDrilldownMetric("completedSessions")}
+                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("completedSessions"); } }} onClick={() => openDrilldown("completedSessions")}
                                     className="cursor-pointer rounded-xl bg-blue-50/60 p-3 hover:bg-blue-100/60 transition-colors"
                                 >
                                     <span className="text-[11px] text-blue-800 block">
@@ -778,7 +786,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                                     <span className="text-base font-bold text-blue-800">{s?.completedSessions ?? 0}</span>
                                 </div>
                                 <div
-                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("cancelledSessions"); } }} onClick={() => setDrilldownMetric("cancelledSessions")}
+                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("cancelledSessions"); } }} onClick={() => openDrilldown("cancelledSessions")}
                                     className="cursor-pointer rounded-xl bg-rose-50/60 p-3 hover:bg-rose-100/60 transition-colors"
                                 >
                                     <span className="text-[11px] text-rose-800 block">
@@ -1106,7 +1114,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                             </h4>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <div
-                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("auditEvents"); } }} onClick={() => setDrilldownMetric("auditEvents")}
+                                    role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("auditEvents"); } }} onClick={() => openDrilldown("auditEvents")}
                                     className="cursor-pointer rounded-xl border border-blue-200/80 bg-blue-50/50 p-3.5 hover:bg-blue-100/60 transition-all group"
                                 >
                                     <div className="flex items-center justify-between">

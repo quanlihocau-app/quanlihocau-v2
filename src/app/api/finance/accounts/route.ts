@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
 import { ensureDefaultFinancialData } from "@/lib/financial/seed-defaults";
 
 const createAccountSchema = z.object({
@@ -17,7 +17,7 @@ const createAccountSchema = z.object({
 
 export async function GET() {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_VIEW_FUNDS");
         const lakeId = tenantContext.lakeId;
 
@@ -94,7 +94,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_MANAGE_FUNDS");
         const lakeId = tenantContext.lakeId;
 

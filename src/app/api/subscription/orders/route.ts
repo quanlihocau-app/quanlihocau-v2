@@ -8,12 +8,13 @@ import {
     ForbiddenError,
     requireTenantContext,
 } from "@/lib/tenant";
-import { BANK_CONFIG, generateVietQrUrl, PLAN_PRICING } from "@/lib/vietqr";
+import { BANK_CONFIG, generateVietQrUrl, planCharge } from "@/lib/vietqr";
 
 const createOrderSchema = z.object({
     plan: z.enum(["SILVER", "GOLD"], {
         message: "Chỉ chấp nhận gói SILVER hoặc GOLD.",
     }),
+    cycle: z.enum(["MONTHLY", "YEARLY"]).default("MONTHLY"),
 });
 
 function generateOrderCode(): string {
@@ -43,8 +44,8 @@ export async function POST(request: Request) {
         }
 
         const planTier = parsed.data.plan;
-        const planConfig = PLAN_PRICING[planTier];
-        const amountVnd = planConfig.priceVnd;
+        const charge = planCharge(planTier, parsed.data.cycle);
+        const amountVnd = charge.amountVnd;
 
         // Generate unique orderCode
         let orderCode = generateOrderCode();
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
                 lakeId: tenant.lakeId,
                 planCode: planTier,
                 amountVnd,
-                durationDays: planConfig.durationDays,
+                durationDays: charge.durationDays,
                 status: "PENDING",
                 paymentMethod: "VIETQR",
             },

@@ -4,7 +4,8 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
+import { assertClientIdsInLake, publicCustomer } from "@/lib/tenant-scope";
 import { generateFinancialCode } from "@/lib/financial/code-generator";
 
 const createDebtSchema = z.object({
@@ -22,7 +23,7 @@ const createDebtSchema = z.object({
 
 export async function GET(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_MANAGE_DEBT");
         const lakeId = tenantContext.lakeId;
 
@@ -60,7 +61,7 @@ export async function GET(request: Request) {
             where,
             orderBy: [{ createdAt: "desc" }],
             include: {
-                customer: { select: { id: true, name: true, phoneNormalized: true } },
+                customer: { select: { id: true, name: true, phoneNormalized: true, lakeId: true } },
                 invoice: { select: { id: true, totalAmountVnd: true } },
                 payments: {
                     orderBy: { paymentDate: "desc" },
@@ -77,6 +78,7 @@ export async function GET(request: Request) {
                 d.status !== "SETTLED" && d.status !== "CANCELLED" && d.dueDate && new Date(d.dueDate) < now;
             return {
                 ...d,
+                customer: publicCustomer(d.customer, lakeId),
                 isOverdue: Boolean(isOverdue),
                 computedStatus: isOverdue ? "OVERDUE" : d.status,
             };
@@ -107,7 +109,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_MANAGE_DEBT");
         const lakeId = tenantContext.lakeId;
 
@@ -139,6 +141,8 @@ export async function POST(request: Request) {
 
         const dueDate = dueDateStr ? new Date(dueDateStr) : null;
 
+        await assertClientIdsInLake(prisma, lakeId, { customerId, invoiceId });
+
         const code = await generateFinancialCode(prisma, lakeId, "CN");
 
         const debt = await prisma.debt.create({
@@ -158,7 +162,7 @@ export async function POST(request: Request) {
                 invoiceId: invoiceId || null,
             },
             include: {
-                customer: true,
+                customer: { select: { id: true, name: true, phoneNormalized: true, lakeId: true } },
             },
         });
 
@@ -181,7 +185,10 @@ export async function POST(request: Request) {
         });
 
         return NextResponse.json(
-            { message: "Đã ghi nhận khoản công nợ thành công.", debt },
+            {
+                message: "Đã ghi nhận khoản công nợ thành công.",
+                debt: { ...debt, customer: publicCustomer(debt.customer, lakeId) },
+            },
             { status: 201 },
         );
     } catch (error: unknown) {

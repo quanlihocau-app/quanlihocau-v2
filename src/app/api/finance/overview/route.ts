@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
 
 const querySchema = z.object({
     from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Định dạng ngày bắt đầu YYYY-MM-DD không đúng."),
@@ -12,7 +12,7 @@ const querySchema = z.object({
 
 export async function GET(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_VIEW_REPORTS");
         const lakeId = tenantContext.lakeId;
 

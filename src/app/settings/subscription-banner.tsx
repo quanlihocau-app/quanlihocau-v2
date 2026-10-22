@@ -23,7 +23,7 @@ export function SubscriptionBanner({
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const planNames = {
-        TRIAL: "Dùng thử 7 ngày",
+        TRIAL: "Dùng thử 30 ngày",
         SILVER: "Gói Bạc (Silver)",
         GOLD: "Gói Vàng (Gold)",
     };
@@ -94,7 +94,7 @@ export function SubscriptionBanner({
                     <div className="rounded-xl bg-[#F7F9F5] p-2.5 border border-[#E3E8E3]">
                         <span className="text-[#66716A] block text-[11px]">Tài khoản nhân sự</span>
                         <span className="font-bold text-[#17201A]">
-                            {staffCount} {plan === "SILVER" ? "/ 1 nhân viên" : "nhân viên (Không giới hạn)"}
+                            {staffCount} {plan === "SILVER" ? "/ 2 nhân sự" : "nhân sự (Không giới hạn)"}
                         </span>
                     </div>
                 </div>

@@ -3,7 +3,8 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
+import { assertClientIdsInLake, publicCustomer } from "@/lib/tenant-scope";
 import { generateFinancialCode } from "@/lib/financial/code-generator";
 import { assertPeriodNotLocked } from "@/lib/financial/period-guard";
 import { csvCell } from "@/lib/finance";
@@ -27,7 +28,7 @@ const createTransactionSchema = z.object({
 
 export async function GET(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_VIEW_TRANSACTIONS");
         const lakeId = tenantContext.lakeId;
 
@@ -91,7 +92,7 @@ export async function GET(request: Request) {
                 include: {
                     category: { select: { id: true, name: true, color: true, icon: true } },
                     account: { select: { id: true, name: true, accountType: true } },
-                    customer: { select: { id: true, name: true, phoneNormalized: true } },
+                    customer: { select: { id: true, name: true, phoneNormalized: true, lakeId: true } },
                     createdBy: { select: { id: true, name: true } },
                 },
             }),
@@ -122,7 +123,7 @@ export async function GET(request: Request) {
                     t.paymentMethod === "CASH" ? "Tiền mặt" : "Chuyển khoản",
                     t.category?.name || "Khác",
                     t.account?.name || "Mặc định",
-                    t.payerOrReceiver || t.customer?.name || t.supplierName || "",
+                    t.payerOrReceiver || publicCustomer(t.customer, lakeId)?.name || t.supplierName || "",
                     t.description,
                     t.status,
                     t.createdBy?.name || "Hệ thống",
@@ -137,8 +138,13 @@ export async function GET(request: Request) {
             });
         }
 
+        const safeTransactions = transactions.map((transaction) => ({
+            ...transaction,
+            customer: publicCustomer(transaction.customer, lakeId),
+        }));
+
         return NextResponse.json({
-            transactions,
+            transactions: safeTransactions,
             summary: {
                 totalReceiptsVnd,
                 totalExpensesVnd,
@@ -164,7 +170,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_CREATE_TRANSACTIONS");
         const lakeId = tenantContext.lakeId;
 
@@ -247,6 +253,8 @@ export async function POST(request: Request) {
             if (duplicateCheck) {
                 return duplicateCheck;
             }
+
+            await assertClientIdsInLake(tx, lakeId, { categoryId, accountId, customerId });
 
             // Tìm hoặc chọn quỹ mặc định nếu không truyền
             let targetAccountId = accountId;

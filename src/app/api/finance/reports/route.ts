@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
 import { csvCell } from "@/lib/finance";
 
 const reportQuerySchema = z.object({
@@ -15,7 +15,7 @@ const reportQuerySchema = z.object({
 
 export async function GET(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_VIEW_REPORTS");
         const lakeId = tenantContext.lakeId;
 

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { BANK_CONFIG, PLAN_PRICING } from "@/lib/vietqr";
+import { BANK_CONFIG, PLAN_PRICING, planCharge } from "@/lib/vietqr";
 
 export const metadata: Metadata = {
     title: "Bảng Giá Thuê Bao Phần Mềm Quản Lý Hồ Câu — Minh Bạch, Không Ẩn Phí",
     description:
-        "Bảng giá phần mềm quản lý hồ câu quanlihocau.com: Gói Bạc 99.000đ/30 ngày (tối đa 30 ô câu, 1 nhân viên), Gói Vàng 179.000đ/30 ngày (không giới hạn). Dùng thử miễn phí full tính năng.",
+        "Bảng giá phần mềm quản lý hồ câu quanlihocau.com: Gói Bạc 129.000đ/tháng (tối đa 30 ô, chủ hồ và 2 nhân sự), Gói Vàng 199.000đ/tháng (không giới hạn). Đóng năm bằng 10 tháng. Tài khoản mới dùng thử 30 ngày.",
     keywords: [
         "bảng giá phần mềm hồ câu",
         "giá phần mềm quản lý hồ câu",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     openGraph: {
         title: "Bảng Giá Thuê Bao Phần Mềm Quản Lý Hồ Câu — Quản Lí Hồ Câu",
         description:
-            "Chi phí chỉ từ 99.000đ/30 ngày. Đầy đủ tính năng mở vé, tính giờ tự động, bán lẻ quầy, thu mua cá và chốt ca đối soát.",
+            "Gói Bạc 129.000đ/tháng, Gói Vàng 199.000đ/tháng. Đóng năm bằng giá 10 tháng. Tài khoản mới dùng thử 30 ngày.",
         url: "https://quanlihocau.com/bang-gia",
         type: "website",
         images: [
@@ -71,7 +71,7 @@ const pricingJsonLd = {
                     "priceValidUntil": "2027-12-31",
                     "availability": "https://schema.org/InStock",
                     "url": "https://quanlihocau.com/bang-gia",
-                    "description": "99.000đ / 30 ngày: tối đa 30 ô câu, 1 tài khoản nhân viên",
+                    "description": "129.000đ/tháng hoặc 1.290.000đ/năm: tối đa 30 ô câu, chủ hồ và 2 nhân sự",
                 },
                 {
                     "@type": "Offer",
@@ -81,7 +81,7 @@ const pricingJsonLd = {
                     "priceValidUntil": "2027-12-31",
                     "availability": "https://schema.org/InStock",
                     "url": "https://quanlihocau.com/bang-gia",
-                    "description": "179.000đ / 30 ngày: không giới hạn ô câu, không giới hạn nhân viên",
+                    "description": "199.000đ/tháng hoặc 1.990.000đ/năm: không giới hạn ô câu và nhân sự",
                 },
             ],
         },
@@ -140,7 +140,7 @@ export default function PublicPricingPage() {
                     </h1>
                     <p className="text-sm sm:text-base text-emerald-200/80 leading-relaxed">
                         Đầu tư nhỏ, yên tâm vận hành trọn vẹn hồ câu. Chi phí cố định theo chu kỳ 30 ngày,
-                        không tự động trừ tiền trong tài khoản, kích hoạt minh bạch bằng chuyển khoản VietQR.
+                        không tự động trừ tiền trong tài khoản. Gia hạn bằng VietQR đúng số tiền, gói kích hoạt khi khoản chuyển được xác nhận.
                     </p>
                 </div>
 
@@ -210,6 +210,7 @@ export default function PublicPricingPage() {
                                     {formatVnd(PLAN_PRICING.SILVER.priceVnd)}
                                 </span>
                                 <span className="text-xs text-emerald-300/70 ml-1.5">/ {PLAN_PRICING.SILVER.durationDays} ngày</span>
+                                <p className="mt-1 text-[11px] text-emerald-200/70">Năm: {formatVnd(planCharge("SILVER", "YEARLY").amountVnd)} / 12 tháng (đóng 10 tháng)</p>
                             </div>
 
                             <ul className="space-y-2.5 pt-4 border-t border-emerald-800/40 text-xs text-emerald-100">
@@ -219,7 +220,7 @@ export default function PublicPricingPage() {
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <span className="text-emerald-400 font-bold">✓</span>
-                                    <span><strong>1 tài khoản nhân viên</strong> (ngoài tài khoản Chủ hồ)</span>
+                                    <span><strong>Chủ hồ và 2 tài khoản nhân sự</strong></span>
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <span className="text-emerald-400 font-bold">✓</span>
@@ -275,6 +276,7 @@ export default function PublicPricingPage() {
                                     {formatVnd(PLAN_PRICING.GOLD.priceVnd)}
                                 </span>
                                 <span className="text-xs text-emerald-300/70 ml-1.5">/ {PLAN_PRICING.GOLD.durationDays} ngày</span>
+                                <p className="mt-1 text-[11px] text-amber-100/80">Năm: {formatVnd(planCharge("GOLD", "YEARLY").amountVnd)} / 12 tháng (đóng 10 tháng)</p>
                             </div>
 
                             <ul className="space-y-2.5 pt-4 border-t border-emerald-800/40 text-xs text-emerald-100">
@@ -347,8 +349,7 @@ export default function PublicPricingPage() {
                         <div className="rounded-xl border border-emerald-800/30 bg-[#061F13]/50 p-4 space-y-2">
                             <p className="font-bold text-white">Thanh Toán VietQR Ngân Hàng</p>
                             <p className="text-emerald-200/70 leading-relaxed">
-                                Gia hạn bằng cách mở ứng dụng ngân hàng bất kỳ và quét mã VietQR.
-                                Hệ thống đối soát tự động và kích hoạt gói ngay sau khi nhận tiền.
+                                Gia hạn bằng cách quét VietQR đúng số tiền và đúng nội dung. Gói được kích hoạt khi khoản chuyển đúng số tiền được xác nhận, không tự trừ tài khoản.
                             </p>
                         </div>
 
@@ -375,8 +376,8 @@ export default function PublicPricingPage() {
                             </h3>
                             <p className="text-xs text-emerald-200/80 leading-relaxed">
                                 Mỗi hồ luôn có 1 tài khoản Chủ hồ (OWNER) có toàn quyền quản trị. Với Gói Bạc,
-                                bạn có thể tạo thêm tối đa 1 tài khoản Nhân viên (STAFF) để cùng trực quầy thu ngân.
-                                Nếu hồ có từ 2 nhân viên trở lên làm việc khác ca, bạn cần nâng cấp lên Gói Vàng.
+                                bạn có thể tạo thêm tối đa 2 tài khoản nhân sự (STAFF hoặc MANAGER) để cùng trực quầy.
+                                Từ người thứ 3 trở đi, hồ cần Gói Vàng.
                             </p>
                         </div>
 
@@ -396,8 +397,7 @@ export default function PublicPricingPage() {
                                 3. Tôi có thể gia hạn sớm trước khi hết hạn không?
                             </h3>
                             <p className="text-xs text-emerald-200/80 leading-relaxed">
-                                Hoàn toàn được. Khi bạn quét mã thanh toán gia hạn, hệ thống sẽ tự động cộng dồn
-                                thêm 30 ngày nối tiếp vào ngày hết hạn hiện tại của bạn, không bị mất bất kỳ ngày nào.
+                                Được. Thanh toán tháng cộng 30 ngày, thanh toán năm cộng 365 ngày, nối vào hạn hiện tại nếu hạn đó còn trong tương lai. Hạn cũ không bị cắt.
                             </p>
                         </div>
 

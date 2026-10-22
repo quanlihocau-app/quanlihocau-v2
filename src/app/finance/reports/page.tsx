@@ -1,12 +1,8 @@
-import { redirect } from "next/navigation";
-import { getTenantContext } from "@/lib/tenant";
+import { requireFinancePage } from "@/lib/finance-page";
 import { FinancialReportsView } from "./reports-view";
 
 export default async function FinancialReportsPage() {
-    const tenant = await getTenantContext();
-    if (!tenant) {
-        redirect("/login");
-    }
+    const tenant = await requireFinancePage();
 
     return (
         <FinancialReportsView

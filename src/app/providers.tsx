@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { AutoScrollCenter } from "@/components/ui/auto-scroll-center";
 import { VirtualKeyboardHandler } from "@/components/ui/virtual-keyboard-handler";
 import { AppTour } from "@/components/tour/app-tour";
+import { SubscriptionAccessBanner } from "@/components/subscription/subscription-access-banner";
 
 function SessionCacheGuard() {
     const { data: session, status } = useSession();
@@ -40,6 +41,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <ToastProvider>
             <AutoScrollCenter />
             <VirtualKeyboardHandler />
+            <SubscriptionAccessBanner />
             {children}
         </ToastProvider>
     );

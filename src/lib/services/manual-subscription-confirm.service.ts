@@ -152,12 +152,17 @@ export async function confirmManualSubscriptionOrder(
             throw new Error("PLAN_NOT_FOUND");
         }
 
-        // Verify amount integrity
+        // Số tiền trên đơn là giá đã phát hành. Đơn cũ (99.000đ / 179.000đ) vẫn xác nhận được
+        // sau khi bảng giá tăng; đơn mới phải đạt giá catalog hiện tại.
+        const legacyIssuedAmounts = [99000, 179000];
         if (order.amountVnd <= 0) {
             throw new Error("INVALID_AMOUNT");
         }
 
-        if (order.amountVnd < order.plan.priceVnd) {
+        if (
+            order.amountVnd < order.plan.priceVnd &&
+            !legacyIssuedAmounts.includes(order.amountVnd)
+        ) {
             throw new Error("INVALID_AMOUNT");
         }
 

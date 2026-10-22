@@ -1,43 +1,15 @@
 import { NextResponse } from "next/server";
-import crypto from "node:crypto";
 
+import { shouldMarkOrderPaid, verifyWebhookSecret } from "@/lib/bank-webhook";
 import { prisma } from "@/lib/prisma";
 
-/**
- * Helper to verify webhook authenticity
- */
 function verifyWebhookSecurity(request: Request, rawBody: string): boolean {
     const secret = process.env.BANK_WEBHOOK_SECRET;
-    // If no secret configured in development, allow requests for local testing
     if (!secret) {
-        return true;
+        console.error("Bank webhook rejected: BANK_WEBHOOK_SECRET is unset.");
+        return false;
     }
-
-    // 1. Check Bearer token or API key header
-    const authHeader = request.headers.get("authorization");
-    const apiKeyHeader = request.headers.get("x-api-key");
-
-    if (authHeader && authHeader.replace(/^Bearer\s+/i, "").trim() === secret) {
-        return true;
-    }
-
-    if (apiKeyHeader && apiKeyHeader.trim() === secret) {
-        return true;
-    }
-
-    // 2. Check HMAC signature if present
-    const signature = request.headers.get("x-signature") || request.headers.get("x-hub-signature");
-    if (signature) {
-        const expectedSig = crypto
-            .createHmac("sha256", secret)
-            .update(rawBody)
-            .digest("hex");
-        if (crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
-            return true;
-        }
-    }
-
-    return false;
+    return verifyWebhookSecret(request, rawBody, secret);
 }
 
 export async function POST(request: Request) {
@@ -138,8 +110,7 @@ export async function POST(request: Request) {
                 };
             }
 
-            // Verify amount
-            if (transferAmount && transferAmount < order.amountVnd) {
+            if (!shouldMarkOrderPaid(transferAmount, order.amountVnd)) {
                 await tx.subscriptionOrder.update({
                     where: { id: order.id },
                     data: {

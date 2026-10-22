@@ -55,7 +55,7 @@ export default function TermsOfServicePage() {
                             href="/register"
                             className="rounded-xl bg-[#8A5A20] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#724918] transition-colors"
                         >
-                            Dùng thử 7 ngày
+                            Dùng thử 30 ngày
                         </Link>
                     </div>
                 </div>
@@ -97,9 +97,9 @@ export default function TermsOfServicePage() {
                             Chính Sách Dùng Thử & Thuê Bao
                         </h2>
                         <div className="space-y-2 text-xs sm:text-sm text-[#5A524A]">
-                            <p><strong>2.1 Dùng thử miễn phí 7 ngày:</strong> Mọi hồ câu mới đăng ký đều được kích hoạt ngay 7 ngày trải nghiệm trọn vẹn toàn bộ tính năng cao cấp của hệ thống mà không cần cung cấp thẻ tín dụng hay chuyển khoản trước.</p>
-                            <p><strong>2.2 Chu kỳ thuê bao:</strong> Dịch vụ được cung cấp theo chu kỳ 30 ngày (Gói Bạc 99.000đ/30 ngày và Gói Vàng 179.000đ/30 ngày). Thời hạn bắt đầu tính từ ngày thanh toán hoặc cộng nối tiếp nếu hồ đang còn hạn sử dụng.</p>
-                            <p><strong>2.3 Thanh toán chủ động qua VietQR:</strong> Toàn bộ giao dịch gia hạn thực hiện bằng quét mã VietQR ngân hàng Techcombank. Hệ thống <strong>tuyệt đối không tự động trừ tiền</strong> từ tài khoản ngân hàng của bạn khi hết chu kỳ.</p>
+                            <p><strong>2.1 Dùng thử miễn phí 30 ngày:</strong> Tài khoản hồ mới đăng ký được 30 ngày trải nghiệm. Hồ đã có hạn sử dụng giữ nguyên hạn đó, không bị đặt lại.</p>
+                            <p><strong>2.2 Chu kỳ thuê bao:</strong> Gói Bạc 129.000đ/tháng (tối đa 30 ô câu, chủ hồ và 2 tài khoản nhân sự) và Gói Vàng 199.000đ/tháng (không giới hạn). Đóng theo năm tính bằng 10 tháng: 1.290.000đ và 1.990.000đ, thời hạn 365 ngày. Hạn mới được cộng nối tiếp nếu hồ còn hạn.</p>
+                            <p><strong>2.3 Thanh toán chủ động qua VietQR:</strong> Gia hạn bằng quét mã VietQR đúng số tiền. Hệ thống <strong>không tự động trừ tiền</strong> tài khoản. Gói được kích hoạt khi khoản chuyển đúng số tiền được xác nhận.</p>
                         </div>
                     </section>
 

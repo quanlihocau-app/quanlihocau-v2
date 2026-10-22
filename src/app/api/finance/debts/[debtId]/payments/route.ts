@@ -3,7 +3,8 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
+import { assertClientIdsInLake, belongsToLake } from "@/lib/tenant-scope";
 import { generateFinancialCode } from "@/lib/financial/code-generator";
 import { assertPeriodNotLocked } from "@/lib/financial/period-guard";
 
@@ -21,13 +22,13 @@ export async function POST(
 ) {
     try {
         const { debtId } = await params;
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_MANAGE_DEBT");
         const lakeId = tenantContext.lakeId;
 
         const debt = await prisma.debt.findFirst({
             where: { id: debtId, lakeId },
-            include: { customer: true },
+            include: { customer: { select: { id: true, name: true, lakeId: true } } },
         });
 
         if (!debt) {
@@ -67,6 +68,7 @@ export async function POST(
 
         const result = await prisma.$transaction(async (tx) => {
             // Chọn quỹ mặc định nếu không truyền
+            await assertClientIdsInLake(tx, lakeId, { accountId });
             let targetAccountId = accountId;
             if (!targetAccountId) {
                 const defaultAcc = await tx.financialAccount.findFirst({
@@ -90,7 +92,8 @@ export async function POST(
                 where: { lakeId, name: catName },
             });
 
-            const payerOrReceiver = debt.customer?.name || debt.supplierName || "Đối tác";
+            const sameLakeCustomer = debt.customer && belongsToLake(debt.customer.lakeId, lakeId) ? debt.customer : null;
+            const payerOrReceiver = sameLakeCustomer?.name || debt.supplierName || "Đối tác";
             const description = isReceivable
                 ? `Thu nợ: [${debt.code}] ${debt.title} - ${payerOrReceiver}`
                 : `Trả nợ: [${debt.code}] ${debt.title} - ${payerOrReceiver}`;
@@ -105,7 +108,7 @@ export async function POST(
                     status: "APPROVED",
                     categoryId: category?.id || null,
                     accountId: targetAccountId,
-                    customerId: debt.customerId,
+                    customerId: sameLakeCustomer ? debt.customerId : null,
                     supplierName: debt.supplierName,
                     payerOrReceiver,
                     description,

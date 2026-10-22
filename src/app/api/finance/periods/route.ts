@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
 
 const periodSchema = z.object({
     name: z.string().trim().min(1, "Tên kỳ không được để trống.").max(100),
@@ -15,7 +15,7 @@ const periodSchema = z.object({
 
 export async function GET() {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_VIEW_REPORTS");
         const lakeId = tenantContext.lakeId;
 
@@ -38,7 +38,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_LOCK_PERIOD");
         const lakeId = tenantContext.lakeId;
 

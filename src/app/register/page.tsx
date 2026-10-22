@@ -21,7 +21,7 @@ export default function RegisterPage() {
                 </div>
                 <h1 className="text-2xl font-bold text-slate-900">Tạo tài khoản hồ câu</h1>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Tiếp tục bằng Google để tạo tài khoản chủ hồ và bắt đầu dùng thử miễn phí 7 ngày.
+                    Tiếp tục bằng Google để tạo tài khoản chủ hồ và bắt đầu dùng thử miễn phí 30 ngày.
                     Tên hồ ban đầu sẽ được tạo tự động và có thể chỉnh trong phần cài đặt.
                 </p>
                 <button

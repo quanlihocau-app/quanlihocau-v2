@@ -24,16 +24,27 @@ function loadModule(path, modules, globals = {}) {
     return exports;
 }
 
+const authRateLimit = {
+    authFailureState: async (_namespace, account) => ({ blocked: false, retryAfterSeconds: 0, identifier: String(account ?? "unknown") }),
+    authLockMessage: () => "locked",
+    isRateLimitUnavailable: () => false,
+    rateLimitUnavailableMessage: () => "busy",
+    recordAuthFailure: async () => {},
+};
+
 function authModule(user = { email: "owner@example.com", systemRole: "USER", sessionVersion: 2, isLocked: false }) {
     let cookie;
     const auth = loadModule("../src/lib/auth.ts", {
         crypto,
+        "node:crypto": crypto,
         "next/headers": { cookies: async () => ({ get: () => ({ value: cookie }), set: (_name, token) => { cookie = token; } }) },
         bcryptjs: {}, "next-auth/providers/credentials": () => ({}), "next-auth/providers/google": () => ({}),
         zod: { z: { string: () => ({ trim() { return this; }, min() { return this; }, email() { return this; } }), object: () => ({}) } },
-        "@/generated/prisma/client": { SystemRole: {} }, "@/lib/phone": {},
+        "@/generated/prisma/client": { SystemRole: {}, Role: { OWNER: "OWNER" }, Prisma: {} }, "@/lib/phone": {},
         "@/lib/prisma": { prisma: { user: { findUnique: async () => user } } },
         "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
+        "@/lib/auth-rate-limit": authRateLimit,
+        "@/lib/vietqr": { TRIAL_DAYS: 30 },
     });
     return { auth, user, setCookie: (token) => { cookie = token; } };
 }
@@ -196,6 +207,8 @@ test("Registration validates input and normalizes phone numbers before writing",
         "@/lib/auth": { setSessionCookie: async () => { registrationCreatedSession = true; } },
         "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
         "next/navigation": {}, "@/lib/phone": phone, zod: { z },
+        "@/lib/auth-rate-limit": authRateLimit,
+        "@/lib/vietqr": { TRIAL_DAYS: 30 },
     }, { console });
     assert.equal((await actions.registerUser({ email: 12 })).success, false);
     assert.equal((await actions.registerUser({ email: "owner@example.com", password: "Password123!", name: "Owner", phone: "bad" })).success, false);
@@ -218,6 +231,8 @@ test("Existing staff can log in by email while phone-number login is disabled", 
         "@/lib/auth": { setSessionCookie: async (value) => { session = value; } },
         "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
         "next/navigation": {}, "@/lib/phone": {}, zod: { z },
+        "@/lib/auth-rate-limit": authRateLimit,
+        "@/lib/vietqr": { TRIAL_DAYS: 30 },
     }, { console });
     const result = await actions.loginUser({ email: " Staff@Example.com ", password: "valid-password" });
     assert.equal(result.success, true);
@@ -242,6 +257,7 @@ test("Tenant data follows qa_session when an older NextAuth account cookie remai
         "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
         "@/lib/auth": { authOptions: {}, getSessionCookie: async () => ({ email: "staff@example.com", role: "USER" }) },
         "@/lib/prisma": { prisma: { membership: { findFirst: async (args) => { membershipQuery = args; return employee; } }, user: {} } },
+        "@/lib/subscription-access": { resolveSubscriptionAccess: () => "active" },
     }, { process: { env: {} } });
     const context = await tenant.getTenantContext();
     assert.equal(membershipQuery.where.user.email, "staff@example.com");
@@ -264,6 +280,7 @@ test("An expired qa_session falls back to a valid regular NextAuth account", asy
         "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
         "@/lib/auth": { authOptions: {}, getSessionCookie: async () => null },
         "@/lib/prisma": { prisma: { membership: { findFirst: async (args) => { membershipQuery = args; return employee; } }, user: {} } },
+        "@/lib/subscription-access": { resolveSubscriptionAccess: () => "active" },
     }, { process: { env: {} } });
     const context = await tenant.getTenantContext();
     assert.equal(membershipQuery.where.user.email, "staff@example.com");
@@ -280,6 +297,7 @@ test("An invalid qa_session cannot use a SUPER_ADMIN NextAuth cookie", async () 
         "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
         "@/lib/auth": { authOptions: {}, getSessionCookie: async () => null },
         "@/lib/prisma": { prisma: { membership: { findFirst: async () => { throw new Error("must not query tenant"); } }, user: {} } },
+        "@/lib/subscription-access": { resolveSubscriptionAccess: () => "active" },
     }, { process: { env: {} } });
     assert.equal(await tenant.getTenantContext(), null);
 });

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
 
 const reconcileSchema = z.object({
     accountId: z.string().uuid("Tài khoản quỹ không hợp lệ."),
@@ -13,7 +13,7 @@ const reconcileSchema = z.object({
 
 export async function GET() {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_RECONCILE");
         const lakeId = tenantContext.lakeId;
 
@@ -53,7 +53,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_RECONCILE");
         const lakeId = tenantContext.lakeId;
 

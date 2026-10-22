@@ -3,7 +3,8 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
+import { assertClientIdsInLake } from "@/lib/tenant-scope";
 
 const updateCategorySchema = z.object({
     name: z.string().trim().min(1, "Tên danh mục không được để trống.").max(100).optional(),
@@ -20,7 +21,7 @@ export async function PUT(
 ) {
     try {
         const { categoryId } = await params;
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_MANAGE_CATEGORIES");
         const lakeId = tenantContext.lakeId;
 
@@ -39,6 +40,13 @@ export async function PUT(
                 { error: parsed.error.issues[0]?.message ?? "Dữ liệu không hợp lệ." },
                 { status: 400 },
             );
+        }
+
+        if (parsed.data.parentId) {
+            if (parsed.data.parentId === categoryId) {
+                return NextResponse.json({ error: "Danh mục không thể là cha của chính nó." }, { status: 400 });
+            }
+            await assertClientIdsInLake(prisma, lakeId, { parentCategoryId: parsed.data.parentId });
         }
 
         const updated = await prisma.financialCategory.update({
@@ -71,7 +79,7 @@ export async function DELETE(
 ) {
     try {
         const { categoryId } = await params;
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_MANAGE_CATEGORIES");
         const lakeId = tenantContext.lakeId;
 

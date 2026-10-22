@@ -367,29 +367,37 @@ export function DailyReportView({
         }
     }, []);
 
-    // ── Realtime Auto-Polling (mỗi 5 giây khi ca đang mở) ─────
+    // ── Poll mỗi 60 giây khi tab đang mở, dừng hẳn khi tab bị ẩn ──
     useEffect(() => {
-        // Chỉ auto-poll nếu đang xem ca đang mở
         if (shift.isClosed) return;
 
+        let intervalId: number | undefined;
         const doFetch = () => {
-            if (document.visibilityState === "visible") {
-                fetchLiveData(selectedShiftId === shift.id && !shift.isClosed ? undefined : selectedShiftId);
+            fetchLiveData(selectedShiftId === shift.id && !shift.isClosed ? undefined : selectedShiftId);
+        };
+        const stop = () => {
+            if (intervalId !== undefined) {
+                window.clearInterval(intervalId);
+                intervalId = undefined;
             }
         };
-
-        const interval = setInterval(doFetch, 5000);
-
-        // Resume poll ngay khi tab được active lại
+        const start = () => {
+            if (intervalId !== undefined || document.visibilityState !== "visible") return;
+            intervalId = window.setInterval(doFetch, 60_000);
+        };
         const handleVisibility = () => {
             if (document.visibilityState === "visible") {
                 doFetch();
+                start();
+            } else {
+                stop();
             }
         };
-        document.addEventListener("visibilitychange", handleVisibility);
 
+        start();
+        document.addEventListener("visibilitychange", handleVisibility);
         return () => {
-            clearInterval(interval);
+            stop();
             document.removeEventListener("visibilitychange", handleVisibility);
         };
     }, [shift.isClosed, shift.id, selectedShiftId, fetchLiveData]);

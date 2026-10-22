@@ -103,7 +103,7 @@ export function VerifyPhoneClient({
                 throw new Error(data.error || "Mã OTP không chính xác.");
             }
 
-            setSuccessMessage("Xác thực thành công! Gói Dùng thử 7 ngày đã được kích hoạt.");
+            setSuccessMessage("Xác thực thành công. Tài khoản mới được dùng thử 30 ngày.");
 
             // Refresh route & session, redirect into app
             setTimeout(() => {
@@ -148,7 +148,7 @@ export function VerifyPhoneClient({
                     Xác thực số điện thoại
                 </h1>
                 <p className="mt-1 text-xs text-[#66716A]">
-                    Kích hoạt gói <strong>Dùng thử 7 ngày</strong> cho {lakeName}
+                    Xác thực số điện thoại cho {lakeName}
                 </p>
             </div>
 
@@ -160,7 +160,7 @@ export function VerifyPhoneClient({
                         <span>Đặc quyền kích hoạt ngay sau khi xác thực:</span>
                     </div>
                     <ul className="list-disc pl-4 space-y-0.5 text-[11px] text-[#246B38]/90">
-                        <li>Gói <strong>Dùng thử 7 ngày</strong> miễn phí trọn bộ chức năng</li>
+                        <li>Tài khoản mới được <strong>dùng thử 30 ngày</strong></li>
                         <li>Quản lý hồ câu, tạo vé, tính giờ tự động và báo cáo ca</li>
                         <li>Bảo vệ tài khoản và lịch sử giao dịch chính chủ</li>
                     </ul>
@@ -244,7 +244,7 @@ export function VerifyPhoneClient({
                                 disabled={isVerifying || otpCode.length !== 6}
                                 className="w-full mt-3 bg-[#4F9D5A] text-white font-bold hover:bg-[#246B38] transition-colors py-2.5 shadow-sm"
                             >
-                                {isVerifying ? "Đang xác thực..." : "Xác nhận & Kích hoạt gói 7 ngày"}
+                                {isVerifying ? "Đang xác thực..." : "Xác nhận số điện thoại"}
                             </Button>
                         </div>
                     )}

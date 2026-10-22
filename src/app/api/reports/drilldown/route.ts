@@ -7,6 +7,7 @@ import {
     PaymentDirection,
     PaymentMethod,
     Prisma,
+    Role,
     SessionStatus,
 } from "@/generated/prisma/client";
 import { authOptions } from "@/lib/auth";
@@ -16,7 +17,7 @@ import {
     formatVnDateTimeDisplay,
     getDateRangeForPreset,
 } from "@/lib/reports/date-utils";
-import { getTenantContext } from "@/lib/tenant";
+import { AuthenticationError, ForbiddenError, requireTenantContext } from "@/lib/tenant";
 import { createInternalErrorResponse } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
@@ -42,10 +43,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const tenantContext = await getTenantContext();
-        if (!tenantContext?.lakeId) {
-            return NextResponse.json({ error: "Forbidden: No lake assigned" }, { status: 403 });
-        }
+        const tenantContext = await requireTenantContext([Role.OWNER, Role.MANAGER]);
 
         const lakeId = tenantContext.lakeId;
         const { searchParams } = new URL(request.url);
@@ -435,6 +433,12 @@ export async function GET(request: NextRequest) {
             items,
         });
     } catch (error: unknown) {
+        if (error instanceof AuthenticationError) {
+            return NextResponse.json({ error: error.message }, { status: 401 });
+        }
+        if (error instanceof ForbiddenError) {
+            return NextResponse.json({ error: error.message }, { status: 403 });
+        }
         return createInternalErrorResponse(
             "GET /api/reports/drilldown error",
             error,

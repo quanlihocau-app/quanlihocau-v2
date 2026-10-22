@@ -106,7 +106,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                     className="inline-flex min-h-9.5 items-center justify-center gap-1.5 rounded-xl bg-[#4F9D5A] px-3.5 sm:px-4 text-xs font-black text-white hover:bg-[#3D8547] transition-all shadow-md shadow-[#4F9D5A]/25"
                                 >
                                     <span>Dùng miễn phí</span>
-                                    <span className="hidden sm:inline">7 ngày</span>
+                                    <span className="hidden sm:inline">30 ngày</span>
                                     <span>→</span>
                                 </Link>
                             </>
@@ -158,7 +158,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                         href={isLoggedIn ? "/sessions" : "/register"}
                                         className="inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-7 py-3.5 text-sm sm:text-base font-black text-white hover:bg-[#3D8547] shadow-xl shadow-[#4F9D5A]/35 active:scale-95 transition-all text-center"
                                     >
-                                        <span>{isLoggedIn ? "Vào ứng dụng ngay" : "Bắt đầu dùng thử miễn phí 7 ngày"}</span>
+                                        <span>{isLoggedIn ? "Vào ứng dụng ngay" : "Bắt đầu dùng thử miễn phí 30 ngày"}</span>
                                         <span>→</span>
                                     </Link>
                                     <Link
@@ -171,7 +171,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
 
                                 {/* Reassurance Tagline */}
                                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-3 gap-y-1 text-xs text-[#52D879] font-semibold pt-0.5">
-                                    <span>🎁 Miễn phí 7 ngày</span>
+                                    <span>🎁 Miễn phí 30 ngày</span>
                                     <span>•</span>
                                     <span>⚡ Kích hoạt 30 giây</span>
                                     <span>•</span>
@@ -428,7 +428,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                 },
                                 {
                                     title: "Đa dạng phương thức thanh toán",
-                                    desc: "Hỗ trợ tiền mặt, chuyển khoản quét mã VietQR tự động và thanh toán kết hợp.",
+                                    desc: "Tiền mặt, chuyển khoản quét VietQR đúng số tiền (nhân viên xác nhận đã nhận) và thanh toán kết hợp.",
                                     icon: "📲",
                                 },
                                 {
@@ -452,8 +452,8 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                     icon: "🛡️",
                                 },
                                 {
-                                    title: "Lưu tạm khi mạng chập chờn",
-                                    desc: "Cơ chế lưu trữ offline giúp tiếp tục mở vé, ghi hàng thiết yếu ngay cả khi sóng yếu.",
+                                    title: "Chặn thao tác khi mất mạng",
+                                    desc: "Khi mất mạng, ứng dụng báo offline và chặn mở vé, thu tiền để tránh ghi sai. Có mạng trở lại mới tiếp tục.",
                                     icon: "📶",
                                 },
                             ].map((feat, idx) => (
@@ -669,7 +669,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                         vận hành nhàn và rõ ràng hơn?
                                     </h2>
                                     <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
-                                        Đăng ký ngay tài khoản Chủ hồ để trải nghiệm 7 ngày đầy đủ tính năng: tạo vé câu, sơ đồ chòi, đếm giờ tự động, bán hàng quầy và xem báo cáo doanh thu từ xa.
+                                        Đăng ký ngay tài khoản Chủ hồ để trải nghiệm 30 ngày đầy đủ tính năng: tạo vé câu, sơ đồ chòi, đếm giờ tự động, bán hàng quầy và xem báo cáo doanh thu từ xa.
                                     </p>
                                     <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-5 gap-y-2 pt-1 text-xs text-[#A8C9B4]">
                                         <span className="flex items-center gap-1.5">
@@ -692,7 +692,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                         href={isLoggedIn ? "/sessions" : "/register"}
                                         className="inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-7 py-3.5 text-sm sm:text-base font-black text-white hover:bg-[#3D8547] shadow-xl shadow-[#4F9D5A]/40 active:scale-95 transition-all text-center"
                                     >
-                                        <span>{isLoggedIn ? "Vào ứng dụng ngay →" : "Đăng ký dùng miễn phí 7 ngày →"}</span>
+                                        <span>{isLoggedIn ? "Vào ứng dụng ngay →" : "Đăng ký dùng miễn phí 30 ngày →"}</span>
                                     </Link>
                                     <Link
                                         href={isLoggedIn ? "/sessions" : "/login"}
@@ -797,7 +797,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                         💰 CHI PHÍ & DÙNG THỬ
                                     </span>
                                     <p className="text-[#D1E5D7] leading-relaxed">
-                                        Dùng thử miễn phí trọn vẹn 7 ngày full tính năng. Thuê bao chính thức từ 99.000đ/tháng, không phí duy trì ẩn, hỗ trợ kỹ thuật tận nơi.
+                                        Dùng thử miễn phí 30 ngày cho tài khoản mới, đủ tính năng. Gói Bạc 129.000đ/tháng, Gói Vàng 199.000đ/tháng. Hỗ trợ qua Zalo và hotline. Cài đặt tận nơi chỉ dành cho Gói sáng lập.
                                     </p>
                                 </div>
                             </div>
@@ -853,11 +853,11 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                 },
                                 {
                                     q: "Mất mạng có làm gián đoạn việc tạo vé không?",
-                                    a: "Không gián đoạn các thao tác thiết yếu. Ứng dụng có bộ nhớ tạm trên máy giúp mở vé và ghi nhận thông tin, sau đó tự đồng bộ khi có kết nối trở lại.",
+                                    a: "Có gián đoạn các thao tác ghi dữ liệu. Khi mất mạng, ứng dụng hiện trạng thái offline và chặn mở vé, đóng phiên, thu tiền để tránh sai lệch. Khi có mạng trở lại thì thao tác bình thường.",
                                 },
                                 {
                                     q: "Chi phí sử dụng app cho chủ hồ là bao nhiêu và cách dùng thử?",
-                                    a: "Mọi chủ hồ đều được kích hoạt dùng thử miễn phí 7 ngày đầy đủ tính năng ngay khi đăng ký tại quanlihocau.com mà không cần thẻ ngân hàng. Sau dùng thử, chi phí thuê bao chỉ từ 99.000đ/tháng (Gói Bạc) hoặc 179.000đ/tháng (Gói Vàng không giới hạn). Hotline hỗ trợ: 0855 550 813.",
+                                    a: "Tài khoản chủ hồ mới được dùng thử miễn phí 30 ngày, đủ tính năng, khi đăng ký tại quanlihocau.com, không cần thẻ ngân hàng. Hồ đang dùng giữ nguyên hạn hiện tại. Sau dùng thử: Gói Bạc 129.000đ/tháng (tối đa 30 ô, chủ hồ và 2 nhân sự) hoặc Gói Vàng 199.000đ/tháng (không giới hạn). Đóng năm bằng 10 tháng: 1.290.000đ và 1.990.000đ. Hỗ trợ qua Zalo/hotline 0855 550 813. Cài đặt tận nơi chỉ dành cho Gói sáng lập.",
                                 },
                             ].map((faq, idx) => {
                                 const isOpen = openFaq === idx;
@@ -925,7 +925,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                         href={isLoggedIn ? "/sessions" : "/register"}
                                         className="w-full sm:w-auto inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-[#4F9D5A] px-8 py-3.5 text-sm sm:text-base font-black text-white hover:bg-[#3D8547] shadow-xl shadow-[#4F9D5A]/35 active:scale-95 transition-all text-center"
                                     >
-                                        <span>{isLoggedIn ? "Vào ứng dụng ngay →" : "Đăng ký dùng thử miễn phí 7 ngày →"}</span>
+                                        <span>{isLoggedIn ? "Vào ứng dụng ngay →" : "Đăng ký dùng thử miễn phí 30 ngày →"}</span>
                                     </Link>
 
                                     <Link
@@ -979,7 +979,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-4">
                         <Link href="/register" className="text-[#52D879] font-bold hover:underline">
-                            Dùng thử 7 ngày
+                            Dùng thử 30 ngày
                         </Link>
                         <span>•</span>
                         <Link href="/bang-gia" className="hover:text-white transition-colors font-semibold">

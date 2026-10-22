@@ -1,9 +1,10 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getServerSession } from "next-auth";
 
 import { Role } from "@/generated/prisma/client";
 import { authOptions, getSessionCookie } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolveSubscriptionAccess, type SubscriptionAccess } from "@/lib/subscription-access";
 
 export interface TenantContext {
     userId: string;
@@ -17,6 +18,9 @@ export interface TenantContext {
     organizationName: string;
     role: Role;
     isSupportMode?: boolean;
+    subscriptionStatus: string;
+    subscriptionExpiresAt: Date | null;
+    subscriptionAccess: SubscriptionAccess;
 }
 
 export class AuthenticationError extends Error {
@@ -31,6 +35,56 @@ export class ForbiddenError extends Error {
         super(message);
         this.name = "ForbiddenError";
     }
+}
+
+export class SubscriptionLockedError extends ForbiddenError {
+    readonly code = "SUBSCRIPTION_LOCKED";
+
+    constructor(
+        message = "Hồ câu đã hết hạn và quá thời gian ân hạn. Chỉ xem được dữ liệu và trang gia hạn.",
+    ) {
+        super(message);
+        this.name = "SubscriptionLockedError";
+    }
+}
+
+const WRITABLE_WHEN_LOCKED = ["/api/subscription", "/api/auth", "/api/cron", "/api/webhooks"];
+
+function withSubscription<T extends object>(
+    base: T,
+    lake: { subscriptionStatus?: string | null; subscriptionExpiresAt?: Date | null } | null | undefined,
+    bypass: boolean,
+): T & Pick<TenantContext, "subscriptionStatus" | "subscriptionExpiresAt" | "subscriptionAccess"> {
+    const subscriptionStatus = lake?.subscriptionStatus || "ACTIVE";
+    const subscriptionExpiresAt = lake?.subscriptionExpiresAt ?? null;
+    return {
+        ...base,
+        subscriptionStatus,
+        subscriptionExpiresAt,
+        subscriptionAccess: bypass
+            ? "active"
+            : resolveSubscriptionAccess({ status: subscriptionStatus, expiresAt: subscriptionExpiresAt }),
+    };
+}
+
+function isWritableWhenLocked(pathname: string): boolean {
+    return WRITABLE_WHEN_LOCKED.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+async function assertSubscriptionWritable(context: TenantContext): Promise<void> {
+    if (context.subscriptionAccess !== "locked" || context.isSupportMode) return;
+    try {
+        const headerStore = await headers();
+        const pathname = headerStore.get("x-ql-pathname") || "";
+        const methodHeader = (headerStore.get("x-ql-method") || "").toUpperCase();
+        const nextAction = headerStore.get("next-action") || headerStore.get("Next-Action");
+        const method = methodHeader || (nextAction ? "POST" : "GET");
+        const isWrite = method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
+        if (!isWrite || isWritableWhenLocked(pathname)) return;
+    } catch {
+        return;
+    }
+    throw new SubscriptionLockedError();
 }
 
 export async function requireSuperAdmin(): Promise<{ id: string; email: string; name: string }> {
@@ -119,7 +173,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
                 });
 
                 if (supportLake) {
-                    return {
+                    return withSubscription({
                         userId: user.id,
                         userName: user.name,
                         userEmail: user.email,
@@ -131,7 +185,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
                         organizationName: supportLake.organization.name,
                         role: Role.OWNER,
                         isSupportMode: true,
-                    };
+                    }, supportLake, true);
                 }
             }
         }
@@ -181,7 +235,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
             });
 
             if (fallbackLake) {
-                return {
+                return withSubscription({
                     userId: user.id,
                     userName: user.name,
                     userEmail: user.email,
@@ -193,7 +247,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
                     organizationName: fallbackLake.organization.name,
                     role: Role.OWNER,
                     isSupportMode: false,
-                };
+                }, fallbackLake, true);
             }
         }
 
@@ -202,7 +256,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
 
     const isPhoneVerified = Boolean(membership.user.phoneVerified);
 
-    return {
+    return withSubscription({
         userId: membership.user.id,
         userName: membership.user.name,
         userEmail: membership.user.email,
@@ -213,7 +267,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
         organizationId: membership.lake.organization.id,
         organizationName: membership.lake.organization.name,
         role: membership.role,
-    };
+    }, membership.lake, false);
 }
 
 export async function requireTenantContext(
@@ -240,7 +294,7 @@ export async function requireTenantContext(
         throw new AuthenticationError("Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.");
     }
 
-    const context = await getTenantContext();
+    let context = await getTenantContext();
     if (!context) {
         throw new ForbiddenError(
             "Không tìm thấy thông tin hồ câu hoặc quyền truy cập đã bị vô hiệu hóa.",
@@ -251,6 +305,10 @@ export async function requireTenantContext(
         ? false
         : sessionCookie?.role || session?.user?.systemRole) === "SUPER_ADMIN";
 
+    if (isSuperAdmin || context.isSupportMode) {
+        context = { ...context, subscriptionAccess: "active" };
+    }
+
     if (
         !isSuperAdmin &&
         allowedRoles &&
@@ -260,5 +318,6 @@ export async function requireTenantContext(
         throw new ForbiddenError("Bạn không có quyền thực hiện thao tác này.");
     }
 
+    await assertSubscriptionWritable(context);
     return context;
 }

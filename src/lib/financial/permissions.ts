@@ -1,6 +1,8 @@
 import { Role, SystemRole } from "@/generated/prisma/client";
 import { ForbiddenError, TenantContext } from "@/lib/tenant";
 
+export const FINANCE_ROLES: Role[] = [Role.OWNER, Role.MANAGER];
+
 export type FinancialPermission =
     | "FINANCIAL_VIEW_TRANSACTIONS"   // Xem danh sách phiếu thu/chi
     | "FINANCIAL_CREATE_TRANSACTIONS" // Tạo phiếu thu/chi mới
@@ -47,12 +49,7 @@ const ROLE_PERMISSIONS: Record<Role, readonly FinancialPermission[]> = {
         "FINANCIAL_RECONCILE",
         "FINANCIAL_MANAGE_DEBT",
     ],
-    [Role.STAFF]: [
-        "FINANCIAL_VIEW_TRANSACTIONS",
-        "FINANCIAL_CREATE_TRANSACTIONS",
-        "FINANCIAL_VIEW_FUNDS",
-        "FINANCIAL_MANAGE_DEBT",
-    ],
+    [Role.STAFF]: [],
 };
 
 const PERMISSION_DESCRIPTIONS: Record<FinancialPermission, string> = {

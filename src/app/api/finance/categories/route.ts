@@ -4,7 +4,8 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
+import { assertClientIdsInLake } from "@/lib/tenant-scope";
 import { ensureDefaultFinancialData } from "@/lib/financial/seed-defaults";
 
 const createCategorySchema = z.object({
@@ -19,7 +20,7 @@ const createCategorySchema = z.object({
 
 export async function GET(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         const lakeId = tenantContext.lakeId;
 
         // Đảm bảo hồ có sẵn danh mục mặc định
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_MANAGE_CATEGORIES");
         const lakeId = tenantContext.lakeId;
 
@@ -101,12 +102,7 @@ export async function POST(request: Request) {
         }
 
         if (parentId) {
-            const parent = await prisma.financialCategory.findFirst({
-                where: { id: parentId, lakeId },
-            });
-            if (!parent) {
-                return NextResponse.json({ error: "Danh mục cha không tồn tại." }, { status: 400 });
-            }
+            await assertClientIdsInLake(prisma, lakeId, { parentCategoryId: parentId });
         }
 
         const category = await prisma.financialCategory.create({

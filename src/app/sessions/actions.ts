@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { Role } from "@/generated/prisma/client";
-import { requireTenantContext } from "@/lib/tenant";
+import { ForbiddenError, requireTenantContext } from "@/lib/tenant";
 import { openSession, type OpenSessionInput } from "@/lib/services/open-session.service";
 
 export interface ServerActionResponse<T = unknown> {
@@ -40,6 +40,14 @@ export async function createSessionAction(
         };
     } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : String(err);
+
+        if (err instanceof ForbiddenError) {
+            return {
+                ok: false,
+                error: err.message,
+                code: err instanceof Error && err.name === "SubscriptionLockedError" ? "SUBSCRIPTION_LOCKED" : "FORBIDDEN",
+            };
+        }
 
         if (errorMessage.startsWith("VALIDATION_ERROR:")) {
             return {

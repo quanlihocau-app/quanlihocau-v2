@@ -6,7 +6,7 @@ import { OfficialLandingPage } from "@/components/landing/official-landing-page"
 export const metadata: Metadata = {
     title: "Phần Mềm Quản Lý Hồ Câu — App Cho Chủ Hồ Trên Điện Thoại | Quản Lí Hồ Câu",
     description:
-        "Phần mềm quản lý hồ câu & App cho chủ hồ câu trên điện thoại: đếm giờ phiên câu tự động, tính phụ thu lố giờ, quản lý nhân viên từ xa, bán mồi nước, thu mua cá, in bill 58mm và hạn chế thất thoát. Dùng thử miễn phí 7 ngày!",
+        "Phần mềm quản lý hồ câu & App cho chủ hồ câu trên điện thoại: đếm giờ phiên câu tự động, tính phụ thu lố giờ, quản lý nhân viên từ xa, bán mồi nước, thu mua cá, in bill 58mm và hạn chế thất thoát. Tài khoản mới dùng thử miễn phí 30 ngày.",
     keywords: [
         "phần mềm quản lý hồ câu",
         "app cho chủ hồ",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     openGraph: {
         title: "Phần Mềm Quản Lý Hồ Câu — App Cho Chủ Hồ Trên Điện Thoại",
         description:
-            "App cho chủ hồ quản lý vé câu, nhân viên từ xa, đếm giờ tự động, bán mồi nước và chống thất thoát ngay trên điện thoại. Dùng thử miễn phí 7 ngày.",
+            "App cho chủ hồ quản lý vé câu, nhân viên từ xa, đếm giờ tự động, bán mồi nước và chống thất thoát ngay trên điện thoại. Tài khoản mới dùng thử miễn phí 30 ngày.",
         url: "https://quanlihocau.com",
         siteName: "Quản Lý Hồ Câu",
         locale: "vi_VN",
@@ -74,12 +74,12 @@ const homeJsonLd = {
                 "Cân cá thu mua và cấn trừ tiền tự động vào hóa đơn",
                 "Theo dõi doanh thu thời gian thực và quản lý nhân viên từ xa trên điện thoại",
                 "In vé tạm và hóa đơn thanh toán khổ 58mm qua máy in Bluetooth hoặc Wifi",
-                "Cơ chế lưu trữ offline giúp mở vé liên tục ngay cả khi sóng mạng yếu",
+                "Phát hiện mất mạng và chặn mở vé, thu tiền để tránh ghi sai số liệu",
             ],
             "offers": [
                 {
                     "@type": "Offer",
-                    "name": "Dùng thử miễn phí 7 ngày",
+                    "name": "Dùng thử miễn phí 30 ngày",
                     "price": "0",
                     "priceCurrency": "VND",
                     "priceValidUntil": "2027-12-31",
@@ -89,22 +89,22 @@ const homeJsonLd = {
                 {
                     "@type": "Offer",
                     "name": "Gói Bạc (Silver)",
-                    "price": "99000",
+                    "price": "129000",
                     "priceCurrency": "VND",
                     "priceValidUntil": "2027-12-31",
                     "availability": "https://schema.org/InStock",
                     "url": "https://quanlihocau.com/bang-gia",
-                    "description": "99.000đ / 30 ngày: tối đa 30 ô câu, 1 nhân viên",
+                    "description": "129.000đ/tháng hoặc 1.290.000đ/năm: tối đa 30 ô câu, chủ hồ và 2 nhân sự",
                 },
                 {
                     "@type": "Offer",
                     "name": "Gói Vàng (Gold)",
-                    "price": "179000",
+                    "price": "199000",
                     "priceCurrency": "VND",
                     "priceValidUntil": "2027-12-31",
                     "availability": "https://schema.org/InStock",
                     "url": "https://quanlihocau.com/bang-gia",
-                    "description": "179.000đ / 30 ngày: không giới hạn ô câu, không giới hạn nhân viên",
+                    "description": "199.000đ/tháng hoặc 1.990.000đ/năm: không giới hạn ô câu và nhân sự",
                 },
             ],
         },
@@ -173,7 +173,7 @@ const homeJsonLd = {
                     "name": "Mất mạng có làm gián đoạn việc tạo vé không?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Không gián đoạn các thao tác thiết yếu. Ứng dụng có bộ nhớ tạm trên máy giúp mở vé và ghi nhận thông tin, sau đó tự đồng bộ khi có kết nối trở lại.",
+                        "text": "Khi mất mạng, ứng dụng báo offline và chặn mở vé, đóng phiên, thu tiền để tránh ghi sai. Có mạng trở lại thì thao tác bình thường. Ứng dụng không lưu vé offline để đồng bộ sau.",
                     },
                 },
                 {
@@ -181,7 +181,7 @@ const homeJsonLd = {
                     "name": "Chi phí sử dụng app cho chủ hồ là bao nhiêu và cách dùng thử?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Mọi chủ hồ đều được kích hoạt dùng thử miễn phí 7 ngày đầy đủ tính năng ngay khi đăng ký tại quanlihocau.com mà không cần thẻ ngân hàng. Sau dùng thử, chi phí thuê bao chỉ từ 99.000đ/tháng (Gói Bạc) hoặc 179.000đ/tháng (Gói Vàng không giới hạn). Hotline hỗ trợ: 0855 550 813.",
+                        "text": "Tài khoản mới được dùng thử 30 ngày. Gói Bạc 129.000đ/tháng (tối đa 30 ô, chủ hồ và 2 nhân sự), Gói Vàng 199.000đ/tháng. Đóng năm bằng giá 10 tháng: 1.290.000đ và 1.990.000đ. Hỗ trợ qua Zalo/hotline 0855 550 813. Cài đặt tận nơi chỉ dành cho Gói sáng lập.",
                     },
                 },
             ],

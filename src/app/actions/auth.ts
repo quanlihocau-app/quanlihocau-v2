@@ -7,6 +7,14 @@ import { redirect } from 'next/navigation'
 import { normalizeVietnamesePhone } from '@/lib/phone'
 import { z } from 'zod'
 import { seedSampleLakeData } from '@/lib/onboarding/seed-sample-lake'
+import {
+  authFailureState,
+  authLockMessage,
+  isRateLimitUnavailable,
+  rateLimitUnavailableMessage,
+  recordAuthFailure,
+} from '@/lib/auth-rate-limit'
+import { TRIAL_DAYS } from '@/lib/vietqr'
 
 export interface RegisterInput {
   email: string
@@ -17,6 +25,32 @@ export interface RegisterInput {
 }
 
 export async function registerUser(input: RegisterInput) {
+  const account = typeof input?.email === 'string' ? input.email : 'unknown'
+  let rateIdentifier = account
+  try {
+    const gate = await authFailureState('auth-register', account)
+    rateIdentifier = gate.identifier
+    if (gate.blocked) {
+      return { success: false, message: authLockMessage(gate.retryAfterSeconds) }
+    }
+  } catch (error) {
+    if (isRateLimitUnavailable(error)) {
+      return { success: false, message: rateLimitUnavailableMessage() }
+    }
+    throw error
+  }
+
+  const reject = async (message: string) => {
+    try {
+      await recordAuthFailure('auth-register', rateIdentifier)
+    } catch (error) {
+      if (isRateLimitUnavailable(error)) {
+        return { success: false, message: rateLimitUnavailableMessage() }
+      }
+    }
+    return { success: false, message }
+  }
+
   try {
     const parsed = z.object({
       email: z.string().trim().pipe(z.email('Email không hợp lệ.')),
@@ -25,17 +59,17 @@ export async function registerUser(input: RegisterInput) {
       phone: z.string().nullable().optional(),
       lakeName: z.string().trim().max(200).nullable().optional(),
     }).safeParse(input)
-    if (!parsed.success) return { success: false, message: parsed.error.issues[0]?.message || 'Dữ liệu không hợp lệ.' }
+    if (!parsed.success) return reject(parsed.error.issues[0]?.message || 'Dữ liệu không hợp lệ.')
     input = parsed.data
     const email = input.email.trim().toLowerCase()
     const { password, name, phone, lakeName } = input
     let normalizedPhone: string | null
     try { normalizedPhone = normalizeVietnamesePhone(phone) } catch {
-      return { success: false, message: 'Số điện thoại không hợp lệ.' }
+      return reject('Số điện thoại không hợp lệ.')
     }
 
     if (!email || !password || !name) {
-      return { success: false, message: 'Vui lòng điền đầy đủ thông tin bắt buộc.' }
+      return reject('Vui lòng điền đầy đủ thông tin bắt buộc.')
     }
 
     // 1. Check existing user (non-transaction quick read)
@@ -45,7 +79,7 @@ export async function registerUser(input: RegisterInput) {
     })
 
     if (existingUser) {
-      return { success: false, message: 'Email này đã được sử dụng trong hệ thống.' }
+      return reject('Email này đã được sử dụng trong hệ thống.')
     }
 
     // 2. Hash password ngoài transaction để giảm thời gian giữ lock connection
@@ -53,9 +87,7 @@ export async function registerUser(input: RegisterInput) {
 
     // 3. Atomic transaction cho việc tạo user và gán trial data
     const newUser = await prisma.$transaction(async (tx) => {
-      // Mặc định gói dùng thử khi đăng ký tài khoản mới là 7 ngày theo chuẩn nghiệp vụ
-      const trialDays = 7
-      const trialExpiresAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
+      const trialExpiresAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000)
 
       const displayLakeName =
         lakeName && lakeName.trim().length > 0
@@ -132,20 +164,43 @@ export async function registerUser(input: RegisterInput) {
     }
   } catch (error) {
     console.error('Register error:', error)
-    return {
-      success: false,
-      message: 'Đã xảy ra lỗi hệ thống, vui lòng thử lại sau.'
-    }
+    return reject('Đã xảy ra lỗi hệ thống, vui lòng thử lại sau.')
   }
 }
 
 export async function loginUser(input: { email: string; password: string }) {
+  const account = typeof input?.email === 'string' ? input.email : 'unknown'
+  let rateIdentifier = account
+  try {
+    const gate = await authFailureState('auth-login', account)
+    rateIdentifier = gate.identifier
+    if (gate.blocked) {
+      return { success: false, message: authLockMessage(gate.retryAfterSeconds) }
+    }
+  } catch (error) {
+    if (isRateLimitUnavailable(error)) {
+      return { success: false, message: rateLimitUnavailableMessage() }
+    }
+    throw error
+  }
+
+  const reject = async (message: string) => {
+    try {
+      await recordAuthFailure('auth-login', rateIdentifier)
+    } catch (error) {
+      if (isRateLimitUnavailable(error)) {
+        return { success: false, message: rateLimitUnavailableMessage() }
+      }
+    }
+    return { success: false, message }
+  }
+
   try {
     const identifier = input.email.trim().toLowerCase()
     const { password } = input
 
     if (!identifier || !password) {
-      return { success: false, message: 'Vui lòng nhập tên đăng nhập/email và mật khẩu.' }
+      return reject('Vui lòng nhập tên đăng nhập/email và mật khẩu.')
     }
 
     let user = await prisma.user.findUnique({
@@ -174,7 +229,7 @@ export async function loginUser(input: { email: string; password: string }) {
     }
 
     if (!user || !user.passwordHash) {
-      return { success: false, message: 'Email hoặc mật khẩu không chính xác.' }
+      return reject('Email hoặc mật khẩu không chính xác.')
     }
 
     if (user.isLocked) {
@@ -183,7 +238,7 @@ export async function loginUser(input: { email: string; password: string }) {
 
     const isMatch = await bcrypt.compare(password, user.passwordHash)
     if (!isMatch) {
-      return { success: false, message: 'Email hoặc mật khẩu không chính xác.' }
+      return reject('Email hoặc mật khẩu không chính xác.')
     }
 
     // Set session cookie
@@ -205,7 +260,7 @@ export async function loginUser(input: { email: string; password: string }) {
     return { success: true, message: 'Đăng nhập thành công!', email: user.email }
   } catch (error) {
     console.error('Login error:', error)
-    return { success: false, message: 'Lỗi hệ thống, vui lòng thử lại sau.' }
+    return reject('Lỗi hệ thống, vui lòng thử lại sau.')
   }
 }
 

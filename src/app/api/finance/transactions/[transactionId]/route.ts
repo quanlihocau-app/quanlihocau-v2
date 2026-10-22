@@ -3,7 +3,8 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
-import { assertFinancialPermission } from "@/lib/financial/permissions";
+import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
+import { assertClientIdsInLake, publicCustomer } from "@/lib/tenant-scope";
 import { assertPeriodNotLocked } from "@/lib/financial/period-guard";
 
 const updateDraftSchema = z.object({
@@ -26,7 +27,7 @@ export async function GET(
 ) {
     try {
         const { transactionId } = await params;
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_VIEW_TRANSACTIONS");
         const lakeId = tenantContext.lakeId;
 
@@ -35,7 +36,7 @@ export async function GET(
             include: {
                 category: true,
                 account: true,
-                customer: true,
+                customer: { select: { id: true, name: true, phoneNormalized: true, lakeId: true } },
                 createdBy: { select: { id: true, name: true, email: true } },
                 approvedBy: { select: { id: true, name: true } },
                 invoice: { include: { lines: true } },
@@ -55,7 +56,10 @@ export async function GET(
             take: 20,
         });
 
-        return NextResponse.json({ transaction, auditLogs });
+        return NextResponse.json({
+            transaction: { ...transaction, customer: publicCustomer(transaction.customer, lakeId) },
+            auditLogs,
+        });
     } catch (error: unknown) {
         if (error instanceof AuthenticationError) {
             return NextResponse.json({ error: error.message }, { status: 401 });
@@ -73,7 +77,7 @@ export async function PUT(
 ) {
     try {
         const { transactionId } = await params;
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_EDIT_DRAFT");
         const lakeId = tenantContext.lakeId;
 
@@ -105,6 +109,11 @@ export async function PUT(
                 { status: 400 },
             );
         }
+
+        await assertClientIdsInLake(prisma, lakeId, {
+            categoryId: parsed.data.categoryId,
+            accountId: parsed.data.accountId,
+        });
 
         const updated = await prisma.financialTransaction.update({
             where: { id: transactionId },
@@ -145,7 +154,7 @@ export async function DELETE(
 ) {
     try {
         const { transactionId } = await params;
-        const tenantContext = await requireTenantContext();
+        const tenantContext = await requireTenantContext(FINANCE_ROLES);
         assertFinancialPermission(tenantContext, "FINANCIAL_CANCEL_TRANSACTIONS");
         const lakeId = tenantContext.lakeId;
 

@@ -1,6 +1,7 @@
 import { Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ForbiddenError } from "@/lib/tenant";
+import { PLAN_PRICING } from "@/lib/vietqr";
 
 export class SubscriptionQuotaExceededError extends ForbiddenError {
     public code = "QUOTA_EXCEEDED";
@@ -28,8 +29,8 @@ export async function assertSpotLimit(lakeId: string): Promise<void> {
         return;
     }
 
-    // Gói Bạc (SILVER) giới hạn tối đa 30 ô câu
-    if (lake.subscriptionPlan === "SILVER") {
+    const maxSpots = PLAN_PRICING.SILVER.maxSpots;
+    if (lake.subscriptionPlan === "SILVER" && maxSpots !== null) {
         const activeSpotsCount = await prisma.hut.count({
             where: {
                 lakeId,
@@ -37,9 +38,9 @@ export async function assertSpotLimit(lakeId: string): Promise<void> {
             },
         });
 
-        if (activeSpotsCount >= 30) {
+        if (activeSpotsCount >= maxSpots) {
             throw new SubscriptionQuotaExceededError(
-                "Gói Bạc (SILVER) chỉ hỗ trợ tối đa 30 ô câu. Vui lòng nâng cấp lên Gói Vàng (GOLD) để tạo thêm ô câu không giới hạn.",
+                `Gói Bạc chỉ hỗ trợ tối đa ${maxSpots} ô câu. Vui lòng nâng cấp lên Gói Vàng để tạo thêm ô câu không giới hạn.`,
             );
         }
     }
@@ -62,8 +63,8 @@ export async function assertStaffLimit(lakeId: string): Promise<void> {
         return;
     }
 
-    // Gói Bạc (SILVER) giới hạn tối đa 1 nhân viên (STAFF hoặc MANAGER, không tính OWNER)
-    if (lake.subscriptionPlan === "SILVER") {
+    const maxStaff = PLAN_PRICING.SILVER.maxStaff;
+    if (lake.subscriptionPlan === "SILVER" && maxStaff !== null) {
         const staffCount = await prisma.membership.count({
             where: {
                 lakeId,
@@ -74,9 +75,9 @@ export async function assertStaffLimit(lakeId: string): Promise<void> {
             },
         });
 
-        if (staffCount >= 1) {
+        if (staffCount >= maxStaff) {
             throw new SubscriptionQuotaExceededError(
-                "Gói Bạc (SILVER) chỉ hỗ trợ tối đa 1 nhân viên. Vui lòng nâng cấp lên Gói Vàng (GOLD) để thêm nhân sự không giới hạn.",
+                `Gói Bạc chỉ gồm chủ hồ và tối đa ${maxStaff} tài khoản nhân sự. Vui lòng nâng cấp lên Gói Vàng để thêm người.`,
             );
         }
     }

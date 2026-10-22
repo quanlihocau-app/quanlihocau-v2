@@ -55,7 +55,7 @@ export default function PrinterDevicesPage() {
                             href="/register"
                             className="rounded-xl bg-[#8A5A20] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#724918] transition-colors"
                         >
-                            Dùng thử 7 ngày
+                            Dùng thử 30 ngày
                         </Link>
                     </div>
                 </div>

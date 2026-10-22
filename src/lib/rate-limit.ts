@@ -30,6 +30,47 @@ function hashIdentifier(namespace: string, identifier: string): string {
     return crypto.createHash("sha256").update(raw).digest("hex");
 }
 
+function bucketKey(namespace: string, identifier: string): string {
+    return `rl:${namespace}:${hashIdentifier(namespace, identifier)}`;
+}
+
+/**
+ * Đọc bộ đếm hiện tại, không tăng. Dùng để chặn trước khi ghi nhận thêm một lần thất bại.
+ */
+export async function peekRateLimit({
+    namespace,
+    identifier,
+}: Pick<RateLimitOptions, "namespace" | "identifier">): Promise<{
+    currentCount: number;
+    retryAfterSeconds: number;
+}> {
+    if (!namespace?.trim() || !identifier?.trim()) {
+        throw new TypeError("RateLimit namespace and identifier are required.");
+    }
+    const now = new Date();
+    try {
+        const rows = await prisma.$queryRaw<Array<{ count: number; expiresAt: Date }>>(Prisma.sql`
+            SELECT "count", "expiresAt"
+            FROM "RateLimitBucket"
+            WHERE "key" = ${bucketKey(namespace, identifier)}
+        `);
+        if (!rows?.length) {
+            return { currentCount: 0, retryAfterSeconds: 0 };
+        }
+        const expiresAt = new Date(rows[0].expiresAt);
+        if (expiresAt.getTime() <= now.getTime()) {
+            return { currentCount: 0, retryAfterSeconds: 0 };
+        }
+        return {
+            currentCount: Number(rows[0].count),
+            retryAfterSeconds: Math.max(1, Math.ceil((expiresAt.getTime() - now.getTime()) / 1000)),
+        };
+    } catch (err: unknown) {
+        console.error("Rate limit peek failed:", err instanceof Error ? err.message : "DB error");
+        throw new RateLimitUnavailableError();
+    }
+}
+
 /**
  * Server-only atomic rate limit consumer using PostgreSQL.
  * Safely handles concurrent requests without race conditions using tagged Prisma.sql.
@@ -56,7 +97,7 @@ export async function consumeRateLimit({
         throw new RangeError("RateLimit windowSeconds must be a positive integer.");
     }
 
-    const hashedKey = `rl:${namespace}:${hashIdentifier(namespace, identifier)}`;
+    const hashedKey = bucketKey(namespace, identifier);
     const now = new Date();
     const expiresAt = new Date(now.getTime() + windowSeconds * 1000);
 

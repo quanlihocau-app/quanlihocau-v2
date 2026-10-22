@@ -176,7 +176,7 @@ export default async function OpenGraphImage() {
                             color: "#FFFFFF",
                         }}
                     >
-                        Dùng thử miễn phí 7 ngày →
+                        Dùng thử miễn phí 30 ngày →
                     </div>
                 </div>
             </div>

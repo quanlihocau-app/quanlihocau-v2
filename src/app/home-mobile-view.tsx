@@ -165,10 +165,11 @@ export function HomeMobileView({
 }: HomeMobileViewProps) {
     const [searchQuery, setSearchQuery] = useState("");
 
-    const filteredActions = QUICK_ACTIONS.filter((act) =>
-        act.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        act.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredActions = QUICK_ACTIONS.filter((act) => {
+        if (roleBadge === "STAFF" && act.href.startsWith("/finance")) return false;
+        return act.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            act.subtitle.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     return (
         <div className="mobile-pos-shell font-serif">

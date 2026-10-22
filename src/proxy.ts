@@ -76,6 +76,13 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   return response
 }
 
+function nextWithMeta(request: NextRequest): NextResponse {
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-ql-method', request.method)
+  requestHeaders.set('x-ql-pathname', request.nextUrl.pathname)
+  return applySecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }))
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const userAgent = request.headers.get('user-agent') || ''
@@ -120,14 +127,14 @@ export function proxy(request: NextRequest) {
       }
     }
 
-    return applySecurityHeaders(NextResponse.next())
+    return nextWithMeta(request)
   }
 
   // 3. Kiểm tra xem request có thuộc route được bảo vệ không
   const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix))
 
   if (!isProtected) {
-    return applySecurityHeaders(NextResponse.next())
+    return nextWithMeta(request)
   }
 
   // 4. Kiểm tra phiên đăng nhập qua cookie qa_session hoặc next-auth
@@ -138,7 +145,7 @@ export function proxy(request: NextRequest) {
 
   // Nếu có cookie phiên hợp lệ thì cho phép tiếp tục
   if (qaSession || nextAuthToken) {
-    return applySecurityHeaders(NextResponse.next())
+    return nextWithMeta(request)
   }
 
   // Nếu chưa đăng nhập, điều hướng sang /login kèm param redirect

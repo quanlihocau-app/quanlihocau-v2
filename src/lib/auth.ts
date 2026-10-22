@@ -7,8 +7,16 @@ import GoogleProvider from "next-auth/providers/google";
 import { z } from "zod";
 
 import { SystemRole, Prisma, Role } from "@/generated/prisma/client";
+import {
+    authFailureState,
+    authLockMessage,
+    isRateLimitUnavailable,
+    rateLimitUnavailableMessage,
+    recordAuthFailure,
+} from "@/lib/auth-rate-limit";
 import { prisma } from "@/lib/prisma";
 import { seedSampleLakeData } from "@/lib/onboarding/seed-sample-lake";
+import { TRIAL_DAYS } from "@/lib/vietqr";
 
 declare module "next-auth" {
     interface Session {
@@ -109,7 +117,7 @@ export const authOptions: NextAuthOptions = {
 
             if (!dbUser) {
                 const now = new Date();
-                const trialExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const trialExpiresAt = new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
                 const ownerName = (user.name?.trim() || email.split("@")[0] || "Chủ hồ").slice(0, 100);
                 const lakeName = `Hồ câu của ${ownerName}`;
 
@@ -256,9 +264,23 @@ export const authOptions: NextAuthOptions = {
                     return null;
                 }
 
+                const identifier = parsed.data.email.trim().toLowerCase();
+                let rateIdentifier = identifier;
+                try {
+                    const gate = await authFailureState("auth-login", identifier);
+                    rateIdentifier = gate.identifier;
+                    if (gate.blocked) {
+                        throw new Error(authLockMessage(gate.retryAfterSeconds));
+                    }
+                } catch (rateError: unknown) {
+                    if (isRateLimitUnavailable(rateError)) {
+                        throw new Error(rateLimitUnavailableMessage());
+                    }
+                    throw rateError;
+                }
+
                 let user;
                 try {
-                    const identifier = parsed.data.email.trim().toLowerCase();
                     user = await prisma.user.findUnique({
                         where: { email: identifier },
                     });
@@ -298,6 +320,13 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 if (!user) {
+                    try {
+                        await recordAuthFailure("auth-login", rateIdentifier);
+                    } catch (rateError: unknown) {
+                        if (isRateLimitUnavailable(rateError)) {
+                            throw new Error(rateLimitUnavailableMessage());
+                        }
+                    }
                     return null;
                 }
 
@@ -315,6 +344,13 @@ export const authOptions: NextAuthOptions = {
                 );
 
                 if (!passwordMatches) {
+                    try {
+                        await recordAuthFailure("auth-login", rateIdentifier);
+                    } catch (rateError: unknown) {
+                        if (isRateLimitUnavailable(rateError)) {
+                            throw new Error(rateLimitUnavailableMessage());
+                        }
+                    }
                     return null;
                 }
 
@@ -344,16 +380,17 @@ export const authOptions: NextAuthOptions = {
 
 // -----------------------------------------------------------------------------
 // LIGHTWEIGHT SESSION COOKIE UTILITIES (HMAC-SHA256)
+// Kiểm tra khóa lúc ký/xác thực, không lúc import, để `next build` trên CI
+// không cần NEXTAUTH_SECRET.
 // -----------------------------------------------------------------------------
-if (process.env.NODE_ENV === 'production') {
-    if (!process.env.SESSION_SECRET && !process.env.NEXTAUTH_SECRET) {
-        throw new Error('SESSION_SECRET or NEXTAUTH_SECRET must be set in production');
+function getSessionSecret(): string {
+    const secret = process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET;
+    if (secret) return secret;
+    if (process.env.NODE_ENV === "production") {
+        throw new Error("SESSION_SECRET or NEXTAUTH_SECRET must be set in production");
     }
+    return "dev-secret-change-in-production";
 }
-const SESSION_SECRET =
-    process.env.SESSION_SECRET ||
-    process.env.NEXTAUTH_SECRET ||
-    (process.env.NODE_ENV === 'production' ? '' : 'dev-secret-change-in-production');
 export const COOKIE_NAME = "qa_session";
 
 export interface SessionPayload {
@@ -372,7 +409,7 @@ export function signSession(payload: SessionPayload): string {
         expiresAt: payload.expiresAt ?? Date.now() + 7 * 24 * 60 * 60 * 1000,
     })).toString("base64url");
     const signature = crypto
-        .createHmac("sha256", SESSION_SECRET)
+        .createHmac("sha256", getSessionSecret())
         .update(data)
         .digest("base64url");
     return `${data}.${signature}`;
@@ -383,7 +420,7 @@ export function verifySession(token: string): SessionPayload | null {
         const [data, signature, extra] = token.split(".");
         if (!data || !signature || extra !== undefined) return null;
         const expectedSig = crypto
-            .createHmac("sha256", SESSION_SECRET)
+            .createHmac("sha256", getSessionSecret())
             .update(data)
             .digest("base64url");
         const actual = Buffer.from(signature);

@@ -9,37 +9,59 @@ export const BANK_CONFIG = {
         "Mức phí trên là số tiền thực nhận của gói cước. Mọi khoản phí phát sinh từ ngân hàng hoặc cổng thanh toán (nếu có) do chủ hồ chịu trách nhiệm thanh toán.",
 } as const;
 
+export const TRIAL_DAYS = 30;
+export const YEARLY_MONTHS_CHARGED = 10;
+export const YEARLY_DURATION_DAYS = 365;
+
 export const PLAN_PRICING = {
     TRIAL: {
         code: "TRIAL",
-        name: "Dùng thử 7 ngày",
+        name: "Dùng thử 30 ngày",
         priceVnd: 0,
-        durationDays: 7,
+        durationDays: TRIAL_DAYS,
         maxSpots: null,
         maxStaff: null,
-        description: "Full chức năng (giống Gói Vàng), 7 ngày dùng thử.",
+        description: "Full chức năng (giống Gói Vàng), 30 ngày dùng thử cho tài khoản mới.",
     },
     SILVER: {
         code: "SILVER",
         name: "Gói Bạc (Silver)",
-        priceVnd: 99000,
+        priceVnd: 129000,
         durationDays: 30,
         maxSpots: 30,
-        maxStaff: 1,
-        description: "Tối đa 30 ô câu, tối đa 1 nhân viên.",
+        maxStaff: 2,
+        description: "129.000đ/tháng: tối đa 30 ô câu, chủ hồ và 2 tài khoản nhân sự.",
     },
     GOLD: {
         code: "GOLD",
         name: "Gói Vàng (Gold)",
-        priceVnd: 179000,
+        priceVnd: 199000,
         durationDays: 30,
         maxSpots: null,
         maxStaff: null,
-        description: "Không giới hạn ô câu, không giới hạn nhân viên, full tính năng.",
+        description: "199.000đ/tháng: không giới hạn ô câu và nhân sự.",
     },
 } as const;
 
 export type PlanTierType = keyof typeof PLAN_PRICING;
+export type BillingCycle = "MONTHLY" | "YEARLY";
+
+export function planCharge(plan: "SILVER" | "GOLD", cycle: BillingCycle = "MONTHLY"): {
+    amountVnd: number;
+    durationDays: number;
+} {
+    const monthly = PLAN_PRICING[plan].priceVnd;
+    if (cycle === "YEARLY") {
+        return {
+            amountVnd: monthly * YEARLY_MONTHS_CHARGED,
+            durationDays: YEARLY_DURATION_DAYS,
+        };
+    }
+    return {
+        amountVnd: monthly,
+        durationDays: PLAN_PRICING[plan].durationDays,
+    };
+}
 
 /**
  * Generate VietQR dynamic link with locked amount and transfer memo
