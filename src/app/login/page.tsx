@@ -9,6 +9,8 @@ import { safeRedirectPath } from '@/lib/navigation'
 
 // Error message mapping for OAuth errors
 const OAUTH_ERRORS: Record<string, string> = {
+  StaffMustUseCredentials: 'Tài khoản Nhân viên vui lòng đăng nhập bằng Email/Tên đăng nhập và Mật khẩu do chủ hồ cấp (không đăng nhập bằng Google).',
+  AccessDenied: 'Quyền truy cập bị từ chối: Tài khoản của bạn có thể đang bị khóa hoặc email Google chưa được xác minh.',
   GoogleSignIn: 'Không thể đăng nhập với Google. Tài khoản chưa được cấp quyền hoặc chưa đăng ký.',
   OAuthSignin: 'Không thể kết nối đến Google. Vui lòng thử lại.',
   OAuthCallback: 'Xác thực Google thất bại. Vui lòng thử lại sau.',

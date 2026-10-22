@@ -11,7 +11,7 @@ import { ensureDefaultFinancialData } from "@/lib/financial/seed-defaults";
  * - Không tạo phiên câu, hóa đơn hay giao dịch giả mạo (để người dùng tự mở thử theo luồng thật).
  */
 export async function seedSampleLakeData(
-    tx: Prisma.TransactionClient | any,
+    tx: Prisma.TransactionClient,
     lakeId: string,
     ownerName?: string | null,
     userId?: string | null,

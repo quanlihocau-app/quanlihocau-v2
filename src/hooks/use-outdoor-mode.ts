@@ -6,36 +6,29 @@ const STORAGE_KEY = "pos_outdoor_mode";
 const EVENT_NAME = "outdoor-mode-change";
 
 export function useOutdoorMode() {
-    const [isOutdoorMode, setIsOutdoorMode] = useState<boolean>(false);
+    const [isOutdoorMode, setIsOutdoorMode] = useState<boolean>(() => {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved === "true";
+  }
+  return false;
+});
 
-    useEffect(() => {
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            const enabled = saved === "true";
-            setIsOutdoorMode(enabled);
-            if (enabled) {
-                document.documentElement.classList.add("outdoor-high-contrast");
-            } else {
-                document.documentElement.classList.remove("outdoor-high-contrast");
-            }
-        } catch {
-            // Safe fallback for SSR or restricted storage
-        }
-
-        const handleSync = (e: Event) => {
-            const customEvent = e as CustomEvent<{ enabled: boolean }>;
-            const next = customEvent.detail?.enabled ?? false;
-            setIsOutdoorMode(next);
-            if (next) {
-                document.documentElement.classList.add("outdoor-high-contrast");
-            } else {
-                document.documentElement.classList.remove("outdoor-high-contrast");
-            }
-        };
-
-        window.addEventListener(EVENT_NAME, handleSync);
-        return () => window.removeEventListener(EVENT_NAME, handleSync);
-    }, []);
+useEffect(() => {
+  // Apply class based on current mode
+  if (isOutdoorMode) {
+    document.documentElement.classList.add("outdoor-high-contrast");
+  } else {
+    document.documentElement.classList.remove("outdoor-high-contrast");
+  }
+  const handleSync = (e: Event) => {
+    const customEvent = e as CustomEvent<{ enabled: boolean }>;
+    const next = customEvent.detail?.enabled ?? false;
+    setIsOutdoorMode(next);
+  };
+  window.addEventListener(EVENT_NAME, handleSync);
+  return () => window.removeEventListener(EVENT_NAME, handleSync);
+}, [isOutdoorMode]);
 
     const toggleOutdoorMode = useCallback(() => {
         setIsOutdoorMode((prev) => {

@@ -26,7 +26,7 @@ import {
 import { RetailProduct } from "./retail-pos-form";
 import { BANK_CONFIG, generateVietQrUrl } from "@/lib/vietqr";
 import { CheckInTimeSection, type CheckInTimeState } from "./check-in-time-section";
-import { useOutdoorMode } from "@/hooks/use-outdoor-mode";
+
 
 export interface SelectCustomer {
     id: string;
@@ -137,8 +137,7 @@ export function OpenSessionForm({
 }: OpenSessionFormProps) {
     const router = useRouter();
     const toast = useToast();
-    const { config: printerConfig, templateConfig, printSessionTicket } = usePrinter();
-    const { isOutdoorMode } = useOutdoorMode();
+    const { printSessionTicket } = usePrinter();
 
     // Customer state
     const [customerList, setCustomerList] =

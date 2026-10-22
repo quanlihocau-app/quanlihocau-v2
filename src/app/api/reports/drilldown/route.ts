@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
                     status: inv.status === InvoiceStatus.PAID ? "Đã thanh toán" : inv.status === InvoiceStatus.PARTIALLY_PAID ? "Thanh toán 1 phần" : "Chưa thanh toán",
                 };
             });
-        } else if (metric === "productRevenue") {
+        } else if (metric === "productRevenue" || metric === "productReport") {
             title = "Chi tiết Sản phẩm & Dịch vụ đã bán";
             const where: Prisma.InvoiceLineWhereInput = {
                 invoice: {
@@ -192,6 +192,7 @@ export async function GET(request: NextRequest) {
             items = lines.map(line => {
                 return {
                     id: line.id,
+                    href: `/invoices/${line.invoiceId}`,
                     code: line.id.substring(0, 8).toUpperCase(),
                     dateTime: formatVnDateTimeDisplay(line.createdAt),
                     customerName: line.invoice.customer?.name || "Khách câu",
@@ -283,6 +284,7 @@ export async function GET(request: NextRequest) {
                 const remaining = Math.max(0, inv.totalAmountVnd - paid);
                 return {
                     id: inv.id,
+                    href: `/invoices/${inv.id}`,
                     code: inv.id.substring(0, 8).toUpperCase(),
                     dateTime: formatVnDateTimeDisplay(inv.createdAt),
                     customerName: inv.customer?.name || "Khách nợ",

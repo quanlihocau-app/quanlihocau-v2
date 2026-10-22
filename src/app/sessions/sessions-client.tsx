@@ -151,14 +151,22 @@ export function SessionsClient({
     const [isActionModalOpen, setIsActionModalOpen] = useState<boolean>(false);
 
     // Hướng dẫn nhanh cho người mới (mặc định mở, có thể thu gọn)
-    const [isGuideOpen, setIsGuideOpen] = useState<boolean>(true);
-
-    useEffect(() => {
-        const saved = localStorage.getItem("pos_sessions_guide_open");
-        if (saved !== null) {
-            setIsGuideOpen(saved === "true");
+    const [isGuideOpen, setIsGuideOpen] = useState<boolean>(() => {
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem("pos_sessions_guide_open");
+            return saved !== null ? saved === "true" : true;
         }
-    }, []);
+        return true;
+    });
+
+    // Sync guide class when state changes
+    useEffect(() => {
+        if (isGuideOpen) {
+            document.documentElement.classList.add("guide-open");
+        } else {
+            document.documentElement.classList.remove("guide-open");
+        }
+    }, [isGuideOpen]);
 
     const toggleGuide = () => {
         setIsGuideOpen((prev) => {

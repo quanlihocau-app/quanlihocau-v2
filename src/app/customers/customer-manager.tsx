@@ -1,7 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { FormEvent, useCallback, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,6 +15,10 @@ export interface CustomerItem {
     name: string;
     phoneNormalized: string | null;
     createdAt: Date | string;
+    _count?: {
+        fishingSessions: number;
+        invoices: number;
+    };
 }
 
 interface CustomerManagerProps {
@@ -26,9 +31,11 @@ export function CustomerManager({
     canDelete,
 }: CustomerManagerProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const initialQuery = searchParams.get("search") || searchParams.get("q") || "";
 
     // Search state (server-side)
-    const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useState(initialQuery);
     const [searchResults, setSearchResults] = useState<CustomerItem[] | null>(null);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState("");
@@ -111,6 +118,12 @@ export function CustomerManager({
         },
         [],
     );
+
+    useEffect(() => {
+        if (initialQuery.trim()) {
+            performSearch(initialQuery, ++requestVersionRef.current);
+        }
+    }, [initialQuery, performSearch]);
 
     function handleSearchChange(val: string) {
         setSearchTerm(val);
@@ -367,40 +380,69 @@ export function CustomerManager({
                             {displayedCustomers.map((customer) => (
                                 <div
                                     key={customer.id}
-                                    className="flex items-center justify-between rounded-xl border border-[#E2DDD2] bg-[#F8F6F0]/40 p-3.5"
+                                    className="flex flex-col gap-2 rounded-xl border border-[#E2DDD2] bg-[#F8F6F0]/40 p-3.5 shadow-2xs"
                                 >
-                                    <div>
-                                        <p className="text-xs font-bold text-slate-900">
-                                            {customer.name}
-                                        </p>
-                                        <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                                            {customer.phoneNormalized || "Chưa có số"}
-                                        </p>
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-900">
+                                                {customer.name}
+                                            </p>
+                                            <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                                {customer.phoneNormalized || "Chưa có số"}
+                                            </p>
+                                        </div>
+                                        {customer._count && (
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <span className="rounded-md bg-emerald-100 text-emerald-800 px-1.5 py-0.5 text-[10px] font-bold">
+                                                    {customer._count.fishingSessions} vé
+                                                </span>
+                                                <span className="rounded-md bg-blue-100 text-blue-800 px-1.5 py-0.5 text-[10px] font-bold">
+                                                    {customer._count.invoices} bill
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => openEditModal(customer)}
-                                        >
-                                            Sửa
-                                        </Button>
-                                        {canDelete && (
+                                    <div className="flex items-center justify-between border-t border-[#E2DDD2]/60 pt-2 mt-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <Link
+                                                href={`/sessions/new?phone=${encodeURIComponent(customer.phoneNormalized || "")}&name=${encodeURIComponent(customer.name)}`}
+                                                className="inline-flex items-center gap-1 rounded-lg bg-[#16A34A] text-white px-2 py-1 text-[11px] font-bold hover:bg-[#15803D] transition-colors"
+                                            >
+                                                <span>＋</span>
+                                                <span>Tạo vé</span>
+                                            </Link>
+                                            <Link
+                                                href={`/reports?customerId=${customer.id}`}
+                                                className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white text-slate-700 px-2 py-1 text-[11px] font-bold hover:bg-slate-50 transition-colors"
+                                            >
+                                                <span>📊 Báo cáo</span>
+                                            </Link>
+                                        </div>
+                                        <div className="flex items-center gap-1">
                                             <Button
                                                 type="button"
                                                 size="sm"
-                                                variant="danger"
-                                                onClick={() =>
-                                                    handleDelete(
-                                                        customer.id,
-                                                        customer.name,
-                                                    )
-                                                }
+                                                variant="outline"
+                                                onClick={() => openEditModal(customer)}
                                             >
-                                                Vô hiệu
+                                                Sửa
                                             </Button>
-                                        )}
+                                            {canDelete && (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="danger"
+                                                    onClick={() =>
+                                                        handleDelete(
+                                                            customer.id,
+                                                            customer.name,
+                                                        )
+                                                    }
+                                                >
+                                                    Vô hiệu
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -413,6 +455,7 @@ export function CustomerManager({
                                     <tr>
                                         <th className="px-4 py-3.5">Họ và tên</th>
                                         <th className="px-4 py-3.5">Số điện thoại (E.164)</th>
+                                        <th className="px-4 py-3.5 text-center">Lịch sử hồ</th>
                                         <th className="px-4 py-3.5 text-right">Thao tác</th>
                                     </tr>
                                 </thead>
@@ -434,8 +477,34 @@ export function CustomerManager({
                                                     </span>
                                                 )}
                                             </td>
+                                            <td className="px-4 py-3.5 text-center">
+                                                {customer._count ? (
+                                                    <div className="inline-flex items-center gap-2">
+                                                        <span className="rounded-md bg-emerald-50 text-emerald-800 px-2 py-0.5 text-xs font-semibold">
+                                                            {customer._count.fishingSessions} vé câu
+                                                        </span>
+                                                        <span className="rounded-md bg-blue-50 text-blue-800 px-2 py-0.5 text-xs font-semibold">
+                                                            {customer._count.invoices} hóa đơn
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-400">-</span>
+                                                )}
+                                            </td>
                                             <td className="px-4 py-3.5 text-right">
-                                                <div className="flex items-center justify-end gap-2">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <Link
+                                                        href={`/sessions/new?phone=${encodeURIComponent(customer.phoneNormalized || "")}&name=${encodeURIComponent(customer.name)}`}
+                                                        className="inline-flex items-center gap-1 rounded-lg bg-[#16A34A] text-white px-2.5 py-1 text-xs font-bold hover:bg-[#15803D] transition-colors"
+                                                    >
+                                                        ＋ Tạo vé
+                                                    </Link>
+                                                    <Link
+                                                        href={`/reports?customerId=${customer.id}`}
+                                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white text-slate-700 px-2.5 py-1 text-xs font-bold hover:bg-slate-50 transition-colors"
+                                                    >
+                                                        📊 Báo cáo
+                                                    </Link>
                                                     <Button
                                                         type="button"
                                                         size="sm"
