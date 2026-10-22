@@ -79,7 +79,14 @@ export async function registerUser(input: RegisterInput) {
     })
 
     if (existingUser) {
-      return reject('Email này đã được sử dụng trong hệ thống.')
+      try {
+        await recordAuthFailure('auth-register', rateIdentifier)
+      } catch (error) {
+        if (isRateLimitUnavailable(error)) {
+          return { success: false, message: rateLimitUnavailableMessage() }
+        }
+      }
+      return { success: false, conflict: true, message: 'Email này đã được sử dụng trong hệ thống.' }
     }
 
     // 2. Hash password ngoài transaction để giảm thời gian giữ lock connection
@@ -163,6 +170,19 @@ export async function registerUser(input: RegisterInput) {
       }
     }
   } catch (error) {
+    const code = typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code: unknown }).code)
+      : ''
+    if (code === 'P2002') {
+      try {
+        await recordAuthFailure('auth-register', rateIdentifier)
+      } catch (rateError) {
+        if (isRateLimitUnavailable(rateError)) {
+          return { success: false, message: rateLimitUnavailableMessage() }
+        }
+      }
+      return { success: false, conflict: true, message: 'Thông tin đăng ký đã tồn tại trong hệ thống.' }
+    }
     console.error('Register error:', error)
     return reject('Đã xảy ra lỗi hệ thống, vui lòng thử lại sau.')
   }
