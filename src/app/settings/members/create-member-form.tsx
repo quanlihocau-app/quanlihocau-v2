@@ -32,12 +32,12 @@ export function CreateMemberForm() {
         }
 
         if (!email.trim()) {
-            setError("Vui lòng nhập địa chỉ email.");
+            setError("Vui lòng nhập tên đăng nhập hoặc địa chỉ email.");
             return;
         }
 
-        if (password.length < 8) {
-            setError("Mật khẩu ban đầu phải có tối thiểu 8 ký tự.");
+        if (password.length < 4) {
+            setError("Mật khẩu ban đầu phải có tối thiểu 4 ký tự.");
             return;
         }
 
@@ -103,24 +103,28 @@ export function CreateMemberForm() {
 
             <Input
                 id="member-email"
-                label="Địa chỉ Email *"
-                type="email"
+                label="Tên đăng nhập hoặc Email *"
+                type="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nhanvien@hocau.vn"
+                placeholder="Ví dụ: hienql hoặc email@..."
+                helperText="Chủ hồ có thể nhập tên đăng nhập bất kỳ (ví dụ: hienql) hoặc email của nhân viên."
             />
 
             <Input
                 id="member-password"
-                label="Mật khẩu ban đầu *"
+                label="Mật khẩu *"
                 type="password"
                 required
-                minLength={8}
+                minLength={4}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Tối thiểu 8 ký tự"
-                helperText="Cung cấp mật khẩu này cho nhân sự để họ đăng nhập lần đầu."
+                placeholder="Tối thiểu 4 ký tự (ví dụ: 123456)"
+                helperText="Cung cấp mật khẩu này cho nhân sự để đăng nhập vào ca làm việc."
             />
 
             <Select

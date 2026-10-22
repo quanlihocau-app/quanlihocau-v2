@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -13,13 +14,18 @@ const uuidSchema = z.string().uuid({
     message: "ID nhân sự không đúng định dạng UUID.",
 });
 
-const deactivateBodySchema = z
-    .object({
-        action: z.literal("DEACTIVATE", {
-            message: "Hành động không hợp lệ, yêu cầu DEACTIVATE.",
-        }),
-    })
-    .strict();
+const patchMemberSchema = z.discriminatedUnion("action", [
+    z.object({
+        action: z.literal("DEACTIVATE"),
+    }),
+    z.object({
+        action: z.literal("RESET_PASSWORD"),
+        newPassword: z
+            .string({ message: "Vui lòng nhập mật khẩu mới." })
+            .min(4, "Mật khẩu mới phải từ 4 ký tự trở lên.")
+            .max(128, "Mật khẩu tối đa 128 ký tự."),
+    }),
+]);
 
 interface RouteParams {
     params: Promise<{
@@ -50,7 +56,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
             );
         }
 
-        const parsed = deactivateBodySchema.safeParse(body);
+        const parsed = patchMemberSchema.safeParse(body);
         if (!parsed.success) {
             const firstError =
                 parsed.error.issues[0]?.message ?? "Dữ liệu gửi lên không hợp lệ.";
@@ -78,6 +84,43 @@ export async function PATCH(request: Request, { params }: RouteParams) {
             return NextResponse.json(
                 { error: "Không tìm thấy thông tin nhân sự trong hồ câu này." },
                 { status: 404 },
+            );
+        }
+
+        // Handle RESET_PASSWORD action
+        if (parsed.data.action === "RESET_PASSWORD") {
+            const newPasswordHash = await bcrypt.hash(parsed.data.newPassword, 12);
+            await prisma.$transaction(async (tx) => {
+                await tx.user.update({
+                    where: { id: membership.userId },
+                    data: {
+                        passwordHash: newPasswordHash,
+                        isLocked: false,
+                    },
+                });
+
+                await tx.auditEvent.create({
+                    data: {
+                        lakeId: tenantContext.lakeId,
+                        entityType: "Membership",
+                        entityId: membership.id,
+                        action: "MEMBER_PASSWORD_RESET",
+                        payload: JSON.stringify({
+                            userId: membership.userId,
+                            name: membership.user.name,
+                            email: membership.user.email,
+                        }),
+                        createdBy: tenantContext.userId,
+                    },
+                });
+            });
+
+            return NextResponse.json(
+                {
+                    success: true,
+                    message: `Đã đặt lại mật khẩu mới cho "${membership.user.name}" (${membership.user.email}) thành công.`,
+                },
+                { status: 200 },
             );
         }
 

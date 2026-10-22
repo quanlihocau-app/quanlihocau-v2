@@ -141,16 +141,37 @@ export async function registerUser(input: RegisterInput) {
 
 export async function loginUser(input: { email: string; password: string }) {
   try {
-    const email = input.email.trim().toLowerCase()
+    const identifier = input.email.trim().toLowerCase()
     const { password } = input
 
-    if (!email || !password) {
-      return { success: false, message: 'Vui lòng nhập email và mật khẩu.' }
+    if (!identifier || !password) {
+      return { success: false, message: 'Vui lòng nhập tên đăng nhập/email và mật khẩu.' }
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
+    let user = await prisma.user.findUnique({
+      where: { email: identifier },
     })
+
+    if (!user && !identifier.includes('@')) {
+      user = await prisma.user.findUnique({
+        where: { email: `${identifier}@hocau.com` },
+      })
+      if (!user) {
+        user = await prisma.user.findUnique({
+          where: { email: `${identifier}@hocau.vn` },
+        })
+      }
+      if (!user) {
+        user = await prisma.user.findFirst({
+          where: {
+            email: {
+              startsWith: `${identifier}@`,
+              mode: 'insensitive',
+            },
+          },
+        })
+      }
+    }
 
     if (!user || !user.passwordHash) {
       return { success: false, message: 'Email hoặc mật khẩu không chính xác.' }
@@ -181,7 +202,7 @@ export async function loginUser(input: { email: string; password: string }) {
       })
       .catch(() => {})
 
-    return { success: true, message: 'Đăng nhập thành công!' }
+    return { success: true, message: 'Đăng nhập thành công!', email: user.email }
   } catch (error) {
     console.error('Login error:', error)
     return { success: false, message: 'Lỗi hệ thống, vui lòng thử lại sau.' }

@@ -45,8 +45,8 @@ declare module "next-auth/jwt" {
 }
 
 const loginSchema = z.object({
-    email: z.string().trim().email({ message: 'Email không hợp lệ' }),
-    password: z.string().min(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' }),
+    email: z.string().trim().min(1, { message: 'Vui lòng nhập email hoặc tên đăng nhập' }),
+    password: z.string().min(4, { message: 'Mật khẩu phải có ít nhất 4 ký tự' }),
 });
 
 export const authOptions: NextAuthOptions = {
@@ -258,9 +258,30 @@ export const authOptions: NextAuthOptions = {
 
                 let user;
                 try {
+                    const identifier = parsed.data.email.trim().toLowerCase();
                     user = await prisma.user.findUnique({
-                        where: { email: parsed.data.email.trim().toLowerCase() },
+                        where: { email: identifier },
                     });
+                    if (!user && !identifier.includes("@")) {
+                        user = await prisma.user.findUnique({
+                            where: { email: `${identifier}@hocau.com` },
+                        });
+                        if (!user) {
+                            user = await prisma.user.findUnique({
+                                where: { email: `${identifier}@hocau.vn` },
+                            });
+                        }
+                        if (!user) {
+                            user = await prisma.user.findFirst({
+                                where: {
+                                    email: {
+                                        startsWith: `${identifier}@`,
+                                        mode: "insensitive",
+                                    },
+                                },
+                            });
+                        }
+                    }
                 } catch (dbErr: unknown) {
                     console.error("[auth] Database query error during authorize:", dbErr);
                     const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);

@@ -9,6 +9,7 @@ import { getTenantContext } from "@/lib/tenant";
 
 import { CreateMemberForm } from "./create-member-form";
 import { DeactivateMemberButton } from "./deactivate-member-button";
+import { ResetPasswordButton } from "./reset-password-button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -185,11 +186,18 @@ export default async function MembersSettingsPage() {
                                         <span>Tham gia: {formatDateTime(m.createdAt)}</span>
                                         {m.role !== Role.OWNER &&
                                         m.user.id !== tenantContext.userId ? (
-                                            <DeactivateMemberButton
-                                                membershipId={m.id}
-                                                memberName={m.user.name}
-                                                memberEmail={m.user.email}
-                                            />
+                                            <div className="flex items-center gap-1.5">
+                                                <ResetPasswordButton
+                                                    membershipId={m.id}
+                                                    memberName={m.user.name}
+                                                    memberEmail={m.user.email}
+                                                />
+                                                <DeactivateMemberButton
+                                                    membershipId={m.id}
+                                                    memberName={m.user.name}
+                                                    memberEmail={m.user.email}
+                                                />
+                                            </div>
                                         ) : null}
                                     </div>
                                 </div>
@@ -234,11 +242,18 @@ export default async function MembersSettingsPage() {
                                             <td className="px-4 py-3.5 text-right">
                                                 {m.role !== Role.OWNER &&
                                                 m.user.id !== tenantContext.userId ? (
-                                                    <DeactivateMemberButton
-                                                        membershipId={m.id}
-                                                        memberName={m.user.name}
-                                                        memberEmail={m.user.email}
-                                                    />
+                                                    <div className="flex items-center justify-end gap-1.5">
+                                                        <ResetPasswordButton
+                                                            membershipId={m.id}
+                                                            memberName={m.user.name}
+                                                            memberEmail={m.user.email}
+                                                        />
+                                                        <DeactivateMemberButton
+                                                            membershipId={m.id}
+                                                            memberName={m.user.name}
+                                                            memberEmail={m.user.email}
+                                                        />
+                                                    </div>
                                                 ) : (
                                                     <span className="text-xs text-slate-400">
                                                         —

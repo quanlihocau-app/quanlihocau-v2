@@ -22,16 +22,16 @@ const createMemberSchema = z
             .max(100, "Tên nhân sự tối đa 100 ký tự."),
         email: z
             .string({
-                message: "Email không được để trống.",
+                message: "Email hoặc tên đăng nhập không được để trống.",
             })
             .trim()
-            .email("Định dạng email không hợp lệ.")
-            .max(255, "Email tối đa 255 ký tự."),
+            .min(2, "Email hoặc tên đăng nhập tối thiểu 2 ký tự.")
+            .max(255, "Tối đa 255 ký tự."),
         password: z
             .string({
                 message: "Mật khẩu không được để trống.",
             })
-            .min(8, "Mật khẩu phải từ 8 ký tự trở lên.")
+            .min(4, "Mật khẩu phải từ 4 ký tự trở lên.")
             .max(128, "Mật khẩu tối đa 128 ký tự."),
         role: z.enum([Role.STAFF, Role.MANAGER], {
             message: "Vai trò chỉ được là NHÂN VIÊN (STAFF) hoặc QUẢN LÝ (MANAGER).",
@@ -111,34 +111,90 @@ export async function POST(request: Request) {
         await assertStaffLimit(tenantContext.lakeId);
 
         const data = parsed.data;
-        const normalizedEmail = data.email.toLowerCase();
+        const rawInput = data.email.toLowerCase().trim();
+        const normalizedEmail = rawInput.includes("@") ? rawInput : `${rawInput}@hocau.vn`;
+
+        const passwordHash = await bcrypt.hash(data.password, 12);
 
         // Check if email already exists
         const existingUser = await prisma.user.findUnique({
             where: { email: normalizedEmail },
-            select: { id: true },
+            include: {
+                memberships: {
+                    where: { lakeId: tenantContext.lakeId },
+                },
+            },
         });
 
         if (existingUser) {
-            return NextResponse.json(
-                { error: "Email này đã được sử dụng trên hệ thống." },
-                { status: 409 },
-            );
-        }
-
-        const passwordHash = await bcrypt.hash(data.password, 12);
-
-        const result = await prisma.$transaction(async (tx) => {
-            // Double check existing user in transaction
-            const duplicate = await tx.user.findUnique({
-                where: { email: normalizedEmail },
-                select: { id: true },
-            });
-
-            if (duplicate) {
-                throw new Error("EMAIL_EXISTS");
+            const activeMembership = existingUser.memberships.find((m) => m.deletedAt === null);
+            if (activeMembership) {
+                return NextResponse.json(
+                    { error: `Tài khoản (${normalizedEmail}) đã có trong danh sách nhân sự của hồ. Bạn có thể bấm Đổi mật khẩu.` },
+                    { status: 409 },
+                );
             }
 
+            const existingMembership = existingUser.memberships[0];
+            const updated = await prisma.$transaction(async (tx) => {
+                await tx.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        name: data.name,
+                        passwordHash,
+                        isLocked: false,
+                    },
+                });
+
+                let membership;
+                if (existingMembership) {
+                    membership = await tx.membership.update({
+                        where: { id: existingMembership.id },
+                        data: {
+                            deletedAt: null,
+                            role: data.role,
+                        },
+                    });
+                } else {
+                    membership = await tx.membership.create({
+                        data: {
+                            userId: existingUser.id,
+                            lakeId: tenantContext.lakeId,
+                            role: data.role,
+                        },
+                    });
+                }
+
+                await tx.auditEvent.create({
+                    data: {
+                        lakeId: tenantContext.lakeId,
+                        entityType: "Membership",
+                        entityId: membership.id,
+                        action: "MEMBER_CREATED",
+                        payload: JSON.stringify({
+                            userId: existingUser.id,
+                            name: data.name,
+                            email: normalizedEmail,
+                            role: membership.role,
+                            reactivated: true,
+                        }),
+                        createdBy: tenantContext.userId,
+                    },
+                });
+
+                return {
+                    id: membership.id,
+                    userId: existingUser.id,
+                    name: data.name,
+                    email: normalizedEmail,
+                    role: membership.role,
+                };
+            });
+
+            return NextResponse.json({ member: updated }, { status: 201 });
+        }
+
+        const result = await prisma.$transaction(async (tx) => {
             const newUser = await tx.user.create({
                 data: {
                     name: data.name,
