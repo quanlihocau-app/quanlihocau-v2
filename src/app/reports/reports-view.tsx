@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
@@ -284,13 +284,8 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
         refetchOnWindowFocus: true,
     });
 
-    // Khi fetch xong, tự động hoàn tất trạng thái optimistic
-    useEffect(() => {
-        if (!isFetching) {
-            setIsOptimistic(false);
-        }
-    }, [isFetching]);
-
+    // isOptimisticActive: true chỉ khi đang fetch VÀ có optimistic/placeholder.
+    // Không cần reset isOptimistic riêng — && isFetching đã tắt trạng thái khi fetch xong.
     const isOptimisticActive = (isOptimistic || isPlaceholderData) && isFetching;
 
     const error = exportError || reportError?.message;
