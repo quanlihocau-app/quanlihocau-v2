@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { usePrinter } from "@/lib/printing/use-printer";
+import { PrintResult } from "@/lib/printing/types";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
 
 import { BottomSheet } from "@/components/ui/bottom-sheet";
@@ -26,7 +27,8 @@ import {
 import { RetailProduct } from "./retail-pos-form";
 import { BANK_CONFIG, generateVietQrUrl } from "@/lib/vietqr";
 import { CheckInTimeSection, type CheckInTimeState } from "./check-in-time-section";
-import { useOutdoorMode } from "@/hooks/use-outdoor-mode";
+
+
 
 export interface SelectCustomer {
     id: string;
@@ -137,8 +139,8 @@ export function OpenSessionForm({
 }: OpenSessionFormProps) {
     const router = useRouter();
     const toast = useToast();
-    const { config: printerConfig, templateConfig, printSessionTicket } = usePrinter();
-    const { isOutdoorMode } = useOutdoorMode();
+  const { printSessionTicket } = usePrinter();
+
 
     // Customer state
     const [customerList, setCustomerList] =
@@ -870,7 +872,7 @@ export function OpenSessionForm({
                         prepaidAmountVnd: 0,
                     },
                     { manual: false, jobId: `open-session-${ticketData.sessionId}` },
-                ).then((result) => {
+                ).then((result: PrintResult) => {
                     if (!result.success) toast.error(result.error || "Đã tạo ca câu, nhưng chưa in được vé. Có thể in lại trong chi tiết ca.");
                 }).catch(() => toast.error("Đã tạo ca câu, nhưng chưa in được vé."));
 
