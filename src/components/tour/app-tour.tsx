@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { TOUR_STEPS, TourStep } from "@/lib/tour/tour-steps";
 
@@ -106,7 +106,7 @@ export function AppTour({ userRole = "OWNER" }: { userRole?: "OWNER" | "MANAGER"
     <>
       {/* Backdrop – semi-transparent but not fully blocking */}
       <div
-        className="fixed inset-0 z-[900] bg-black/40"
+        className="fixed inset-0 z-900 bg-black/40"
         onClick={skip}
         aria-hidden="true"
       />
@@ -121,7 +121,7 @@ export function AppTour({ userRole = "OWNER" }: { userRole?: "OWNER" | "MANAGER"
             ? "tourFadeOut 0.18s ease forwards"
             : "tourFadeIn 0.22s ease forwards",
         }}
-        className="fixed bottom-24 left-1/2 z-[901] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-white/20 bg-[#1A2B20] text-white shadow-2xl overflow-hidden"
+        className="fixed bottom-24 left-1/2 z-901 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-2xl border border-white/20 bg-[#1A2B20] text-white shadow-2xl overflow-hidden"
       >
         {/* Top bar: step counter + close */}
         <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
@@ -141,7 +141,7 @@ export function AppTour({ userRole = "OWNER" }: { userRole?: "OWNER" | "MANAGER"
         </div>
 
         {/* Progress bar */}
-        <div className="h-[3px] w-full bg-white/10">
+        <div className="h-0.75 w-full bg-white/10">
           <div
             className="h-full bg-emerald-400 transition-all duration-300 ease-out"
             style={{ width: `${Math.round(((stepIndex + 1) / total) * 100)}%` }}

@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { loginUser } from '@/app/actions/auth'
-import { signIn, signOut } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { clearCatalogCache } from '@/lib/query-client'
 import { safeRedirectPath } from '@/lib/navigation'
 
@@ -30,7 +30,6 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
-  const [showAdminForm, setShowAdminForm] = useState(false)
 
   const oauthError = errorParam
     ? (OAUTH_ERRORS[errorParam] ?? OAUTH_ERRORS.Default)

@@ -252,14 +252,14 @@ export async function GET(request: NextRequest) {
             const totalFishCount = fishBuybacks.length;
             const totalFishWeight = fishBuybacks.reduce((acc, fb) => {
                 // fb.weight is a Decimal; convert to number
-                const weightNum = typeof fb.weight === 'number' ? fb.weight : (fb.weight as any).toNumber?.() ?? 0;
+                const weightNum = typeof fb.weight === 'number' ? fb.weight : Number(fb.weight) || 0;
                 return acc + weightNum;
             }, 0);
             // Aggregate top fish by weight
             const fishWeightMap = new Map<string, { name: string; weight: number; revenue: number }>();
             for (const fb of fishBuybacks) {
                 const key = fb.fishTypeId;
-                const weightNum = typeof fb.weight === 'number' ? fb.weight : (fb.weight as any).toNumber?.() ?? 0;
+                const weightNum = typeof fb.weight === 'number' ? fb.weight : Number(fb.weight) || 0;
                 const existing = fishWeightMap.get(key);
                 if (existing) {
                     existing.weight += weightNum;
@@ -626,8 +626,8 @@ export async function GET(request: NextRequest) {
         // Top 5 cá lớn nhất (theo weight từng lần mua)
         const top5BiggestFish = primaryData.fishBuybacks
             .map(fb => ({
-                name: (fb as any).fishType?.name ?? 'Unknown',
-                weight: typeof fb.weight === 'number' ? fb.weight : (fb.weight as any).toNumber?.() ?? 0,
+                name: fb.fishType?.name ?? 'Unknown',
+                weight: typeof fb.weight === 'number' ? fb.weight : Number(fb.weight) || 0,
                 revenue: fb.totalVnd,
                 date: fb.createdAt,
             }))

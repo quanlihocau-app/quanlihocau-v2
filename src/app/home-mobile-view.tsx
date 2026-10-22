@@ -193,7 +193,7 @@ export function HomeMobileView({
                     {isSuperAdmin && (
                         <Link
                             href="/admin/lakes"
-                            className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-emerald-900 to-green-950 p-3.5 text-white border border-emerald-800 shadow-sm active:scale-[0.98] transition-all font-serif"
+                            className="flex items-center justify-between rounded-2xl bg-linear-to-r from-emerald-900 to-green-950 p-3.5 text-white border border-emerald-800 shadow-sm active:scale-[0.98] transition-all font-serif"
                         >
                             <div className="flex items-center gap-2.5">
                                 <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400 text-slate-950 font-bold text-xs shadow-xs">
