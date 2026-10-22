@@ -139,8 +139,7 @@ export function OpenSessionForm({
 }: OpenSessionFormProps) {
     const router = useRouter();
     const toast = useToast();
-  const { printSessionTicket } = usePrinter();
-
+    const { printSessionTicket } = usePrinter();
 
     // Customer state
     const [customerList, setCustomerList] =

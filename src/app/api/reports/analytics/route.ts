@@ -44,6 +44,10 @@ interface SessionSummaryItem {
     id: string;
     createdAt: Date;
     packagePriceVndSnapshot: number;
+    status: SessionStatus;
+    startAt: Date;
+    plannedEndAt: Date;
+    endedAt: Date | null;
     hutLinks: Array<{ hut: { id: string; name: string; area: { id: string; name: string } } }>;
     customer?: { id: string; name: string; phoneNormalized: string | null } | null;
 }
@@ -73,10 +77,14 @@ interface WindowMetrics {
     totalFishingHours: number;
     totalOvertimeHours: number;
     averageTicketValue: number;
+    // new fish metrics
+    totalFishCount: number;
+    totalFishWeight: number;
+    topFish: Array<{ name: string; weight: number; revenue: number }>;
     sessions: SessionSummaryItem[];
     invoices: InvoiceSummaryItem[];
     expenses: Array<{ createdAt: Date; amountVnd: number }>;
-    fishBuybacks: Array<{ createdAt: Date; totalVnd: number }>;
+    fishBuybacks: Array<{ createdAt: Date; totalVnd: number; weight: Prisma.Decimal | number; fishType: { name: string } | null }>;
 }
 
 export async function GET(request: NextRequest) {
@@ -188,7 +196,7 @@ export async function GET(request: NextRequest) {
                     ...scope.buyback,
                     createdAt: { gte: from, lte: to },
                 },
-
+                include: { fishType: true },
             });
 
             // Fishing sessions created in range
@@ -240,6 +248,30 @@ export async function GET(request: NextRequest) {
 
             // Total fish buybacks
             const totalFishBuyback = fishBuybacks.reduce((acc, fb) => acc + fb.totalVnd, 0);
+            // New calculations: total fish count and total weight (kg)
+            const totalFishCount = fishBuybacks.length;
+            const totalFishWeight = fishBuybacks.reduce((acc, fb) => {
+                // fb.weight is a Decimal; convert to number
+                const weightNum = typeof fb.weight === 'number' ? fb.weight : (fb.weight as any).toNumber?.() ?? 0;
+                return acc + weightNum;
+            }, 0);
+            // Aggregate top fish by weight
+            const fishWeightMap = new Map<string, { name: string; weight: number; revenue: number }>();
+            for (const fb of fishBuybacks) {
+                const key = fb.fishTypeId;
+                const weightNum = typeof fb.weight === 'number' ? fb.weight : (fb.weight as any).toNumber?.() ?? 0;
+                const existing = fishWeightMap.get(key);
+                if (existing) {
+                    existing.weight += weightNum;
+                    existing.revenue += fb.totalVnd;
+                } else {
+                    fishWeightMap.set(key, { name: fb.fishType?.name ?? 'Unknown', weight: weightNum, revenue: fb.totalVnd });
+                }
+            }
+            const topFish = Array.from(fishWeightMap.values())
+                .sort((a, b) => b.weight - a.weight)
+                .slice(0, 5);
+
 
             // Net Estimated Profit = Total Revenue - Expenses - Fish Buybacks
             const netProfit = totalRevenue - totalExpense - totalFishBuyback;
@@ -269,6 +301,7 @@ export async function GET(request: NextRequest) {
             const averageTicketValue = totalSessions > 0 ? Math.round(ticketRevenue / Math.max(1, completedSessions + activeSessions)) : 0;
 
             return {
+                // existing metrics
                 totalRevenue,
                 ticketRevenue,
                 productRevenue,
@@ -293,6 +326,11 @@ export async function GET(request: NextRequest) {
                 totalFishingHours: Math.round((totalFishingMinutes / 60) * 10) / 10,
                 totalOvertimeHours: Math.round((totalOvertimeMinutes / 60) * 10) / 10,
                 averageTicketValue,
+                // new metrics
+                totalFishCount,
+                totalFishWeight,
+                topFish,
+                // original arrays
                 sessions,
                 invoices,
                 expenses,
@@ -546,7 +584,55 @@ export async function GET(request: NextRequest) {
 
         const topCustomers = Array.from(customerVisitMap.values())
             .sort((a, b) => b.totalSpent - a.totalSpent)
-            .slice(0, 10);
+            .slice(0, 5);
+
+        // Top 5 câu nhiều giờ nhất (tính tổng giờ câu từ sessions có customer)
+        const customerHoursMap = new Map<string, { id: string; name: string; phone: string | null; totalMinutes: number }>();
+        for (const s of primaryData.sessions) {
+            if (!s.customer) continue;
+            const endTime = s.endedAt || s.plannedEndAt;
+            const mins = Math.max(0, Math.round((endTime.getTime() - s.startAt.getTime()) / 60000));
+            if (!customerHoursMap.has(s.customer.id)) {
+                customerHoursMap.set(s.customer.id, { id: s.customer.id, name: s.customer.name, phone: s.customer.phoneNormalized, totalMinutes: 0 });
+            }
+            customerHoursMap.get(s.customer.id)!.totalMinutes += mins;
+        }
+        const top5MostHours = Array.from(customerHoursMap.values())
+            .sort((a, b) => b.totalMinutes - a.totalMinutes)
+            .slice(0, 5)
+            .map(c => ({ ...c, totalHours: Math.round((c.totalMinutes / 60) * 10) / 10 }));
+
+        // Top 5 chi tiêu nhiều nhất (same as topCustomers but slice 5)
+        const top5MostSpent = Array.from(customerVisitMap.values())
+            .sort((a, b) => b.totalSpent - a.totalSpent)
+            .slice(0, 5);
+
+        // Top 5 lâu chưa quay lại: tìm khách có session TRONG DB nhưng lần cuối cách đây lâu nhất
+        // Dùng sessions đã fetch trong primaryData — tìm lần ghé cuối cùng của mỗi khách
+        const customerLastVisitMap = new Map<string, { id: string; name: string; phone: string | null; lastVisit: Date }>();
+        for (const s of primaryData.sessions) {
+            if (!s.customer) continue;
+            const existing = customerLastVisitMap.get(s.customer.id);
+            if (!existing || s.createdAt > existing.lastVisit) {
+                customerLastVisitMap.set(s.customer.id, { id: s.customer.id, name: s.customer.name, phone: s.customer.phoneNormalized, lastVisit: s.createdAt });
+            }
+        }
+        const now = new Date();
+        const top5LongestAbsent = Array.from(customerLastVisitMap.values())
+            .map(c => ({ ...c, daysSince: Math.floor((now.getTime() - c.lastVisit.getTime()) / 86400000) }))
+            .sort((a, b) => b.daysSince - a.daysSince)
+            .slice(0, 5);
+
+        // Top 5 cá lớn nhất (theo weight từng lần mua)
+        const top5BiggestFish = primaryData.fishBuybacks
+            .map(fb => ({
+                name: (fb as any).fishType?.name ?? 'Unknown',
+                weight: typeof fb.weight === 'number' ? fb.weight : (fb.weight as any).toNumber?.() ?? 0,
+                revenue: fb.totalVnd,
+                date: fb.createdAt,
+            }))
+            .sort((a, b) => b.weight - a.weight)
+            .slice(0, 5);
 
         // 10. Staff / Membership overview
         const memberships = await prisma.membership.findMany({
@@ -654,6 +740,11 @@ export async function GET(request: NextRequest) {
                 averageTicketValue: primaryData.averageTicketValue,
                 refundAmount: primaryData.refundAmount,
                 refundCount: primaryData.refundCount,
+                // new fish & customer metrics
+                totalFishCount: primaryData.totalFishCount,
+                totalFishWeight: primaryData.totalFishWeight,
+                topFish: primaryData.topFish,
+                totalCustomers: customerVisitMap.size,
             },
             deltas,
             chartSeries,
@@ -679,6 +770,14 @@ export async function GET(request: NextRequest) {
                     status: o.status,
                     createdAt: o.createdAt,
                 })),
+                // New breakdown entries
+                totalFishCount: primaryData.totalFishCount,
+                totalFishWeight: primaryData.totalFishWeight,
+                topFish: primaryData.topFish,
+                top5BiggestFish,
+                top5MostSpent,
+                top5MostHours,
+                top5LongestAbsent,
             },
             filterOptions: {
                 areas: areas.map(a => ({ id: a.id, name: a.name })),

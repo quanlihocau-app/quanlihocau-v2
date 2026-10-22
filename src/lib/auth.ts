@@ -6,7 +6,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { z } from "zod";
 
-import { SystemRole } from "@/generated/prisma/client";
+import { SystemRole, Prisma, Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { seedSampleLakeData } from "@/lib/onboarding/seed-sample-lake";
 
@@ -55,6 +55,7 @@ export const authOptions: NextAuthOptions = {
     },
     pages: {
         signIn: "/login",
+        error: "/login",
     },
     callbacks: {
         async signIn({ user, account, profile }) {
@@ -62,12 +63,50 @@ export const authOptions: NextAuthOptions = {
 
             const email = user.email?.trim().toLowerCase();
             const googleProfile = profile as { email_verified?: unknown } | null;
-            if (!email || googleProfile?.email_verified !== true) return false;
+            const isEmailVerified = googleProfile?.email_verified === true || googleProfile?.email_verified === "true";
+
+            console.log("[auth:signIn] Google sign-in attempt:", {
+                email,
+                profileEmailVerified: googleProfile?.email_verified,
+                isEmailVerified,
+            });
+
+            if (!email || !isEmailVerified) {
+                console.warn("[auth:signIn] Denied: Email is missing or not verified:", email);
+                return false;
+            }
 
             let dbUser = await prisma.user.findUnique({
                 where: { email },
-                select: { isLocked: true },
+                select: {
+                    id: true,
+                    isLocked: true,
+                    systemRole: true,
+                    memberships: {
+                        where: { deletedAt: null },
+                        select: { role: true },
+                    },
+                },
             });
+
+            console.log("[auth:signIn] Found existing dbUser:", dbUser);
+
+            // Quy tắc: Nhân viên do chủ hồ tạo chỉ đăng nhập bằng tài khoản/mật khẩu, KHÔNG đăng nhập bằng Google
+            if (dbUser) {
+                if (dbUser.isLocked) {
+                    console.warn("[auth:signIn] Denied: User is locked:", email);
+                    return false;
+                }
+
+                const isSuperAdmin = dbUser.systemRole === "SUPER_ADMIN";
+                const hasOwnerMembership = dbUser.memberships?.some((m) => m.role === Role.OWNER) ?? false;
+
+                if (!isSuperAdmin && !hasOwnerMembership && (dbUser.memberships?.length ?? 0) > 0) {
+                    console.warn("[auth:signIn] Denied: Staff account must sign in with credentials, not Google:", email);
+                    return "/login?error=StaffMustUseCredentials";
+                }
+            }
+
             if (!dbUser) {
                 const now = new Date();
                 const trialExpiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -75,51 +114,69 @@ export const authOptions: NextAuthOptions = {
                 const lakeName = `Hồ câu của ${ownerName}`;
 
                 try {
-                    await prisma.$transaction(async (tx) => {
-                        const organization = await tx.organization.create({
-                            data: {
-                                name: `Doanh nghiệp ${lakeName}`,
-                                subscriptionPlan: "TRIAL",
-                                validUntil: trialExpiresAt,
-                            },
-                        });
-                        const lake = await tx.lake.create({
-                            data: {
-                                organizationId: organization.id,
-                                name: lakeName,
-                                subscriptionStatus: "TRIAL",
-                                subscriptionPlan: "TRIAL",
-                                subscriptionExpiresAt: trialExpiresAt,
-                            },
-                        });
-                        const owner = await tx.user.create({
-                            data: {
-                                email,
-                                name: ownerName,
-                                systemRole: "USER",
-                                phoneVerified: false,
-                            },
-                        });
-                        await tx.membership.create({
-                            data: { userId: owner.id, lakeId: lake.id, role: "OWNER" },
-                        });
-                        // Khởi tạo bộ dữ liệu mẫu cho tài khoản Google mới
-                        await seedSampleLakeData(tx, lake.id, ownerName, owner.id);
-                    });
-                } catch {
-                    // A simultaneous first sign-in may have created this email.
-                    // Re-read it and continue without duplicating tenant data.
+                    const result = await prisma.$transaction(
+                        async (tx) => {
+                            const organization = await tx.organization.create({
+                                data: {
+                                    name: `Doanh nghiệp ${lakeName}`,
+                                    subscriptionPlan: "TRIAL",
+                                    validUntil: trialExpiresAt,
+                                },
+                            });
+                            const lake = await tx.lake.create({
+                                data: {
+                                    organizationId: organization.id,
+                                    name: lakeName,
+                                    subscriptionStatus: "TRIAL",
+                                    subscriptionPlan: "TRIAL",
+                                    subscriptionExpiresAt: trialExpiresAt,
+                                },
+                            });
+                            const owner = await tx.user.create({
+                                data: {
+                                    email,
+                                    name: ownerName,
+                                    systemRole: "USER",
+                                    phoneVerified: false,
+                                },
+                            });
+                            await tx.membership.create({
+                                data: { userId: owner.id, lakeId: lake.id, role: "OWNER" },
+                            });
+                            return { lakeId: lake.id, ownerId: owner.id };
+                        },
+                        {
+                            maxWait: 15000,
+                            timeout: 25000,
+                        }
+                    );
+
+                    console.log("[auth:signIn] Created new user, lake, and org for:", email);
+
+                    // Khởi tạo bộ dữ liệu mẫu sau khi transaction người dùng và hồ đã commit thành công
+                    if (result?.lakeId) {
+                        try {
+                            await seedSampleLakeData(prisma as unknown as Prisma.TransactionClient, result.lakeId, ownerName, result.ownerId);
+                            console.log("[auth:signIn] Seeded sample data for lake:", result.lakeId);
+                        } catch (seedErr) {
+                            console.warn("[auth:signIn] Non-fatal: seedSampleLakeData warning:", seedErr);
+                        }
+                    }
+                } catch (txErr) {
+                    console.error("[auth:signIn] Error in user creation transaction:", txErr);
                 }
 
-                dbUser = await prisma.user.findUnique({
+                const createdUser = await prisma.user.findUnique({
                     where: { email },
                     select: { isLocked: true },
                 });
+                console.log("[auth:signIn] dbUser after transaction:", createdUser);
+                return Boolean(createdUser && !createdUser.isLocked);
             }
 
-            // Existing users are matched by verified Google email; locked
-            // accounts keep their restriction. No existing records are changed.
-            return Boolean(dbUser && !dbUser.isLocked);
+            const allowed = Boolean(dbUser && !dbUser.isLocked);
+            console.log("[auth:signIn] Final sign-in allowed:", allowed, "isLocked:", dbUser?.isLocked);
+            return allowed;
         },
         async jwt({ token, user }) {
             if (user) {
@@ -268,9 +325,9 @@ export const authOptions: NextAuthOptions = {
 // LIGHTWEIGHT SESSION COOKIE UTILITIES (HMAC-SHA256)
 // -----------------------------------------------------------------------------
 if (process.env.NODE_ENV === 'production') {
-  if (!process.env.SESSION_SECRET && !process.env.NEXTAUTH_SECRET) {
-    throw new Error('SESSION_SECRET or NEXTAUTH_SECRET must be set in production');
-  }
+    if (!process.env.SESSION_SECRET && !process.env.NEXTAUTH_SECRET) {
+        throw new Error('SESSION_SECRET or NEXTAUTH_SECRET must be set in production');
+    }
 }
 const SESSION_SECRET =
     process.env.SESSION_SECRET ||

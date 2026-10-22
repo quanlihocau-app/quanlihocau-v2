@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -10,12 +10,14 @@ import { DateFilterState, DateRangePicker } from "@/components/reports/date-rang
 import { AdvancedFilterSheet, AdvancedFilterValues } from "@/components/reports/advanced-filter-sheet";
 import { DrilldownDrawer } from "@/components/reports/drilldown-drawer";
 import { AnalyticsChart } from "@/components/reports/analytics-chart";
+import { Role } from "@/generated/prisma/enums";
 import { CompareMode, DatePreset, DeltaComparison, formatVnd, formatVnDateInput, formatVnTimeInput, getDateRangeForPreset } from "@/lib/reports/date-utils";
 
 interface ReportsViewProps {
     lakeName: string;
     lakeId: string;
     userEmail: string;
+    userRole?: Role | null;
 }
 
 interface AreaStat {
@@ -46,6 +48,43 @@ interface TopCustomer {
     phone: string | null;
     sessions: number;
     totalSpent: number;
+}
+
+interface TopFish {
+    name: string;
+    weight: number;
+    revenue: number;
+}
+
+interface Top5Customer {
+    id: string;
+    name: string;
+    phone: string | null;
+    sessions: number;
+    totalSpent: number;
+}
+
+interface Top5HoursCustomer {
+    id: string;
+    name: string;
+    phone: string | null;
+    totalMinutes: number;
+    totalHours: number;
+}
+
+interface Top5AbsentCustomer {
+    id: string;
+    name: string;
+    phone: string | null;
+    lastVisit: string;
+    daysSince: number;
+}
+
+interface Top5BiggestFish {
+    name: string;
+    weight: number;
+    revenue: number;
+    date: string;
 }
 
 interface StaffMember {
@@ -105,6 +144,11 @@ interface AnalyticsDataResponse {
         averageTicketValue: number;
         refundAmount: number;
         refundCount: number;
+        // fish & customer KPIs
+        totalFishCount: number;
+        totalFishWeight: number;
+        topFish: TopFish[];
+        totalCustomers: number;
     };
     deltas: Record<string, DeltaComparison> | null;
     chartSeries: Array<{
@@ -138,6 +182,14 @@ interface AnalyticsDataResponse {
             status: string;
             createdAt: string;
         }>;
+        // fish breakdown
+        totalFishCount: number;
+        totalFishWeight: number;
+        topFish: TopFish[];
+        top5BiggestFish: Top5BiggestFish[];
+        top5MostSpent: Top5Customer[];
+        top5MostHours: Top5HoursCustomer[];
+        top5LongestAbsent: Top5AbsentCustomer[];
     };
     filterOptions: {
         areas: Array<{ id: string; name: string }>;
@@ -150,7 +202,10 @@ interface AnalyticsDataResponse {
 
 const STORAGE_KEY = "qlhc_report_filter_v2";
 
-export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
+export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: ReportsViewProps) {
+  // Load tenant role to control access to audit logs
+  const [userRole] = useState<Role | null>(initialUserRole ?? null);
+
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -183,6 +238,23 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
 
     const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilterValues>(() => Object.fromEntries(["areaId", "hutId", "customerId", "employeeId", "packageId", "productId", "paymentMethod", "sessionStatus"].flatMap(k => searchParams.get(k) ? [[k, searchParams.get(k)!]] : [])));
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+    const [isOptimistic, setIsOptimistic] = useState(false);
+
+    // Cập nhật state bộ lọc ngay trước khi fetch (Optimistic UI)
+    const handleFilterStateChange = (nextFilter: DateFilterState) => {
+        setIsOptimistic(true);
+        setFilterState(nextFilter);
+    };
+
+    const handleAdvancedFilterApply = (newFilters: AdvancedFilterValues) => {
+        setIsOptimistic(true);
+        setAdvancedFilters(newFilters);
+    };
+
+    const handleAdvancedFilterReset = () => {
+        setIsOptimistic(true);
+        setAdvancedFilters({});
+    };
 
     // Active drilldown metric
     const [drilldownMetric, setDrilldownMetric] = useState<string | null>(() => searchParams.get("metric"));
@@ -200,15 +272,27 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
     const paramsString = reportParams.toString();
     const navigationParams = new URLSearchParams(reportParams); navigationParams.set("tab", activeTab);
     const reportNavigation = `/reports?${navigationParams}`;
-    const { data: analyticsData, error: reportError, isFetching, isPending, refetch } = useQuery<AnalyticsDataResponse>({
+    const { data: analyticsData, error: reportError, isFetching, isPending, isPlaceholderData, refetch } = useQuery<AnalyticsDataResponse>({
         queryKey: ["reports", lakeId, paramsString],
         queryFn: async ({ signal }) => {
             const r = await fetch(`/api/reports/analytics?${paramsString}`, { signal, cache: "no-store" });
             if (!r.ok) throw new Error("Không thể tải báo cáo. Vui lòng thử lại.");
             return r.json();
         },
-        staleTime: 10000, refetchOnWindowFocus: true,
+        placeholderData: keepPreviousData,
+        staleTime: 10000, 
+        refetchOnWindowFocus: true,
     });
+
+    // Khi fetch xong, tự động hoàn tất trạng thái optimistic
+    useEffect(() => {
+        if (!isFetching) {
+            setIsOptimistic(false);
+        }
+    }, [isFetching]);
+
+    const isOptimisticActive = (isOptimistic || isPlaceholderData) && isFetching;
+
     const error = exportError || reportError?.message;
     useEffect(() => {
         window.history.replaceState(null, "", reportNavigation);
@@ -274,7 +358,7 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
 
                 {/* Standardized Green Gradient Banner (Đồng bộ trang Đang câu) */}
                 <div className="px-3 pt-3 pb-1 font-sans w-full">
-                    <div className="w-full rounded-2xl border border-emerald-200/90 bg-gradient-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3 shadow-2xs">
+                    <div className="w-full rounded-2xl border border-emerald-200/90 bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3 shadow-2xs">
                         <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
                             <div className="flex items-center gap-2">
                                 <div className="h-4.5 w-1.5 rounded-full bg-[#16A34A] shrink-0" />
@@ -324,13 +408,13 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                 {/* Sticky Time Filter Bar */}
                 <DateRangePicker
                     value={filterState}
-                    onChange={setFilterState}
+                    onChange={handleFilterStateChange}
                     currentRangeLabel={analyticsData?.timeWindow?.label || "Đang tải khoảng thời gian..."}
                 />
 
                 {/* Quick Shift Report Nav Notice */}
                 <div className="w-full px-3 pt-2">
-                    <div className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-[#F0FDF4] via-white to-[#F0FDF4] border border-emerald-200/90 px-3.5 py-2.5 text-xs text-slate-700 shadow-2xs font-serif">
+                    <div className="flex items-center justify-between rounded-2xl bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] border border-emerald-200/90 px-3.5 py-2.5 text-xs text-slate-700 shadow-2xs font-serif">
                         <span>Cần xem hoặc chốt sổ ca trực hiện tại?</span>
                         <button
                             type="button"
@@ -345,7 +429,36 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                 <div className="px-3 pt-2"><button type="button" onClick={() => router.push(cashbookHref())} className="w-full rounded-xl border bg-white p-3 text-sm font-bold text-[#102A43]">Sổ thu chi · Tiền mặt và chuyển khoản →</button></div>
                 {/* Main Content Area */}
                 <main className="w-full px-3 pt-3 space-y-4 font-serif">
-                    <div role="status" className="text-xs text-slate-500">{isPending ? "Đang tải báo cáo…" : isFetching ? "Đang cập nhật số liệu…" : "Doanh thu theo hóa đơn · Dòng tiền theo giao dịch thanh toán"}</div>
+                    <div role="status" className="flex items-center justify-between text-xs text-slate-500">
+                        <div className="flex items-center gap-2">
+                            {isOptimisticActive ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/90 font-medium font-sans animate-pulse">
+                                    <svg className="animate-spin h-3 w-3 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Đang cập nhật số liệu mới (hiển thị tạm số liệu cũ)...
+                                </span>
+                            ) : isPending ? (
+                                <span>Đang tải báo cáo…</span>
+                            ) : isFetching ? (
+                                <span className="inline-flex items-center gap-1.5 text-emerald-700 font-medium font-sans">
+                                    <svg className="animate-spin h-3 w-3 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Đang cập nhật số liệu…
+                                </span>
+                            ) : (
+                                <span>Doanh thu theo hóa đơn · Dòng tiền theo giao dịch thanh toán</span>
+                            )}
+                        </div>
+                        {isOptimisticActive && (
+                            <span className="text-[11px] text-amber-700 bg-amber-100/60 px-2 py-0.5 rounded-md font-sans">
+                                Optimistic UI
+                            </span>
+                        )}
+                    </div>
                     {reportError && <button type="button" onClick={() => void refetch()} className="rounded-xl border bg-white px-3 py-2 text-sm">Thử tải lại</button>}
                     {error && (
                         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 shadow-2xs">
@@ -353,12 +466,14 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                         </div>
                     )}
 
-                    {/* 1. EXECUTIVE KPI SUMMARY CARDS (Clickable for Drilldown) */}
+                    {/* Optimistic UI Wrapper: Dữ liệu cũ được giữ hiển thị và làm mờ nhẹ trong lúc tải */}
+                    <div className={`space-y-4 transition-opacity duration-200 ${isOptimisticActive ? "opacity-60" : "opacity-100"}`}>
+                        {/* 1. EXECUTIVE KPI SUMMARY CARDS (Clickable for Drilldown) */}
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         {/* Total Revenue */}
                         <div
                             role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("totalRevenue"); } }} onClick={() => setDrilldownMetric("totalRevenue")}
-                            className="cursor-pointer rounded-2xl border border-emerald-700 bg-gradient-to-br from-[#1B3224] to-[#244632] p-3 text-white shadow-2xs transition-all active:scale-98"
+                            title={`Doanh thu tổng: ${formatVnd(s?.totalRevenue ?? 0)}`} className="cursor-pointer rounded-2xl border border-emerald-700 bg-linear-to-br from-[#1B3224] to-[#244632] p-3 text-white shadow-2xs transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
                                 <span>
@@ -373,11 +488,14 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
 
                         {/* Net Profit */}
                         <div
-                            className="rounded-2xl border border-slate-800 bg-[#0F172A] p-3 text-white shadow-2xs"
+                            role="button" tabIndex={0}
+                            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setActiveTab("revenue"); } }}
+                            onClick={() => setActiveTab("revenue")}
+                            title="Lợi nhuận tạm tính = Tổng doanh thu - Chi phí - Tiền mua cá. Bấm để xem chi tiết dòng tiền."
+                            className="cursor-pointer rounded-2xl border border-slate-800 bg-[#0F172A] p-3 text-white shadow-2xs hover:border-slate-600 transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-                                <span>
-                                    Lợi nhuận tạm tính</span>
+                                <span>Lợi nhuận tạm tính</span>
                                 <span>📊</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif sm:text-lg tabular-nums">
@@ -409,7 +527,23 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                                 <span>
-                                    Tiền sản phẩm</span>
+                                    Tiền sản phẩm (RBM)</span>
+                                <span>🔍</span>
+                            </div>
+                            <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
+                                {formatVnd(s?.productRevenue ?? 0)}
+                            </div>
+                            {renderDelta(d?.productRevenue)}
+                        </div>
+                        {/* Product Report Card */}
+                        <div
+                            role="button" tabIndex={0}
+                            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDrilldownMetric("productReport"); } }}
+                            onClick={() => setDrilldownMetric("productReport")}
+                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
+                        >
+                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                <span>Báo cáo sản phẩm</span>
                                 <span>🔍</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
@@ -480,7 +614,74 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                             {formatVnd(s?.totalReceivableDebt ?? 0)}
                         </div>
                     </div>
-                </div>
+                
+                        {/* KPI: Số khách hàng */}
+                        <div
+                            role="button" tabIndex={0}
+                            onClick={() => router.push("/customers")}
+                            title="Bấm để mở danh sách khách hàng"
+                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs hover:border-emerald-300 transition-all active:scale-98"
+                        >
+                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                <span>👥 Số khách hàng</span>
+                                <span className="text-emerald-600 font-normal">Xem →</span>
+                            </div>
+                            <div className="mt-1 text-base font-bold text-slate-800 tabular-nums">{s?.totalCustomers ?? 0} khách</div>
+                        </div>
+
+                        {/* KPI: Tổng số lần mua cá */}
+                        <div
+                            role="button" tabIndex={0}
+                            onClick={() => router.push("/fish-buybacks")}
+                            title="Bấm để mở sổ thu mua cá"
+                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs hover:border-emerald-300 transition-all active:scale-98"
+                        >
+                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                <span>🐟 Số lượt mua cá</span>
+                                <span className="text-emerald-600 font-normal">Xem →</span>
+                            </div>
+                            <div className="mt-1 text-base font-bold text-slate-800 tabular-nums">{s?.totalFishCount ?? 0} lượt</div>
+                        </div>
+
+                        {/* KPI: Tổng kg cá */}
+                        <div
+                            role="button" tabIndex={0}
+                            onClick={() => router.push("/fish-buybacks")}
+                            title="Bấm để mở sổ thu mua cá"
+                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs hover:border-emerald-300 transition-all active:scale-98"
+                        >
+                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                <span>⚖️ Tổng cân nặng cá</span>
+                                <span className="text-emerald-600 font-normal">Xem →</span>
+                            </div>
+                            <div className="mt-1 text-base font-bold text-slate-800 tabular-nums">
+                                {((s?.totalFishWeight ?? 0)).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} kg
+                            </div>
+                        </div>
+
+                        {/* KPI: Top cá theo cân nặng */}
+                        {s?.topFish && s.topFish.length > 0 && (
+                            <div
+                                role="button" tabIndex={0}
+                                onClick={() => router.push("/fish-buybacks")}
+                                title="Bấm để xem lịch sử thu mua cá"
+                                className="col-span-2 cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs hover:border-emerald-300 transition-all active:scale-98"
+                            >
+                                <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                    <span>🏆 Top cá theo cân nặng</span>
+                                    <span className="text-emerald-600 font-normal">Sổ mua cá →</span>
+                                </div>
+                                <div className="space-y-1">
+                                    {s.topFish.map((f, i) => (
+                                        <div key={f.name} className="flex items-center justify-between text-xs">
+                                            <span className="text-slate-600">{i + 1}. {f.name}</span>
+                                            <span className="font-bold text-slate-800">{f.weight.toLocaleString("vi-VN", { maximumFractionDigits: 1 })} kg</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        </div>
 
                 {/* 2. DYNAMIC TREND CHART */}
                 <AnalyticsChart
@@ -537,6 +738,7 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                         >
                             👥 Khách hàng & Nhân viên
                         </button>
+{userRole && userRole !== Role.STAFF && (
                         <button
                             type="button"
                             onClick={() => setActiveTab("system")}
@@ -546,6 +748,7 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                         >
                             ⚙️ Hệ thống & Gói SaaS
                         </button>
+)}
                     </div>
 
                     {/* TAB CONTENT: Overview & Operations */}
@@ -733,9 +936,15 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                                             <span className="text-xs text-slate-400">Chưa có doanh số sản phẩm</span>
                                         ) : (
                                             analyticsData?.breakdown?.topProducts.map((p: TopProduct) => (
-                                                <div key={p.id} className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5">
+                                                <div
+                                                    key={p.id}
+                                                    role="button" tabIndex={0}
+                                                    onClick={() => router.push("/products")}
+                                                    title="Bấm để xem quản lý mặt hàng"
+                                                    className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5 cursor-pointer hover:bg-slate-50 rounded px-1 transition-colors"
+                                                >
                                                     <div>
-                                                        <span className="font-semibold text-slate-800">{p.name}</span>
+                                                        <span className="font-semibold text-slate-800 hover:text-emerald-700">{p.name}</span>
                                                         <span className="text-[10px] text-slate-500 block">Đã bán: {p.quantity}</span>
                                                     </div>
                                                     <span className="font-bold text-emerald-700">{formatVnd(p.revenueVnd)}</span>
@@ -766,18 +975,27 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                                     Khách hàng thân thiết & Đội ngũ nhân viên
                             </h4>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                {/* Top 5 chi tiêu nhiều nhất */}
                                 <div className="rounded-xl border border-slate-200 p-3">
-                                    <h5 className="text-xs font-bold text-slate-700 mb-2">
-                                    Top Khách hàng chi tiêu</h5>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h5 className="text-xs font-bold text-slate-700">💸 Top 5 Chi tiêu nhiều nhất</h5>
+                                        <button type="button" onClick={() => router.push("/customers")} className="text-[11px] text-emerald-700 font-semibold hover:underline">Xem tất cả →</button>
+                                    </div>
                                     <div className="space-y-2">
-                                        {(analyticsData?.breakdown?.topCustomers || []).length === 0 ? (
+                                        {(analyticsData?.breakdown?.top5MostSpent || []).length === 0 ? (
                                             <span className="text-xs text-slate-400">Chưa có dữ liệu khách hàng</span>
                                         ) : (
-                                            analyticsData?.breakdown?.topCustomers.map((c: TopCustomer) => (
-                                                <div key={c.id} className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5">
+                                            (analyticsData?.breakdown?.top5MostSpent || []).map((c, i) => (
+                                                <div
+                                                    key={c.id}
+                                                    role="button" tabIndex={0}
+                                                    onClick={() => router.push(`/customers?search=${encodeURIComponent(c.phone || c.name)}`)}
+                                                    title="Bấm để xem chi tiết khách hàng"
+                                                    className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5 cursor-pointer hover:bg-slate-50 rounded px-1 transition-colors"
+                                                >
                                                     <div>
-                                                        <span className="font-semibold text-slate-800">{c.name}</span>
-                                                        <span className="text-[10px] text-slate-400 block">{c.phone || "Chưa có SĐT"} • {c.sessions} phiên</span>
+                                                        <span className="font-semibold text-slate-800 hover:text-emerald-700">{i + 1}. {c.name}</span>
+                                                        <span className="text-[10px] text-slate-400 block">{c.phone || 'Chưa có SĐT'} • {c.sessions} phiên</span>
                                                     </div>
                                                     <span className="font-bold text-emerald-700">{formatVnd(c.totalSpent)}</span>
                                                 </div>
@@ -786,9 +1004,87 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                                     </div>
                                 </div>
 
+                                {/* Top 5 câu nhiều giờ nhất */}
                                 <div className="rounded-xl border border-slate-200 p-3">
-                                    <h5 className="text-xs font-bold text-slate-700 mb-2">
-                                    Danh sách Nhân viên</h5>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h5 className="text-xs font-bold text-slate-700">⏱️ Top 5 Câu nhiều giờ nhất</h5>
+                                        <button type="button" onClick={() => router.push("/customers")} className="text-[11px] text-emerald-700 font-semibold hover:underline">Xem tất cả →</button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {(analyticsData?.breakdown?.top5MostHours || []).length === 0 ? (
+                                            <span className="text-xs text-slate-400">Chưa có dữ liệu</span>
+                                        ) : (
+                                            (analyticsData?.breakdown?.top5MostHours || []).map((c, i) => (
+                                                <div
+                                                    key={c.id}
+                                                    role="button" tabIndex={0}
+                                                    onClick={() => router.push(`/customers?search=${encodeURIComponent(c.phone || c.name)}`)}
+                                                    title="Bấm để xem chi tiết khách hàng"
+                                                    className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5 cursor-pointer hover:bg-slate-50 rounded px-1 transition-colors"
+                                                >
+                                                    <div>
+                                                        <span className="font-semibold text-slate-800 hover:text-emerald-700">{i + 1}. {c.name}</span>
+                                                        <span className="text-[10px] text-slate-400 block">{c.phone || 'Chưa có SĐT'}</span>
+                                                    </div>
+                                                    <span className="font-bold text-blue-700">{c.totalHours} giờ</span>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Top 5 lâu chưa quay lại */}
+                                <div className="rounded-xl border border-slate-200 p-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h5 className="text-xs font-bold text-slate-700">🔔 Top 5 Lâu chưa quay lại</h5>
+                                        <button type="button" onClick={() => router.push("/customers")} className="text-[11px] text-emerald-700 font-semibold hover:underline">Xem tất cả →</button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {(analyticsData?.breakdown?.top5LongestAbsent || []).length === 0 ? (
+                                            <span className="text-xs text-slate-400">Chưa có dữ liệu</span>
+                                        ) : (
+                                            (analyticsData?.breakdown?.top5LongestAbsent || []).map((c, i) => (
+                                                <div
+                                                    key={c.id}
+                                                    role="button" tabIndex={0}
+                                                    onClick={() => router.push(`/customers?search=${encodeURIComponent(c.phone || c.name)}`)}
+                                                    title="Bấm để liên hệ chăm sóc khách hàng"
+                                                    className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5 cursor-pointer hover:bg-slate-50 rounded px-1 transition-colors"
+                                                >
+                                                    <div>
+                                                        <span className="font-semibold text-slate-800 hover:text-emerald-700">{i + 1}. {c.name}</span>
+                                                        <span className="text-[10px] text-slate-400 block">{c.phone || 'Chưa có SĐT'}</span>
+                                                    </div>
+                                                    <span className="font-bold text-amber-600">{c.daysSince} ngày</span>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Top 5 cá lớn nhất */}
+                                <div className="rounded-xl border border-slate-200 p-3">
+                                    <h5 className="text-xs font-bold text-slate-700 mb-2">🐟 Top 5 Cá lớn nhất</h5>
+                                    <div className="space-y-2">
+                                        {(analyticsData?.breakdown?.top5BiggestFish || []).length === 0 ? (
+                                            <span className="text-xs text-slate-400">Chưa có dữ liệu thu mua cá</span>
+                                        ) : (
+                                            (analyticsData?.breakdown?.top5BiggestFish || []).map((f, i) => (
+                                                <div key={i} className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5">
+                                                    <div>
+                                                        <span className="font-semibold text-slate-800">{i + 1}. {f.name}</span>
+                                                        <span className="text-[10px] text-slate-400 block">{formatVnd(f.revenue)}</span>
+                                                    </div>
+                                                    <span className="font-bold text-slate-800">{f.weight.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} kg</span>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Danh sách nhân viên */}
+                                <div className="col-span-1 sm:col-span-2 rounded-xl border border-slate-200 p-3">
+                                    <h5 className="text-xs font-bold text-slate-700 mb-2">👤 Danh sách Nhân viên</h5>
                                     <div className="space-y-2">
                                         {(analyticsData?.breakdown?.staff || []).map((st: StaffMember) => (
                                             <div key={st.id} className="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5">
@@ -808,7 +1104,7 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                     )}
 
                     {/* TAB CONTENT: System & SaaS */}
-                    {activeTab === "system" && (
+                    {activeTab === "system" && userRole && userRole !== Role.STAFF && (
                         <div className="pt-3 space-y-3">
                             <h4 className="text-xs font-bold uppercase text-slate-500">
                                     Nhật ký thao tác & Gói SaaS
@@ -859,6 +1155,7 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                         </div>
                     )}
                 </div>
+                </div>
             </main>
 
             {/* Bottom Sheet for Advanced Filter */}
@@ -867,10 +1164,8 @@ export function ReportsView({ lakeName, lakeId }: ReportsViewProps) {
                 onClose={() => setIsFilterSheetOpen(false)}
                 filters={advancedFilters}
                 options={analyticsData?.filterOptions || { areas: [], huts: [], packages: [], products: [], staff: [] }}
-                onApply={(newFilters) => {
-                    setAdvancedFilters(newFilters);
-                }}
-                onReset={() => setAdvancedFilters({})}
+                onApply={handleAdvancedFilterApply}
+                onReset={handleAdvancedFilterReset}
             />
 
             {/* Drilldown Drawer on KPI click */}

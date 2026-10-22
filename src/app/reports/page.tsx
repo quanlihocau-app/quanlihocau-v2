@@ -54,6 +54,7 @@ export default async function ReportsPage() {
                 lakeName={lake?.name || "Hồ câu"}
                 lakeId={tenantContext.lakeId}
                 userEmail={session.user.email}
+                userRole={tenantContext.role}
             />
         </Suspense>
     );

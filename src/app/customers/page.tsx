@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 import { privateRouteMetadata } from "@/lib/metadata";
 
+import { Suspense } from "react";
 import { CustomerManager } from "./customer-manager";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,14 @@ export default async function CustomersPage() {
             lakeId: tenantContext.lakeId,
             deletedAt: null,
         },
+        include: {
+            _count: {
+                select: {
+                    fishingSessions: true,
+                    invoices: true,
+                },
+            },
+        },
         orderBy: {
             createdAt: "desc",
         },
@@ -56,19 +65,21 @@ export default async function CustomersPage() {
         tenantContext.role === Role.MANAGER;
 
     return (
-        <main className="mx-auto min-h-screen max-w-5xl bg-[#F8F6F0] px-4 pb-24 pt-6 sm:px-6">
+        <main className="mx-auto min-h-screen max-w-5xl bg-[#F8F6F0] px-4 pb-24 pt-6 sm:px-6 font-serif">
             <PageHeader
                 title="Quản lý Khách hàng"
                 subtitle={`Hồ câu: ${tenantContext.lakeName} (${tenantContext.organizationName})`}
-                backHref="/settings"
-                backLabel="Quay lại Cài đặt"
+                backHref="/home"
+                backLabel="Quay lại Trang chủ"
                 badge={<Badge variant="default">Vai trò: {tenantContext.role}</Badge>}
             />
 
-            <CustomerManager
-                initialCustomers={customers}
-                canDelete={canDelete}
-            />
+            <Suspense fallback={<div className="py-12 text-center text-xs text-slate-400">Đang tải danh sách khách hàng...</div>}>
+                <CustomerManager
+                    initialCustomers={customers}
+                    canDelete={canDelete}
+                />
+            </Suspense>
         </main>
     );
 }

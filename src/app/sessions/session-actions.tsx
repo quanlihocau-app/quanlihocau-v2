@@ -164,8 +164,8 @@ export function SessionActions({
                 plannedEndAt: data.session.endTime,
                 items: Array.isArray(data.invoice?.lines)
                     ? data.invoice.lines
-                          .filter((l: any) => Boolean(l.productId))
-                          .map((l: any) => ({
+                          .filter((l: SerializableInvoiceLine) => Boolean(l.productId))
+                          .map((l: SerializableInvoiceLine) => ({
                               name: l.name,
                               quantity: Number(l.quantity) || 1,
                               unitPrice: l.unitPrice,

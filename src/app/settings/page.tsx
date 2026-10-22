@@ -13,6 +13,7 @@ import { NegativeInventoryToggle } from "./negative-inventory-toggle";
 import { SubscriptionBanner } from "./subscription-banner";
 import { PwaInstallSettingRow } from "./pwa-install-button";
 import { SessionAlarmSettingsRow } from "@/components/sessions/session-alarm-settings-row";
+import { TourSettingsRow } from "@/components/tour/tour-settings-row";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 
@@ -195,23 +196,8 @@ export default async function SettingsPage() {
                     </Link>
                 )}
 
-                {/* Hướng dẫn sử dụng & Cẩm nang */}
-                <Link href="/settings/guide" className="menu-row bg-[#E8F3E5]/60 border-[#4F9D5A]/40 hover:bg-[#E8F3E5]">
-                    <div>
-                        <div className="flex items-center gap-1.5">
-                            <span className="rounded-md bg-[#4F9D5A] px-1.5 py-0.5 text-[10px] font-bold text-white">
-                                11 BÀI
-                            </span>
-                            <p className="text-[14px] font-bold text-[#246B38]">
-                                Hướng dẫn sử dụng & Onboarding
-                            </p>
-                        </div>
-                        <p className="text-[12px] text-[#66716A] mt-0.5">
-                            Cẩm nang 10 phút cho nhân viên & quản lý mới
-                        </p>
-                    </div>
-                    <ChevronRight />
-                </Link>
+                {/* Tour hướng dẫn từng bước */}
+                <TourSettingsRow />
 
                 <Link href="/cashbook" className="menu-row">
                     <div>
@@ -300,16 +286,8 @@ export default async function SettingsPage() {
                     <ChevronRight />
                 </Link>
 
-                {/* Hướng dẫn & Cẩm nang sử dụng */}
-                <Link href="/settings/guide" className="menu-row">
-                    <div>
-                        <p className="text-[14px] font-semibold text-[#17201A]">Cẩm nang &amp; Hướng dẫn sử dụng</p>
-                        <p className="text-[12px] text-[#66716A] mt-0.5">
-                            11 bài hướng dẫn vận hành quầy, mở ca, in bill, xử lý sự cố
-                        </p>
-                    </div>
-                    <ChevronRight />
-                </Link>
+
+
 
                 {/* Cảnh báo chuông & rung khi hết giờ */}
                 <SessionAlarmSettingsRow />
