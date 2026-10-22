@@ -88,8 +88,22 @@ after(async () => {
     try {
         if (testLakeId) {
             await client.query(`DELETE FROM "SubscriptionOrder" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "DebtPayment" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "FinancialTransaction" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "FundTransfer" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "Debt" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "ReconciliationRecord" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "FinancialPeriod" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`UPDATE "FinancialCategory" SET "parentId" = NULL WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "FinancialCategory" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "FinancialAccount" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "PrintJob" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "InventoryMovement" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "Product" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "FishType" WHERE "lakeId" = $1`, [testLakeId]);
             await client.query(`DELETE FROM "Hut" WHERE "lakeId" = $1`, [testLakeId]);
             await client.query(`DELETE FROM "Area" WHERE "lakeId" = $1`, [testLakeId]);
+            await client.query(`DELETE FROM "Package" WHERE "lakeId" = $1`, [testLakeId]);
             await client.query(`DELETE FROM "AuditEvent" WHERE "lakeId" = $1`, [testLakeId]);
             await client.query(`DELETE FROM "Membership" WHERE "lakeId" = $1`, [testLakeId]);
             await client.query(`DELETE FROM "Lake" WHERE "id" = $1`, [testLakeId]);
@@ -153,7 +167,7 @@ test("Test 2: Tạo đơn hàng PENDING sinh mã VietQR Techcombank (Gói Bạc 
     assert.equal(silverRes.status, 201);
     const silverData = await silverRes.json();
     assert.equal(silverData.order.status, "PENDING");
-    assert.equal(silverData.order.amountVnd, 99000);
+    assert.equal(silverData.order.amountVnd, 129000);
     assert.equal(silverData.order.planCode, "SILVER");
     assert.ok(silverData.order.orderCode.startsWith("HC"));
     assert.ok(silverData.paymentInfo.qrUrl.includes("TCB-8799999990"));
@@ -177,7 +191,7 @@ test("Test 2: Tạo đơn hàng PENDING sinh mã VietQR Techcombank (Gói Bạc 
 
     assert.equal(goldRes.status, 201);
     const goldData = await goldRes.json();
-    assert.equal(goldData.order.amountVnd, 179000);
+    assert.equal(goldData.order.amountVnd, 199000);
     assert.equal(goldData.order.planCode, "GOLD");
 });
 
@@ -199,10 +213,11 @@ test("Test 3: Webhook ngân hàng tự động kích hoạt, cộng dồn 30 ng�
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.BANK_WEBHOOK_SECRET || ""}`,
         },
         body: JSON.stringify({
             content: `Thanh toan don hang ${createdSilverOrderCode}`,
-            transferAmount: 99000,
+            transferAmount: 129000,
             referenceCode: `FT_TEST_${Date.now()}`,
         }),
     });
@@ -263,10 +278,11 @@ test("Test 4: Idempotency chống cộng dồn thời gian khi Webhook gửi l�
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.BANK_WEBHOOK_SECRET || ""}`,
         },
         body: JSON.stringify({
             content: `Thanh toan don hang ${createdSilverOrderCode}`,
-            transferAmount: 99000,
+            transferAmount: 129000,
             referenceCode: `FT_RETRY_${Date.now()}`,
         }),
     });
@@ -289,7 +305,7 @@ test("Test 4: Idempotency chống cộng dồn thời gian khi Webhook gửi l�
     }
 });
 
-test("Test 5: Guard Enforcement: Gói SILVER chặn tối đa 30 ô câu và 1 nhân viên, GOLD không giới hạn", async () => {
+test("Test 5: Guard Enforcement: Gói Bạc chặn tối đa 30 ô câu và 2 tài khoản nhân sự, Gói Vàng không giới hạn", async () => {
     const client = await pool.connect();
     try {
         // Clear huts to start clean
@@ -321,7 +337,7 @@ test("Test 5: Guard Enforcement: Gói SILVER chặn tối đa 30 ô câu và 1 n
 
     assert.equal(spot31Res.status, 403, "Should reject 31st spot on SILVER plan");
     const spot31Data = await spot31Res.json();
-    assert.ok(spot31Data.error.includes("Gói Bạc (SILVER) chỉ hỗ trợ tối đa 30 ô câu"));
+    assert.ok(spot31Data.error.includes("Gói Bạc chỉ hỗ trợ tối đa 30 ô câu"));
 
     // Also test /api/huts route for 31st spot
     const hut31Res = await fetch(`${BASE_URL}/api/huts`, {
@@ -352,9 +368,8 @@ test("Test 5: Guard Enforcement: Gói SILVER chặn tối đa 30 ô câu và 1 n
             role: "STAFF",
         }),
     });
-    assert.equal(staff1Res.status, 201, "Should allow 1 staff member on SILVER");
+    assert.equal(staff1Res.status, 201, "Should allow 1st staff member on SILVER");
 
-    // Try creating 2nd staff member -> Should fail with 403
     const staff2Res = await fetch(`${BASE_URL}/api/members`, {
         method: "POST",
         headers: {
@@ -368,9 +383,24 @@ test("Test 5: Guard Enforcement: Gói SILVER chặn tối đa 30 ô câu và 1 n
             role: "STAFF",
         }),
     });
-    assert.equal(staff2Res.status, 403, "Should reject 2nd staff on SILVER plan");
-    const staff2Data = await staff2Res.json();
-    assert.ok(staff2Data.error.includes("Gói Bạc (SILVER) chỉ hỗ trợ tối đa 1 nhân viên"));
+    assert.equal(staff2Res.status, 201, "Should allow 2nd staff member on SILVER");
+
+    const staff3Res = await fetch(`${BASE_URL}/api/members`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Cookie: authCookie,
+        },
+        body: JSON.stringify({
+            name: "Nhân Viên 3",
+            email: `staff3_${Date.now()}@example.com`,
+            password: "StaffPassword123!",
+            role: "STAFF",
+        }),
+    });
+    assert.equal(staff3Res.status, 403, "Should reject 3rd staff on SILVER plan");
+    const staff3Data = await staff3Res.json();
+    assert.ok(staff3Data.error.includes("tối đa 2 tài khoản nhân sự"));
 
     // Upgrade lake to GOLD
     const client2 = await pool.connect();
@@ -395,7 +425,6 @@ test("Test 5: Guard Enforcement: Gói SILVER chặn tối đa 30 ô câu và 1 n
     });
     assert.equal(spotGoldRes.status, 201, "Should allow >30 spots on GOLD");
 
-    // Test creating 2nd staff on GOLD -> Should succeed!
     const staffGoldRes = await fetch(`${BASE_URL}/api/members`, {
         method: "POST",
         headers: {
@@ -409,5 +438,5 @@ test("Test 5: Guard Enforcement: Gói SILVER chặn tối đa 30 ô câu và 1 n
             role: "STAFF",
         }),
     });
-    assert.equal(staffGoldRes.status, 201, "Should allow >1 staff on GOLD");
+    assert.equal(staffGoldRes.status, 201, "Should allow more than 2 staff on GOLD");
 });

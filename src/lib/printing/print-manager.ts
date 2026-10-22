@@ -650,7 +650,9 @@ class PrintManager {
 
     private isDeskStation = false;
     private deskStationPollTimer: number | null = null;
+    private deskStationVisibilityHandler: (() => void) | null = null;
     private deskStationListeners: Set<(isStation: boolean) => void> = new Set();
+    private static readonly DESK_POLL_MS = 15_000;
 
     public isStation(): boolean {
         if (typeof window !== "undefined" && !this.isDeskStation) {
@@ -700,17 +702,41 @@ class PrintManager {
     public startDeskStationPolling(): void {
         if (typeof window === "undefined") return;
         this.stopDeskStationPolling();
-        // Lấy lệnh in mới mỗi 2 giây
-        this.deskStationPollTimer = window.setInterval(() => {
+        const pollIfVisible = () => {
+            if (document.hidden) return;
             void this.pollCloudJobs();
-        }, 2000);
-        void this.pollCloudJobs();
+        };
+        const arm = () => {
+            if (this.deskStationPollTimer !== null || document.hidden) return;
+            this.deskStationPollTimer = window.setInterval(pollIfVisible, PrintManager.DESK_POLL_MS);
+        };
+        this.deskStationVisibilityHandler = () => {
+            if (document.hidden) {
+                if (this.deskStationPollTimer !== null) {
+                    clearInterval(this.deskStationPollTimer);
+                    this.deskStationPollTimer = null;
+                }
+                return;
+            }
+            // Lệnh đang chờ trên server không bị xóa; kéo ngay khi tab mở lại.
+            void this.pollCloudJobs();
+            arm();
+        };
+        document.addEventListener("visibilitychange", this.deskStationVisibilityHandler);
+        if (!document.hidden) {
+            void this.pollCloudJobs();
+        }
+        arm();
     }
 
     public stopDeskStationPolling(): void {
         if (this.deskStationPollTimer !== null) {
             clearInterval(this.deskStationPollTimer);
             this.deskStationPollTimer = null;
+        }
+        if (this.deskStationVisibilityHandler) {
+            document.removeEventListener("visibilitychange", this.deskStationVisibilityHandler);
+            this.deskStationVisibilityHandler = null;
         }
     }
 

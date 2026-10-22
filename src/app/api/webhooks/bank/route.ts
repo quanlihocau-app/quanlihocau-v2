@@ -3,13 +3,13 @@ import { NextResponse } from "next/server";
 import { shouldMarkOrderPaid, verifyWebhookSecret } from "@/lib/bank-webhook";
 import { prisma } from "@/lib/prisma";
 
-function verifyWebhookSecurity(request: Request, rawBody: string): boolean {
+function verifyWebhookSecurity(request: Request, rawBody: string): "ok" | "missing" | "invalid" {
     const secret = process.env.BANK_WEBHOOK_SECRET;
     if (!secret) {
         console.error("Bank webhook rejected: BANK_WEBHOOK_SECRET is unset.");
-        return false;
+        return "missing";
     }
-    return verifyWebhookSecret(request, rawBody, secret);
+    return verifyWebhookSecret(request, rawBody, secret) ? "ok" : "invalid";
 }
 
 export async function POST(request: Request) {
@@ -20,8 +20,15 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Không đọc được body yêu cầu." }, { status: 400 });
     }
 
-    // 1. Security Check
-    if (!verifyWebhookSecurity(request, rawBody)) {
+    // 1. Security Check. Thiếu cấu hình là lỗi máy chủ; chữ ký sai là từ chối.
+    const webhookAuth = verifyWebhookSecurity(request, rawBody);
+    if (webhookAuth === "missing") {
+        return NextResponse.json(
+            { error: "Webhook ngân hàng chưa được cấu hình." },
+            { status: 503 },
+        );
+    }
+    if (webhookAuth === "invalid") {
         return NextResponse.json(
             { error: "Xác thực chữ ký / API key không hợp lệ." },
             { status: 401 },

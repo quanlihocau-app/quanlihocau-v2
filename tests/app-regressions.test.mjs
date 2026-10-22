@@ -252,6 +252,7 @@ test("Tenant data follows qa_session when an older NextAuth account cookie remai
     };
     const tenant = loadModule("../src/lib/tenant.ts", {
         "next/headers": { cookies: async () => ({ has: (name) => name === "qa_session", get: () => undefined }) },
+        react: { cache: (fn) => fn },
         "next/navigation": { redirect: (path) => { throw new Error(`redirect:${path}`); } },
         "next-auth": { getServerSession: async () => ({ user: { email: "old-admin@example.com", systemRole: "SUPER_ADMIN" } }) },
         "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
@@ -275,6 +276,7 @@ test("An expired qa_session falls back to a valid regular NextAuth account", asy
     };
     const tenant = loadModule("../src/lib/tenant.ts", {
         "next/headers": { cookies: async () => ({ has: (name) => name === "qa_session", get: () => undefined }) },
+        react: { cache: (fn) => fn },
         "next/navigation": { redirect: (path) => { throw new Error(`redirect:${path}`); } },
         "next-auth": { getServerSession: async () => ({ user: { email: "staff@example.com", systemRole: "USER" } }) },
         "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
@@ -292,6 +294,7 @@ test("An expired qa_session falls back to a valid regular NextAuth account", asy
 test("An invalid qa_session cannot use a SUPER_ADMIN NextAuth cookie", async () => {
     const tenant = loadModule("../src/lib/tenant.ts", {
         "next/headers": { cookies: async () => ({ has: (name) => name === "qa_session", get: () => undefined }) },
+        react: { cache: (fn) => fn },
         "next/navigation": { redirect: (path) => { throw new Error(`redirect:${path}`); } },
         "next-auth": { getServerSession: async () => ({ user: { email: "admin@example.com", systemRole: "SUPER_ADMIN" } }) },
         "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },

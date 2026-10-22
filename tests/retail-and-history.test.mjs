@@ -87,6 +87,18 @@ async function cleanupLake(lakeId) {
         await pool.query(`DELETE FROM "Hut" WHERE "lakeId" = $1`, [lakeId]);
         await pool.query(`DELETE FROM "Area" WHERE "lakeId" = $1`, [lakeId]);
         await pool.query(`DELETE FROM "Package" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "FishType" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "Customer" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "DebtPayment" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "FinancialTransaction" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "FundTransfer" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "Debt" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "ReconciliationRecord" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "FinancialPeriod" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`UPDATE "FinancialCategory" SET "parentId" = NULL WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "FinancialCategory" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "FinancialAccount" WHERE "lakeId" = $1`, [lakeId]);
+        await pool.query(`DELETE FROM "PrintJob" WHERE "lakeId" = $1`, [lakeId]);
         await pool.query(`DELETE FROM "ShiftClose" WHERE "shiftId" IN (SELECT "id" FROM "Shift" WHERE "lakeId" = $1)`, [lakeId]);
         await pool.query(`DELETE FROM "Shift" WHERE "lakeId" = $1`, [lakeId]);
         await pool.query(`DELETE FROM "Membership" WHERE "lakeId" = $1`, [lakeId]);

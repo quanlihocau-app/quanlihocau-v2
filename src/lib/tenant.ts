@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { getServerSession } from "next-auth";
 
@@ -5,6 +6,9 @@ import { Role } from "@/generated/prisma/client";
 import { authOptions, getSessionCookie } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveSubscriptionAccess, type SubscriptionAccess } from "@/lib/subscription-access";
+
+/** Một lần decode phiên NextAuth cho mỗi request, kể cả khi requireTenantContext gọi tiếp getTenantContext. */
+const readAuthSession = cache(() => getServerSession(authOptions));
 
 export interface TenantContext {
     userId: string;
@@ -126,7 +130,7 @@ export async function requireSuperAdmin(): Promise<{ id: string; email: string; 
 }
 
 export async function getTenantContext(): Promise<TenantContext | null> {
-    const session = await getServerSession(authOptions);
+    const session = await readAuthSession();
     // qa_session is issued by the app's login action. When both auth systems
     // have cookies, use that signed app identity so a stale NextAuth cookie
     // cannot silently select another account's lake and hide the user's data.
@@ -273,7 +277,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
 export async function requireTenantContext(
     allowedRoles?: Role[],
 ): Promise<TenantContext> {
-    const session = await getServerSession(authOptions);
+    const session = await readAuthSession();
     const cookieStore = await cookies();
     const hasAppSession = cookieStore.has("qa_session");
     const sessionCookie = hasAppSession || !session?.user?.email

@@ -14,18 +14,29 @@ interface MeAccess {
 }
 
 const HIDDEN_PREFIXES = ["/login", "/register", "/admin", "/bang-gia", "/dieu-khoan", "/chinh-sach-bao-mat"];
+const ACCESS_CACHE_MS = 60_000;
+let accessCache: { at: number; data: MeAccess | null } | null = null;
 
 export function SubscriptionAccessBanner() {
     const { status } = useSession();
     const pathname = usePathname() || "/";
-    const [access, setAccess] = useState<MeAccess | null>(null);
+    const [access, setAccess] = useState<MeAccess | null>(() =>
+        accessCache && Date.now() - accessCache.at < ACCESS_CACHE_MS ? accessCache.data : null,
+    );
 
     useEffect(() => {
-        if (status !== "authenticated") return;
+        if (status !== "authenticated") {
+            accessCache = null;
+            return;
+        }
+        if (accessCache && Date.now() - accessCache.at < ACCESS_CACHE_MS) {
+            return;
+        }
         let cancelled = false;
         fetch("/api/me", { credentials: "same-origin" })
             .then(async (response) => (response.ok ? response.json() : null))
             .then((data: MeAccess | null) => {
+                accessCache = { at: Date.now(), data };
                 if (!cancelled) setAccess(data);
             })
             .catch(() => {

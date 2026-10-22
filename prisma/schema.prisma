@@ -503,6 +503,7 @@ model Shift {
   lakeId         String
   startTime      DateTime
   endTime        DateTime?
+  openingCashVnd Int       @default(0)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -521,6 +522,10 @@ model ShiftClose {
   totalExpenseVnd   Int      @default(0)
   fishBuybackVnd    Int      @default(0)
   otherExpenseVnd   Int      @default(0)
+  actualCashVnd     Int?
+  cashDifferenceVnd Int      @default(0)
+  differenceReason  String?
+  receivedBy        String?
   closedBy          String?
   note              String?
   createdAt         DateTime @default(now())

@@ -24,7 +24,7 @@ const filters = z.object({
 
 export async function GET(request: Request) {
     try {
-        const context = await requireTenantContext([Role.OWNER, Role.MANAGER, Role.STAFF]);
+        const context = await requireTenantContext([Role.OWNER, Role.MANAGER]);
         const parsed = filters.safeParse(Object.fromEntries(new URL(request.url).searchParams));
         if (!parsed.success) return NextResponse.json({ error: "Bộ lọc ngày hoặc phương thức không hợp lệ." }, { status: 400 });
         const f = parsed.data;

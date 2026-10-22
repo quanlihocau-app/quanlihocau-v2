@@ -67,9 +67,9 @@ test("1. Phân quyền tài chính: Kiểm tra ma trận quyền theo Role SaaS"
     assert.equal(permissions.hasFinancialPermission("MANAGER", "FINANCIAL_TRANSFER_FUNDS"), true);
     assert.equal(permissions.hasFinancialPermission("MANAGER", "FINANCIAL_LOCK_PERIOD"), false);
 
-    // STAFF chỉ có quyền tạo phiếu thu chi và xem danh sách, KHÔNG có quyền chuyển quỹ hay khóa sổ
-    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_VIEW_TRANSACTIONS"), true);
-    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_CREATE_TRANSACTIONS"), true);
+    // STAFF không vào phân hệ tài chính (kể cả xem và tạo phiếu).
+    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_VIEW_TRANSACTIONS"), false);
+    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_CREATE_TRANSACTIONS"), false);
     assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_TRANSFER_FUNDS"), false);
     assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_LOCK_PERIOD"), false);
     assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_MANAGE_CATEGORIES"), false);

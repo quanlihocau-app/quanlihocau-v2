@@ -166,9 +166,9 @@ test("Subscription: Kiểm tra thông tin gói ban đầu khi tạo hồ", async
     assert.equal(lake.subscriptionStatus, "TRIAL");
     assert.ok(lake.subscriptionExpiresAt instanceof Date);
 
-    // Thời gian dùng thử 7 ngày
+    // Thời gian dùng thử 30 ngày cho tài khoản mới
     const daysLeft = (lake.subscriptionExpiresAt.getTime() - Date.now()) / (86400 * 1000);
-    assert.ok(daysLeft > 6 && daysLeft <= 7.1, `Hạn dùng thử phải là 7 ngày (hiện tại: ${daysLeft})`);
+    assert.ok(daysLeft > 29 && daysLeft <= 30.1, `Hạn dùng thử phải là 30 ngày (hiện tại: ${daysLeft})`);
 });
 
 let createdSilverOrderCode = "";
@@ -190,13 +190,13 @@ test("Subscription: Tạo đơn đăng ký Gói Bạc (SILVER - 99.000 VNĐ)", a
     assert.ok(data.order);
     assert.ok(data.order.orderCode.startsWith("HC"));
     assert.equal(data.order.planCode, "SILVER");
-    assert.equal(data.order.amountVnd, 99000);
+    assert.equal(data.order.amountVnd, 129000);
     assert.equal(data.order.status, "PENDING");
 
     // Kiểm tra thông tin VietQR trả về
     assert.ok(data.paymentInfo);
     assert.ok(data.paymentInfo.qrUrl.includes("vietqr"));
-    assert.equal(data.paymentInfo.amount, 99000);
+    assert.equal(data.paymentInfo.amount, 129000);
     assert.ok(data.paymentInfo.memo.includes(data.order.orderCode));
 
     createdSilverOrderCode = data.order.orderCode;
@@ -217,7 +217,7 @@ test("Subscription: Tạo đơn đăng ký Gói Vàng (GOLD - 179.000 VNĐ)", as
 
     assert.ok(data.order);
     assert.equal(data.order.planCode, "GOLD");
-    assert.equal(data.order.amountVnd, 179000);
+    assert.equal(data.order.amountVnd, 199000);
     assert.equal(data.order.status, "PENDING");
 
     createdGoldOrderCode = data.order.orderCode;
@@ -242,7 +242,7 @@ test("Subscription Webhook: Chặn kích hoạt khi khách thanh toán thiếu t
     // Gói Bạc 99k nhưng khách chỉ chuyển 50k
     const webhookRes = await fetch(`${BASE_URL}/api/webhooks/bank`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.BANK_WEBHOOK_SECRET || ""}` },
         body: JSON.stringify({
             content: `Chuyen khoan ${createdSilverOrderCode}`,
             amount: 50000,
@@ -273,10 +273,10 @@ test("Subscription Webhook: Kích hoạt Gói Bạc (SILVER) khi chuyển khoả
     const txnRef = `TXN_SILVER_${Date.now()}`;
     const webhookRes = await fetch(`${BASE_URL}/api/webhooks/bank`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.BANK_WEBHOOK_SECRET || ""}` },
         body: JSON.stringify({
             content: `Thanh toan don hang ${createdSilverOrderCode} QLHC`,
-            transferAmount: 99000,
+            transferAmount: 129000,
             referenceCode: txnRef,
         }),
     });
@@ -329,10 +329,10 @@ test("Subscription Webhook: Idempotency chống cộng dồn thời gian trùng 
     // Gửi lại webhook một lần nữa cho cùng đơn hàng
     const webhookRes = await fetch(`${BASE_URL}/api/webhooks/bank`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.BANK_WEBHOOK_SECRET || ""}` },
         body: JSON.stringify({
             content: `Thanh toan don hang ${createdSilverOrderCode} QLHC`,
-            transferAmount: 99000,
+            transferAmount: 129000,
             referenceCode: `TXN_REPEAT_${Date.now()}`,
         }),
     });
@@ -360,10 +360,10 @@ test("Subscription Webhook: Nâng cấp tiếp lên Gói Vàng (GOLD - 179k)", a
     // Gửi webhook thanh toán cho đơn GOLD
     const webhookRes = await fetch(`${BASE_URL}/api/webhooks/bank`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.BANK_WEBHOOK_SECRET || ""}` },
         body: JSON.stringify({
             content: `Thanh toan don hang ${createdGoldOrderCode}`,
-            amount: 179000,
+            amount: 199000,
             id: `TXN_GOLD_${Date.now()}`,
         }),
     });
