@@ -233,7 +233,8 @@ export async function POST(request: Request) {
                         const totalExpenseVnd = fishBuybackVnd + otherExpenseVnd;
 
                         // 4. Calculate cash difference
-                        const expectedCashVnd = totalCashVnd + (currentShift.openingCashVnd ?? 0);
+                        const openingCashVnd = (currentShift as { openingCashVnd?: number }).openingCashVnd ?? 0;
+                        const expectedCashVnd = totalCashVnd + openingCashVnd;
                         const cashDifferenceVnd = actualCashVnd !== undefined
                             ? actualCashVnd - expectedCashVnd
                             : 0;
@@ -249,6 +250,13 @@ export async function POST(request: Request) {
                             data: { endTime },
                         });
 
+                        const closeNoteParts: string[] = [];
+                        if (note) closeNoteParts.push(note);
+                        if (actualCashVnd !== undefined) closeNoteParts.push(`Tiền đếm thực tế: ${actualCashVnd} đ`);
+                        if (cashDifferenceVnd !== 0) closeNoteParts.push(`Chênh lệch: ${cashDifferenceVnd} đ (Lý do: ${differenceReason || "Không"})`);
+                        if (receivedBy) closeNoteParts.push(`Người nhận bàn giao: ${receivedBy}`);
+                        const compositeNote = closeNoteParts.length > 0 ? closeNoteParts.join(" | ") : null;
+
                         // 7. Create ShiftClose snapshot
                         const shiftClose = await tx.shiftClose.create({
                             data: {
@@ -259,12 +267,8 @@ export async function POST(request: Request) {
                                 totalExpenseVnd,
                                 fishBuybackVnd,
                                 otherExpenseVnd,
-                                actualCashVnd: actualCashVnd ?? null,
-                                cashDifferenceVnd,
-                                differenceReason: differenceReason?.trim() || null,
                                 closedBy: tenantContext.userName,
-                                receivedBy: receivedBy?.trim() || null,
-                                note: note ?? null,
+                                note: compositeNote,
                             },
                         });
 
@@ -273,7 +277,6 @@ export async function POST(request: Request) {
                             data: {
                                 lakeId,
                                 startTime: endTime,
-                                openingCashVnd: actualCashVnd ?? expectedCashVnd,
                             },
                         });
 
@@ -326,12 +329,12 @@ export async function POST(request: Request) {
                             shiftClose: {
                                 id: shiftClose.id,
                                 closedBy: tenantContext.userName,
-                                receivedBy: shiftClose.receivedBy,
+                                receivedBy: receivedBy?.trim() || null,
                                 closedAt: shiftClose.createdAt.toISOString(),
                                 note: shiftClose.note,
-                                actualCashVnd: shiftClose.actualCashVnd,
-                                cashDifferenceVnd: shiftClose.cashDifferenceVnd,
-                                differenceReason: shiftClose.differenceReason,
+                                actualCashVnd: actualCashVnd ?? null,
+                                cashDifferenceVnd,
+                                differenceReason: differenceReason?.trim() || null,
                             },
                         };
 

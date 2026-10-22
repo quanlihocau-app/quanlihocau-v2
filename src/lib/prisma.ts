@@ -29,22 +29,27 @@ function getPrisma(): PrismaClient {
 
   const adapter = new PrismaPg(getPool());
   const client = new PrismaClient({ adapter });
-  if (process.env.NODE_ENV !== "production") {
-    globalCache.__prisma = client;
-  }
+  // Always cache in globalThis to prevent connection pool exhaustion in production.
+  // In serverless environments (Vercel), each new PrismaClient creates a new pool
+  // which would exhaust available connections under load.
+  globalCache.__prisma = client;
   return client;
 }
 
 /** Export proxies that delegate to the lazy instances */
 export const pool = new Proxy({} as Pool, {
   get(_, prop) {
-    return getPool()[prop as keyof Pool];
+    const target = getPool();
+    const value = Reflect.get(target, prop, target);
+    return typeof value === "function" ? value.bind(target) : value;
   },
 });
 
 export const prisma = new Proxy({} as PrismaClient, {
   get(_, prop) {
-    return getPrisma()[prop as keyof PrismaClient];
+    const target = getPrisma();
+    const value = Reflect.get(target, prop, target);
+    return typeof value === "function" ? value.bind(target) : value;
   },
 });
 
