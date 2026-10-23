@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Role } from "@/generated/prisma/client";
+import { LakeProfileForm } from "./lake-profile-form";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 import { privateRouteMetadata } from "@/lib/metadata";
@@ -67,6 +68,10 @@ export default async function SettingsPage() {
             select: {
                 id: true,
                 name: true,
+                contactPhone: true,
+                bankCode: true,
+                bankAccountNumber: true,
+                bankAccountName: true,
                 allowNegativeInventory: true,
                 subscriptionPlan: true,
                 subscriptionStatus: true,
@@ -149,6 +154,17 @@ export default async function SettingsPage() {
                         </div>
                     )}
                 </div>
+            )}
+
+            {lake && (
+                <LakeProfileForm
+                    initialName={lake.name}
+                    initialPhone={lake.contactPhone}
+                    initialBankCode={lake.bankCode}
+                    initialAccountNumber={lake.bankAccountNumber}
+                    initialAccountName={lake.bankAccountName}
+                    canEdit={isOwner}
+                />
             )}
 
             {/* ── SaaS Subscription Status Card ──────────────────────── */}

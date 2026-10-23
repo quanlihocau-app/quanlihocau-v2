@@ -212,6 +212,18 @@ export function buildPaymentReceiptEscPos(
         builder.twoCols("Thu ngan:", data.cashierName);
     }
 
+    if (data.bankAccountNumber && data.bankAccountName) {
+        builder.divider("-");
+        builder.align("center");
+        builder.text("CHUYEN KHOAN");
+        if (data.bankName) builder.text(data.bankName);
+        builder.text(`STK: ${data.bankAccountNumber}`);
+        builder.text(data.bankAccountName);
+        if (data.transferAmountVnd && data.transferAmountVnd > 0) {
+            builder.text(`So tien: ${formatVnd(data.transferAmountVnd)}`);
+        }
+    }
+
     builder.divider("=");
 
     // 5. QR Code & Footer

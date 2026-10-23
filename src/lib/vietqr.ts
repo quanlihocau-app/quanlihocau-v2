@@ -63,6 +63,83 @@ export function planCharge(plan: "SILVER" | "GOLD", cycle: BillingCycle = "MONTH
     };
 }
 
+export const VIETQR_BANKS = [
+    { code: "VCB", name: "Vietcombank" },
+    { code: "TCB", name: "Techcombank" },
+    { code: "MB", name: "MB Bank" },
+    { code: "ACB", name: "ACB" },
+    { code: "VPB", name: "VPBank" },
+    { code: "BIDV", name: "BIDV" },
+    { code: "ICB", name: "VietinBank" },
+    { code: "STB", name: "Sacombank" },
+    { code: "TPB", name: "TPBank" },
+    { code: "HDB", name: "HDBank" },
+    { code: "MSB", name: "MSB" },
+    { code: "OCB", name: "OCB" },
+    { code: "SHB", name: "SHB" },
+    { code: "EIB", name: "Eximbank" },
+    { code: "VIB", name: "VIB" },
+    { code: "VBA", name: "Agribank" },
+] as const;
+
+export function normalizeAccountName(name: string): string {
+    return name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
+        .replace(/[^A-Za-z0-9 ]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toUpperCase();
+}
+
+export function bankNameForCode(code: string | null | undefined): string | null {
+    if (!code) return null;
+    return VIETQR_BANKS.find((bank) => bank.code === code)?.name ?? code;
+}
+
+/** Customer payment QR. Never falls back to the platform subscription account. */
+export function generatePondVietQrUrl(params: {
+    amount: number;
+    orderCode: string;
+    bankCode?: string | null;
+    accountNumber?: string | null;
+    accountName?: string | null;
+}): {
+    qrUrl: string | null;
+    memo: string;
+    missingAccount: boolean;
+    accountNumber: string | null;
+    accountName: string | null;
+    bankName: string | null;
+} {
+    const memo = `VECAU ${params.orderCode.toUpperCase()}`;
+    const bankCode = params.bankCode?.trim() || "";
+    const accountNumber = params.accountNumber?.replace(/\s/g, "") || "";
+    const accountName = params.accountName?.trim() || "";
+    if (!bankCode || !accountNumber || !accountName) {
+        return {
+            qrUrl: null,
+            memo,
+            missingAccount: true,
+            accountNumber: accountNumber || null,
+            accountName: accountName || null,
+            bankName: bankNameForCode(bankCode),
+        };
+    }
+    const printableName = normalizeAccountName(accountName);
+    const qrUrl = `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact2.png?amount=${params.amount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(printableName)}`;
+    return {
+        qrUrl,
+        memo,
+        missingAccount: false,
+        accountNumber,
+        accountName: printableName,
+        bankName: bankNameForCode(bankCode),
+    };
+}
+
 /**
  * Generate VietQR dynamic link with locked amount and transfer memo
  */

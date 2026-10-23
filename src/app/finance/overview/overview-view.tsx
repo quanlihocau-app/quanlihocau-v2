@@ -263,10 +263,10 @@ export function OverviewView({
                                 </p>
                             </div>
 
-                            {/* Lợi nhuận ước tính */}
+                            {/* Doanh thu trừ chi và thu cá */}
                             <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all hover:border-slate-300">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-slate-500">Lợi nhuận ước tính</span>
+                                    <span className="text-xs font-semibold text-slate-500">Doanh thu trừ chi và thu cá</span>
                                     <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 text-sm">
                                         📈
                                     </span>

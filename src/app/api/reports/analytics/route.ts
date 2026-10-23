@@ -1,5 +1,6 @@
 import { financialScope } from "@/lib/reports/financial-scope";
 import { summarizeMoney, summarizeRevenue } from "@/lib/finance";
+import { isOvertimeLineName, lineInWindow } from "@/lib/money";
 import { NextRequest, NextResponse } from "next/server";
 import { getPageSession } from "@/lib/server-session";
 
@@ -30,12 +31,14 @@ interface InvoiceSummaryItem {
     id: string;
     createdAt: Date;
     status: InvoiceStatus;
+    fishingSessionId?: string | null;
     lines: Array<{
         productId: string | null;
         name: string;
         fishBuybackId: string | null;
         totalVnd: number;
         quantity: Prisma.Decimal | number;
+        createdAt: Date;
     }>;
 }
 
@@ -147,7 +150,7 @@ export async function GET(request: NextRequest) {
             // Invoices in range
             const invoiceWhere: Prisma.InvoiceWhereInput = {
                 ...scope.invoice,
-                createdAt: { gte: from, lte: to },
+                AND: [{ lines: { some: { createdAt: { gte: from, lte: to } } } }],
             };
             if (filterCustomerId) invoiceWhere.customerId = filterCustomerId;
 
@@ -174,6 +177,7 @@ export async function GET(request: NextRequest) {
             const paymentWhere: Prisma.PaymentWhereInput = {
                 ...scope.payment,
                 createdAt: { gte: from, lte: to },
+                financialTransactions: { none: { status: "DRAFT" } },
             };
             if (filterPaymentMethod) paymentWhere.method = filterPaymentMethod;
 
@@ -186,6 +190,7 @@ export async function GET(request: NextRequest) {
                 where: {
                     ...scope.expense,
                     createdAt: { gte: from, lte: to },
+                    financialTransactions: { none: { status: "DRAFT" } },
                 },
             });
 
@@ -232,7 +237,10 @@ export async function GET(request: NextRequest) {
             // Calculate metrics strictly according to formula
             const validInvoices = invoices.filter(inv => inv.status !== InvoiceStatus.VOIDED);
             const { ticketRevenue, productRevenue, overtimeRevenue, otherRevenue, refundAmount, refundCount, totalRevenue } = summarizeRevenue(
-                validInvoices.map(inv => ({ ...inv, lines: inv.lines.filter(line => !filterProductId || line.productId === filterProductId) }))
+                validInvoices.map(inv => ({
+                    fishingSessionId: inv.fishingSessionId,
+                    lines: inv.lines.filter(line => lineInWindow(line.createdAt, from, to) && (!filterProductId || line.productId === filterProductId)),
+                }))
             );
             let totalReceivableDebt = 0;
             for (const inv of validInvoices) {
@@ -403,41 +411,45 @@ export async function GET(request: NextRequest) {
         // Populate revenue and tickets into chart buckets
         for (const inv of primaryData.invoices) {
             if (inv.status === InvoiceStatus.VOIDED) continue;
-            const p = getVnParts(inv.createdAt);
-            let bucketKey = "";
-            let bucketLabel = "";
+            for (const line of inv.lines) {
+                if (!lineInWindow(line.createdAt, primaryRange.from, primaryRange.to)) continue;
+                if (filterProductId && line.productId !== filterProductId) continue;
+                const p = getVnParts(line.createdAt);
+                let bucketKey = "";
+                let bucketLabel = "";
 
-            if (grouping === "hourly") {
-                bucketKey = `${String(p.hours).padStart(2, "0")}:00`;
-                bucketLabel = `${p.hours}h`;
-            } else if (grouping === "daily") {
-                bucketKey = `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
-                bucketLabel = `${p.day}/${p.month}`;
-            } else if (grouping === "monthly") {
-                bucketKey = `${p.year}-${String(p.month).padStart(2, "0")}`;
-                bucketLabel = `T${p.month}/${p.year}`;
-            } else {
-                bucketKey = `${p.year}`;
-                bucketLabel = `${p.year}`;
+                if (grouping === "hourly") {
+                    bucketKey = `${String(p.hours).padStart(2, "0")}:00`;
+                    bucketLabel = `${p.hours}h`;
+                } else if (grouping === "daily") {
+                    bucketKey = `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
+                    bucketLabel = `${p.day}/${p.month}`;
+                } else if (grouping === "monthly") {
+                    bucketKey = `${p.year}-${String(p.month).padStart(2, "0")}`;
+                    bucketLabel = `T${p.month}/${p.year}`;
+                } else {
+                    bucketKey = `${p.year}`;
+                    bucketLabel = `${p.year}`;
+                }
+
+                if (!chartPointsMap.has(bucketKey)) {
+                    chartPointsMap.set(bucketKey, {
+                        key: bucketKey,
+                        label: bucketLabel,
+                        revenue: 0,
+                        expense: 0,
+                        profit: 0,
+                        sessions: 0,
+                        overtimeVnd: 0,
+                    });
+                }
+
+                const pt = chartPointsMap.get(bucketKey)!;
+                pt.revenue += summarizeRevenue([{ fishingSessionId: inv.fishingSessionId, lines: [line] }]).totalRevenue;
+                if (!line.fishBuybackId && !line.productId && isOvertimeLineName(line.name) && line.totalVnd > 0) {
+                    pt.overtimeVnd += line.totalVnd;
+                }
             }
-
-            if (!chartPointsMap.has(bucketKey)) {
-                chartPointsMap.set(bucketKey, {
-                    key: bucketKey,
-                    label: bucketLabel,
-                    revenue: 0,
-                    expense: 0,
-                    profit: 0,
-                    sessions: 0,
-                    overtimeVnd: 0,
-                });
-            }
-
-            const pt = chartPointsMap.get(bucketKey)!;
-            pt.revenue += summarizeRevenue([{ ...inv, lines: inv.lines.filter(l => !filterProductId || l.productId === filterProductId) }]).totalRevenue;
-
-            const otLine = inv.lines.find((l) => l.name.toLowerCase().includes("thêm giờ") || l.name.toLowerCase().includes("phụ trội"));
-            if (otLine) pt.overtimeVnd += otLine.totalVnd;
         }
 
         // Populate expenses into chart buckets

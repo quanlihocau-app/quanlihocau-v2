@@ -7,6 +7,7 @@ import {
     Role,
 } from "@/generated/prisma/client";
 import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
+import { syncInvoiceTotals } from "@/lib/invoice-totals";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -241,24 +242,8 @@ export async function DELETE(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // Recalculate and update Invoice totalAmountVnd
-                        const linesAgg = await tx.invoiceLine.aggregate({
-                            where: {
-                                invoiceId: invoice.id,
-                            },
-                            _sum: {
-                                totalVnd: true,
-                            },
-                        });
-
-                        const newTotalAmountVnd = linesAgg._sum.totalVnd ?? 0;
-
-                        const updatedInvoice = await tx.invoice.update({
-                            where: { id: invoice.id },
-                            data: {
-                                totalAmountVnd: newTotalAmountVnd,
-                            },
-                        });
+                        const updatedInvoice = await syncInvoiceTotals(tx, invoice.id, tenantContext.lakeId);
+                        const newTotalAmountVnd = updatedInvoice?.totalAmountVnd ?? 0;
 
                         await writeStaffAudit(tx, {
                             lakeId: tenantContext.lakeId,

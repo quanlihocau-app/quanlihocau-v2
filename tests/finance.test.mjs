@@ -16,7 +16,7 @@ function load(path, modules = {}) {
     }, Request, Response, URL, Map });
     return exports;
 }
-const finance = load("src/lib/finance.ts");
+const finance = load("src/lib/finance.ts", { "./money": load("src/lib/money.ts") });
 const quickActions = load("src/lib/quick-actions.ts");
 test("Quick actions open only operational pages and dispatch only to cashbook lists", () => {
     for (const path of ["/home", "/reports", "/sessions/new", "/cashbook/receipt-id", "/expenses/cashbook", "/inventory"])

@@ -42,9 +42,10 @@ export interface DailyReportBreakdown {
             id: string;
             customerName: string;
             hutName: string;
-            startTime: string;
+            startTime?: string;
             pendingAmountVnd: number;
-            packageName: string;
+            packageName?: string;
+            overtimeLabel?: string | null;
         }>;
         totalActivePendingVnd?: number;
     };
@@ -105,10 +106,41 @@ export interface RecentShiftItem {
     closedBy?: string | null;
 }
 
+export interface ReconciliationInfo {
+    revenueVnd: number;
+    cashCollectedVnd: number;
+    transferCollectedVnd: number;
+    fishOffsetVnd: number;
+    stillOwedVnd: number;
+    identity: string;
+    identityHolds: boolean;
+    ticketVnd: number;
+    productVnd: number;
+    overtimeVnd: number;
+    otherVnd: number;
+    fishCashOutVnd: number;
+    approvedExpenseVnd: number;
+    openingCashVnd: number;
+    cashInVnd: number;
+    cashOutVnd: number;
+    expectedDrawerVnd: number;
+    openSessions: Array<{
+        id: string;
+        customerName: string;
+        hutName: string;
+        pendingAmountVnd: number;
+        overtimeLabel: string | null;
+        packageName?: string;
+    }>;
+    openSessionBalanceVnd: number;
+    frozen: boolean;
+}
+
 interface DailyReportViewProps {
     shift: ShiftInfo;
     summary: DailyReportSummary;
     breakdown?: DailyReportBreakdown | null;
+    reconciliation?: ReconciliationInfo | null;
     shiftClose: ShiftCloseInfo | null;
     canCloseShift: boolean;
     lakeName: string;
@@ -265,7 +297,7 @@ function PrintReceipt({
                     <span>{formatVnd(summary.expenseVnd)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                    <span>Lợi nhuận ròng:</span>
+                    <span>Doanh thu trừ chi và thu cá:</span>
                     <span>{formatVnd(summary.netProfitVnd)}</span>
                 </div>
             </div>
@@ -316,6 +348,7 @@ export function DailyReportView({
     shift: initialShift,
     summary: initialSummary,
     breakdown: initialBreakdown,
+    reconciliation: initialReconciliation = null,
     shiftClose: initialShiftClose,
     canCloseShift,
     lakeName,
@@ -328,6 +361,8 @@ export function DailyReportView({
     const [summary, setSummary] = useState<DailyReportSummary>(initialSummary);
     const [breakdown, setBreakdown] = useState<DailyReportBreakdown | null | undefined>(initialBreakdown);
     const [shiftClose, setShiftClose] = useState<ShiftCloseInfo | null>(initialShiftClose);
+    const [reconciliation, setReconciliation] = useState<ReconciliationInfo | null>(initialReconciliation);
+    const [confirmOpenSessions, setConfirmOpenSessions] = useState(false);
     const [shiftsHistory, setShiftsHistory] = useState<RecentShiftItem[]>(recentShifts);
 
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -363,6 +398,7 @@ export function DailyReportView({
                 if (data.shift) setShift(data.shift);
                 if (data.summary) setSummary(data.summary);
                 if (data.breakdown) setBreakdown(data.breakdown);
+                if (data.reconciliation) setReconciliation(data.reconciliation);
                 setShiftClose(data.shiftClose || null);
                 if (data.recentShifts) setShiftsHistory(data.recentShifts);
                 setLastUpdated(new Date());
@@ -469,13 +505,18 @@ export function DailyReportView({
                     actualCashVnd: actualCashParsed,
                     differenceReason: differenceReason.trim() || undefined,
                     receivedBy: receivedBy.trim() || undefined,
+                    confirmOpenSessions,
                 }),
             });
 
             const data = await res.json();
 
             if (!res.ok) {
-                setError(data.error || "Không thể chốt ca.");
+                if (data.code === "OPEN_SESSIONS") {
+                    setError("Còn phiên đang mở. Xem danh sách và tick xác nhận trước khi chốt. Hệ thống không chặn cứng.");
+                } else {
+                    setError(data.error || "Không thể chốt ca.");
+                }
                 setIsSubmitting(false);
                 return;
             }
@@ -500,6 +541,7 @@ export function DailyReportView({
         idempotencyKeyRef.current = null;
         setActualCashInput(expectedCashVnd > 0 ? expectedCashVnd.toString() : "");
         setDifferenceReason("");
+        setConfirmOpenSessions(false);
         setIsModalOpen(true);
     }
 
@@ -602,7 +644,7 @@ export function DailyReportView({
                     <div className="rounded-2xl bg-linear-to-br from-[#1E3A2B] to-[#2C4C3B] p-4 text-white shadow-lg space-y-2">
                         <div className="flex items-center justify-between">
                             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200">
-                                Lợi nhuận ròng của ca
+                                Doanh thu trừ chi và thu cá
                             </span>
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${shift.isClosed ? "bg-slate-200/20 text-slate-200" : "bg-emerald-400/20 text-emerald-300"}`}>
                                 {shift.isClosed ? "CA ĐÃ ĐÓNG" : "CA ĐANG MỞ"}
@@ -611,6 +653,7 @@ export function DailyReportView({
                         <p className="text-3xl font-black font-serif text-white tabular-nums tracking-tight">
                             {formatVnd(summary.netProfitVnd)}
                         </p>
+                        <p className="text-[10px] text-emerald-100">Không phải tiền trong két. Thu cá chỉ trừ một lần.</p>
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-emerald-700/60 text-xs">
                             <div>
                                 <span className="text-[11px] text-emerald-200">Tổng doanh thu:</span>
@@ -622,6 +665,49 @@ export function DailyReportView({
                             </div>
                         </div>
                     </div>
+
+                    {reconciliation && (
+                        <div className="rounded-2xl border border-emerald-300 bg-white p-4 shadow-xs space-y-2">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">Đối soát cuối ca</h2>
+                                <span className={`text-[10px] font-bold ${reconciliation.identityHolds ? "text-emerald-700" : "text-red-700"}`}>
+                                    {reconciliation.identityHolds ? "Khớp đúng đồng" : "Chưa khớp"}
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600">{reconciliation.identity}</p>
+                            {reconciliation.frozen && (
+                                <p className="text-[11px] text-slate-500">Số trên thẻ ca đã chốt là ảnh chụp lúc đóng. Bảng này tính lại theo quy tắc mới.</p>
+                            )}
+                            <div className="divide-y divide-slate-100 text-xs">
+                                <div className="flex justify-between py-1.5"><span>Doanh thu</span><span className="font-bold tabular-nums">{formatVnd(reconciliation.revenueVnd)}</span></div>
+                                <div className="flex justify-between py-1.5 text-slate-500"><span className="pl-3">Vé {formatVnd(reconciliation.ticketVnd)} · Hàng {formatVnd(reconciliation.productVnd)} · Thêm giờ {formatVnd(reconciliation.overtimeVnd)}</span></div>
+                                <div className="flex justify-between py-1.5"><span>Tiền mặt đã thu</span><span className="font-bold tabular-nums">{formatVnd(reconciliation.cashCollectedVnd)}</span></div>
+                                <div className="flex justify-between py-1.5"><span>Chuyển khoản</span><span className="font-bold tabular-nums">{formatVnd(reconciliation.transferCollectedVnd)}</span></div>
+                                <div className="flex justify-between py-1.5"><span>Còn phải thu</span><span className="font-bold tabular-nums text-amber-800">{formatVnd(reconciliation.stillOwedVnd)}</span></div>
+                                <div className="flex justify-between py-1.5"><span>Cấn trừ bằng cá</span><span className="font-bold tabular-nums">{formatVnd(reconciliation.fishOffsetVnd)}</span></div>
+                                <div className="flex justify-between py-1.5"><span>Tiền mặt phải có trong két</span><span className="font-black tabular-nums">{formatVnd(reconciliation.expectedDrawerVnd)}</span></div>
+                                <p className="py-1 text-[10px] text-slate-500">Đầu ca {formatVnd(reconciliation.openingCashVnd)} + tiền mặt vào {formatVnd(reconciliation.cashInVnd)} − tiền mặt ra {formatVnd(reconciliation.cashOutVnd)}</p>
+                                <div className="flex justify-between py-1.5"><span>Thu cá trả tiền (không gắn vé)</span><span className="font-bold tabular-nums">{formatVnd(reconciliation.fishCashOutVnd)}</span></div>
+                                <div className="flex justify-between py-1.5"><span>Phiếu chi đã duyệt</span><span className="font-bold tabular-nums">{formatVnd(reconciliation.approvedExpenseVnd)}</span></div>
+                            </div>
+                            {reconciliation.openSessionBalanceVnd !== reconciliation.stillOwedVnd && (
+                                <p className="text-[11px] text-slate-600">
+                                    Tổng còn lại trên phiên đang mở là {formatVnd(reconciliation.openSessionBalanceVnd)}. Còn phải thu của ca là {formatVnd(reconciliation.stillOwedVnd)} vì có thể thu hộ ngày khác hoặc hoá đơn đã đóng vẫn còn nợ.
+                                </p>
+                            )}
+                            {reconciliation.openSessions.length > 0 && (
+                                <div className="space-y-1">
+                                    <p className="text-[11px] font-bold text-amber-900">Phiên đang mở</p>
+                                    {reconciliation.openSessions.map((session) => (
+                                        <div key={session.id} className="flex items-start justify-between gap-2 rounded-lg bg-amber-50 px-2 py-1.5 text-[11px]">
+                                            <span>{session.customerName} · {session.hutName}{session.overtimeLabel ? ` · ${session.overtimeLabel}` : ""}</span>
+                                            <span className="font-bold tabular-nums shrink-0">{formatVnd(session.pendingAmountVnd)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* ── KHỐI 1: ĐỐI SOÁT TIỀN MẶT TRONG KÉT (Cash in Drawer) ── */}
                     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
@@ -680,7 +766,7 @@ export function DailyReportView({
                             <div className="flex items-center justify-between py-3 px-3 rounded-xl bg-linear-to-r from-emerald-100/70 via-emerald-50 to-emerald-100/70 border border-emerald-300 mt-2">
                                 <div>
                                     <span className="font-black text-slate-900 text-xs sm:text-sm">
-                                        = TIỀN MẶT DỰ KIẾN TRONG KÉT
+                                        = Tiền mặt phải có trong két
                                     </span>
                                     <p className="text-[10px] text-emerald-800 font-sans mt-0.5">
                                         (Đầu ca + Thu tiền mặt − Chi tiền mặt)
@@ -769,7 +855,7 @@ export function DailyReportView({
                     </div>
 
                     {/* ── KHỐI 3: PHIÊN CÂU ĐANG DIỄN RA (realtime) ─────────────── */}
-                    {!shift.isClosed && breakdown && (breakdown.sessions.active > 0) && (
+                    {!shift.isClosed && breakdown && ((breakdown.sessions.activeList?.length ?? breakdown.sessions.active) > 0) && (
                         <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 shadow-xs space-y-3">
                             <div className="flex items-center justify-between border-b border-amber-200 pb-2">
                                 <div className="flex items-center gap-1.5">
@@ -782,7 +868,7 @@ export function DailyReportView({
                                     </h2>
                                 </div>
                                 <span className="rounded-full bg-amber-500 text-white text-[10px] font-black px-2 py-0.5">
-                                    {breakdown.sessions.active} đang câu
+                                    {(breakdown.sessions.activeList?.length ?? breakdown.sessions.active)} đang câu
                                 </span>
                             </div>
                             <div className="space-y-1.5">
@@ -796,12 +882,17 @@ export function DailyReportView({
                                                 </p>
                                             </div>
                                             <div className="text-right shrink-0 ml-2">
+                                                {sess.overtimeLabel ? (
+                                                    <span className="block max-w-[9rem] text-[10px] font-bold text-amber-800">{sess.overtimeLabel}</span>
+                                                ) : null}
                                                 {sess.pendingAmountVnd > 0 ? (
                                                     <span className="font-black text-amber-700 tabular-nums">
                                                         Còn {formatVnd(sess.pendingAmountVnd)}
                                                     </span>
-                                                ) : (
-                                                    <span className="text-emerald-600 font-bold">Đã thanh toán</span>
+                                                ) : sess.pendingAmountVnd < 0 ? (
+                                                    <span className="font-bold text-red-700">Thối {formatVnd(Math.abs(sess.pendingAmountVnd))}</span>
+                                                ) : sess.overtimeLabel ? null : (
+                                                    <span className="text-emerald-600 font-bold">Đã thu đủ</span>
                                                 )}
                                             </div>
                                         </div>
@@ -1019,24 +1110,37 @@ export function DailyReportView({
                                 </div>
 
                                 {/* Cảnh báo phiên câu chưa thanh toán */}
-                                {breakdown && (breakdown.sessions.totalActivePendingVnd ?? 0) > 0 && (
-                                    <div className="rounded-xl bg-amber-50 border border-amber-300 p-3 text-xs">
-                                        <div className="flex items-center gap-1.5 font-black text-amber-900 mb-1">
+                                {(reconciliation?.openSessions.length ?? breakdown?.sessions.activeList?.length ?? 0) > 0 && (
+                                    <div className="rounded-xl bg-amber-50 border border-amber-300 p-3 text-xs space-y-2">
+                                        <div className="flex items-center gap-1.5 font-black text-amber-900">
                                             <span>⚠</span>
-                                            <span>Cảnh báo: Còn phiên câu chưa thanh toán!</span>
+                                            <span>Còn phiên đang mở. Có thể chốt ca sau khi xác nhận.</span>
                                         </div>
-                                        <p className="text-amber-800">
-                                            Có <strong>{breakdown.sessions.active} phiên</strong> đang câu chưa kết thúc với tổng tiền chưa thu là{" "}
-                                            <strong>{formatVnd(breakdown.sessions.totalActivePendingVnd ?? 0)}</strong>.
-                                            Hãy chốt các phiên này trước hoặc ghi chú rõ trong phần bàn giao.
-                                        </p>
+                                        <ul className="space-y-1 text-amber-900">
+                                            {(reconciliation?.openSessions ?? breakdown?.sessions.activeList ?? []).map((session) => (
+                                                <li key={session.id}>
+                                                    {session.customerName} · {session.hutName}
+                                                    {session.overtimeLabel ? ` · ${session.overtimeLabel}` : ""}
+                                                    {" · "}{formatVnd(session.pendingAmountVnd)}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <label className="flex items-start gap-2 font-bold text-amber-950">
+                                            <input
+                                                type="checkbox"
+                                                checked={confirmOpenSessions}
+                                                onChange={(event) => setConfirmOpenSessions(event.target.checked)}
+                                                className="mt-0.5"
+                                            />
+                                            <span>Tôi đã xem các phiên đang mở và vẫn chốt ca.</span>
+                                        </label>
                                     </div>
                                 )}
 
                                 {/* Nhập tiền thực tế đếm được */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-black text-slate-900 uppercase tracking-wider block">
-                                        Tiền mặt thực tế đếm trong két: <span className="text-red-500">*</span>
+                                        Tiền mặt nhân viên giao lại: <span className="text-red-500">*</span>
                                     </label>
                                     <div className="relative">
                                         <input
@@ -1170,6 +1274,7 @@ export function DailyReportView({
                                         variant="primary"
                                         isLoading={isSubmitting}
                                         loadingText="Đang chốt ca…"
+                                        disabled={((reconciliation?.openSessions.length ?? 0) > 0) && !confirmOpenSessions}
                                         onClick={handleConfirmClose}
                                         className="flex-2 rounded-xl bg-[#2C4C3B] hover:bg-[#20372A] font-bold text-white shadow-md"
                                     >

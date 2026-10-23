@@ -127,6 +127,10 @@ export interface PaymentReceiptData {
     paymentTime: Date | string;
     cashierName?: string | null;
     isReprint?: boolean;
+    bankName?: string | null;
+    bankAccountNumber?: string | null;
+    bankAccountName?: string | null;
+    transferAmountVnd?: number;
 }
 
 export interface TestReceiptData {

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
 import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
 import { csvCell } from "@/lib/finance";
+import { summarizeRevenue } from "@/lib/money";
 
 const reportQuerySchema = z.object({
     type: z.enum(["pnl", "cashflow", "debt", "expense", "revenue"]),
@@ -37,33 +38,40 @@ export async function GET(request: Request) {
 
         // BÁO CÁO 1: KẾT QUẢ KINH DOANH (P&L)
         if (type === "pnl") {
-            const [invoices, expenses] = await Promise.all([
-                prisma.invoice.findMany({
-                    where: { lakeId, createdAt: { gte: fromDate, lte: toDate }, status: { not: "VOIDED" } },
-                    include: { lines: true },
+            const [lines, expenses, fishAgg] = await Promise.all([
+                prisma.invoiceLine.findMany({
+                    where: {
+                        createdAt: { gte: fromDate, lte: toDate },
+                        invoice: { lakeId, status: { not: "VOIDED" } },
+                    },
+                    select: {
+                        name: true,
+                        totalVnd: true,
+                        productId: true,
+                        fishBuybackId: true,
+                        invoice: { select: { fishingSessionId: true, discountAmountVnd: true } },
+                    },
                 }),
                 prisma.financialTransaction.findMany({
                     where: { lakeId, type: "EXPENSE", status: "APPROVED", transactionDate: { gte: fromDate, lte: toDate } },
                     include: { category: true },
                 }),
+                prisma.fishBuyback.aggregate({
+                    where: { lakeId, createdAt: { gte: fromDate, lte: toDate } },
+                    _sum: { totalVnd: true },
+                }),
             ]);
 
-            let ticketRevenue = 0;
-            let productRevenue = 0;
-            let otherRevenue = 0;
-            let discounts = 0;
-
-            for (const inv of invoices) {
-                discounts += inv.discountAmountVnd || 0;
-                for (const line of inv.lines) {
-                    if (line.fishBuybackId) continue;
-                    if (line.productId) productRevenue += line.totalVnd;
-                    else if (inv.fishingSessionId) ticketRevenue += line.totalVnd;
-                    else otherRevenue += line.totalVnd;
-                }
-            }
-
-            const totalRevenue = ticketRevenue + productRevenue + otherRevenue - discounts;
+            const revenue = summarizeRevenue(lines.map((line) => ({
+                fishingSessionId: line.invoice.fishingSessionId,
+                lines: [line],
+            })));
+            const ticketRevenue = revenue.ticketRevenue;
+            const productRevenue = revenue.productRevenue;
+            const otherRevenue = revenue.otherRevenue + revenue.overtimeRevenue;
+            const discounts = revenue.refundAmount;
+            const fishBuybackVnd = fishAgg._sum.totalVnd || 0;
+            const totalRevenue = revenue.totalRevenue;
 
             // Gom nhóm chi phí theo danh mục
             const expenseMap = new Map<string, number>();
@@ -81,7 +89,7 @@ export async function GET(request: Request) {
                 ratioPct: totalExpense > 0 ? Math.round((amountVnd / totalExpense) * 100) : 0,
             }));
 
-            const estimatedProfit = totalRevenue - totalExpense;
+            const estimatedProfit = totalRevenue - totalExpense - fishBuybackVnd;
 
             if (exportFormat === "csv") {
                 const rows: (string | number)[][] = [
@@ -94,7 +102,8 @@ export async function GET(request: Request) {
                     ["- Các khoản giảm trừ", -discounts, ""],
                     ["2. CHI PHÍ HOẠT ĐỘNG", totalExpense, "100%"],
                     ...expenseBreakdown.map((e) => [`- ${e.name}`, e.amountVnd, `${e.ratioPct}%`]),
-                    ["3. LỢI NHUẬN ƯỚC TÍNH", estimatedProfit, ""],
+                    ["- Thu mua cá (trừ một lần, không nằm trong doanh thu)", fishBuybackVnd, ""],
+                    ["3. DOANH THU TRỪ CHI VÀ THU CÁ", estimatedProfit, ""],
                 ];
 
                 return new NextResponse("\uFEFF" + rows.map((r) => r.map(csvCell).join(",")).join("\r\n"), {

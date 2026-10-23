@@ -41,6 +41,11 @@ export function normalizeVietnamesePhone(
     return `+${standardDigits}`;
 }
 
+/** Mailbox for a phone-only account. Google login stays on real emails. */
+export function syntheticPhoneEmail(normalizedPhone: string): string {
+    return `p${normalizedPhone.replace(/\D/g, "")}@phone.quanlihocau.local`;
+}
+
 /**
  * Formats a normalized or raw Vietnamese phone number for SpeedSMS API ("84xxxxxxxxx").
  */

@@ -8,7 +8,7 @@ import { consumeRateLimit, RateLimitUnavailableError } from "@/lib/rate-limit";
 const registerSchema = z.object({
     fullName: z.string().trim().min(2).max(100).optional(),
     name: z.string().trim().min(1).max(100).optional(),
-    email: z.string().trim().email("Email không hợp lệ.").max(255),
+    email: z.union([z.string().trim().email("Email không hợp lệ.").max(255), z.literal("")]).optional(),
     password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự.").max(128),
     phone: z.string().trim().min(1, "Số điện thoại chủ hồ là bắt buộc."),
     lakeName: z.string().trim().min(2).max(200),
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         );
     }
 
-    const email = parsed.data.email.toLowerCase();
+    const email = parsed.data.email?.trim().toLowerCase() || undefined;
     const rawIp =
         request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
         request.headers.get("x-real-ip")?.trim() ||
@@ -64,9 +64,11 @@ export async function POST(request: Request) {
 
     try {
         const checks = [
-            consumeRateLimit({ namespace: "register:email", identifier: email, maxRequests: 3, windowSeconds: 3600 }),
             consumeRateLimit({ namespace: "register:phone", identifier: normalizedPhone, maxRequests: 3, windowSeconds: 3600 }),
         ];
+        if (email) {
+            checks.push(consumeRateLimit({ namespace: "register:email", identifier: email, maxRequests: 3, windowSeconds: 3600 }));
+        }
         if (validIp) {
             checks.push(consumeRateLimit({
                 namespace: "register:ip",

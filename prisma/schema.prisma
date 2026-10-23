@@ -127,6 +127,11 @@ model Lake {
   id                     String              @id @default(uuid())
   organizationId         String
   name                   String
+  contactPhone           String?
+  bankCode               String?
+  bankName               String?
+  bankAccountNumber      String?
+  bankAccountName        String?
   allowNegativeInventory Boolean             @default(false)
   // SHA-256 of the optional read-only bot token. Null until the owner creates one.
   // The plaintext token is never stored.
@@ -456,6 +461,9 @@ model InvoiceLine {
   invoice     Invoice      @relation(fields: [invoiceId], references: [id])
   product     Product?     @relation(fields: [productId], references: [id])
   fishBuyback FishBuyback? @relation(fields: [fishBuybackId], references: [id])
+
+  @@index([createdAt])
+  @@index([invoiceId, createdAt])
 }
 
 model Payment {

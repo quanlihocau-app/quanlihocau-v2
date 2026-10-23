@@ -3,6 +3,7 @@
 import React, { memo, useRef, useSyncExternalStore } from "react";
 import { sessionTicker } from "@/lib/ticker/session-ticker";
 import { SessionCountdown } from "./session-countdown";
+import { sessionBalancePresentation } from "@/lib/money";
 import type { SerializableSession } from "./sessions-client";
 
 export function formatVnd(vnd: number): string {
@@ -131,6 +132,7 @@ export function computeSessionFinancials(s: SerializableSession, currentNowMs: n
 
     // Số dư ròng = Tổng chi phí - Tổng giảm trừ
     const netBalance = totalCharges - totalDeductions;
+    const elapsedOvertimeMs = isOvertime ? Math.max(0, currentNowMs - plannedEndMs) : 0;
 
     return {
         lines,
@@ -157,6 +159,7 @@ export function computeSessionFinancials(s: SerializableSession, currentNowMs: n
         totalPaid,
         totalDeductions,
         netBalance,
+        elapsedOvertimeMs,
     };
 }
 
@@ -199,7 +202,13 @@ function SessionGridCardComponent({
         liveOvertimeMinutes,
         liveOvertimeVnd,
         netBalance,
+        elapsedOvertimeMs,
     } = computeSessionFinancials(s, nowMs);
+    const balanceView = sessionBalancePresentation({
+        netBalanceVnd: netBalance,
+        elapsedOvertimeMs,
+        recordedOvertimeVnd: liveOvertimeVnd,
+    });
 
     // Every expired session requires an explicit finish or extension decision.
     const isPriceFreezed = isExpired;
@@ -299,23 +308,25 @@ function SessionGridCardComponent({
             <div className="mt-1 pt-1 border-t border-slate-100/90">
                 <div
                     className={`rounded-xs px-1.5 py-0.5 border flex items-center justify-between font-serif text-[11px] ${
-                        netBalance < 0
+                        balanceView.kind === "refund"
                             ? "bg-[#FBEBEB] border-[#E9B6B7] text-[#9E2A2B]"
-                            : netBalance === 0
-                            ? "bg-[#EAEFEA] border-[#B8CEB8] text-[#2C4C3B]"
-                            : "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
+                            : balanceView.kind === "due"
+                            ? "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
+                            : balanceView.kind === "unbilled-overtime"
+                            ? "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
+                            : "bg-[#EAEFEA] border-[#B8CEB8] text-[#2C4C3B]"
                     }`}
                 >
                     <span className="text-[10px] font-bold">
-                        {netBalance < 0 ? "Thối lại:" : netBalance === 0 ? "Đã đủ:" : "Cần thu:"}
+                        {balanceView.label}
                     </span>
-                    <span className="font-bold">
-                        {netBalance < 0
-                            ? `-${formatVnd(Math.abs(netBalance))}`
-                            : netBalance === 0
-                            ? "0 đ"
-                            : `+${formatVnd(netBalance)}`}
-                    </span>
+                    {balanceView.showAmount && (
+                        <span className="font-bold">
+                            {netBalance < 0
+                                ? `-${formatVnd(Math.abs(netBalance))}`
+                                : `+${formatVnd(netBalance)}`}
+                        </span>
+                    )}
                 </div>
 
                 {/* Mini chips if items, extension, or overtime exist */}

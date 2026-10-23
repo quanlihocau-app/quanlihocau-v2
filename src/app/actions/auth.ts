@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { setSessionCookie, clearSessionCookie } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { normalizeVietnamesePhone } from '@/lib/phone'
+import { normalizeVietnamesePhone, syntheticPhoneEmail } from '@/lib/phone'
 import { z } from 'zod'
 import { seedSampleLakeData } from '@/lib/onboarding/seed-sample-lake'
 import {
@@ -27,7 +27,7 @@ const loginMembershipInclude = {
 }
 
 export interface RegisterInput {
-  email: string
+  email?: string | null
   password: string
   name: string
   phone?: string | null
@@ -63,23 +63,34 @@ export async function registerUser(input: RegisterInput) {
 
   try {
     const parsed = z.object({
-      email: z.string().trim().pipe(z.email('Email không hợp lệ.')),
+      email: z.string().trim().optional().nullable(),
       password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự.').max(128),
       name: z.string().trim().min(1, 'Vui lòng nhập họ tên.').max(100),
       phone: z.string().nullable().optional(),
       lakeName: z.string().trim().max(200).nullable().optional(),
     }).safeParse(input)
     if (!parsed.success) return reject(parsed.error.issues[0]?.message || 'Dữ liệu không hợp lệ.')
-    input = parsed.data
-    const email = input.email.trim().toLowerCase()
-    const { password, name, phone, lakeName } = input
+    const { password, name, phone, lakeName } = parsed.data
+    const rawEmail = typeof parsed.data.email === 'string' ? parsed.data.email.trim().toLowerCase() : ''
+    if (rawEmail && !z.email().safeParse(rawEmail).success) {
+      return reject('Email không hợp lệ.')
+    }
     let normalizedPhone: string | null
     try { normalizedPhone = normalizeVietnamesePhone(phone) } catch {
       return reject('Số điện thoại không hợp lệ.')
     }
+    if (!rawEmail && !normalizedPhone) {
+      return reject('Nhập email hoặc số điện thoại.')
+    }
+    const email = rawEmail || syntheticPhoneEmail(normalizedPhone!)
 
-    if (!email || !password || !name) {
+    if (!password || !name) {
       return reject('Vui lòng điền đầy đủ thông tin bắt buộc.')
+    }
+
+    if (normalizedPhone) {
+      const gate = await authFailureState('auth-register', normalizedPhone)
+      if (gate.blocked) return { success: false, message: authLockMessage(gate.retryAfterSeconds) }
     }
 
     // 1. Check existing user (non-transaction quick read)
@@ -97,6 +108,16 @@ export async function registerUser(input: RegisterInput) {
         }
       }
       return { success: false, conflict: true, message: 'Email này đã được sử dụng trong hệ thống.' }
+    }
+
+    if (normalizedPhone) {
+      const existingPhone = await prisma.user.findUnique({
+        where: { phone: normalizedPhone },
+        select: { id: true },
+      })
+      if (existingPhone) {
+        return { success: false, conflict: true, message: 'Số điện thoại này đã được sử dụng.' }
+      }
     }
 
     // 2. Hash password ngoài transaction để giảm thời gian giữ lock connection
@@ -171,7 +192,7 @@ export async function registerUser(input: RegisterInput) {
 
     return {
       success: true,
-      message: 'Đăng ký tài khoản thành công! Hãy đăng nhập bằng Google đã đăng ký.',
+      message: 'Đăng ký tài khoản thành công! Hãy đăng nhập bằng số điện thoại hoặc email và mật khẩu.',
       data: {
         id: newUser.id,
         email: newUser.email,
@@ -239,6 +260,17 @@ export async function loginUser(input: { email: string; password: string }) {
     })
 
     if (!user && !identifier.includes('@')) {
+      let phone: string | null = null
+      try { phone = normalizeVietnamesePhone(identifier) } catch { phone = null }
+      if (phone) {
+        user = await prisma.user.findUnique({
+          where: { phone },
+          include: loginMembershipInclude,
+        })
+      }
+    }
+
+    if (!user && !identifier.includes('@')) {
       user = await prisma.user.findUnique({
         where: { email: `${identifier}@hocau.com` },
         include: loginMembershipInclude,
@@ -273,7 +305,7 @@ export async function loginUser(input: { email: string; password: string }) {
           memberships: user.memberships,
         })
       }
-      return reject('Email hoặc mật khẩu không chính xác.')
+      return reject('Số điện thoại, email hoặc mật khẩu không chính xác.')
     }
 
     if (user.isLocked) {
@@ -298,7 +330,7 @@ export async function loginUser(input: { email: string; password: string }) {
         reason: 'bad_password',
         memberships: user.memberships,
       })
-      return reject('Email hoặc mật khẩu không chính xác.')
+      return reject('Số điện thoại, email hoặc mật khẩu không chính xác.')
     }
 
     // Set session cookie

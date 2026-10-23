@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { Prisma, Role } from "@/generated/prisma/client";
+import { PaymentMethod, Prisma, Role } from "@/generated/prisma/client";
 import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
+import { syncInvoiceTotals } from "@/lib/invoice-totals";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -29,6 +30,7 @@ const createBuybackSchema = z
             .positive("Trọng lượng cá phải lớn hơn 0.")),
         sessionId: z.string().uuid().optional(),
         invoiceId: z.string().uuid().optional(),
+        paymentMethod: z.enum(["CASH", "BANK_TRANSFER"]).optional(),
     })
     .strict();
 
@@ -166,8 +168,9 @@ export async function POST(request: Request) {
 
             let invoiceBeforeTotal: number | null = null;
             let invoiceAfterTotal: number | null = null;
+            let cashOutPaymentId: string | null = null;
             if (targetInvoiceId) {
-                // Deduct fish buyback from the customer's invoice with negative totalVnd
+                // Linked buyback offsets the bill. It is not cash leaving the drawer.
                 await tx.invoiceLine.create({
                     data: {
                         invoiceId: targetInvoiceId,
@@ -179,18 +182,21 @@ export async function POST(request: Request) {
                     },
                 });
 
-                // Update invoice total amount
-                const invLines = await tx.invoiceLine.findMany({
-                    where: { invoiceId: targetInvoiceId },
-                    select: { totalVnd: true },
+                const synced = await syncInvoiceTotals(tx, targetInvoiceId, tenantContext.lakeId);
+                invoiceAfterTotal = synced?.totalAmountVnd ?? null;
+                invoiceBeforeTotal = invoiceAfterTotal === null ? null : invoiceAfterTotal + totalVnd;
+            } else {
+                // Fish not tied to a ticket is paid from the drawer.
+                const payout = await tx.payment.create({
+                    data: {
+                        lakeId: tenantContext.lakeId,
+                        amountVnd: totalVnd,
+                        method: (data.paymentMethod ?? "CASH") as PaymentMethod,
+                        direction: "OUT",
+                        idempotencyKey: crypto.randomUUID(),
+                    },
                 });
-                const updatedTotalAmount = invLines.reduce((s, l) => s + l.totalVnd, 0);
-                invoiceAfterTotal = updatedTotalAmount;
-                invoiceBeforeTotal = updatedTotalAmount + totalVnd;
-                await tx.invoice.update({
-                    where: { id: targetInvoiceId },
-                    data: { totalAmountVnd: updatedTotalAmount },
-                });
+                cashOutPaymentId = payout.id;
             }
 
             await writeStaffAudit(tx, {
@@ -216,6 +222,8 @@ export async function POST(request: Request) {
                     totalVnd,
                     invoiceId: targetInvoiceId,
                     sessionId: data.sessionId || null,
+                    cashOutPaymentId,
+                    paymentMethod: targetInvoiceId ? null : (data.paymentMethod ?? "CASH"),
                 },
                 ip: requestMeta.ip,
                 userAgent: requestMeta.userAgent,

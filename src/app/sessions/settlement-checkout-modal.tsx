@@ -9,6 +9,7 @@ import { usePrinter } from "@/lib/printing/use-printer";
 import { PaymentReceiptData } from "@/lib/printing/types";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
+import { PondTransferQr } from "@/components/payments/pond-transfer-qr";
 
 interface SettlementPreviewData {
     session: {
@@ -504,6 +505,12 @@ export function SettlementCheckoutModal({
                                                 🏦 Chuyển khoản (QR)
                                             </button>
                                         </div>
+                                        {paymentMethod === "BANK_TRANSFER" && preview.invoice && (
+                                            <PondTransferQr
+                                                amountVnd={preview.financials.netDueVnd}
+                                                orderCode={preview.invoice.id.slice(0, 8)}
+                                            />
+                                        )}
                                     </div>
                                 )}
 

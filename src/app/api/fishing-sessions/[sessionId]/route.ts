@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { InvoiceStatus, Prisma, Role, SessionStatus } from "@/generated/prisma/client";
 import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
+import { syncInvoiceTotals } from "@/lib/invoice-totals";
+import { refundsDueByMethod } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -374,6 +376,58 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                             }
                         }
 
+                        let cancelRefundVnd = 0;
+                        if (action === "CANCEL") {
+                            const existingInvoice = await tx.invoice.findFirst({
+                                where: {
+                                    fishingSessionId: session.id,
+                                    lakeId: tenantContext.lakeId,
+                                },
+                                include: { payments: true },
+                            });
+                            if (existingInvoice && existingInvoice.status !== InvoiceStatus.VOIDED) {
+                                const refunds = refundsDueByMethod(existingInvoice.payments);
+                                for (const refund of refunds) {
+                                    await tx.payment.create({
+                                        data: {
+                                            lakeId: tenantContext.lakeId,
+                                            invoiceId: existingInvoice.id,
+                                            amountVnd: refund.amountVnd,
+                                            method: refund.method,
+                                            direction: "OUT",
+                                            idempotencyKey: crypto.randomUUID(),
+                                        },
+                                    });
+                                    cancelRefundVnd += refund.amountVnd;
+                                }
+                                await syncInvoiceTotals(tx, existingInvoice.id, tenantContext.lakeId, {
+                                    forceStatus: "VOIDED",
+                                });
+                                await writeStaffAudit(tx, {
+                                    lakeId: tenantContext.lakeId,
+                                    entityType: "Invoice",
+                                    entityId: existingInvoice.id,
+                                    action: "INVOICE_VOIDED",
+                                    createdBy: tenantContext.userId,
+                                    actorName: tenantContext.userName,
+                                    actorRole: tenantContext.role,
+                                    before: {
+                                        status: existingInvoice.status,
+                                        totalAmountVnd: existingInvoice.totalAmountVnd,
+                                        paidAmountVnd: existingInvoice.paidAmountVnd,
+                                    },
+                                    after: { status: "VOIDED", refundedVnd: cancelRefundVnd },
+                                    extra: {
+                                        reason: "Huỷ phiên câu đang mở",
+                                        sessionId: session.id,
+                                        refunds,
+                                    },
+                                    ip: requestMeta.ip,
+                                    userAgent: requestMeta.userAgent,
+                                });
+                            }
+                        }
+
                         // 3. Update session status
                         const newStatus =
                             action === "COMPLETE"
@@ -433,6 +487,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                 endedAt: endedAt.toISOString(),
                                 hutIds,
                                 settlement: parsed.data.settlement || null,
+                                refundedVnd: cancelRefundVnd,
                             },
                             ip: requestMeta.ip,
                             userAgent: requestMeta.userAgent,

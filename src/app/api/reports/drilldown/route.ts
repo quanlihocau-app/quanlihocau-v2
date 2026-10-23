@@ -1,4 +1,5 @@
 import { financialScope } from "@/lib/reports/financial-scope";
+import { lineInWindow, summarizeRevenue } from "@/lib/money";
 import { NextRequest, NextResponse } from "next/server";
 import { getPageSession } from "@/lib/server-session";
 
@@ -76,8 +77,8 @@ export async function GET(request: NextRequest) {
             title = metric === "ticketRevenue" ? "Chi tiết Doanh thu Vé câu" : "Chi tiết Tổng Doanh thu";
             const where: Prisma.InvoiceWhereInput = {
                 ...scope.invoice,
-                createdAt: { gte: dateRange.from, lte: dateRange.to },
                 status: { not: InvoiceStatus.VOIDED },
+                AND: [{ lines: { some: { createdAt: { gte: dateRange.from, lte: dateRange.to } } } }],
             };
             if (metric === "ticketRevenue") {
                 where.fishingSessionId = { not: null };
@@ -109,15 +110,16 @@ export async function GET(request: NextRequest) {
                     ? `Vé câu [${inv.fishingSession.packageNameSnapshot}] ${spots ? `(${spots})` : ""}`
                     : `Hóa đơn bán lẻ (${inv.lines.length} món)`;
 
+                const windowLines = inv.lines.filter((line) => lineInWindow(line.createdAt, dateRange.from, dateRange.to));
                 return {
                     id: inv.id,
                     href: `/invoices/${inv.id}`,
                     code: inv.id.substring(0, 8).toUpperCase(),
-                    dateTime: formatVnDateTimeDisplay(inv.createdAt),
+                    dateTime: formatVnDateTimeDisplay(windowLines[0]?.createdAt ?? inv.createdAt),
                     customerName: inv.customer?.name || "Khách vãng lai",
                     staffName: "Thu ngân",
                     content,
-                    amountVnd: inv.totalAmountVnd,
+                    amountVnd: summarizeRevenue([{ fishingSessionId: inv.fishingSessionId, lines: windowLines }]).totalRevenue,
                     paymentMethod: methods,
                     status: inv.status === InvoiceStatus.PAID ? "Đã thanh toán" : inv.status === InvoiceStatus.PARTIALLY_PAID ? "Thanh toán 1 phần" : "Chưa thanh toán",
                 };
@@ -125,9 +127,9 @@ export async function GET(request: NextRequest) {
         } else if (metric === "productRevenue" || metric === "productReport") {
             title = "Chi tiết Sản phẩm & Dịch vụ đã bán";
             const where: Prisma.InvoiceLineWhereInput = {
+                createdAt: { gte: dateRange.from, lte: dateRange.to },
                 invoice: {
                     ...scope.invoice,
-                    createdAt: { gte: dateRange.from, lte: dateRange.to },
                     status: { not: InvoiceStatus.VOIDED },
                 },
                 productId: scope.productId ?? { not: null },
@@ -163,11 +165,11 @@ export async function GET(request: NextRequest) {
                 };
             });
         } else if (metric === "overtimeRevenue") {
-            title = "Chi tiết Tiền thêm giờ phụ trội";
+            title = "Chi tiết doanh thu thêm giờ";
             const where: Prisma.InvoiceLineWhereInput = {
+                createdAt: { gte: dateRange.from, lte: dateRange.to },
                 invoice: {
                     lakeId,
-                    createdAt: { gte: dateRange.from, lte: dateRange.to },
                     status: { not: InvoiceStatus.VOIDED },
                 },
                 fishBuybackId: null, productId: null, OR: [{ name: { contains: "thêm giờ", mode: "insensitive" } }, { name: { contains: "phụ trội", mode: "insensitive" } }, { name: { contains: "gia hạn", mode: "insensitive" } }],
@@ -233,6 +235,7 @@ export async function GET(request: NextRequest) {
             const where: Prisma.ExpenseWhereInput = {
                 ...scope.expense,
                 createdAt: { gte: dateRange.from, lte: dateRange.to },
+                financialTransactions: { none: { status: "DRAFT" } },
             };
 
             totalCount = await prisma.expense.count({ where });

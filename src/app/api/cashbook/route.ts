@@ -42,7 +42,8 @@ export async function GET(request: Request) {
             { expense: { description: { contains: f.q, mode: "insensitive" } } },
             { invoice: { lines: { some: { name: { contains: f.q, mode: "insensitive" } } } } },
         ] });
-        if (conditions.length) where.AND = conditions;
+        conditions.push({ financialTransactions: { none: { status: "DRAFT" } } });
+        where.AND = conditions;
         const limit = 30;
         const result = await prisma.$transaction(async tx => {
             const total = await tx.payment.count({ where });

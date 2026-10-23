@@ -25,7 +25,7 @@ import {
     addQuickFishTypeAction,
 } from "../quick-create-actions";
 import { RetailProduct } from "./retail-pos-form";
-import { BANK_CONFIG, generateVietQrUrl } from "@/lib/vietqr";
+import { PondTransferQr } from "@/components/payments/pond-transfer-qr";
 import { CheckInTimeSection, type CheckInTimeState } from "./check-in-time-section";
 
 
@@ -2437,58 +2437,7 @@ export function OpenSessionForm({
 
                             {paymentMethodChoice === "BANK_TRANSFER" && (
                                 <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 space-y-2.5 text-xs">
-                                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-600">Ngân hàng:</span>
-                                            <span className="font-bold text-slate-900">{BANK_CONFIG.bankName}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-slate-600">Số tài khoản:</span>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="font-mono font-extrabold text-emerald-700 text-sm">
-                                                    {BANK_CONFIG.accountNumber}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(BANK_CONFIG.accountNumber);
-                                                        toast.success("Đã sao chép STK!");
-                                                    }}
-                                                    className="px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-[10px] font-semibold text-slate-800"
-                                                >
-                                                    Copy
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-600">Chủ tài khoản:</span>
-                                            <span className="font-bold text-slate-900">{BANK_CONFIG.accountName}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-600">Số tiền:</span>
-                                            <span className="font-mono font-bold text-emerald-700">
-                                                {formatPrice(grandTotalPrice)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-slate-600">Nội dung CK:</span>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="font-mono font-bold text-slate-900">
-                                                    VECAU {tempOrderCode}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        navigator.clipboard.writeText(`VECAU ${tempOrderCode}`);
-                                                        toast.success("Đã sao chép nội dung!");
-                                                    }}
-                                                    className="px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-[10px] font-semibold text-slate-800"
-                                                >
-                                                    Copy
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <PondTransferQr amountVnd={grandTotalPrice} orderCode={tempOrderCode || "VECAU"} showQr={false} />
 
                                     <label className="flex items-start gap-2 pt-1 cursor-pointer">
                                         <input
@@ -2508,16 +2457,9 @@ export function OpenSessionForm({
 
                             {paymentMethodChoice === "VIETQR" && (
                                 <div className="rounded-2xl border border-[#E3E8E3] bg-white p-3.5 space-y-3 text-center">
-                                    <div className="mx-auto w-52 h-52 rounded-xl bg-white border border-slate-200 p-2 shadow-xs flex items-center justify-center">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={generateVietQrUrl({ amount: grandTotalPrice, orderCode: tempOrderCode || "VECAU" }).qrUrl}
-                                            alt="VietQR Chuyển khoản"
-                                            className="w-full h-full object-contain"
-                                        />
-                                    </div>
+                                    <PondTransferQr amountVnd={grandTotalPrice} orderCode={tempOrderCode || "VECAU"} />
                                     <p className="text-xs text-[#66716A]">
-                                        Quét mã bằng ứng dụng ngân hàng bất kỳ để chuyển khoản tự động đúng số tiền và nội dung.
+                                        Quét mã bằng ứng dụng ngân hàng bất kỳ để chuyển khoản đúng số tiền và nội dung.
                                     </p>
                                     <label className="flex items-start justify-center gap-2 text-left cursor-pointer pt-1">
                                         <input
