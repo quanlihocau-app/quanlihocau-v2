@@ -21,7 +21,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "welcome",
     category: "CHÀO MỪNG",
-    title: "Chào mừng đến với Quản Lý Hồ Câu",
+    title: "Chào mừng đến với Quản Lí Hồ Câu",
     body: "Hướng dẫn nhanh này sẽ đưa bạn qua các tính năng chính của ứng dụng. Chỉ mất khoảng 2 phút.",
     highlight:
       "Bạn có thể bỏ qua hoặc xem lại hướng dẫn bất cứ lúc nào trong phần Cài đặt.",

@@ -33,7 +33,7 @@
 
 ### 1.1 Mục tiêu
 
-QuanLyHoCau V2 là web app/PWA mobile-first dành cho hồ câu giải trí, giúp:
+quanlihocau V2 là web app/PWA mobile-first dành cho hồ câu giải trí, giúp:
 
 - Nhân viên mới học thao tác cơ bản trong tối đa 10 phút.
 - Mở một vé tiêu chuẩn trong tối đa 15 giây.
@@ -1100,4 +1100,4 @@ Hệ thống đã hoàn thành 100% các cột mốc nền tảng và tính năn
 
 ## 20. Kết luận
 
-QuanLyHoCau V2 ưu tiên độ tin cậy hơn số lượng tính năng. Luồng mở vé là nền móng: một request nguyên tử, server làm nguồn sự thật, khách lẻ không tạo customer, database chống trùng ô, client dừng đúng khi API lỗi và mọi thao tác ghi có idempotency. Khi nền móng này qua đủ kiểm thử, các module Đang câu, checkout, báo cáo và SaaS mới có thể phát triển mà không lặp lại lỗi cũ.
+quanlihocau V2 ưu tiên độ tin cậy hơn số lượng tính năng. Luồng mở vé là nền móng: một request nguyên tử, server làm nguồn sự thật, khách lẻ không tạo customer, database chống trùng ô, client dừng đúng khi API lỗi và mọi thao tác ghi có idempotency. Khi nền móng này qua đủ kiểm thử, các module Đang câu, checkout, báo cáo và SaaS mới có thể phát triển mà không lặp lại lỗi cũ.

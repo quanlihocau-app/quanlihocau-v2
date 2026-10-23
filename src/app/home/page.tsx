@@ -7,7 +7,7 @@ import { InvoiceStatus, SessionStatus } from "@/generated/prisma/client";
 import { HomeMobileView } from "@/app/home-mobile-view";
 
 export const metadata = {
-    title: "Tổng quan hồ câu | Quản Lý Hồ Câu",
+    title: "Tổng quan hồ câu | Quản Lí Hồ Câu",
 };
 
 export default async function AppHomePage() {

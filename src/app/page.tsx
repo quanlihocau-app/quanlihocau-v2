@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { OfficialLandingPage } from "@/components/landing/official-landing-page";
 
 export const metadata: Metadata = {
-    title: "Phần Mềm Quản Lý Hồ Câu — App Cho Chủ Hồ Trên Điện Thoại | Quản Lí Hồ Câu",
+    title: "Phần Mềm Quản Lí Hồ Câu — App Cho Chủ Hồ Trên Điện Thoại | Quản Lí Hồ Câu",
     description:
         "Phần mềm quản lý hồ câu & App cho chủ hồ câu trên điện thoại: đếm giờ phiên câu tự động, tính phụ thu lố giờ, quản lý nhân viên từ xa, bán mồi nước, thu mua cá, in bill 58mm và hạn chế thất thoát. Tài khoản mới dùng thử miễn phí 30 ngày.",
     keywords: [
@@ -24,17 +24,17 @@ export const metadata: Metadata = {
         "quanlihocau",
     ],
     openGraph: {
-        title: "Phần Mềm Quản Lý Hồ Câu — App Cho Chủ Hồ Trên Điện Thoại",
+        title: "Phần Mềm Quản Lí Hồ Câu — App Cho Chủ Hồ Trên Điện Thoại",
         description:
             "App cho chủ hồ quản lý vé câu, nhân viên từ xa, đếm giờ tự động, bán mồi nước và chống thất thoát ngay trên điện thoại. Tài khoản mới dùng thử miễn phí 30 ngày.",
         url: "https://quanlihocau.com",
-        siteName: "Quản Lý Hồ Câu",
+        siteName: "Quản Lí Hồ Câu",
         locale: "vi_VN",
         type: "website",
     },
     twitter: {
         card: "summary_large_image",
-        title: "Phần Mềm Quản Lý Hồ Câu — App Cho Chủ Hồ Trên Điện Thoại",
+        title: "Phần Mềm Quản Lí Hồ Câu — App Cho Chủ Hồ Trên Điện Thoại",
         description:
             "Phần mềm quản lý hồ câu & App cho chủ hồ câu: đếm giờ tự động, quản lý kho mồi nước, in bill 58mm.",
     },
@@ -50,7 +50,7 @@ const homeJsonLd = {
             "@type": "WebSite",
             "@id": "https://quanlihocau.com/#website",
             "url": "https://quanlihocau.com",
-            "name": "Quản Lý Hồ Câu",
+            "name": "Quản Lí Hồ Câu",
             "alternateName": ["App Cho Chủ Hồ", "Quan Li Ho Cau POS"],
             "description": "Phần mềm quản lý hồ câu chuyên nghiệp và app cho chủ hồ câu trên điện thoại tại Việt Nam",
             "inLanguage": "vi",
@@ -58,8 +58,8 @@ const homeJsonLd = {
         {
             "@type": "SoftwareApplication",
             "@id": "https://quanlihocau.com/#software",
-            "name": "Quản Lý Hồ Câu",
-            "alternateName": "App Quản Lý Hồ Câu Cho Chủ Hồ",
+            "name": "Quản Lí Hồ Câu",
+            "alternateName": "App Quản Lí Hồ Câu Cho Chủ Hồ",
             "operatingSystem": "iOS, Android, Windows, macOS, Web",
             "applicationCategory": "BusinessApplication",
             "applicationSubCategory": "Fishing Pond POS & Management System",
@@ -117,7 +117,7 @@ const homeJsonLd = {
                     "name": "Phần mềm quản lý hồ câu là gì và gồm những tính năng gì?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Quản Lý Hồ Câu (quanlihocau.com) là phần mềm chuyên biệt hoạt động trên điện thoại và máy tính dành cho các hồ câu dịch vụ. Phần mềm gồm các tính năng cốt lõi: mở vé theo sơ đồ ô câu, đồng hồ đếm ngược phiên câu, tự tính phụ thu lố giờ, bán mồi nước cộng vào vé, cân cá thu mua cấn trừ bill, in bill 58mm và báo cáo doanh thu từ xa cho chủ hồ.",
+                        "text": "Quản Lí Hồ Câu (quanlihocau.com) là phần mềm chuyên biệt hoạt động trên điện thoại và máy tính dành cho các hồ câu dịch vụ. Phần mềm gồm các tính năng cốt lõi: mở vé theo sơ đồ ô câu, đồng hồ đếm ngược phiên câu, tự tính phụ thu lố giờ, bán mồi nước cộng vào vé, cân cá thu mua cấn trừ bill, in bill 58mm và báo cáo doanh thu từ xa cho chủ hồ.",
                     },
                 },
                 {
@@ -146,10 +146,10 @@ const homeJsonLd = {
                 },
                 {
                     "@type": "Question",
-                    "name": "So sánh phần mềm Quản Lý Hồ Câu với Excel và KiotViet?",
+                    "name": "So sánh phần mềm Quản Lí Hồ Câu với Excel và KiotViet?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Excel và sổ tay dễ mất số liệu, không có đồng hồ đếm giờ và không thể theo dõi từ xa. KiotViet và Sapo thiết kế cho bán lẻ tạp hóa, thiếu hoàn toàn nghiệp vụ đếm giờ phiên câu theo ô, không tự tính phụ thu quá giờ và không có tính năng thu mua lại cá. Quản Lý Hồ Câu là giải pháp chuyên biệt bờ hồ duy nhất giải quyết trọn vẹn các bài toán này.",
+                        "text": "Excel và sổ tay dễ mất số liệu, không có đồng hồ đếm giờ và không thể theo dõi từ xa. KiotViet và Sapo thiết kế cho bán lẻ tạp hóa, thiếu hoàn toàn nghiệp vụ đếm giờ phiên câu theo ô, không tự tính phụ thu quá giờ và không có tính năng thu mua lại cá. Quản Lí Hồ Câu là giải pháp chuyên biệt bờ hồ duy nhất giải quyết trọn vẹn các bài toán này.",
                     },
                 },
                 {

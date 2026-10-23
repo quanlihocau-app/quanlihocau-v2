@@ -42,7 +42,7 @@ export class SpeedSmsProvider implements OtpProvider {
             };
         }
 
-        const messageContent = `[QuanLyHoCau] Ma xac thuc OTP cua ban la: ${params.code}. Hieu luc trong 3 phut. Khong chia se ma nay.`;
+        const messageContent = `[QuanLiHoCau] Ma xac thuc OTP cua ban la: ${params.code}. Hieu luc trong 3 phut. Khong chia se ma nay.`;
 
         try {
             const basicAuth = Buffer.from(`${this.authToken}:x`).toString("base64");
@@ -58,7 +58,7 @@ export class SpeedSmsProvider implements OtpProvider {
                         },
                         body: JSON.stringify({
                             to: destination,
-                            content: `[QuanLyHoCau] Ma xac thuc OTP cua ban la ${params.code}. Hieu luc 3 phut.`,
+                            content: `[QuanLiHoCau] Ma xac thuc OTP cua ban la ${params.code}. Hieu luc 3 phut.`,
                             app_id: this.appId,
                         }),
                     });

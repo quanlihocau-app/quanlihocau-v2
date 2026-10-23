@@ -1,6 +1,6 @@
 # CHIẾN LƯỢC SEO & TIẾP CẬN CHỦ HỒ CÂU TOÀN DIỆN (quanlihocau.com)
 
-> **Mục tiêu**: Giúp thương hiệu **Quản Lý Hồ Câu** lên top Google tìm kiếm tự nhiên và tiếp cận trực tiếp hàng nghìn chủ hồ câu dịch vụ trên toàn quốc (Đồng Nai, Bình Dương, TP.HCM, Củ Chi, Miền Tây, Lâm Đồng, Hà Nội, Hải Phòng...) với chi phí thấp nhất và tốc độ nhanh nhất.
+> **Mục tiêu**: Giúp thương hiệu **Quản Lí Hồ Câu** lên top Google tìm kiếm tự nhiên và tiếp cận trực tiếp hàng nghìn chủ hồ câu dịch vụ trên toàn quốc (Đồng Nai, Bình Dương, TP.HCM, Củ Chi, Miền Tây, Lâm Đồng, Hà Nội, Hải Phòng...) với chi phí thấp nhất và tốc độ nhanh nhất.
 
 ---
 
@@ -22,8 +22,8 @@
 ### 1.2. Các Yếu Tố Kỹ Thuật Đã Tối Ưu
 
 1. **Thẻ H1 & Title chuẩn Google Search**:
-   - `H1`: Đã tích hợp trực tiếp cụm từ khóa mục tiêu: *"PHẦN MỀM QUẢN LÝ HỒ CÂU CHUYÊN NGHIỆP — Hồ đông vẫn nhàn. Tiền hàng vẫn rõ."*
-   - `Title`: *"Phần Mềm Quản Lý Hồ Câu Chuyên Nghiệp Trên Điện Thoại — Quản Lí Hồ Câu"* (đạt độ dài chuẩn 55-60 ký tự, không bị cắt dấu ba chấm trên màn hình điện thoại).
+   - `H1`: Đã tích hợp trực tiếp cụm từ khóa mục tiêu: *"PHẦN MỀM QUẢN LÍ HỒ CÂU CHUYÊN NGHIỆP — Hồ đông vẫn nhàn. Tiền hàng vẫn rõ."*
+   - `Title`: *"Phần Mềm Quản Lí Hồ Câu Chuyên Nghiệp Trên Điện Thoại — Quản Lí Hồ Câu"* (đạt độ dài chuẩn 55-60 ký tự, không bị cắt dấu ba chấm trên màn hình điện thoại).
 2. **Google Rich Snippets (Schema JSON-LD)**:
    - Schema `FAQPage`: Tự động kích hoạt hiển thị khối câu hỏi - trả lời có thể mở rộng (Accordion FAQ) trực tiếp ngay trên trang kết quả tìm kiếm Google (SERP).
    - Schema `AggregateRating`: Đánh giá 4.9⭐ kích thích tỷ lệ click (CTR) vượt trội so với các kết quả tìm kiếm thông thường.
@@ -86,13 +86,13 @@ Mục tiêu: Đạt hiệu quả ra khách dùng thử ngay trong 24h đầu ti�
 - **Thời lượng**: 25 - 30 giây.
 - **Hình ảnh**: Quay màn hình điện thoại cầm trên tay tại mép hồ câu thực tế.
 - **Hành động**: Chỉ tay vào ô đang nhấp nháy đỏ quá giờ 18 phút. Bấm vào ô -> Màn hình hiện tự động: *"Phụ thu quá giờ: 35.000đ"*. Bấm in bill cầm tay ra tờ giấy in nhiệt nhỏ 58mm.
-- **Voiceover**: *"Hồ đông khách mà nhân viên cứ phải đứng canh giờ từng chòi thì quá cực. Với Quản Lý Hồ Câu, khách câu lố bao nhiêu phút máy tự cộng tiền bấy nhiêu, in bill rõ ràng, không bao giờ phải đôi co với khách!"*
+- **Voiceover**: *"Hồ đông khách mà nhân viên cứ phải đứng canh giờ từng chòi thì quá cực. Với Quản Lí Hồ Câu, khách câu lố bao nhiêu phút máy tự cộng tiền bấy nhiêu, in bill rõ ràng, không bao giờ phải đôi co với khách!"*
 - **Call to action**: *"Dùng thử miễn phí ngay tại quanlihocau.com"*.
 
 #### Kịch bản 2: "Chủ hồ ở nhà vẫn biết hồ đang thu bao nhiêu tiền"
 
 - **Thời lượng**: 25 giây.
-- **Hình ảnh**: Chủ hồ đang ngồi uống cà phê ở nhà, mở điện thoại xem app Quản Lý Hồ Câu.
+- **Hình ảnh**: Chủ hồ đang ngồi uống cà phê ở nhà, mở điện thoại xem app Quản Lí Hồ Câu.
 - **Hành động**: Màn hình hiển thị: 18/25 ô đang có khách câu, biểu đồ doanh thu nhảy số tiền vé 2.400.000đ, tiền dịch vụ ăn uống 850.000đ.
 - **Voiceover**: *"Đi công việc hay ở nhà vẫn biết từng ô câu có khách hay chưa, nhân viên vừa thu của ai bao nhiêu tiền mặt, chuyển khoản. Quản lý hồ câu nhẹ tênh trên điện thoại!"*
 
@@ -103,7 +103,7 @@ Mục tiêu: Đạt hiệu quả ra khách dùng thử ngay trong 24h đầu ti�
 Nhiều chủ hồ tìm kiếm các dịch vụ hỗ trợ gần họ:
 
 1. Đăng ký **Google Business Profile** (Google Doanh nghiệp) với tên:
-   - `Quản Lý Hồ Câu — Phần Mềm Quản Lý Hồ Câu Chuyên Nghiệp`
+   - `Quản Lí Hồ Câu — Phần Mềm Quản Lí Hồ Câu Chuyên Nghiệp`
 2. Đặt danh mục chính: `Phần mềm doanh nghiệp (Software company)` & `Dịch vụ công nghệ thông tin`.
 3. Nhập số điện thoại: `0855 550 813`, liên kết website `https://quanlihocau.com`.
 4. Đăng ảnh chụp giao diện điện thoại, máy in bill nhiệt 58mm và sơ đồ hồ câu thực tế.
@@ -115,7 +115,7 @@ Nhiều chủ hồ tìm kiếm các dịch vụ hỗ trợ gần họ:
 Khi chủ hồ nhắn Zalo đến số **0855 550 813**:
 
 - **Bước 1 (Lắng nghe & đồng cảm)**:
-  *"Dạ chào anh/chị. Em bên Quản Lý Hồ Câu. Anh/chị cho em hỏi hồ mình đang ở khu vực nào và quy mô khoảng bao nhiêu ô câu ạ?"*
+  *"Dạ chào anh/chị. Em bên Quản Lí Hồ Câu. Anh/chị cho em hỏi hồ mình đang ở khu vực nào và quy mô khoảng bao nhiêu ô câu ạ?"*
 - **Bước 2 (Giải quyết đúng vấn đề)**:
   *"Hồ mình hiện tại đang tính tiền theo ca (3-4 tiếng) hay tính giờ lẻ ạ? Hồ có gặp tình trạng khách câu lố giờ hoặc nhân viên quên ghi tiền nước mồi không anh?"*
 - **Bước 3 (Kích hoạt dùng thử không rủi ro)**:

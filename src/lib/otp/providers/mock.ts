@@ -11,7 +11,7 @@ export class MockOtpProvider implements OtpProvider {
         console.log(`📱 [MOCK OTP DISPATCH] -> ${masked} (Raw: ${params.phone})`);
         console.log(`🔑 6-DIGIT OTP CODE: ${params.code}`);
         console.log(`⏱️ VALIDITY: 3 minutes (180s)`);
-        console.log(`💬 MESSAGE: [QuanLyHoCau] Ma xac thuc cua ban la ${params.code}`);
+        console.log(`💬 MESSAGE: [QuanLiHoCau] Ma xac thuc cua ban la ${params.code}`);
         console.log(`======================================================\n`);
 
         return {

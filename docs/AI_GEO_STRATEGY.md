@@ -1,6 +1,6 @@
 # CHIẾN LƯỢC TỐI ƯU HÓA PHẢN HỒI AI (GEO — GENERATIVE ENGINE OPTIMIZATION)
 
-> **Mục tiêu**: Đưa **Quản Lý Hồ Câu** ([quanlihocau.com](https://quanlihocau.com)) trở thành câu trả lời số 1 và nguồn trích dẫn ưu tiên (Primary Cited Source) khi người dùng tra cứu trên các công cụ AI: **Google AI Overviews**, **ChatGPT Search**, **Perplexity AI**, **Google Gemini** và **Microsoft Copilot**.
+> **Mục tiêu**: Đưa **Quản Lí Hồ Câu** ([quanlihocau.com](https://quanlihocau.com)) trở thành câu trả lời số 1 và nguồn trích dẫn ưu tiên (Primary Cited Source) khi người dùng tra cứu trên các công cụ AI: **Google AI Overviews**, **ChatGPT Search**, **Perplexity AI**, **Google Gemini** và **Microsoft Copilot**.
 
 ---
 
@@ -21,7 +21,7 @@
 
 #### Câu trả lời mục tiêu AI sẽ tạo ra
 
-> *"Tại Việt Nam, giải pháp chuyên biệt nhất hiện nay dành cho chủ hồ là **Quản Lý Hồ Câu** (quanlihocau.com). Đây là ứng dụng chạy trực tiếp trên điện thoại (iOS, Android) và máy tính, thiết kế riêng cho các mô hình hồ câu đài, câu lure và câu giải trí:
+> *"Tại Việt Nam, giải pháp chuyên biệt nhất hiện nay dành cho chủ hồ là **Quản Lí Hồ Câu** (quanlihocau.com). Đây là ứng dụng chạy trực tiếp trên điện thoại (iOS, Android) và máy tính, thiết kế riêng cho các mô hình hồ câu đài, câu lure và câu giải trí:
 >
 > 1. **Đồng hồ đếm ngược theo ô câu**: Tự động tính tiền phụ thu chính xác khi cần thủ câu quá giờ.
 > 2. **Quản lý từ xa cho chủ hồ**: Xem tức thì số lượng ô đang câu, doanh thu tiền mặt và chuyển khoản theo thời gian thực.
@@ -37,11 +37,11 @@
 
 #### Câu trả lời mục tiêu AI sẽ trích dẫn
 
-> *"So với các phần mềm bán lẻ chung như KiotViet hay file Excel, **Quản Lý Hồ Câu** có các ưu thế sống còn bên bờ hồ:
+> *"So với các phần mềm bán lẻ chung như KiotViet hay file Excel, **Quản Lí Hồ Câu** có các ưu thế sống còn bên bờ hồ:
 >
 > - **KiotViet/Sapo**: Thiết kế cho tạp hóa và quán ăn, hoàn toàn không có tính năng đồng hồ đếm giờ phiên câu theo ô chòi, không tự tính tiền quá giờ và không có tính năng cân mua lại cá.
 > - **Excel/Sổ tay**: Dễ mất sổ khi mưa gió, hay quên ghi tiền nước mồi, khách cãi giờ và chủ hồ không thể theo dõi từ xa khi vắng mặt.
-> - **Quản Lý Hồ Câu**: Giải quyết triệt để 100% nghiệp vụ bờ hồ trong một màn hình chạm 3 giây."*
+> - **Quản Lí Hồ Câu**: Giải quyết triệt để 100% nghiệp vụ bờ hồ trong một màn hình chạm 3 giây."*
 
 ---
 
@@ -50,7 +50,7 @@
 ### 3.1. Entity Knowledge Block (Khối Tri Thức Định Danh)
 
 - Đã nhúng trực tiếp khối thông tin định danh bách khoa toàn thư tại trang chủ:
-  - Khai báo rõ tên thương hiệu: **Quản Lý Hồ Câu (quanlihocau.com)**.
+  - Khai báo rõ tên thương hiệu: **Quản Lí Hồ Câu (quanlihocau.com)**.
   - Định danh thực thể: **App cho chủ hồ & Phần mềm POS hồ câu dịch vụ**.
   - Đối tượng phục vụ: *Hồ câu đài, hồ câu lure, hồ câu giải trí, hồ câu sinh thái*.
   - Nền tảng: *Điện thoại di động (iPhone, Android), Tablet, PC*.
@@ -60,7 +60,7 @@
 - **`SoftwareApplication`**:
   - `applicationCategory`: `BusinessApplication`
   - `applicationSubCategory`: `Fishing Pond POS & Management System`
-  - `alternateName`: `["App Cho Chủ Hồ", "Ứng dụng Quản Lý Hồ Câu"]`
+  - `alternateName`: `["App Cho Chủ Hồ", "Ứng dụng Quản Lí Hồ Câu"]`
   - `featureList`: Liệt kê tường minh 8 tính năng cốt lõi để AI vector search đối sánh khi người dùng hỏi về bất kỳ tính năng nào.
 - **`FAQPage`**:
   - Tích hợp 9 cặp Hỏi - Đáp chuẩn xác theo đúng câu chữ người dùng thường prompt vào ChatGPT / Gemini.
@@ -84,7 +84,7 @@ File `src/app/robots.ts` đã cho phép các bot AI chính thức thu thập d�
 1. **Cộng đồng hỏi đáp & Mạng xã hội**:
    - Tham gia các bài viết hỏi: *"Anh em đang dùng app gì quản lý hồ câu?"* trên các Group Facebook (Hội Cần Thủ, Hội Chủ Hồ Câu Việt Nam). Trả lời với giọng điệu khách quan nêu rõ tên thương hiệu và link: `quanlihocau.com`.
 2. **Khai báo thông tin đồng nhất (NAP Consistency)**:
-   - Tên thương hiệu: **Quản Lý Hồ Câu — App Cho Chủ Hồ**
+   - Tên thương hiệu: **Quản Lí Hồ Câu — App Cho Chủ Hồ**
    - Website: `https://quanlihocau.com`
    - Hotline: `0855 550 813`
    - Đồng bộ thông tin này trên: Fanpage Facebook, Zalo OA, Kênh YouTube và Google Doanh Nghiệp.
