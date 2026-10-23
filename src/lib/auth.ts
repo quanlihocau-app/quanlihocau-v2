@@ -16,6 +16,7 @@ import {
 } from "@/lib/auth-rate-limit";
 import { prisma } from "@/lib/prisma";
 import { seedSampleLakeData } from "@/lib/onboarding/seed-sample-lake";
+import { sessionSecret, verifySignedSession } from "@/lib/session-signature";
 import { TRIAL_DAYS } from "@/lib/vietqr";
 
 declare module "next-auth" {
@@ -384,12 +385,7 @@ export const authOptions: NextAuthOptions = {
 // không cần NEXTAUTH_SECRET.
 // -----------------------------------------------------------------------------
 function getSessionSecret(): string {
-    const secret = process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET;
-    if (secret) return secret;
-    if (process.env.NODE_ENV === "production") {
-        throw new Error("SESSION_SECRET or NEXTAUTH_SECRET must be set in production");
-    }
-    return "dev-secret-change-in-production";
+    return sessionSecret();
 }
 export const COOKIE_NAME = "qa_session";
 
@@ -417,21 +413,7 @@ export function signSession(payload: SessionPayload): string {
 
 export function verifySession(token: string): SessionPayload | null {
     try {
-        const [data, signature, extra] = token.split(".");
-        if (!data || !signature || extra !== undefined) return null;
-        const expectedSig = crypto
-            .createHmac("sha256", getSessionSecret())
-            .update(data)
-            .digest("base64url");
-        const actual = Buffer.from(signature);
-        const expected = Buffer.from(expectedSig);
-        if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) return null;
-        const payload = JSON.parse(
-            Buffer.from(data, "base64url").toString("utf-8"),
-        ) as SessionPayload;
-        if (!payload || typeof payload.userId !== "string" || typeof payload.email !== "string") return null;
-        if (payload.expiresAt !== undefined && (!Number.isFinite(payload.expiresAt) || payload.expiresAt <= Date.now())) return null;
-        return payload;
+        return verifySignedSession(token, getSessionSecret());
     } catch {
         return null;
     }

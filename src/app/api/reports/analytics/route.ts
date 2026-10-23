@@ -1,7 +1,7 @@
 import { financialScope } from "@/lib/reports/financial-scope";
 import { summarizeMoney, summarizeRevenue } from "@/lib/finance";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getPageSession } from "@/lib/server-session";
 
 import {
     InvoiceStatus,
@@ -10,7 +10,6 @@ import {
     Prisma,
     SessionStatus,
 } from "@/generated/prisma/client";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
     calculateDelta,
@@ -89,7 +88,7 @@ interface WindowMetrics {
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const session = await getPageSession();
         if (!session?.user?.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }

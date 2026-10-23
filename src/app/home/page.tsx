@@ -1,17 +1,16 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getPageSession } from "@/lib/server-session";
 import { getTenantContext } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { InvoiceStatus, SessionStatus } from "@/generated/prisma/client";
 import { HomeMobileView } from "@/app/home-mobile-view";
 
 export const metadata = {
-    title: "Tổng quan hồ câu | Quản Lí Hồ Câu",
+    title: "Tổng quan hồ câu | Quản Lý Hồ Câu",
 };
 
 export default async function AppHomePage() {
-    const session = await getServerSession(authOptions);
+    const session = await getPageSession();
 
     if (!session?.user) {
         redirect("/login");

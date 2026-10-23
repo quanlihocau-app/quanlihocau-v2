@@ -1,15 +1,14 @@
-import { getServerSession } from "next-auth";
+import { getPageSession } from "@/lib/server-session";
 import { redirect } from "next/navigation";
 
-import { authOptions } from "@/lib/auth";
 
 export const metadata = {
-    title: "Quản Lí Hồ Câu",
+    title: "Quản Lý Hồ Câu",
     description: "Quản lý hồ câu.",
 };
 
 export default async function VerifyPhonePage() {
-    const session = await getServerSession(authOptions);
+    const session = await getPageSession();
 
     if (!session?.user?.email) {
         redirect("/login");

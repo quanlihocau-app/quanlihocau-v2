@@ -1,4 +1,4 @@
-import { getServerSession } from "next-auth";
+import { getPageSession } from "@/lib/server-session";
 import { redirect } from "next/navigation";
 
 import {
@@ -6,7 +6,6 @@ import {
     PaymentMethod,
     Role,
 } from "@/generated/prisma/client";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseShiftCloseNote } from "@/lib/shift-helper";
 import { getTenantContext } from "@/lib/tenant";
@@ -20,7 +19,7 @@ interface PageProps {
 }
 
 export default async function DailyReportPage({ searchParams }: PageProps) {
-    const session = await getServerSession(authOptions);
+    const session = await getPageSession();
 
     if (!session?.user?.email) {
         redirect("/login");

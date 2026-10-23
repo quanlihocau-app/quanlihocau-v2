@@ -1,10 +1,9 @@
 import { financialScope } from "@/lib/reports/financial-scope";
 import { csvCell, summarizeRevenue } from "@/lib/finance";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getPageSession } from "@/lib/server-session";
 
 import { InvoiceStatus, PaymentMethod, Role } from "@/generated/prisma/client";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AuthenticationError, ForbiddenError, requireTenantContext } from "@/lib/tenant";
 import {
@@ -19,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
+        const session = await getPageSession();
         if (!session?.user?.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }

@@ -305,6 +305,13 @@ function PrintReceipt({
 // Main component
 // ─────────────────────────────────────────────
 
+// Báo cáo đầy đủ tốn khoảng 15 query mỗi lần. Poll 5 giây (và cả 60 giây) với
+// nhiều máy mở cả ngày vượt 200.000 operation/tháng của Prisma Postgres Free.
+// Tab hiện và còn phiên đang câu: 15 phút. Tab hiện nhưng không ai câu: 30 phút.
+// Tab ẩn hoặc ca đã đóng: không gọi.
+const ACTIVE_POLL_MS = 15 * 60 * 1000;
+const IDLE_POLL_MS = 30 * 60 * 1000;
+
 export function DailyReportView({
     shift: initialShift,
     summary: initialSummary,
@@ -367,11 +374,12 @@ export function DailyReportView({
         }
     }, []);
 
-    // ── Poll mỗi 60 giây khi tab đang mở, dừng hẳn khi tab bị ẩn ──
     useEffect(() => {
         if (shift.isClosed) return;
 
         let intervalId: number | undefined;
+        const activeCount = breakdown?.sessions.active ?? 0;
+        const delay = activeCount > 0 ? ACTIVE_POLL_MS : IDLE_POLL_MS;
         const doFetch = () => {
             fetchLiveData(selectedShiftId === shift.id && !shift.isClosed ? undefined : selectedShiftId);
         };
@@ -383,7 +391,7 @@ export function DailyReportView({
         };
         const start = () => {
             if (intervalId !== undefined || document.visibilityState !== "visible") return;
-            intervalId = window.setInterval(doFetch, 60_000);
+            intervalId = window.setInterval(doFetch, delay);
         };
         const handleVisibility = () => {
             if (document.visibilityState === "visible") {
@@ -400,7 +408,7 @@ export function DailyReportView({
             stop();
             document.removeEventListener("visibilitychange", handleVisibility);
         };
-    }, [shift.isClosed, shift.id, selectedShiftId, fetchLiveData]);
+    }, [shift.isClosed, shift.id, selectedShiftId, fetchLiveData, breakdown?.sessions.active]);
 
     // ── Xử lý chuyển đổi ca lịch sử ──────────────────────────
     function handleSelectShift(shiftId: string) {

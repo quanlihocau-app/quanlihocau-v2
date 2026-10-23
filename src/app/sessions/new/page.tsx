@@ -1,8 +1,7 @@
-import { getServerSession } from "next-auth";
+import { getPageSession } from "@/lib/server-session";
 import { redirect } from "next/navigation";
 
 import { Role } from "@/generated/prisma/client";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getProductStockMap } from "@/lib/product-stock";
 import { getTenantContext } from "@/lib/tenant";
@@ -11,7 +10,7 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 
 export default async function NewSessionPage() {
-    const session = await getServerSession(authOptions);
+    const session = await getPageSession();
 
     if (!session?.user?.email) {
         redirect("/login");
@@ -120,7 +119,7 @@ export default async function NewSessionPage() {
                                 </h1>
                             </div>
                             <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] border border-[#BBF7D0] shadow-2xs font-serif shrink-0 whitespace-nowrap">
-                                POS Hồ câu
+                                QuanLiHoCau
                             </span>
                         </div>
                     </div>

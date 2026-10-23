@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
+import { getPageSession } from "@/lib/server-session";
 import { redirect } from "next/navigation";
 
-import { authOptions } from "@/lib/auth";
 import { getTenantContext } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { privateRouteMetadata } from "@/lib/metadata";
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ReportsPage() {
-    const session = await getServerSession(authOptions);
+    const session = await getPageSession();
 
     if (!session?.user?.email) {
         redirect("/login");

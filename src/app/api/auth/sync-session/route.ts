@@ -1,11 +1,11 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-import { authOptions, setSessionCookie } from "@/lib/auth";
+import { setSessionCookie } from "@/lib/auth";
 import { safeRedirectPath } from "@/lib/navigation";
+import { getAppSession } from "@/lib/server-session";
 
 export async function GET(request: Request) {
-    const session = await getServerSession(authOptions);
+    const session = await getAppSession();
     const user = session?.user;
 
     if (!user?.id || !user.email) {

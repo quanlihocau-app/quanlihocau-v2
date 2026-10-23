@@ -1,9 +1,9 @@
-import { getServerSession } from "next-auth";
+import { getPageSession } from "@/lib/server-session";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { authOptions, getSessionCookie } from "@/lib/auth";
+import { getSessionCookie } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 
@@ -12,7 +12,7 @@ export default async function AdminLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const session = await getServerSession(authOptions);
+    const session = await getPageSession();
 
     if (!session?.user?.email) {
         redirect("/login?callbackUrl=/admin/lakes");

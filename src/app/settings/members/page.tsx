@@ -1,9 +1,8 @@
-import { getServerSession } from "next-auth";
+import { getPageSession } from "@/lib/server-session";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Role } from "@/generated/prisma/client";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 
@@ -52,7 +51,7 @@ function getRoleBadge(role: Role) {
 }
 
 export default async function MembersSettingsPage() {
-    const session = await getServerSession(authOptions);
+    const session = await getPageSession();
 
     if (!session?.user?.email) {
         redirect("/login");

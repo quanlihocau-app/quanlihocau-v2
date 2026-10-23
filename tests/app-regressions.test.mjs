@@ -34,6 +34,7 @@ const authRateLimit = {
 
 function authModule(user = { email: "owner@example.com", systemRole: "USER", sessionVersion: 2, isLocked: false }) {
     let cookie;
+    const signature = loadModule("../src/lib/session-signature.ts", { crypto, "node:crypto": crypto });
     const auth = loadModule("../src/lib/auth.ts", {
         crypto,
         "node:crypto": crypto,
@@ -44,6 +45,7 @@ function authModule(user = { email: "owner@example.com", systemRole: "USER", ses
         "@/lib/prisma": { prisma: { user: { findUnique: async () => user } } },
         "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
         "@/lib/auth-rate-limit": authRateLimit,
+        "@/lib/session-signature": signature,
         "@/lib/vietqr": { TRIAL_DAYS: 30 },
     });
     return { auth, user, setCookie: (token) => { cookie = token; } };
@@ -255,6 +257,7 @@ test("Tenant data follows qa_session when an older NextAuth account cookie remai
         react: { cache: (fn) => fn },
         "next/navigation": { redirect: (path) => { throw new Error(`redirect:${path}`); } },
         "next-auth": { getServerSession: async () => ({ user: { email: "old-admin@example.com", systemRole: "SUPER_ADMIN" } }) },
+        "@/lib/server-session": { getAppSession: async () => ({ user: { email: "old-admin@example.com", systemRole: "SUPER_ADMIN" } }) },
         "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
         "@/lib/auth": { authOptions: {}, getSessionCookie: async () => ({ email: "staff@example.com", role: "USER" }) },
         "@/lib/prisma": { prisma: { membership: { findFirst: async (args) => { membershipQuery = args; return employee; } }, user: {} } },
@@ -279,6 +282,7 @@ test("An expired qa_session falls back to a valid regular NextAuth account", asy
         react: { cache: (fn) => fn },
         "next/navigation": { redirect: (path) => { throw new Error(`redirect:${path}`); } },
         "next-auth": { getServerSession: async () => ({ user: { email: "staff@example.com", systemRole: "USER" } }) },
+        "@/lib/server-session": { getAppSession: async () => ({ user: { email: "staff@example.com", systemRole: "USER" } }) },
         "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
         "@/lib/auth": { authOptions: {}, getSessionCookie: async () => null },
         "@/lib/prisma": { prisma: { membership: { findFirst: async (args) => { membershipQuery = args; return employee; } }, user: {} } },
@@ -297,6 +301,7 @@ test("An invalid qa_session cannot use a SUPER_ADMIN NextAuth cookie", async () 
         react: { cache: (fn) => fn },
         "next/navigation": { redirect: (path) => { throw new Error(`redirect:${path}`); } },
         "next-auth": { getServerSession: async () => ({ user: { email: "admin@example.com", systemRole: "SUPER_ADMIN" } }) },
+        "@/lib/server-session": { getAppSession: async () => ({ user: { email: "admin@example.com", systemRole: "SUPER_ADMIN" } }) },
         "@/generated/prisma/client": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
         "@/lib/auth": { authOptions: {}, getSessionCookie: async () => null },
         "@/lib/prisma": { prisma: { membership: { findFirst: async () => { throw new Error("must not query tenant"); } }, user: {} } },

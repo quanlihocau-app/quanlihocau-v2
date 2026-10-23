@@ -1,14 +1,13 @@
-import { cache } from "react";
 import { cookies, headers } from "next/headers";
-import { getServerSession } from "next-auth";
 
 import { Role } from "@/generated/prisma/client";
-import { authOptions, getSessionCookie } from "@/lib/auth";
+import { getSessionCookie } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getAppSession } from "@/lib/server-session";
 import { resolveSubscriptionAccess, type SubscriptionAccess } from "@/lib/subscription-access";
 
 /** Một lần decode phiên NextAuth cho mỗi request, kể cả khi requireTenantContext gọi tiếp getTenantContext. */
-const readAuthSession = cache(() => getServerSession(authOptions));
+const readAuthSession = getAppSession;
 
 export interface TenantContext {
     userId: string;
@@ -92,7 +91,7 @@ async function assertSubscriptionWritable(context: TenantContext): Promise<void>
 }
 
 export async function requireSuperAdmin(): Promise<{ id: string; email: string; name: string }> {
-    const session = await getServerSession(authOptions);
+    const session = await getAppSession();
 
     if (!session?.user?.email) {
         throw new AuthenticationError("Chưa đăng nhập.");

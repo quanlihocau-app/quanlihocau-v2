@@ -1,15 +1,14 @@
-import { getServerSession } from "next-auth";
+import { getPageSession } from "@/lib/server-session";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { authOptions } from "@/lib/auth";
 import { getTenantContext } from "@/lib/tenant";
 import { PrinterSettingsSection } from "../printer-settings";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 
 export default async function PrinterSettingsPage() {
-    const session = await getServerSession(authOptions);
+    const session = await getPageSession();
 
     if (!session?.user?.email) {
         redirect("/login");

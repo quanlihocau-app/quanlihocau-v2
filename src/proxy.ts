@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+import { classifyAuthCookies } from '@/lib/stale-auth-cookie'
+
 const COOKIE_NAME = 'qa_session'
 
 // Danh sách các route bảo vệ yêu cầu đăng nhập
@@ -76,14 +78,44 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   return response
 }
 
-function nextWithMeta(request: NextRequest): NextResponse {
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-ql-method', request.method)
-  requestHeaders.set('x-ql-pathname', request.nextUrl.pathname)
-  return applySecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }))
+function nextWithMeta(request: NextRequest, requestHeaders?: Headers): NextResponse {
+  const headers = requestHeaders ?? new Headers(request.headers)
+  headers.set('x-ql-method', request.method)
+  headers.set('x-ql-pathname', request.nextUrl.pathname)
+  return applySecurityHeaders(NextResponse.next({ request: { headers } }))
 }
 
-export function proxy(request: NextRequest) {
+function stripCookieHeader(request: NextRequest, stale: string[]): Headers {
+  const headers = new Headers(request.headers)
+  if (stale.length === 0) return headers
+  const drop = new Set(stale)
+  const kept = (request.headers.get('cookie') ?? '')
+    .split(';')
+    .map((part) => part.trim())
+    .filter((part) => {
+      if (!part) return false
+      const name = part.split('=')[0]?.trim() ?? ''
+      return !drop.has(name)
+    })
+  if (kept.length === 0) headers.delete('cookie')
+  else headers.set('cookie', kept.join('; '))
+  return headers
+}
+
+function expireStaleCookies(response: NextResponse, stale: string[]): void {
+  for (const name of stale) {
+    const secure = name.startsWith('__Secure-') || name.startsWith('__Host-') || process.env.NODE_ENV === 'production'
+    response.cookies.set(name, '', {
+      httpOnly: true,
+      path: '/',
+      maxAge: 0,
+      sameSite: 'lax',
+      secure,
+    })
+  }
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const userAgent = request.headers.get('user-agent') || ''
 
@@ -130,22 +162,38 @@ export function proxy(request: NextRequest) {
     return nextWithMeta(request)
   }
 
-  // 3. Kiểm tra xem request có thuộc route được bảo vệ không
+  // 3. Cookie phiên không giải mã được (ví dụ sau khi xoay NEXTAUTH_SECRET)
+  //    bị xóa và bỏ qua. Request hiện tại không còn thấy cookie hỏng, nên
+  //    trang đăng nhập hiện ra thay vì 500 / vòng lặp.
+  let stale: string[] = []
+  let authenticated = false
+  try {
+    const classified = await classifyAuthCookies(request)
+    stale = classified.stale
+    authenticated = classified.authenticated
+  } catch (error) {
+    console.error('[auth] session cookie check failed:', error instanceof Error ? error.name : 'unknown')
+    authenticated = Boolean(
+      request.cookies.get(COOKIE_NAME)?.value ||
+      request.cookies.get('next-auth.session-token')?.value ||
+      request.cookies.get('__Secure-next-auth.session-token')?.value,
+    )
+  }
+  const forwardedHeaders = stripCookieHeader(request, stale)
+
+  // 4. Kiểm tra xem request có thuộc route được bảo vệ không
   const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix))
 
   if (!isProtected) {
-    return nextWithMeta(request)
+    const response = nextWithMeta(request, forwardedHeaders)
+    expireStaleCookies(response, stale)
+    return response
   }
 
-  // 4. Kiểm tra phiên đăng nhập qua cookie qa_session hoặc next-auth
-  const qaSession = request.cookies.get(COOKIE_NAME)?.value
-  const nextAuthToken =
-    request.cookies.get('next-auth.session-token')?.value ||
-    request.cookies.get('__Secure-next-auth.session-token')?.value
-
-  // Nếu có cookie phiên hợp lệ thì cho phép tiếp tục
-  if (qaSession || nextAuthToken) {
-    return nextWithMeta(request)
+  if (authenticated) {
+    const response = nextWithMeta(request, forwardedHeaders)
+    expireStaleCookies(response, stale)
+    return response
   }
 
   // Nếu chưa đăng nhập, điều hướng sang /login kèm param redirect
@@ -153,7 +201,9 @@ export function proxy(request: NextRequest) {
   const redirectPath = pathname === '/settings/printer' && request.nextUrl.searchParams.get('setup') === 'windows'
     ? `${pathname}?setup=windows` : pathname
   loginUrl.searchParams.set('redirect', redirectPath)
-  return NextResponse.redirect(loginUrl)
+  const response = applySecurityHeaders(NextResponse.redirect(loginUrl))
+  expireStaleCookies(response, stale)
+  return response
 }
 
 export const config = {
