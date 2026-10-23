@@ -499,7 +499,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                 fishBuybackTotalVnd: fishTotal,
                                 prepaidAmountVnd: packagePrepaidAmount,
                                 supplementaryAmountVnd: settleAmount,
-                                totalAmountVnd: Math.max(0, gTotal - fishTotal),
+                                // gTotal already nets negative fish-buyback lines. Subtracting
+                                // fishTotal again made the close screen show half the real bill.
+                                totalAmountVnd: Math.max(0, gTotal),
                                 invoiceTotalVnd: gTotal,
                                 paidAmountVnd: pTotal,
                                 paymentAmountVnd: settleAmount,
