@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { InvoiceStatus, Prisma, Role, SessionStatus } from "@/generated/prisma/client";
+import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -60,6 +61,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         }
 
         const { action } = parsed.data;
+        const requestMeta = await readRequestMeta();
 
         // RBAC: CANCEL requires OWNER/MANAGER; COMPLETE allows STAFF too
         const allowedRoles = action === "CANCEL" ? ROLE_CANCEL : ROLE_COMPLETE;
@@ -411,19 +413,29 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                 ? "FISHING_SESSION_COMPLETED"
                                 : "FISHING_SESSION_CANCELLED";
 
-                        await tx.auditEvent.create({
-                            data: {
-                                lakeId: tenantContext.lakeId,
-                                entityType: "FishingSession",
-                                entityId: session.id,
-                                action: auditAction,
-                                payload: JSON.stringify({
-                                    endedAt: endedAt.toISOString(),
-                                    hutIds,
-                                    settlement: parsed.data.settlement || null,
-                                }),
-                                createdBy: tenantContext.userId,
+                        await writeStaffAudit(tx, {
+                            lakeId: tenantContext.lakeId,
+                            entityType: "FishingSession",
+                            entityId: session.id,
+                            action: auditAction,
+                            createdBy: tenantContext.userId,
+                            actorName: tenantContext.userName,
+                            actorRole: tenantContext.role,
+                            before: {
+                                status: session.status,
+                                endedAt: null,
                             },
+                            after: {
+                                status: newStatus,
+                                endedAt: endedAt.toISOString(),
+                            },
+                            extra: {
+                                endedAt: endedAt.toISOString(),
+                                hutIds,
+                                settlement: parsed.data.settlement || null,
+                            },
+                            ip: requestMeta.ip,
+                            userAgent: requestMeta.userAgent,
                         });
 
                         // 5. Construct updated session with known relations (0 redundant round-trips)

@@ -15,6 +15,16 @@ import {
   recordAuthFailure,
 } from '@/lib/auth-rate-limit'
 import { TRIAL_DAYS } from '@/lib/vietqr'
+import { recordLoginAudit } from '@/lib/audit-log'
+
+const loginMembershipInclude = {
+  memberships: {
+    where: { deletedAt: null },
+    select: { lakeId: true, role: true },
+    orderBy: { createdAt: 'asc' as const },
+    take: 3,
+  },
+}
 
 export interface RegisterInput {
   email: string
@@ -225,15 +235,18 @@ export async function loginUser(input: { email: string; password: string }) {
 
     let user = await prisma.user.findUnique({
       where: { email: identifier },
+      include: loginMembershipInclude,
     })
 
     if (!user && !identifier.includes('@')) {
       user = await prisma.user.findUnique({
         where: { email: `${identifier}@hocau.com` },
+        include: loginMembershipInclude,
       })
       if (!user) {
         user = await prisma.user.findUnique({
           where: { email: `${identifier}@hocau.vn` },
+          include: loginMembershipInclude,
         })
       }
       if (!user) {
@@ -244,20 +257,47 @@ export async function loginUser(input: { email: string; password: string }) {
               mode: 'insensitive',
             },
           },
+          include: loginMembershipInclude,
         })
       }
     }
 
     if (!user || !user.passwordHash) {
+      if (user) {
+        await recordLoginAudit({
+          success: false,
+          userId: user.id,
+          name: user.name,
+          account: identifier,
+          reason: 'no_password',
+          memberships: user.memberships,
+        })
+      }
       return reject('Email hoặc mật khẩu không chính xác.')
     }
 
     if (user.isLocked) {
+      await recordLoginAudit({
+        success: false,
+        userId: user.id,
+        name: user.name,
+        account: identifier,
+        reason: 'locked',
+        memberships: user.memberships,
+      })
       return { success: false, message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.' }
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash)
     if (!isMatch) {
+      await recordLoginAudit({
+        success: false,
+        userId: user.id,
+        name: user.name,
+        account: identifier,
+        reason: 'bad_password',
+        memberships: user.memberships,
+      })
       return reject('Email hoặc mật khẩu không chính xác.')
     }
 
@@ -276,6 +316,15 @@ export async function loginUser(input: { email: string; password: string }) {
         data: { lastLoginAt: new Date() },
       })
       .catch(() => {})
+
+    await recordLoginAudit({
+      success: true,
+      userId: user.id,
+      name: user.name,
+      account: identifier,
+      reason: 'credentials',
+      memberships: user.memberships,
+    })
 
     return { success: true, message: 'Đăng nhập thành công!', email: user.email }
   } catch (error) {

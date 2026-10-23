@@ -6,6 +6,7 @@ import {
     Prisma,
     Role,
 } from "@/generated/prisma/client";
+import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -84,6 +85,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
             Role.MANAGER,
             Role.STAFF,
         ]);
+        const requestMeta = await readRequestMeta();
 
         const { invoiceId, lineId } = await params;
         const invoiceIdParse = uuidSchema.safeParse(invoiceId);
@@ -258,23 +260,30 @@ export async function DELETE(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // Record AuditEvent
-                        await tx.auditEvent.create({
-                            data: {
-                                lakeId: tenantContext.lakeId,
-                                entityType: "Invoice",
-                                entityId: invoice.id,
-                                action: "INVOICE_PRODUCT_LINE_REMOVED",
-                                payload: JSON.stringify({
-                                    lineId: line.id,
-                                    productId,
-                                    productName: line.name,
-                                    quantity: lineQuantity,
-                                    lineTotalVnd: line.totalVnd,
-                                    newTotalAmountVnd,
-                                }),
-                                createdBy: tenantContext.userId,
+                        await writeStaffAudit(tx, {
+                            lakeId: tenantContext.lakeId,
+                            entityType: "Invoice",
+                            entityId: invoice.id,
+                            action: "INVOICE_PRODUCT_LINE_REMOVED",
+                            createdBy: tenantContext.userId,
+                            actorName: tenantContext.userName,
+                            actorRole: tenantContext.role,
+                            before: {
+                                totalAmountVnd: txInvoice.totalAmountVnd,
+                                lineName: line.name,
+                                lineTotalVnd: line.totalVnd,
                             },
+                            after: { totalAmountVnd: newTotalAmountVnd },
+                            extra: {
+                                lineId: line.id,
+                                productId,
+                                productName: line.name,
+                                quantity: lineQuantity,
+                                lineTotalVnd: line.totalVnd,
+                                newTotalAmountVnd,
+                            },
+                            ip: requestMeta.ip,
+                            userAgent: requestMeta.userAgent,
                         });
 
                         const responsePayload = {

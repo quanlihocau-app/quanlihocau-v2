@@ -47,6 +47,7 @@ function authModule(user = { email: "owner@example.com", systemRole: "USER", ses
         "@/lib/auth-rate-limit": authRateLimit,
         "@/lib/session-signature": signature,
         "@/lib/vietqr": { TRIAL_DAYS: 30 },
+        "@/lib/audit-log": { recordLoginAudit: async () => {} },
     });
     return { auth, user, setCookie: (token) => { cookie = token; } };
 }
@@ -211,6 +212,7 @@ test("Registration validates input and normalizes phone numbers before writing",
         "next/navigation": {}, "@/lib/phone": phone, zod: { z },
         "@/lib/auth-rate-limit": authRateLimit,
         "@/lib/vietqr": { TRIAL_DAYS: 30 },
+        "@/lib/audit-log": { recordLoginAudit: async () => {} },
     }, { console });
     assert.equal((await actions.registerUser({ email: 12 })).success, false);
     assert.equal((await actions.registerUser({ email: "owner@example.com", password: "Password123!", name: "Owner", phone: "bad" })).success, false);
@@ -235,14 +237,23 @@ test("Existing staff can log in by email while phone-number login is disabled", 
         "next/navigation": {}, "@/lib/phone": {}, zod: { z },
         "@/lib/auth-rate-limit": authRateLimit,
         "@/lib/vietqr": { TRIAL_DAYS: 30 },
+        "@/lib/audit-log": { recordLoginAudit: async () => {} },
     }, { console });
+    const membershipInclude = {
+        memberships: {
+            where: { deletedAt: null },
+            select: { lakeId: true, role: true },
+            orderBy: { createdAt: "asc" },
+            take: 3,
+        },
+    };
     const result = await actions.loginUser({ email: " Staff@Example.com ", password: "valid-password" });
     assert.equal(result.success, true);
-    assert.deepEqual(JSON.parse(JSON.stringify(lookups[0])), { where: { email: "staff@example.com" } });
+    assert.deepEqual(JSON.parse(JSON.stringify(lookups[0])), { where: { email: "staff@example.com" }, include: membershipInclude });
     assert.equal(session.userId, "staff-1");
     const phoneLogin = await actions.loginUser({ email: "0901234567", password: "valid-password" });
     assert.equal(phoneLogin.success, false);
-    assert.deepEqual(JSON.parse(JSON.stringify(lookups[1])), { where: { email: "0901234567" } });
+    assert.deepEqual(JSON.parse(JSON.stringify(lookups[1])), { where: { email: "0901234567" }, include: membershipInclude });
 });
 
 test("Tenant data follows qa_session when an older NextAuth account cookie remains", async () => {
@@ -322,6 +333,21 @@ function routeModule(path, prisma) {
         "next/server": { NextResponse: Response }, zod: { z },
         "@/generated/prisma/client": { Role: roles, SessionStatus: sessionStatuses, InvoiceStatus: invoiceStatuses, Prisma: {} },
         "@/lib/prisma": { prisma }, "@/lib/tenant": tenantModule,
+        "@/lib/audit-log": {
+            readRequestMeta: async () => ({ ip: null, userAgent: null }),
+            writeStaffAudit: async (db, input) => {
+                await db.auditEvent.create({
+                    data: {
+                        lakeId: input.lakeId,
+                        entityType: input.entityType,
+                        entityId: input.entityId,
+                        action: input.action,
+                        payload: "{}",
+                        createdBy: input.createdBy,
+                    },
+                });
+            },
+        },
         "@/lib/api-error": { createInternalErrorResponse: (_tag, error) => { throw error; } },
     }, { Date, Response, crypto: crypto.webcrypto, console });
 }

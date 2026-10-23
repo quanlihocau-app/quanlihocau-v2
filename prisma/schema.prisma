@@ -128,6 +128,9 @@ model Lake {
   organizationId         String
   name                   String
   allowNegativeInventory Boolean             @default(false)
+  // SHA-256 of the optional read-only bot token. Null until the owner creates one.
+  // The plaintext token is never stored.
+  auditReadTokenHash     String?             @unique
   subscriptionStatus     SubscriptionStatus  @default(TRIAL)
   subscriptionPlan       PlanTier            @default(TRIAL)
   subscriptionExpiresAt  DateTime?
@@ -553,6 +556,7 @@ model AuditEvent {
   @@index([createdAt])
   @@index([entityType, entityId])
   @@index([createdBy])
+  @@index([lakeId, createdBy, createdAt])
 }
 
 model IdempotencyKey {

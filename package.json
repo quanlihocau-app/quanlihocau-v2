@@ -10,7 +10,7 @@
     "test:unit": "node --test --test-timeout=15000 tests/saas-finance-complete.test.mjs tests/finance.test.mjs tests/app-regressions.test.mjs tests/custom-start-time.test.mjs tests/verification-timer-comprehensive.mjs",
     "test:integration": "node --test --test-concurrency=1 --env-file=.env.test tests/settlement-and-reporting.test.mjs tests/prepaid-and-postpaid-billing.test.mjs tests/finance-flow.integration.test.mjs",
     "postinstall": "prisma generate",
-    "test": "node --test --test-concurrency=1 --env-file=.env.test tests/stale-session.test.mjs tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs tests/speedsms-and-otp-security.test.mjs tests/comprehensive-reporting.test.mjs tests/test-auth-and-subscription.test.mjs tests/prepaid-and-postpaid-billing.test.mjs tests/admin-user-management.test.mjs tests/admin-manual-order-confirm.test.mjs"
+    "test": "node --test --test-concurrency=1 --env-file=.env.test tests/audit-log.test.mjs tests/stale-session.test.mjs tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs tests/speedsms-and-otp-security.test.mjs tests/comprehensive-reporting.test.mjs tests/test-auth-and-subscription.test.mjs tests/prepaid-and-postpaid-billing.test.mjs tests/admin-user-management.test.mjs tests/admin-manual-order-confirm.test.mjs"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",

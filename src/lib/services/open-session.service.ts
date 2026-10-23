@@ -6,6 +6,7 @@ import {
     Prisma,
     SessionStatus,
 } from "@/generated/prisma/client";
+import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import type { TenantContext } from "@/lib/tenant";
 
@@ -124,6 +125,7 @@ export async function openSession(
 
     const input = parsed.data;
     const effectiveKey = idempotencyKey || input.clientMutationId;
+    const requestMeta = await readRequestMeta();
 
     // Retry loop for Serializable P2034 conflicts
     const MAX_RETRIES = 3;
@@ -438,47 +440,70 @@ export async function openSession(
                         },
                     });
 
-                    // 11. Audit logs
-                    await tx.auditEvent.create({
-                        data: {
-                            lakeId: tenantContext.lakeId,
-                            entityType: "FishingSession",
-                            entityId: session.id,
-                            action: "FISHING_SESSION_OPENED",
-                            payload: JSON.stringify({
-                                packageId: pkg.id,
-                                hutIds: input.hutIds,
-                                customerId: resolvedCustomerId,
-                                paymentTiming: session.paymentTiming,
-                                startAt: effectiveStartAt.toISOString(),
-                                plannedEndAt: plannedEndAt.toISOString(),
-                                createdAt: now.toISOString(),
-                                isCustomStart,
-                            }),
-                            createdBy: tenantContext.userId,
+                    // 11. Audit logs — same two inserts as before, now with a compact diff.
+                    const defaultPlannedEndAt = new Date(now.getTime() + pkg.durationMinutes * 60 * 1000);
+                    await writeStaffAudit(tx, {
+                        lakeId: tenantContext.lakeId,
+                        entityType: "FishingSession",
+                        entityId: session.id,
+                        action: "FISHING_SESSION_OPENED",
+                        createdBy: tenantContext.userId,
+                        actorName: tenantContext.userName,
+                        actorRole: tenantContext.role,
+                        before: isCustomStart
+                            ? {
+                                startAt: now.toISOString(),
+                                plannedEndAt: defaultPlannedEndAt.toISOString(),
+                            }
+                            : null,
+                        after: {
+                            startAt: effectiveStartAt.toISOString(),
+                            plannedEndAt: plannedEndAt.toISOString(),
+                            status: session.status,
                         },
+                        extra: {
+                            packageId: pkg.id,
+                            hutIds: input.hutIds,
+                            customerId: resolvedCustomerId,
+                            paymentTiming: session.paymentTiming,
+                            startAt: effectiveStartAt.toISOString(),
+                            plannedEndAt: plannedEndAt.toISOString(),
+                            createdAt: now.toISOString(),
+                            isCustomStart,
+                        },
+                        ip: requestMeta.ip,
+                        userAgent: requestMeta.userAgent,
                     });
 
-                    await tx.auditEvent.create({
-                        data: {
-                            lakeId: tenantContext.lakeId,
-                            entityType: "Invoice",
-                            entityId: invoice.id,
-                            action: resolvedPaymentTiming === "PREPAID" ? "INVOICE_PREPAID" : "INVOICE_CREATED",
-                            payload: JSON.stringify({
-                                fishingSessionId: session.id,
-                                status: invoice.status,
-                                paymentTiming: session.paymentTiming,
-                                totalAmountVnd: totalGrossAmountVnd,
-                                paidAmountVnd: totalPaidVnd,
-                                balanceDueVnd,
-                                payments: paymentsToCreate.map((p) => ({
-                                    method: p.method,
-                                    amountVnd: p.amountVnd,
-                                })),
-                            }),
-                            createdBy: tenantContext.userId,
+                    await writeStaffAudit(tx, {
+                        lakeId: tenantContext.lakeId,
+                        entityType: "Invoice",
+                        entityId: invoice.id,
+                        action: resolvedPaymentTiming === "PREPAID" ? "INVOICE_PREPAID" : "INVOICE_CREATED",
+                        createdBy: tenantContext.userId,
+                        actorName: tenantContext.userName,
+                        actorRole: tenantContext.role,
+                        before: null,
+                        after: {
+                            status: invoice.status,
+                            totalAmountVnd: totalGrossAmountVnd,
+                            paidAmountVnd: totalPaidVnd,
+                            balanceDueVnd,
                         },
+                        extra: {
+                            fishingSessionId: session.id,
+                            status: invoice.status,
+                            paymentTiming: session.paymentTiming,
+                            totalAmountVnd: totalGrossAmountVnd,
+                            paidAmountVnd: totalPaidVnd,
+                            balanceDueVnd,
+                            payments: paymentsToCreate.map((p) => ({
+                                method: p.method,
+                                amountVnd: p.amountVnd,
+                            })),
+                        },
+                        ip: requestMeta.ip,
+                        userAgent: requestMeta.userAgent,
                     });
 
                     const requestId = crypto.randomUUID();

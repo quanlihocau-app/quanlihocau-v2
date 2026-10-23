@@ -6,6 +6,7 @@ import {
     Prisma,
     Role,
 } from "@/generated/prisma/client";
+import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -100,6 +101,7 @@ export async function POST(request: Request, { params }: RouteParams) {
             Role.MANAGER,
             Role.STAFF,
         ]);
+        const requestMeta = await readRequestMeta();
 
         const { invoiceId } = await params;
         const idParse = uuidSchema.safeParse(invoiceId);
@@ -329,26 +331,34 @@ export async function POST(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // Record AuditEvent (reflects negative stock if occurred)
-                        await tx.auditEvent.create({
-                            data: {
-                                lakeId: tenantContext.lakeId,
-                                entityType: "Invoice",
-                                entityId: invoice.id,
-                                action: "INVOICE_PRODUCT_LINE_ADDED",
-                                payload: JSON.stringify({
-                                    lineId: line.id,
-                                    productId: product.id,
-                                    productName: product.name,
-                                    quantity: data.quantity,
-                                    unitPrice: product.priceVnd,
-                                    lineTotalVnd,
-                                    newTotalAmountVnd,
-                                    isNegativeStock,
-                                    remainingStock,
-                                }),
-                                createdBy: tenantContext.userId,
+                        await writeStaffAudit(tx, {
+                            lakeId: tenantContext.lakeId,
+                            entityType: "Invoice",
+                            entityId: invoice.id,
+                            action: "INVOICE_PRODUCT_LINE_ADDED",
+                            createdBy: tenantContext.userId,
+                            actorName: tenantContext.userName,
+                            actorRole: tenantContext.role,
+                            before: { totalAmountVnd: txInvoice.totalAmountVnd },
+                            after: {
+                                totalAmountVnd: newTotalAmountVnd,
+                                lineName: product.name,
+                                quantity: data.quantity,
+                                lineTotalVnd,
                             },
+                            extra: {
+                                lineId: line.id,
+                                productId: product.id,
+                                productName: product.name,
+                                quantity: data.quantity,
+                                unitPrice: product.priceVnd,
+                                lineTotalVnd,
+                                newTotalAmountVnd,
+                                isNegativeStock,
+                                remainingStock,
+                            },
+                            ip: requestMeta.ip,
+                            userAgent: requestMeta.userAgent,
                         });
 
                         const responsePayload = {

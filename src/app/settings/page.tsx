@@ -274,6 +274,18 @@ export default async function SettingsPage() {
                     </Link>
                 )}
 
+                {(isOwner || isManager) && (
+                    <Link href="/settings/nhat-ky" className="menu-row">
+                        <div>
+                            <p className="text-[14px] font-semibold text-[#17201A]">Nhật ký thao tác</p>
+                            <p className="text-[12px] text-[#66716A] mt-0.5">
+                                Ai mở vé, sửa bill, đăng nhập — chỉ chủ hồ và quản lý xem
+                            </p>
+                        </div>
+                        <ChevronRight />
+                    </Link>
+                )}
+
                 {/* Máy in & Mẫu vé */}
                 <Link href="/settings/printer" className="menu-row">
                     <div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { Prisma, Role } from "@/generated/prisma/client";
+import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -151,6 +152,7 @@ export async function POST(request: Request) {
             if (inv) targetInvoiceId = inv.id;
         }
 
+        const requestMeta = await readRequestMeta();
         const result = await prisma.$transaction(async (tx) => {
             const created = await tx.fishBuyback.create({
                 data: {
@@ -162,6 +164,8 @@ export async function POST(request: Request) {
                 },
             });
 
+            let invoiceBeforeTotal: number | null = null;
+            let invoiceAfterTotal: number | null = null;
             if (targetInvoiceId) {
                 // Deduct fish buyback from the customer's invoice with negative totalVnd
                 await tx.invoiceLine.create({
@@ -181,29 +185,40 @@ export async function POST(request: Request) {
                     select: { totalVnd: true },
                 });
                 const updatedTotalAmount = invLines.reduce((s, l) => s + l.totalVnd, 0);
+                invoiceAfterTotal = updatedTotalAmount;
+                invoiceBeforeTotal = updatedTotalAmount + totalVnd;
                 await tx.invoice.update({
                     where: { id: targetInvoiceId },
                     data: { totalAmountVnd: updatedTotalAmount },
                 });
             }
 
-            await tx.auditEvent.create({
-                data: {
-                    lakeId: tenantContext.lakeId,
-                    entityType: "FishBuyback",
-                    entityId: created.id,
-                    action: "FISH_BUYBACK_CREATED",
-                    payload: JSON.stringify({
-                        fishTypeId: fishType.id,
-                        fishTypeName: fishType.name,
-                        weight: data.weight,
-                        pricePerKg: fishType.pricePerKg,
-                        totalVnd,
-                        invoiceId: targetInvoiceId,
-                        sessionId: data.sessionId || null,
-                    }),
-                    createdBy: tenantContext.userId,
+            await writeStaffAudit(tx, {
+                lakeId: tenantContext.lakeId,
+                entityType: "FishBuyback",
+                entityId: created.id,
+                action: "FISH_BUYBACK_CREATED",
+                createdBy: tenantContext.userId,
+                actorName: tenantContext.userName,
+                actorRole: tenantContext.role,
+                before: invoiceBeforeTotal === null ? null : { invoiceTotalVnd: invoiceBeforeTotal },
+                after: {
+                    weight: data.weight,
+                    totalVnd,
+                    fishTypeName: fishType.name,
+                    ...(invoiceAfterTotal === null ? {} : { invoiceTotalVnd: invoiceAfterTotal }),
                 },
+                extra: {
+                    fishTypeId: fishType.id,
+                    fishTypeName: fishType.name,
+                    weight: data.weight,
+                    pricePerKg: fishType.pricePerKg,
+                    totalVnd,
+                    invoiceId: targetInvoiceId,
+                    sessionId: data.sessionId || null,
+                },
+                ip: requestMeta.ip,
+                userAgent: requestMeta.userAgent,
             });
 
             return created;

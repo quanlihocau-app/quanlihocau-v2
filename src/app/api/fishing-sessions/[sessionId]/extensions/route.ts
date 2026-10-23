@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { InvoiceStatus, Role, SessionStatus } from "@/generated/prisma/client";
+import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -70,6 +71,7 @@ function handleExistingExtensionKey(
 export async function POST(request: Request, { params }: RouteParams) {
     try {
         const tenantContext = await requireTenantContext(ALLOWED_ROLES);
+        const requestMeta = await readRequestMeta();
         const { sessionId } = await params;
 
         const idempotencyKeyHeader =
@@ -254,28 +256,39 @@ export async function POST(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // 8. Create AuditEvent
-                        await tx.auditEvent.create({
-                            data: {
-                                lakeId: tenantContext.lakeId,
-                                entityType: "FishingSession",
-                                entityId: session.id,
-                                action: "FISHING_SESSION_EXTENDED",
-                                payload: JSON.stringify({
-                                    packageId: pkg.id,
-                                    packageName: pkg.name,
-                                    addedMinutes: pkg.durationMinutes,
-                                    priceVnd: pkg.priceVnd,
-                                    previousPlannedEndAt:
-                                        session.plannedEndAt.toISOString(),
-                                    newPlannedEndAt:
-                                        newPlannedEndAt.toISOString(),
-                                    invoiceId: invoice.id,
-                                    invoiceLineId: line.id,
-                                    newTotalAmountVnd,
-                                }),
-                                createdBy: tenantContext.userId,
+                        // 8. Create AuditEvent. priceVnd and packageName stay at the top level:
+                        // closing a session rebuilds a missing invoice from those fields.
+                        await writeStaffAudit(tx, {
+                            lakeId: tenantContext.lakeId,
+                            entityType: "FishingSession",
+                            entityId: session.id,
+                            action: "FISHING_SESSION_EXTENDED",
+                            createdBy: tenantContext.userId,
+                            actorName: tenantContext.userName,
+                            actorRole: tenantContext.role,
+                            before: {
+                                plannedEndAt: baseTime.toISOString(),
+                                ...(typeof invoice.totalAmountVnd === "number"
+                                    ? { invoiceTotalVnd: invoice.totalAmountVnd }
+                                    : {}),
                             },
+                            after: {
+                                plannedEndAt: newPlannedEndAt.toISOString(),
+                                invoiceTotalVnd: newTotalAmountVnd,
+                            },
+                            extra: {
+                                packageId: pkg.id,
+                                packageName: pkg.name,
+                                addedMinutes: pkg.durationMinutes,
+                                priceVnd: pkg.priceVnd,
+                                previousPlannedEndAt: baseTime.toISOString(),
+                                newPlannedEndAt: newPlannedEndAt.toISOString(),
+                                invoiceId: invoice.id,
+                                invoiceLineId: line.id,
+                                newTotalAmountVnd,
+                            },
+                            ip: requestMeta.ip,
+                            userAgent: requestMeta.userAgent,
                         });
 
                         const responsePayload = {

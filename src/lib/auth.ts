@@ -14,6 +14,7 @@ import {
     rateLimitUnavailableMessage,
     recordAuthFailure,
 } from "@/lib/auth-rate-limit";
+import { recordLoginAudit, type LoginMembership } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { seedSampleLakeData } from "@/lib/onboarding/seed-sample-lake";
 import { sessionSecret, verifySignedSession } from "@/lib/session-signature";
@@ -53,6 +54,50 @@ declare module "next-auth/jwt" {
     }
 }
 
+const credentialMembershipInclude = {
+    memberships: {
+        where: { deletedAt: null },
+        select: { lakeId: true, role: true },
+        orderBy: { createdAt: "asc" as const },
+        take: 3,
+    },
+};
+
+async function findCredentialUser(identifier: string) {
+    let user = await prisma.user.findUnique({
+        where: { email: identifier },
+        include: credentialMembershipInclude,
+    });
+    if (!user && !identifier.includes("@")) {
+        user = await prisma.user.findUnique({
+            where: { email: `${identifier}@hocau.com` },
+            include: credentialMembershipInclude,
+        });
+        if (!user) {
+            user = await prisma.user.findUnique({
+                where: { email: `${identifier}@hocau.vn` },
+                include: credentialMembershipInclude,
+            });
+        }
+        if (!user) {
+            user = await prisma.user.findFirst({
+                where: {
+                    email: {
+                        startsWith: `${identifier}@`,
+                        mode: "insensitive",
+                    },
+                },
+                include: credentialMembershipInclude,
+            });
+        }
+    }
+    return user;
+}
+
+function membershipsOf(user: { memberships?: LoginMembership[] } | null): LoginMembership[] {
+    return user?.memberships ?? [];
+}
+
 const loginSchema = z.object({
     email: z.string().trim().min(1, { message: 'Vui lòng nhập email hoặc tên đăng nhập' }),
     password: z.string().min(4, { message: 'Mật khẩu phải có ít nhất 4 ký tự' }),
@@ -87,15 +132,18 @@ export const authOptions: NextAuthOptions = {
 
             const dbUser = await prisma.user.findUnique({
                 where: { email },
-                select: {
-                    id: true,
-                    isLocked: true,
-                    systemRole: true,
-                    memberships: {
-                        where: { deletedAt: null },
-                        select: { role: true },
+                    select: {
+                        id: true,
+                        name: true,
+                        isLocked: true,
+                        systemRole: true,
+                        memberships: {
+                            where: { deletedAt: null },
+                            select: { role: true, lakeId: true },
+                            orderBy: { createdAt: "asc" },
+                            take: 3,
+                        },
                     },
-                },
             });
 
             console.log("[auth:signIn] Found existing dbUser:", dbUser);
@@ -104,6 +152,14 @@ export const authOptions: NextAuthOptions = {
             if (dbUser) {
                 if (dbUser.isLocked) {
                     console.warn("[auth:signIn] Denied: User is locked:", email);
+                    await recordLoginAudit({
+                        success: false,
+                        userId: dbUser.id,
+                        name: dbUser.name,
+                        account: email,
+                        reason: "locked",
+                        memberships: dbUser.memberships,
+                    });
                     return false;
                 }
 
@@ -112,6 +168,14 @@ export const authOptions: NextAuthOptions = {
 
                 if (!isSuperAdmin && !hasOwnerMembership && (dbUser.memberships?.length ?? 0) > 0) {
                     console.warn("[auth:signIn] Denied: Staff account must sign in with credentials, not Google:", email);
+                    await recordLoginAudit({
+                        success: false,
+                        userId: dbUser.id,
+                        name: dbUser.name,
+                        account: email,
+                        reason: "staff_google_blocked",
+                        memberships: dbUser.memberships,
+                    });
                     return "/login?error=StaffMustUseCredentials";
                 }
             }
@@ -122,6 +186,7 @@ export const authOptions: NextAuthOptions = {
                 const ownerName = (user.name?.trim() || email.split("@")[0] || "Chủ hồ").slice(0, 100);
                 const lakeName = `Hồ câu của ${ownerName}`;
 
+                let createdLake: { lakeId: string; ownerId: string } | null = null;
                 try {
                     const result = await prisma.$transaction(
                         async (tx) => {
@@ -160,6 +225,7 @@ export const authOptions: NextAuthOptions = {
                         }
                     );
 
+                    createdLake = result ?? null;
                     console.log("[auth:signIn] Created new user, lake, and org for:", email);
 
                     // Khởi tạo bộ dữ liệu mẫu sau khi transaction người dùng và hồ đã commit thành công
@@ -177,14 +243,35 @@ export const authOptions: NextAuthOptions = {
 
                 const createdUser = await prisma.user.findUnique({
                     where: { email },
-                    select: { isLocked: true },
+                    select: { id: true, name: true, isLocked: true },
                 });
                 console.log("[auth:signIn] dbUser after transaction:", createdUser);
-                return Boolean(createdUser && !createdUser.isLocked);
+                const createdOk = Boolean(createdUser && !createdUser.isLocked);
+                if (createdOk && createdUser) {
+                    await recordLoginAudit({
+                        success: true,
+                        userId: createdUser.id,
+                        name: createdUser.name,
+                        account: email,
+                        reason: "google",
+                        memberships: createdLake ? [{ lakeId: createdLake.lakeId, role: "OWNER" }] : [],
+                    });
+                }
+                return createdOk;
             }
 
             const allowed = Boolean(dbUser && !dbUser.isLocked);
             console.log("[auth:signIn] Final sign-in allowed:", allowed, "isLocked:", dbUser?.isLocked);
+            if (allowed) {
+                await recordLoginAudit({
+                    success: true,
+                    userId: dbUser.id,
+                    name: dbUser.name,
+                    account: email,
+                    reason: "google",
+                    memberships: dbUser.memberships,
+                });
+            }
             return allowed;
         },
         async jwt({ token, user }) {
@@ -282,29 +369,7 @@ export const authOptions: NextAuthOptions = {
 
                 let user;
                 try {
-                    user = await prisma.user.findUnique({
-                        where: { email: identifier },
-                    });
-                    if (!user && !identifier.includes("@")) {
-                        user = await prisma.user.findUnique({
-                            where: { email: `${identifier}@hocau.com` },
-                        });
-                        if (!user) {
-                            user = await prisma.user.findUnique({
-                                where: { email: `${identifier}@hocau.vn` },
-                            });
-                        }
-                        if (!user) {
-                            user = await prisma.user.findFirst({
-                                where: {
-                                    email: {
-                                        startsWith: `${identifier}@`,
-                                        mode: "insensitive",
-                                    },
-                                },
-                            });
-                        }
-                    }
+                    user = await findCredentialUser(identifier);
                 } catch (dbErr: unknown) {
                     console.error("[auth] Database query error during authorize:", dbErr);
                     const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
@@ -332,10 +397,26 @@ export const authOptions: NextAuthOptions = {
                 }
 
                 if (user.isLocked) {
+                    await recordLoginAudit({
+                        success: false,
+                        userId: user.id,
+                        name: user.name,
+                        account: identifier,
+                        reason: "locked",
+                        memberships: membershipsOf(user),
+                    });
                     throw new Error("Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên.");
                 }
 
                 if (!user.passwordHash) {
+                    await recordLoginAudit({
+                        success: false,
+                        userId: user.id,
+                        name: user.name,
+                        account: identifier,
+                        reason: "no_password",
+                        memberships: membershipsOf(user),
+                    });
                     throw new Error("Tài khoản chưa được tạo mật khẩu. Vui lòng liên hệ quản trị viên hồ để được hỗ trợ.");
                 }
 
@@ -352,6 +433,14 @@ export const authOptions: NextAuthOptions = {
                             throw new Error(rateLimitUnavailableMessage());
                         }
                     }
+                    await recordLoginAudit({
+                        success: false,
+                        userId: user.id,
+                        name: user.name,
+                        account: identifier,
+                        reason: "bad_password",
+                        memberships: membershipsOf(user),
+                    });
                     return null;
                 }
 
