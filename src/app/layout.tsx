@@ -10,8 +10,8 @@ import "./globals.css";
 export const metadata: Metadata = {
     metadataBase: new URL("https://quanlihocau.com"),
     title: {
-        default: "Quản Lí Hồ Câu — Hồ đông vẫn nhàn, tiền hàng vẫn rõ",
-        template: "%s | Quản Lí Hồ Câu",
+        default: "Quản Lý Hồ Câu — Hồ đông vẫn nhàn, tiền hàng vẫn rõ",
+        template: "%s | Quản Lý Hồ Câu",
     },
     description:
         "Phần mềm quản lý hồ câu & App cho chủ hồ câu trên điện thoại: quản lý nhân viên từ xa, vé câu, hàng hóa, thanh toán, báo cáo và hạn chế thất thoát. Tư vấn miễn phí: 0855 550 813.",
@@ -28,9 +28,9 @@ export const metadata: Metadata = {
         "đồng hồ phiên câu",
         "báo cáo ca hồ câu",
     ],
-    authors: [{ name: "Quản Lí Hồ Câu", url: "https://quanlihocau.com" }],
-    creator: "Quản Lí Hồ Câu",
-    publisher: "Quản Lí Hồ Câu",
+    authors: [{ name: "Quản Lý Hồ Câu", url: "https://quanlihocau.com" }],
+    creator: "Quản Lý Hồ Câu",
+    publisher: "Quản Lý Hồ Câu",
     robots: {
         index: true,
         follow: true,
@@ -49,8 +49,8 @@ export const metadata: Metadata = {
         type: "website",
         locale: "vi_VN",
         url: "https://quanlihocau.com",
-        siteName: "Quản Lí Hồ Câu",
-        title: "Quản Lí Hồ Câu — Phần Mềm & App Cho Chủ Hồ Câu Trên Điện Thoại",
+        siteName: "Quản Lý Hồ Câu",
+        title: "Quản Lý Hồ Câu — Phần Mềm & App Cho Chủ Hồ Câu Trên Điện Thoại",
         description:
             "Phần mềm quản lý hồ câu chuyên nghiệp: tính tiền phiên câu theo giờ, tự động tính phụ thu lố giờ, bán mồi nước, thu mua cá, kiểm soát nhân viên và báo cáo doanh thu từ xa.",
         images: [
@@ -58,19 +58,19 @@ export const metadata: Metadata = {
                 url: "https://quanlihocau.com/opengraph-image",
                 width: 1200,
                 height: 630,
-                alt: "Quản Lí Hồ Câu - Phần mềm quản lý hồ câu chuyên nghiệp",
+                alt: "Quản Lý Hồ Câu - Phần mềm quản lý hồ câu chuyên nghiệp",
             },
             {
                 url: "https://quanlihocau.com/icons/icon-512x512.png",
                 width: 512,
                 height: 512,
-                alt: "Quản Lí Hồ Câu App Icon",
+                alt: "Quản Lý Hồ Câu App Icon",
             },
         ],
     },
     twitter: {
         card: "summary_large_image",
-        title: "Quản Lí Hồ Câu — Phần Mềm & App Cho Chủ Hồ Câu Trên Điện Thoại",
+        title: "Quản Lý Hồ Câu — Phần Mềm & App Cho Chủ Hồ Câu Trên Điện Thoại",
         description:
             "Hồ câu vận hành gọn. Khách vui, chủ yên tâm. Quản lý phiên câu, ô câu, hóa đơn, kho, chi phí và chốt ca trên điện thoại.",
         images: ["https://quanlihocau.com/opengraph-image"],
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
     appleWebApp: {
         capable: true,
         statusBarStyle: "black-translucent",
-        title: "Hồ Câu POS",
+        title: "QuanLiHoCau",
     },
     formatDetection: {
         telephone: false,
@@ -119,8 +119,8 @@ const jsonLdSchema = {
         {
             "@type": "SoftwareApplication",
             "@id": "https://quanlihocau.com/#software",
-            "name": "Quản Lí Hồ Câu",
-            "alternateName": ["App Cho Chủ Hồ", "Ứng dụng Quản Lí Hồ Câu"],
+            "name": "Quản Lý Hồ Câu",
+            "alternateName": ["App Cho Chủ Hồ", "Ứng dụng Quản Lý Hồ Câu"],
             "operatingSystem": "All",
             "applicationCategory": "BusinessApplication",
             "applicationSubCategory": "Fishing Pond POS & Management System",
@@ -170,7 +170,7 @@ const jsonLdSchema = {
         {
             "@type": "Organization",
             "@id": "https://quanlihocau.com/#organization",
-            "name": "Quản Lí Hồ Câu",
+            "name": "Quản Lý Hồ Câu",
             "url": "https://quanlihocau.com",
             "logo": "https://quanlihocau.com/icons/icon-512x512.png",
             "telephone": "+84855550813",
@@ -198,7 +198,7 @@ export default function RootLayout({
                 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-                <meta name="apple-mobile-web-app-title" content="Hồ Câu POS" />
+                <meta name="apple-mobile-web-app-title" content="QuanLiHoCau" />
                 <meta name="mobile-web-app-capable" content="yes" />
                 <meta
                     name="google-site-verification"

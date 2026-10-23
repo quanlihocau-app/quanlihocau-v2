@@ -4,7 +4,7 @@ import Image from "next/image";
 import { BANK_CONFIG, PLAN_PRICING, planCharge } from "@/lib/vietqr";
 
 export const metadata: Metadata = {
-    title: "Bảng Giá Thuê Bao Phần Mềm Quản Lí Hồ Câu — Minh Bạch, Không Ẩn Phí",
+    title: "Bảng Giá Thuê Bao Phần Mềm Quản Lý Hồ Câu — Minh Bạch, Không Ẩn Phí",
     description:
         "Bảng giá phần mềm quản lý hồ câu quanlihocau.com: Gói Bạc 129.000đ/tháng (tối đa 30 ô, chủ hồ và 2 nhân sự), Gói Vàng 199.000đ/tháng (không giới hạn). Đóng năm bằng 10 tháng. Tài khoản mới dùng thử 30 ngày.",
     keywords: [
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
         canonical: "https://quanlihocau.com/bang-gia",
     },
     openGraph: {
-        title: "Bảng Giá Thuê Bao Phần Mềm Quản Lí Hồ Câu — Quản Lí Hồ Câu",
+        title: "Bảng Giá Thuê Bao Phần Mềm Quản Lý Hồ Câu — Quản Lý Hồ Câu",
         description:
             "Gói Bạc 129.000đ/tháng, Gói Vàng 199.000đ/tháng. Đóng năm bằng giá 10 tháng. Tài khoản mới dùng thử 30 ngày.",
         url: "https://quanlihocau.com/bang-gia",
@@ -55,12 +55,12 @@ const pricingJsonLd = {
         },
         {
             "@type": "Product",
-            "name": "Phần mềm Quản Lí Hồ Câu",
+            "name": "Phần mềm Quản Lý Hồ Câu",
             "description":
                 "Phần mềm quản lý hồ câu dịch vụ toàn diện trên điện thoại và máy tính: mở vé, đếm giờ, phụ thu quá giờ, bán lẻ đồ câu, thu mua cá, quản lý kho và đối soát ca.",
             "brand": {
                 "@type": "Brand",
-                "name": "Quản Lí Hồ Câu",
+                "name": "Quản Lý Hồ Câu",
             },
             "offers": [
                 {
@@ -106,10 +106,10 @@ export default function PublicPricingPage() {
                     <Link href="/" className="flex items-center gap-2 text-white font-bold text-lg hover:opacity-90 transition-opacity">
                         <Image width={32} height={32}
                             src="/icons/icon-192x192.png"
-                            alt="Logo Quản Lí Hồ Câu"
+                            alt="Logo Quản Lý Hồ Câu"
                             className="h-8 w-8 rounded-lg border border-emerald-500/40"
                         />
-                        <span>Quản Lí Hồ Câu</span>
+                        <span>Quản Lý Hồ Câu</span>
                     </Link>
 
                     <div className="flex items-center gap-3">
@@ -136,7 +136,7 @@ export default function PublicPricingPage() {
                         Bảng Giá Thuê Bao 2026
                     </span>
                     <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
-                        Bảng Giá Phần Mềm Quản Lí Hồ Câu
+                        Bảng Giá Phần Mềm Quản Lý Hồ Câu
                     </h1>
                     <p className="text-sm sm:text-base text-emerald-200/80 leading-relaxed">
                         Đầu tư nhỏ, yên tâm vận hành trọn vẹn hồ câu. Chi phí cố định theo chu kỳ 30 ngày,
@@ -444,7 +444,7 @@ export default function PublicPricingPage() {
 
             {/* Footer */}
             <footer className="mt-16 border-t border-emerald-900/60 bg-[#04160D] py-8 text-center text-xs text-emerald-300/60 space-y-2">
-                <p>© 2026 Quản Lí Hồ Câu — Giải pháp vận hành thông minh cho các hồ câu tại Việt Nam.</p>
+                <p>© 2026 Quản Lý Hồ Câu — Giải pháp vận hành thông minh cho các hồ câu tại Việt Nam.</p>
                 <div className="flex items-center justify-center gap-4 text-[11px]">
                     <Link href="/" className="hover:text-emerald-200">Trang chủ</Link>
                     <span>•</span>

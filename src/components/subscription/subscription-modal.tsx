@@ -177,7 +177,7 @@ function SubscriptionModalContent({
                         <p className="text-xs text-[#766F67] mt-0.5">
                             {step === "SELECT_PLAN" && "Lựa chọn gói dịch vụ phù hợp với quy mô hồ của bạn"}
                             {step === "QR_PAYMENT" && "Chuyển đúng số tiền và đúng nội dung. Gói được kích hoạt khi khoản chuyển được xác nhận."}
-                            {step === "SUCCESS" && "Cảm ơn bạn đã đồng hành cùng Quản Lí Hồ Câu"}
+                            {step === "SUCCESS" && "Cảm ơn bạn đã đồng hành cùng Quản Lý Hồ Câu"}
                         </p>
                     </div>
                     <button

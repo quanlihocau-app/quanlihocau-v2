@@ -1,6 +1,6 @@
 # WORKLOG — TIẾN ĐỘ & NHẬT KÝ KỸ THUẬT QUANLIHOCAU.COM
 
-> Dự án: SaaS Quản Lí Hồ Câu (quanlihocau.com)  
+> Dự án: SaaS Quản Lý Hồ Câu (quanlihocau.com)  
 > Nhánh công việc: `feature/saas-hardening-seo-ux`  
 > Người thực hiện: Kỹ sư trưởng  
 > Tài liệu đối chiếu: `docs/PRD.md`, `AGENTS.md`  

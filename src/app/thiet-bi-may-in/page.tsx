@@ -2,22 +2,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-    title: "Máy in & Thiết bị đã kiểm chứng | Quản Lí Hồ Câu",
+    title: "Máy in & Thiết bị đã kiểm chứng | Quản Lý Hồ Câu",
     description: "Danh sách máy in nhiệt K80/K58, cổng kết nối LAN/Wi-Fi/Bluetooth và hướng dẫn kết nối in bill tại quầy hồ câu dịch vụ quanlihocau.com.",
     alternates: {
         canonical: "https://quanlihocau.com/thiet-bi-may-in",
     },
     openGraph: {
-        title: "Máy in & Thiết bị đã kiểm chứng — Quản Lí Hồ Câu",
+        title: "Máy in & Thiết bị đã kiểm chứng — Quản Lý Hồ Câu",
         description: "Tương thích máy in bill K80, K58 qua LAN, Wi-Fi và Bluetooth trên Android, iOS và Máy tính cho hồ câu.",
         url: "https://quanlihocau.com/thiet-bi-may-in",
-        siteName: "Quản Lí Hồ Câu",
+        siteName: "Quản Lý Hồ Câu",
         images: [
             {
                 url: "/icons/icon-512x512.png",
                 width: 512,
                 height: 512,
-                alt: "Thiết bị máy in kiểm chứng Quản Lí Hồ Câu",
+                alt: "Thiết bị máy in kiểm chứng Quản Lý Hồ Câu",
             },
         ],
         locale: "vi_VN",

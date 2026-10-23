@@ -93,7 +93,7 @@ function LoginForm() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Quản Lí Hồ Câu</h1>
+          <h1 className="text-xl font-bold text-white tracking-tight">Quản Lý Hồ Câu</h1>
           <p className="mt-0.5 text-xs text-emerald-300/70">Đăng nhập quầy thu ngân &amp; quản trị</p>
         </div>
 

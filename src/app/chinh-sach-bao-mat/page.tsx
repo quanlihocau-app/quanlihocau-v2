@@ -2,22 +2,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-    title: "Chính sách bảo mật dữ liệu | Quản Lí Hồ Câu",
+    title: "Chính sách bảo mật dữ liệu | Quản Lý Hồ Câu",
     description: "Chính sách bảo mật thông tin và dữ liệu kinh doanh hồ câu tại quanlihocau.com. Cam kết cách ly dữ liệu từng hồ, mã hóa mật khẩu và không chia sẻ cho bên thứ ba.",
     alternates: {
         canonical: "https://quanlihocau.com/chinh-sach-bao-mat",
     },
     openGraph: {
-        title: "Chính sách bảo mật dữ liệu — Quản Lí Hồ Câu",
+        title: "Chính sách bảo mật dữ liệu — Quản Lý Hồ Câu",
         description: "Cam kết bảo vệ dữ liệu kinh doanh, vé câu và thông tin cá nhân của chủ hồ tại quanlihocau.com.",
         url: "https://quanlihocau.com/chinh-sach-bao-mat",
-        siteName: "Quản Lí Hồ Câu",
+        siteName: "Quản Lý Hồ Câu",
         images: [
             {
                 url: "/icons/icon-512x512.png",
                 width: 512,
                 height: 512,
-                alt: "Chính sách bảo mật Quản Lí Hồ Câu",
+                alt: "Chính sách bảo mật Quản Lý Hồ Câu",
             },
         ],
         locale: "vi_VN",

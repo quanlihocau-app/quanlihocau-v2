@@ -2,22 +2,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-    title: "Điều khoản dịch vụ | Quản Lí Hồ Câu",
+    title: "Điều khoản dịch vụ | Quản Lý Hồ Câu",
     description: "Điều khoản sử dụng dịch vụ phần mềm quản lý hồ câu quanlihocau.com. Minh bạch chu kỳ thuê bao, thanh toán VietQR và quyền lợi bảo vệ dữ liệu hồ câu.",
     alternates: {
         canonical: "https://quanlihocau.com/dieu-khoan",
     },
     openGraph: {
-        title: "Điều khoản dịch vụ — Quản Lí Hồ Câu",
+        title: "Điều khoản dịch vụ — Quản Lý Hồ Câu",
         description: "Quy định sử dụng dịch vụ phần mềm quản lý hồ câu quanlihocau.com.",
         url: "https://quanlihocau.com/dieu-khoan",
-        siteName: "Quản Lí Hồ Câu",
+        siteName: "Quản Lý Hồ Câu",
         images: [
             {
                 url: "/icons/icon-512x512.png",
                 width: 512,
                 height: 512,
-                alt: "Điều khoản dịch vụ Quản Lí Hồ Câu",
+                alt: "Điều khoản dịch vụ Quản Lý Hồ Câu",
             },
         ],
         locale: "vi_VN",

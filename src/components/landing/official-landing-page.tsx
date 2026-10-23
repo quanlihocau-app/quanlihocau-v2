@@ -38,7 +38,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                     <Link
                         href="/"
                         className="flex items-center gap-2.5 group focus:outline-none rounded-xl"
-                        aria-label="Quản Lí Hồ Câu - Trang chủ"
+                        aria-label="Quản Lý Hồ Câu - Trang chủ"
                     >
                         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#246B38] text-[#4ADE80] border border-[#2F7E47] shadow-xs group-hover:scale-105 transition-transform">
                             {/* Curved Fishing Hook Icon */}
@@ -51,7 +51,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                             </svg>
                         </div>
                         <span className="text-base sm:text-lg font-black tracking-tight text-white">
-                            Quản Lí Hồ Câu
+                            Quản Lý Hồ Câu
                         </span>
                     </Link>
 
@@ -575,7 +575,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                             KiotViet / Sapo chung
                                         </th>
                                         <th className="p-4 sm:p-5 text-xs sm:text-sm font-black text-[#52D879] text-center w-[23%] bg-[#103E26]">
-                                            ⭐ Quản Lí Hồ Câu
+                                            ⭐ Quản Lý Hồ Câu
                                         </th>
                                     </tr>
                                 </thead>
@@ -756,10 +756,10 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                     THÔNG TIN TỔNG QUAN
                                 </span>
                                 <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                                    Về Quản Lí Hồ Câu — Ứng dụng chuyên biệt cho chủ hồ tại Việt Nam
+                                    Về Quản Lý Hồ Câu — Ứng dụng chuyên biệt cho chủ hồ tại Việt Nam
                                 </h2>
                                 <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
-                                    <strong>Quản Lí Hồ Câu</strong> (<a href="https://quanlihocau.com" className="text-[#52D879] underline hover:text-white font-semibold">quanlihocau.com</a>) là phần mềm dịch vụ và ứng dụng di động (App cho chủ hồ) tiên phong được xây dựng chuyên biệt hóa 100% cho bài toán vận hành hồ câu dịch vụ tại Việt Nam.
+                                    <strong>Quản Lý Hồ Câu</strong> (<a href="https://quanlihocau.com" className="text-[#52D879] underline hover:text-white font-semibold">quanlihocau.com</a>) là phần mềm dịch vụ và ứng dụng di động (App cho chủ hồ) tiên phong được xây dựng chuyên biệt hóa 100% cho bài toán vận hành hồ câu dịch vụ tại Việt Nam.
                                 </p>
                             </div>
 
@@ -825,7 +825,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                             {[
                                 {
                                     q: "Phần mềm quản lý hồ câu là gì và gồm những tính năng gì?",
-                                    a: "Quản Lí Hồ Câu (quanlihocau.com) là phần mềm chuyên biệt hoạt động trên điện thoại và máy tính dành cho các hồ câu dịch vụ. Phần mềm gồm các tính năng cốt lõi: mở vé theo sơ đồ ô câu, đồng hồ đếm ngược phiên câu, tự tính phụ thu lố giờ, bán mồi nước cộng vào vé, cân cá thu mua cấn trừ bill, in bill 58mm và báo cáo doanh thu từ xa cho chủ hồ.",
+                                    a: "Quản Lý Hồ Câu (quanlihocau.com) là phần mềm chuyên biệt hoạt động trên điện thoại và máy tính dành cho các hồ câu dịch vụ. Phần mềm gồm các tính năng cốt lõi: mở vé theo sơ đồ ô câu, đồng hồ đếm ngược phiên câu, tự tính phụ thu lố giờ, bán mồi nước cộng vào vé, cân cá thu mua cấn trừ bill, in bill 58mm và báo cáo doanh thu từ xa cho chủ hồ.",
                                 },
                                 {
                                     q: "App cho chủ hồ câu trên điện thoại giúp quản lý những gì từ xa?",
@@ -840,8 +840,8 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                     a: "Phần mềm được thiết kế tối ưu cho cả hồ câu đài (tính giờ, đếm giờ ca, phụ thu quá giờ), hồ câu lure và cá thịt (quản lý vé câu buổi/ngày, cân cá mua lại cấn trừ hóa đơn), hồ câu tôm và hồ câu sinh thái đa phân khu.",
                                 },
                                 {
-                                    q: "So sánh phần mềm Quản Lí Hồ Câu với Excel và KiotViet?",
-                                    a: "Excel và sổ tay dễ mất số liệu, không có đồng hồ đếm giờ và không thể theo dõi từ xa. KiotViet và Sapo thiết kế cho bán lẻ tạp hóa, thiếu hoàn toàn nghiệp vụ đếm giờ phiên câu theo ô, không tự tính phụ thu quá giờ và không có tính năng thu mua lại cá. Quản Lí Hồ Câu là giải pháp chuyên biệt bờ hồ duy nhất giải quyết trọn vẹn các bài toán này.",
+                                    q: "So sánh phần mềm Quản Lý Hồ Câu với Excel và KiotViet?",
+                                    a: "Excel và sổ tay dễ mất số liệu, không có đồng hồ đếm giờ và không thể theo dõi từ xa. KiotViet và Sapo thiết kế cho bán lẻ tạp hóa, thiếu hoàn toàn nghiệp vụ đếm giờ phiên câu theo ô, không tự tính phụ thu quá giờ và không có tính năng thu mua lại cá. Quản Lý Hồ Câu là giải pháp chuyên biệt bờ hồ duy nhất giải quyết trọn vẹn các bài toán này.",
                                 },
                                 {
                                     q: "Nhân viên lớn tuổi, ít dùng công nghệ có sử dụng được không?",
@@ -973,7 +973,7 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
             <footer className="border-t border-[#143B25] bg-[#04140D] py-10 text-white">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#86AB94]">
                     <div className="flex items-center gap-2">
-                        <span className="font-bold text-white">Quản Lí Hồ Câu</span>
+                        <span className="font-bold text-white">Quản Lý Hồ Câu</span>
                         <span>•</span>
                         <span>Hồ đông vẫn nhàn, tiền hàng vẫn rõ</span>
                     </div>

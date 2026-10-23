@@ -123,7 +123,7 @@ export function PwaInstallPrompt() {
                         {/* App Icon */}
                         <Image width={40} height={40}
                             src="/icons/icon-192x192.png"
-                            alt="Hồ Câu POS"
+                            alt="QuanLiHoCau"
                             className="h-10 w-10 shrink-0 rounded-xl shadow-md border border-emerald-400/30 object-cover"
                         />
 

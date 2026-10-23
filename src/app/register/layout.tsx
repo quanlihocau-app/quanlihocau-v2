@@ -8,7 +8,7 @@ export const metadata: Metadata = {
         canonical: "https://quanlihocau.com/register",
     },
     openGraph: {
-        title: "Đăng ký mở hồ câu mới - Dùng thử miễn phí | Quản Lí Hồ Câu",
+        title: "Đăng ký mở hồ câu mới - Dùng thử miễn phí | Quản Lý Hồ Câu",
         description: "Bắt đầu quản lý hồ câu chuyên nghiệp, miễn phí tạo tài khoản và hồ câu ban đầu.",
         url: "https://quanlihocau.com/register",
     },

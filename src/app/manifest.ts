@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: "Quản Lí Hồ Câu - POS Hồ Câu",
-        short_name: "Hồ Câu POS",
+        name: "Quản Lý Hồ Câu",
+        short_name: "QuanLiHoCau",
         description: "Phần mềm quản lý và vận hành hồ câu dịch vụ chuyên nghiệp",
         start_url: "/sessions",
         id: "/sessions",

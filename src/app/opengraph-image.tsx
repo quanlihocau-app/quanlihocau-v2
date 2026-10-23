@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Phần Mềm Quản Lí Hồ Câu — Hồ đông vẫn nhàn, tiền hàng vẫn rõ";
+export const alt = "Phần Mềm Quản Lý Hồ Câu — Hồ đông vẫn nhàn, tiền hàng vẫn rõ";
 export const size = {
     width: 1200,
     height: 630,
