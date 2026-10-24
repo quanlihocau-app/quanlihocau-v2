@@ -10,6 +10,7 @@ import { InlineAlert } from "@/components/ui/inline-alert";
 import { usePrinter } from "@/lib/printing/use-printer";
 import { PaymentReceiptData } from "@/lib/printing/types";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
+import { explainVndInputValidity, VND_INPUT_STEP } from "@/lib/vnd-amount";
 
 interface RecordPaymentButtonProps {
     invoiceId: string;
@@ -257,9 +258,13 @@ export function RecordPaymentButton({
                                 id="amountVnd"
                                 label="Số tiền thanh toán (VNĐ)"
                                 type="number"
-                                min={1000}
+                                min={1}
                                 max={remainingAmountVnd}
-                                step={1000}
+                                step={VND_INPUT_STEP}
+                                onInvalid={(event) => {
+                                    event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                                }}
+                                onInput={(event) => event.currentTarget.setCustomValidity("")}
                                 value={amountVnd}
                                 onChange={(e) => setAmountVnd(e.target.value)}
                                 disabled={loading}

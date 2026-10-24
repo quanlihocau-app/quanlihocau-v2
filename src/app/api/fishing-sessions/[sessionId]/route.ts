@@ -4,7 +4,7 @@ import { z } from "zod";
 import { InvoiceStatus, Prisma, Role, SessionStatus } from "@/generated/prisma/client";
 import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { syncInvoiceTotals } from "@/lib/invoice-totals";
-import { refundsDueByMethod } from "@/lib/money";
+import { refundsDueByMethod, settlementFigures } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -535,11 +535,27 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                             l.name.toLowerCase().includes("quá giờ")),
                                 )
                                 .reduce((s, l) => s + l.totalVnd, 0);
-                            const fishTotal = Math.abs(
-                                invLines
-                                    .filter((l) => l.fishBuybackId !== null || l.totalVnd < 0)
-                                    .reduce((s, l) => s + l.totalVnd, 0),
-                            );
+                            const fishIds = invLines
+                                .map((line) => line.fishBuybackId)
+                                .filter((id): id is string => Boolean(id));
+                            const linkedBuybacks = fishIds.length
+                                ? await tx.fishBuyback.findMany({
+                                      where: { id: { in: fishIds }, lakeId: tenantContext.lakeId },
+                                      select: { totalVnd: true },
+                                  })
+                                : [];
+                            const figures = settlementFigures({
+                                lines: invLines.map((line) => ({
+                                    fishBuybackId: line.fishBuybackId,
+                                    totalVnd: line.totalVnd,
+                                    name: line.name,
+                                    productId: line.productId,
+                                })),
+                                linkedBuybackVnd: linkedBuybacks.reduce((sum, row) => sum + row.totalVnd, 0),
+                                invoiceOutVnd: invPayments
+                                    .filter((payment) => payment.direction === "OUT")
+                                    .reduce((sum, payment) => sum + payment.amountVnd, 0),
+                            });
                             const settleAmount = parsed.data.settlement?.amountVnd ?? 0;
                             const priorPaidAmount = Math.max(0, pTotal - settleAmount);
                             const packagePrepaidAmount = Math.min(pkgTotal, priorPaidAmount);
@@ -563,19 +579,21 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                                 itemsTotalVnd: itemsTotal,
                                 extensionsTotalVnd: extTotal,
                                 overtimeTotalVnd: otTotal,
-                                fishBuybackTotalVnd: fishTotal,
+                                fishBuybackTotalVnd: figures.fishOffsetVnd,
                                 prepaidAmountVnd: packagePrepaidAmount,
                                 supplementaryAmountVnd: settleAmount,
-                                // gTotal already nets negative fish-buyback lines. Subtracting
-                                // fishTotal again made the close screen show half the real bill.
-                                totalAmountVnd: Math.max(0, gTotal),
-                                invoiceTotalVnd: gTotal,
+                                // Bill is the revenue figure. Fish above that bill is cash
+                                // already handed back, not a zero invoice beside a refund.
+                                totalAmountVnd: figures.billVnd,
+                                invoiceTotalVnd: figures.billVnd,
+                                billVnd: figures.billVnd,
+                                fishOffsetVnd: figures.fishOffsetVnd,
+                                cashReturnedVnd: figures.cashReturnedVnd,
+                                settlementSummary: figures.summary,
                                 paidAmountVnd: pTotal,
                                 paymentAmountVnd: settleAmount,
                                 remainingVnd: Math.max(0, gTotal - pTotal),
-                                refundAmountVnd:
-                                    parsed.data.settlement?.refundVnd ??
-                                    (pTotal > gTotal ? pTotal - gTotal : 0),
+                                refundAmountVnd: figures.refundStillDueVnd,
                                 paymentMethod: parsed.data.settlement?.paymentMethod || "CASH",
                                 paymentTime: endedAt.toISOString(),
                                 cashierName: tenantContext.userId || null,
@@ -824,7 +842,27 @@ export async function GET(_request: Request, { params }: RouteParams) {
         // Kết quả = Tổng chi phí - (Tiền tạm tính + Tiền thu cá)
         const netBalance = grossCharge - totalDeductions;
         const netDue = netBalance > 0 ? netBalance : 0;
-        const refund = netBalance < 0 ? Math.abs(netBalance) : 0;
+        const fishIds = lines
+            .map((line) => line.fishBuybackId)
+            .filter((id): id is string => Boolean(id));
+        const linkedBuybacks = fishIds.length
+            ? await prisma.fishBuyback.findMany({
+                  where: { id: { in: fishIds }, lakeId: tenantContext.lakeId },
+                  select: { totalVnd: true },
+              })
+            : [];
+        const figures = settlementFigures({
+            lines: lines.map((line) => ({
+                fishBuybackId: line.fishBuybackId,
+                totalVnd: line.totalVnd,
+                name: line.name,
+                productId: line.productId,
+            })),
+            linkedBuybackVnd: linkedBuybacks.reduce((sum, row) => sum + row.totalVnd, 0),
+            invoiceOutVnd: payments
+                .filter((payment) => payment.direction === "OUT")
+                .reduce((sum, payment) => sum + payment.amountVnd, 0),
+        });
 
         return NextResponse.json({
             session: {
@@ -884,7 +922,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
                 totalDeductionsVnd: totalDeductions,
                 netBalanceVnd: netBalance,
                 netDueVnd: netDue,
-                refundVnd: refund,
+                refundVnd: figures.refundStillDueVnd,
+                billVnd: figures.billVnd,
+                fishOffsetVnd: figures.fishOffsetVnd,
+                cashReturnedVnd: figures.cashReturnedVnd,
+                settlementSummary: figures.summary,
             },
             lakeName: tenantContext.lakeName,
         });

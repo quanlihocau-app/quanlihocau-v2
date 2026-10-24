@@ -37,6 +37,7 @@ export async function GET(request: Request) {
         if (f.scope === "manual") conditions.push({ OR: [
             { expenseId: { not: null } },
             { invoice: { fishingSessionId: null, lines: { some: { name: { startsWith: "Thu khác: " } } } } },
+            { invoiceId: null, expenseId: null, direction: "OUT" },
         ] });
         if (f.q) conditions.push({ OR: [
             { expense: { description: { contains: f.q, mode: "insensitive" } } },
@@ -69,7 +70,11 @@ export async function GET(request: Request) {
         if (!result) return NextResponse.json({ error: "Tối đa 10.000 giao dịch mỗi file. Hãy thu hẹp khoảng ngày." }, { status: 400 });
         const items = result.payments.map(p => ({ id: p.id, createdAt: p.createdAt.toISOString(),
             amountVnd: p.amountVnd, direction: p.direction, method: p.method,
-            description: p.expense?.description ?? p.invoice?.lines.map(l => l.name).join("; ") ?? "Giao dịch khác",
+            description: p.expense?.description
+                ?? p.invoice?.lines.map(l => l.name).join("; ")
+                ?? (p.direction === "OUT" && !p.invoiceId && !p.expenseId
+                    ? "Trả lại khách (thu cá vượt tiền bill)"
+                    : "Giao dịch khác"),
             invoiceId: p.invoiceId, reversalOfId: p.reversalOfId,
             expenseId: p.expenseId,
             recordedBy: result.creators.get(p.expenseId ?? p.invoiceId ?? "") ?? "Hệ thống" }));

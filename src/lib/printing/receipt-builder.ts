@@ -176,7 +176,10 @@ export function buildPaymentReceiptEscPos(
         builder.twoCols("Tru tien ca thu lai:", `-${formatVnd(fishTotal)}`);
     }
     builder.divider("-");
-    builder.bold(true).twoCols("TONG HOA DON:", formatVnd(data.invoiceTotalVnd ?? data.totalAmountVnd)).bold(false);
+    builder.bold(true).twoCols("TONG HOA DON:", formatVnd(data.billVnd ?? data.invoiceTotalVnd ?? data.totalAmountVnd)).bold(false);
+    if (data.settlementSummary) {
+        builder.text(data.settlementSummary);
+    }
     if (prepaidTotal > 0) {
         builder.twoCols("Ve da thanh toan:", formatVnd(prepaidTotal));
     }

@@ -278,23 +278,23 @@ export default async function SessionsPage() {
                 {/* ── Main Content Area ───────────────────────────────────── */}
                 <main className="flex-1 px-4 sm:px-5 py-4 overflow-y-auto has-bottom-nav">
                     {/* ── Section header: Tách biệt & Nổi bật theo yêu cầu Hình 2 ─── */}
-                    <div className="w-full mb-4 rounded-2xl border border-emerald-200/90 bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-4 py-3.5 shadow-2xs font-serif">
-                        <div className="flex items-center justify-between gap-3 w-full">
-                            <div className="flex items-center gap-2">
-                                <div className="h-4.5 w-1.5 rounded-full bg-[#16A34A] shrink-0" />
-                                <h1 className="text-xs sm:text-[13px] font-bold uppercase tracking-normal text-[#0F172A] font-serif leading-none whitespace-nowrap">
+                    <div className="w-full mb-4 overflow-hidden rounded-2xl border border-emerald-200/90 bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] px-3 py-3 sm:px-4 sm:py-3.5 shadow-2xs font-serif">
+                        <div className="flex w-full min-w-0 items-center justify-between gap-2 sm:gap-3">
+                            <div className="flex min-w-0 flex-1 items-center gap-2">
+                                <div className="h-4.5 w-1.5 shrink-0 rounded-full bg-[#16A34A]" />
+                                <h1 className="min-w-0 truncate text-xs font-bold uppercase tracking-normal text-[#0F172A] font-serif leading-none sm:text-[13px]">
                                     PHIÊN CÂU ĐANG HOẠT ĐỘNG
                                 </h1>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                                 <SessionAlarmButton />
-                                <span className="hidden xs:inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] border border-[#BBF7D0] shadow-2xs font-serif whitespace-nowrap">
+                                <span className="hidden items-center whitespace-nowrap rounded-full border border-[#BBF7D0] bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] shadow-2xs font-serif sm:inline-flex">
                                     {serializedSessions.length} vé · {activeHutCount} ô
                                 </span>
                                 {canOpenSession && (
                                     <Link
                                         href="/sessions/new"
-                                        className="inline-flex items-center gap-1 rounded-xl bg-[#16A34A] hover:bg-[#15803D] px-2.5 py-1 text-xs font-bold text-white shadow-xs font-serif shrink-0 active:scale-95 transition-all"
+                                        className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl bg-[#16A34A] px-2 py-1 text-[11px] font-bold text-white shadow-xs font-serif transition-all hover:bg-[#15803D] active:scale-95 sm:px-2.5 sm:text-xs"
                                     >
                                         <span>＋</span>
                                         <span>Tạo vé</span>

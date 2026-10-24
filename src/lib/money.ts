@@ -271,6 +271,59 @@ export function sessionBalancePresentation(input: {
     return { kind: "due", label: "Cần thu:", showAmount: true };
 }
 
+/**
+ * A fish buyback offsets the bill only up to the amount that brings it to 0.
+ * Anything above that leaves the drawer as cash. It is not negative revenue.
+ * 2.5 kg × 30.000đ is exactly 75.000; on a 50.000 bill that is 50.000 offset
+ * and 25.000 cash out. It is not 52.500.
+ */
+export function splitFishBuyback(billBeforeVnd: number, buybackVnd: number): { offsetVnd: number; cashOutVnd: number } {
+    const room = Math.max(0, Math.round(billBeforeVnd));
+    const buyback = Math.max(0, Math.round(buybackVnd));
+    const offsetVnd = Math.min(room, buyback);
+    return { offsetVnd, cashOutVnd: buyback - offsetVnd };
+}
+
+export function formatVndGrouped(amount: number): string {
+    return new Intl.NumberFormat("vi-VN").format(Math.round(amount)) + "đ";
+}
+
+export function closeSettlementSummary(input: { billVnd: number; fishOffsetVnd: number; cashReturnedVnd: number }): string {
+    return `Tiền bill ${formatVndGrouped(input.billVnd)}, Cấn trừ cá ${formatVndGrouped(input.fishOffsetVnd)}, Trả lại khách ${formatVndGrouped(input.cashReturnedVnd)}`;
+}
+
+/**
+ * One reading of a closed ticket: the bill (revenue), the fish that nets it,
+ * and the cash already handed back. A second refund is due only when the
+ * extra fish has not been paid out yet.
+ */
+export function settlementFigures(input: {
+    lines: Array<{ fishBuybackId?: string | null; totalVnd: number; name: string; productId?: string | null }>;
+    linkedBuybackVnd: number;
+    invoiceOutVnd: number;
+}): {
+    billVnd: number;
+    fishOffsetVnd: number;
+    cashReturnedVnd: number;
+    refundStillDueVnd: number;
+    summary: string;
+} {
+    const billVnd = summarizeRevenue([{ fishingSessionId: "session", lines: input.lines }]).totalRevenue;
+    const fishLines = fishOffsetVnd(input.lines);
+    const fishOffset = Math.min(fishLines, Math.max(0, billVnd));
+    const cashAlready = Math.max(0, input.linkedBuybackVnd - fishLines) + Math.max(0, input.invoiceOutVnd);
+    const owed = Math.max(0, input.linkedBuybackVnd - fishOffset);
+    const cashReturnedVnd = Math.max(cashAlready, owed);
+    const refundStillDueVnd = Math.max(0, owed - cashAlready);
+    return {
+        billVnd,
+        fishOffsetVnd: fishOffset,
+        cashReturnedVnd,
+        refundStillDueVnd,
+        summary: closeSettlementSummary({ billVnd, fishOffsetVnd: fishOffset, cashReturnedVnd }),
+    };
+}
+
 export function openSessionMoney(input: {
     now: Date;
     plannedEndAt: Date;

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { PaymentMethod, Prisma, Role } from "@/generated/prisma/client";
 import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { syncInvoiceTotals } from "@/lib/invoice-totals";
+import { splitFishBuyback } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -169,28 +170,42 @@ export async function POST(request: Request) {
             let invoiceBeforeTotal: number | null = null;
             let invoiceAfterTotal: number | null = null;
             let cashOutPaymentId: string | null = null;
+            let offsetVnd = 0;
+            let cashOutVnd = totalVnd;
             if (targetInvoiceId) {
-                // Linked buyback offsets the bill. It is not cash leaving the drawer.
-                await tx.invoiceLine.create({
-                    data: {
-                        invoiceId: targetInvoiceId,
-                        fishBuybackId: created.id,
-                        name: `Thu cá: ${fishType.name} (${data.weight} kg)`,
-                        unitPrice: fishType.pricePerKg,
-                        quantity: new Prisma.Decimal(data.weight),
-                        totalVnd: -totalVnd,
-                    },
+                const existingLines = await tx.invoiceLine.findMany({
+                    where: { invoiceId: targetInvoiceId },
+                    select: { totalVnd: true },
                 });
-
-                const synced = await syncInvoiceTotals(tx, targetInvoiceId, tenantContext.lakeId);
-                invoiceAfterTotal = synced?.totalAmountVnd ?? null;
-                invoiceBeforeTotal = invoiceAfterTotal === null ? null : invoiceAfterTotal + totalVnd;
-            } else {
-                // Fish not tied to a ticket is paid from the drawer.
+                const billBefore = existingLines.reduce((sum, line) => sum + line.totalVnd, 0);
+                const split = splitFishBuyback(billBefore, totalVnd);
+                offsetVnd = split.offsetVnd;
+                cashOutVnd = split.cashOutVnd;
+                invoiceBeforeTotal = billBefore;
+                if (offsetVnd > 0) {
+                    // Only the part that nets the bill to 0 is an offset. The rest is cash.
+                    await tx.invoiceLine.create({
+                        data: {
+                            invoiceId: targetInvoiceId,
+                            fishBuybackId: created.id,
+                            name: `Thu cá: ${fishType.name} (${data.weight} kg)`,
+                            unitPrice: fishType.pricePerKg,
+                            quantity: new Prisma.Decimal(data.weight),
+                            totalVnd: -offsetVnd,
+                        },
+                    });
+                    const synced = await syncInvoiceTotals(tx, targetInvoiceId, tenantContext.lakeId);
+                    invoiceAfterTotal = synced?.totalAmountVnd ?? null;
+                } else {
+                    invoiceAfterTotal = billBefore;
+                }
+            }
+            if (cashOutVnd > 0) {
+                // Cash leaving the drawer: the whole buyback, or only the part above the bill.
                 const payout = await tx.payment.create({
                     data: {
                         lakeId: tenantContext.lakeId,
-                        amountVnd: totalVnd,
+                        amountVnd: cashOutVnd,
                         method: (data.paymentMethod ?? "CASH") as PaymentMethod,
                         direction: "OUT",
                         idempotencyKey: crypto.randomUUID(),
@@ -220,10 +235,12 @@ export async function POST(request: Request) {
                     weight: data.weight,
                     pricePerKg: fishType.pricePerKg,
                     totalVnd,
+                    offsetVnd,
+                    cashOutVnd,
                     invoiceId: targetInvoiceId,
                     sessionId: data.sessionId || null,
                     cashOutPaymentId,
-                    paymentMethod: targetInvoiceId ? null : (data.paymentMethod ?? "CASH"),
+                    paymentMethod: cashOutVnd > 0 ? (data.paymentMethod ?? "CASH") : null,
                 },
                 ip: requestMeta.ip,
                 userAgent: requestMeta.userAgent,

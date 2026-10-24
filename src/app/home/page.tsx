@@ -4,6 +4,8 @@ import { getTenantContext } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { InvoiceStatus, SessionStatus } from "@/generated/prisma/client";
 import { HomeMobileView } from "@/app/home-mobile-view";
+import { startOfVnDay } from "@/lib/reports/date-utils";
+import { loadShiftReport } from "@/lib/reports/shift-report";
 
 export const metadata = {
     title: "Tổng quan hồ câu | Quản Lý Hồ Câu",
@@ -24,10 +26,9 @@ export default async function AppHomePage() {
         redirect("/login");
     }
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const todayStart = startOfVnDay(new Date());
 
-    const [activeSessionsCount, totalHutsCount, todayInvoices, recentSessions] = await Promise.all([
+    const [activeSessionsCount, totalHutsCount, todayInvoices, recentSessions, shiftReport] = await Promise.all([
         prisma.fishingSession.count({
             where: {
                 lakeId: tenantContext.lakeId,
@@ -73,12 +74,10 @@ export default async function AppHomePage() {
             orderBy: { startAt: "desc" },
             take: 3,
         }),
+        loadShiftReport(tenantContext.lakeId),
     ]);
 
-    const todayRevenue = todayInvoices.reduce(
-        (sum, inv) => sum + Number(inv.totalAmountVnd || 0),
-        0,
-    );
+    const todayRevenue = shiftReport.reconciliation.revenueVnd;
 
     return (
         <HomeMobileView

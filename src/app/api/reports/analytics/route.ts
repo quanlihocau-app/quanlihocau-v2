@@ -1,5 +1,6 @@
 import { financialScope } from "@/lib/reports/financial-scope";
 import { summarizeMoney, summarizeRevenue } from "@/lib/finance";
+import { fishingHoursFromMinutes, fishingSpan } from "@/lib/fishing-hours";
 import { isOvertimeLineName, lineInWindow } from "@/lib/money";
 import { NextRequest, NextResponse } from "next/server";
 import { getPageSession } from "@/lib/server-session";
@@ -203,10 +204,18 @@ export async function GET(request: NextRequest) {
                 include: { fishType: true },
             });
 
-            // Fishing sessions created in range
+            // Sessions that overlap the window, including ones opened earlier and still running.
             const sessionWhere: Prisma.FishingSessionWhereInput = {
-                ...scope.session,
-                createdAt: { gte: from, lte: to },
+                AND: [
+                    scope.session,
+                    {
+                        OR: [
+                            { createdAt: { gte: from, lte: to } },
+                            { status: SessionStatus.ACTIVE, startAt: { lte: to } },
+                            { endedAt: { gte: from }, startAt: { lte: to } },
+                        ],
+                    },
+                ],
             };
             if (filterCustomerId) sessionWhere.customerId = filterCustomerId;
             if (filterPackageId) sessionWhere.packageId = filterPackageId;
@@ -287,24 +296,34 @@ export async function GET(request: NextRequest) {
             let activeSessions = 0;
             let completedSessions = 0;
             let cancelledSessions = 0;
+            let createdInWindow = 0;
             let totalFishingMinutes = 0;
             let totalOvertimeMinutes = 0;
+            const now = new Date();
 
             for (const s of sessions) {
-                if (s.status === SessionStatus.ACTIVE) activeSessions++;
-                else if (s.status === SessionStatus.COMPLETED) completedSessions++;
-                else if (s.status === SessionStatus.CANCELLED) cancelledSessions++;
-
-                const endTime = s.endedAt || (s.status === SessionStatus.ACTIVE ? new Date() : s.plannedEndAt);
-                const durationMinutes = Math.max(0, Math.round((endTime.getTime() - s.startAt.getTime()) / 60000));
-                totalFishingMinutes += durationMinutes;
-
-                if (endTime.getTime() > s.plannedEndAt.getTime()) {
-                    totalOvertimeMinutes += Math.round((endTime.getTime() - s.plannedEndAt.getTime()) / 60000);
+                const createdHere = s.createdAt >= from && s.createdAt <= to;
+                if (createdHere) {
+                    createdInWindow += 1;
+                    if (s.status === SessionStatus.ACTIVE) activeSessions++;
+                    else if (s.status === SessionStatus.COMPLETED) completedSessions++;
+                    else if (s.status === SessionStatus.CANCELLED) cancelledSessions++;
                 }
+
+                const span = fishingSpan({
+                    startAt: s.startAt,
+                    endedAt: s.endedAt,
+                    plannedEndAt: s.plannedEndAt,
+                    status: s.status,
+                    now,
+                    windowFrom: from,
+                    windowTo: to,
+                });
+                totalFishingMinutes += span.minutes;
+                totalOvertimeMinutes += span.overtimeMinutes;
             }
 
-            const totalSessions = sessions.length;
+            const totalSessions = createdInWindow;
             const averageTicketValue = totalSessions > 0 ? Math.round(ticketRevenue / Math.max(1, completedSessions + activeSessions)) : 0;
 
             return {
@@ -330,8 +349,8 @@ export async function GET(request: NextRequest) {
                 activeSessions,
                 completedSessions,
                 cancelledSessions,
-                totalFishingHours: Math.round((totalFishingMinutes / 60) * 10) / 10,
-                totalOvertimeHours: Math.round((totalOvertimeMinutes / 60) * 10) / 10,
+                totalFishingHours: fishingHoursFromMinutes(totalFishingMinutes),
+                totalOvertimeHours: fishingHoursFromMinutes(totalOvertimeMinutes),
                 averageTicketValue,
                 // new metrics
                 totalFishCount,
@@ -577,6 +596,7 @@ export async function GET(request: NextRequest) {
         // 9. Customer summary
         const customerVisitMap = new Map<string, { id: string; name: string; phone: string | null; sessions: number; totalSpent: number }>();
         for (const s of primaryData.sessions) {
+            if (s.createdAt < primaryRange.from || s.createdAt > primaryRange.to) continue;
             if (s.customer) {
                 if (!customerVisitMap.has(s.customer.id)) {
                     customerVisitMap.set(s.customer.id, {
@@ -599,19 +619,27 @@ export async function GET(request: NextRequest) {
 
         // Top 5 câu nhiều giờ nhất (tính tổng giờ câu từ sessions có customer)
         const customerHoursMap = new Map<string, { id: string; name: string; phone: string | null; totalMinutes: number }>();
+        const hoursNow = new Date();
         for (const s of primaryData.sessions) {
             if (!s.customer) continue;
-            const endTime = s.endedAt || s.plannedEndAt;
-            const mins = Math.max(0, Math.round((endTime.getTime() - s.startAt.getTime()) / 60000));
+            const span = fishingSpan({
+                startAt: s.startAt,
+                endedAt: s.endedAt,
+                plannedEndAt: s.plannedEndAt,
+                status: s.status,
+                now: hoursNow,
+                windowFrom: primaryRange.from,
+                windowTo: primaryRange.to,
+            });
             if (!customerHoursMap.has(s.customer.id)) {
                 customerHoursMap.set(s.customer.id, { id: s.customer.id, name: s.customer.name, phone: s.customer.phoneNormalized, totalMinutes: 0 });
             }
-            customerHoursMap.get(s.customer.id)!.totalMinutes += mins;
+            customerHoursMap.get(s.customer.id)!.totalMinutes += span.minutes;
         }
         const top5MostHours = Array.from(customerHoursMap.values())
             .sort((a, b) => b.totalMinutes - a.totalMinutes)
             .slice(0, 5)
-            .map(c => ({ ...c, totalHours: Math.round((c.totalMinutes / 60) * 10) / 10 }));
+            .map(c => ({ ...c, totalHours: fishingHoursFromMinutes(c.totalMinutes) }));
 
         // Top 5 chi tiêu nhiều nhất (same as topCustomers but slice 5)
         const top5MostSpent = Array.from(customerVisitMap.values())

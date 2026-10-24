@@ -27,6 +27,8 @@ import {
 import { RetailProduct } from "./retail-pos-form";
 import { PondTransferQr } from "@/components/payments/pond-transfer-qr";
 import { CheckInTimeSection, type CheckInTimeState } from "./check-in-time-section";
+import { openSessionCustomerBody, resolveTicketCustomer } from "@/lib/ticket-customer";
+import { explainVndInputValidity, VND_INPUT_STEP } from "@/lib/vnd-amount";
 
 
 
@@ -395,6 +397,22 @@ export function OpenSessionForm({
     const selectedCustomer = customerList.find(
         (c) => c.id === selectedCustomerId,
     );
+    function ticketCustomerChoice() {
+        return resolveTicketCustomer({
+            selectedCustomerId,
+            selectedCustomerName: selectedCustomer?.name ?? null,
+            typedName: guestName,
+        });
+    }
+    function selectCustomer(customer: SelectCustomer) {
+        setSelectedCustomerId(customer.id);
+        setCustomerSearch("");
+        setGuestName("");
+    }
+    const ticketCustomerName =
+        ticketCustomerChoice().mode === "EXISTING"
+            ? selectedCustomer?.name || "Khách"
+            : ticketCustomerChoice().name || "Khách lẻ";
     const selectedPackage = packageList.find((p) => p.id === selectedPackageId);
 
     // Search filter for customers
@@ -476,10 +494,9 @@ export function OpenSessionForm({
                 },
                 body: JSON.stringify({
                     clientMutationId: idempotencyKey,
-                    customerId: selectedCustomerId || null,
+                    ...openSessionCustomerBody(ticketCustomerChoice()),
                     packageId: targetPackage.id,
                     hutIds: selectedHutIds,
-                    customer: { mode: "GUEST" },
                     paymentTiming: "POSTPAID",
                     paymentMode: "POSTPAID",
                 }),
@@ -529,7 +546,7 @@ export function OpenSessionForm({
                         packageName: targetPackage.name,
                         packagePriceVnd: targetPackage.priceVnd,
                         durationMinutes: targetPackage.durationMinutes,
-                        customerName: selectedCustomer?.name || "Khách lẻ",
+                        customerName: ticketCustomerName,
                         customerPhone: selectedCustomer?.phoneNormalized || null,
                         startAt: resolvedStartTime,
                         plannedEndAt: resolvedPlannedEnd,
@@ -710,14 +727,7 @@ export function OpenSessionForm({
                     "Idempotency-Key": idempotencyKey,
                 },
                 body: JSON.stringify({
-                    customerId: selectedCustomerId || null,
-                    ...((!selectedCustomerId && guestName.trim().length >= 2) ? {
-                        customer: {
-                            mode: "NEW",
-                            name: guestName.trim(),
-                            phone: guestPhone.trim() || null,
-                        },
-                    } : {}),
+                    ...openSessionCustomerBody(ticketCustomerChoice(), guestPhone),
                     packageId: selectedPackageId,
                     hutIds: selectedHutIds,
                     paymentTiming: "POSTPAID",
@@ -826,10 +836,9 @@ export function OpenSessionForm({
                     result.packageDurationMinutesSnapshot ||
                     0,
                 customerName:
-                    selectedCustomer?.name ||
+                    (ticketCustomerChoice().mode === "EXISTING" ? selectedCustomer?.name : null) ||
                     result.customer?.name ||
-                    (guestName.trim().length >= 2 ? guestName.trim() : null) ||
-                    "Khách lẻ",
+                    ticketCustomerName,
                 customerPhone:
                     selectedCustomer?.phoneNormalized ||
                     result.customer?.phoneNormalized ||
@@ -972,14 +981,7 @@ export function OpenSessionForm({
                     "Idempotency-Key": idempotencyKey,
                 },
                 body: JSON.stringify({
-                    customerId: selectedCustomerId || null,
-                    ...((!selectedCustomerId && guestName.trim().length >= 2) ? {
-                        customer: {
-                            mode: "NEW",
-                            name: guestName.trim(),
-                            phone: guestPhone.trim() || null,
-                        },
-                    } : {}),
+                    ...openSessionCustomerBody(ticketCustomerChoice(), guestPhone),
                     packageId: selectedPackageId,
                     hutIds: selectedHutIds,
                     paymentTiming: "PREPAID",
@@ -1091,10 +1093,9 @@ export function OpenSessionForm({
                     result.packageDurationMinutesSnapshot ||
                     0,
                 customerName:
-                    selectedCustomer?.name ||
+                    (ticketCustomerChoice().mode === "EXISTING" ? selectedCustomer?.name : null) ||
                     result.customer?.name ||
-                    (guestName.trim().length >= 2 ? guestName.trim() : null) ||
-                    "Khách lẻ",
+                    ticketCustomerName,
                 customerPhone:
                     selectedCustomer?.phoneNormalized ||
                     result.customer?.phoneNormalized ||
@@ -1225,7 +1226,7 @@ export function OpenSessionForm({
                                 👤
                             </div>
                             <div className="min-w-0">
-                                <p className="text-xs font-bold text-[#0F172A] truncate">
+                                    <p className="text-xs font-bold text-[#0F172A] whitespace-normal wrap-break-word">
                                     {selectedCustomer?.name}
                                 </p>
                                 {selectedCustomer?.phoneNormalized && (
@@ -1278,15 +1279,15 @@ export function OpenSessionForm({
                         {filteredCustomers.length > 0 && (
                             <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-md">
                                 {filteredCustomers.map((c) => (
-                                    <div
+                                    <button
+                                        type="button"
                                         key={c.id}
-                                        onClick={() => {
-                                            setSelectedCustomerId(c.id);
-                                            setCustomerSearch("");
-                                            setGuestName("");
+                                        onPointerDown={(event) => {
+                                            event.preventDefault();
+                                            selectCustomer(c);
                                             setShowQuickAddCustomer(false);
                                         }}
-                                        className="cursor-pointer p-2.5 text-xs hover:bg-[#F0FDF4] flex items-center justify-between transition-colors"
+                                        className="w-full cursor-pointer p-2.5 text-xs hover:bg-[#F0FDF4] flex items-center justify-between transition-colors text-left"
                                     >
                                         <div className="flex items-center gap-2">
                                             <span className="text-slate-400">👤</span>
@@ -1295,7 +1296,7 @@ export function OpenSessionForm({
                                         <span className="text-[#16A34A] font-mono font-semibold">
                                             {c.phoneNormalized ?? "—"}
                                         </span>
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                         )}
@@ -1987,9 +1988,7 @@ export function OpenSessionForm({
                                 <span className="text-[#66716A]">Khách hàng:</span>
                                 <div className="text-right">
                                     <span className="font-bold text-[#17201A]">
-                                        {selectedCustomer?.name ||
-                                            (guestName.trim().length >= 2 ? guestName.trim() : null) ||
-                                            "Khách lẻ"}
+                                        {ticketCustomerName}
                                     </span>
                                     {selectedCustomer?.phoneNormalized && (
                                         <p className="text-[11px] font-mono text-[#66716A]">
@@ -2234,7 +2233,7 @@ export function OpenSessionForm({
                                         Thanh toán vé câu (Thu trước)
                                     </h3>
                                     <p className="text-xs text-[#66716A]">
-                                        Ô câu: {hutList.filter((h) => selectedHutIds.includes(h.id)).map((h) => h.name).join(", ")} · {selectedCustomer?.name || (guestName.trim().length >= 2 ? guestName.trim() : null) || "Khách lẻ"}
+                                        Ô câu: {hutList.filter((h) => selectedHutIds.includes(h.id)).map((h) => h.name).join(", ")} · {ticketCustomerName}
                                     </p>
                                 </div>
                             </div>
@@ -2359,7 +2358,11 @@ export function OpenSessionForm({
                                         <Input
                                             type="number"
                                             min={0}
-                                            step={1000}
+                                            step={VND_INPUT_STEP}
+                                            onInvalid={(event) => {
+                                                event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                                            }}
+                                            onInput={(event) => event.currentTarget.setCustomValidity("")}
                                             value={cashCustomerGives}
                                             onChange={(e) =>
                                                 setCashCustomerGives(
@@ -2873,8 +2876,12 @@ function AddQuickPackageSheet({ isOpen, onClose, onCreated }: AddQuickPackageShe
                         </label>
                         <Input
                             type="number"
-                            step="10000"
+                            step={VND_INPUT_STEP}
                             min="0"
+                            onInvalid={(event) => {
+                                event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                            }}
+                            onInput={(event) => event.currentTarget.setCustomValidity("")}
                             value={priceVnd}
                             onChange={(e) => setPriceVnd(e.target.value)}
                             disabled={isSubmitting}
@@ -2887,9 +2894,13 @@ function AddQuickPackageSheet({ isOpen, onClose, onCreated }: AddQuickPackageShe
                         </label>
                         <Input
                             type="number"
-                            step="5000"
+                            step={VND_INPUT_STEP}
                             min="0"
-                            placeholder="50,000"
+                            placeholder="50.000"
+                            onInvalid={(event) => {
+                                event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                            }}
+                            onInput={(event) => event.currentTarget.setCustomValidity("")}
                             value={overtimeHourlyVnd}
                             onChange={(e) => setOvertimeHourlyVnd(e.target.value)}
                             disabled={isSubmitting}
@@ -3031,8 +3042,12 @@ function AddQuickProductSheet({ isOpen, onClose, onCreated }: AddQuickProductShe
                         </label>
                         <Input
                             type="number"
-                            step="1000"
+                            step={VND_INPUT_STEP}
                             min="0"
+                            onInvalid={(event) => {
+                                event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                            }}
+                            onInput={(event) => event.currentTarget.setCustomValidity("")}
                             value={priceVnd}
                             onChange={(e) => setPriceVnd(e.target.value)}
                             disabled={isSubmitting}
@@ -3177,8 +3192,12 @@ function AddQuickFishTypeSheet({ isOpen, onClose, onCreated }: AddQuickFishTypeS
                     </label>
                     <Input
                         type="number"
-                        step="1000"
-                        min="1000"
+                        step={VND_INPUT_STEP}
+                        min="0"
+                        onInvalid={(event) => {
+                            event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                        }}
+                        onInput={(event) => event.currentTarget.setCustomValidity("")}
                         value={pricePerKg}
                         onChange={(e) => setPricePerKg(e.target.value)}
                         disabled={isSubmitting}
