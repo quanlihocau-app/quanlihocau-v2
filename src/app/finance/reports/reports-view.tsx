@@ -195,15 +195,15 @@ export function FinancialReportsView({
                                 </div>
                             </div>
 
-                            {/* 3. Lợi nhuận ước tính */}
+                            {/* 3. Doanh thu trừ chi và thu cá */}
                             <div className="rounded-xl bg-slate-50 p-4 border border-slate-200">
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <span className="text-base font-extrabold text-slate-900">
-                                            3. LỢI NHUẬN ƯỚC TÍNH (1 - 2)
+                                            3. DOANH THU TRỪ CHI VÀ THU CÁ
                                         </span>
                                         <p className="text-xs text-slate-500">
-                                            * Số liệu phản ánh chênh lệch doanh thu và chi phí thực tế.
+                                            * Doanh thu trừ chi và thu cá. Không phải tiền trong két. Thu cá chỉ trừ một lần.
                                         </p>
                                     </div>
                                     <span

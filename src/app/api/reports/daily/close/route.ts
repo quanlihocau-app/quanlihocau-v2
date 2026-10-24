@@ -1,10 +1,16 @@
-import { summarizeMoney, summarizeRevenue } from "@/lib/finance";
 import { formatShiftCloseNote } from "@/lib/shift-helper";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { Role } from "@/generated/prisma/client";
+import { drawerDifference, expectedDrawerCash, shiftStartInstant } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
+import { startOfVnDay } from "@/lib/reports/date-utils";
+import {
+    handoverCash,
+    measureShiftWindow,
+    OpenSessionsNeedConfirmError,
+} from "@/lib/reports/shift-report";
 import {
     AuthenticationError,
     ForbiddenError,
@@ -17,6 +23,7 @@ const closeShiftBodySchema = z
         actualCashVnd: z.number().int().min(0).optional(),
         differenceReason: z.string().max(500).optional(),
         receivedBy: z.string().max(100).optional(),
+        confirmOpenSessions: z.boolean().optional(),
     })
     .optional();
 
@@ -87,6 +94,7 @@ export async function POST(request: Request) {
         let actualCashVnd: number | undefined;
         let differenceReason: string | undefined;
         let receivedBy: string | undefined;
+        let confirmOpenSessions = false;
         try {
             const body = await request.json();
             const parsedBody = closeShiftBodySchema.safeParse(body);
@@ -95,6 +103,7 @@ export async function POST(request: Request) {
                 actualCashVnd = parsedBody.data.actualCashVnd;
                 differenceReason = parsedBody.data.differenceReason;
                 receivedBy = parsedBody.data.receivedBy;
+                confirmOpenSessions = parsedBody.data.confirmOpenSessions === true;
             }
         } catch {
             // Body is optional
@@ -151,15 +160,20 @@ export async function POST(request: Request) {
                             },
                         });
 
-                        // If no open shift exists, find if one was opened today, otherwise create one
-                        if (!currentShift) {
-                            const startOfToday = new Date();
-                            startOfToday.setHours(0, 0, 0, 0);
+                        const lastClosed = await tx.shift.findFirst({
+                            where: { lakeId, endTime: { not: null } },
+                            include: { closes: { orderBy: { createdAt: "desc" }, take: 1 } },
+                            orderBy: { endTime: "desc" },
+                        });
+                        const previousHandover = lastClosed?.closes[0] ? handoverCash(lastClosed.closes[0]) : 0;
 
+                        // If no open shift exists, open one from the Saigon midnight (or the last handover).
+                        if (!currentShift) {
                             currentShift = await tx.shift.create({
                                 data: {
                                     lakeId,
-                                    startTime: startOfToday,
+                                    startTime: shiftStartInstant(new Date(), lastClosed?.endTime ?? null, startOfVnDay()),
+                                    openingCashVnd: previousHandover,
                                 },
                                 include: {
                                     closes: true,
@@ -173,71 +187,24 @@ export async function POST(request: Request) {
 
                         const startTime = currentShift.startTime;
                         const endTime = new Date();
+                        const measured = await measureShiftWindow(tx, lakeId, startTime, endTime, endTime);
+                        if (measured.openSessions.length > 0 && !confirmOpenSessions) {
+                            throw new OpenSessionsNeedConfirmError(measured.openSessions);
+                        }
 
-                        // 1. Calculate Payments
-                        const payments = await tx.payment.findMany({
-                            where: {
-                                lakeId,
-                                createdAt: {
-                                    gte: startTime,
-                                    lte: endTime,
-                                },
-                            },
-                            select: {
-                                amountVnd: true,
-                                method: true,
-                                direction: true,
-                                expenseId: true,
-                            },
-                        });
+                        const totalCashVnd = measured.drawer.netCash;
+                        const totalTransferVnd = measured.drawer.netTransfer;
+                        const totalRevenueVnd = measured.revenue.totalRevenue;
+                        const fishBuybackVnd = measured.fishBuybackVnd;
+                        const otherExpenseVnd = measured.approvedExpenseVnd;
+                        const totalExpenseVnd = measured.totalExpenseVnd;
 
-                        const totals = summarizeMoney(payments);
-                        const totalCashVnd = totals.netCash;
-                        const totalTransferVnd = totals.netTransfer;
-                        const revenueLines = await tx.invoiceLine.findMany({
-                            where: { invoice: { lakeId, status: { not: "VOIDED" }, createdAt: { gte: startTime, lte: endTime } } },
-                            include: { invoice: { select: { fishingSessionId: true } } },
-                        });
-                        const totalRevenueVnd = summarizeRevenue(revenueLines.map(line => ({
-                            fishingSessionId: line.invoice.fishingSessionId, lines: [line],
-                        }))).totalRevenue;
-
-                        // 2. Calculate Fish Buybacks
-                        const fishBuybacksAgg = await tx.fishBuyback.aggregate({
-                            where: {
-                                lakeId,
-                                createdAt: {
-                                    gte: startTime,
-                                    lte: endTime,
-                                },
-                            },
-                            _sum: {
-                                totalVnd: true,
-                            },
-                        });
-                        const fishBuybackVnd = fishBuybacksAgg._sum.totalVnd ?? 0;
-
-                        // 3. Calculate Other Expenses
-                        const expensesAgg = await tx.expense.aggregate({
-                            where: {
-                                lakeId,
-                                createdAt: {
-                                    gte: startTime,
-                                    lte: endTime,
-                                },
-                            },
-                            _sum: {
-                                amountVnd: true,
-                            },
-                        });
-                        const otherExpenseVnd = expensesAgg._sum.amountVnd ?? 0;
-                        const totalExpenseVnd = fishBuybackVnd + otherExpenseVnd;
-
-                        // 4. Calculate cash difference
-                        const openingCashVnd = (currentShift as { openingCashVnd?: number }).openingCashVnd ?? 0;
-                        const expectedCashVnd = totalCashVnd + openingCashVnd;
+                        const openingCashVnd = currentShift.openingCashVnd > 0
+                            ? currentShift.openingCashVnd
+                            : previousHandover;
+                        const expectedCashVnd = expectedDrawerCash(openingCashVnd, measured.drawer.cashIn, measured.drawer.cashOut);
                         const cashDifferenceVnd = actualCashVnd !== undefined
-                            ? actualCashVnd - expectedCashVnd
+                            ? drawerDifference(actualCashVnd, expectedCashVnd)
                             : 0;
 
                         // 5. Validate: if there's a discrepancy, reason is required
@@ -269,16 +236,21 @@ export async function POST(request: Request) {
                                 totalExpenseVnd,
                                 fishBuybackVnd,
                                 otherExpenseVnd,
+                                actualCashVnd: actualCashVnd ?? null,
+                                cashDifferenceVnd,
+                                differenceReason: differenceReason?.trim() || null,
+                                receivedBy: receivedBy?.trim() || null,
                                 closedBy: tenantContext.userName,
                                 note: compositeNote,
                             },
                         });
 
-                        // 8. Create new shift for next period (auto-open)
+                        // 8. Create new shift for next period (auto-open). Counted cash becomes its opening float.
                         await tx.shift.create({
                             data: {
                                 lakeId,
                                 startTime: endTime,
+                                openingCashVnd: actualCashVnd ?? expectedCashVnd,
                             },
                         });
 
@@ -386,6 +358,17 @@ export async function POST(request: Request) {
                 ) {
                     return NextResponse.json(
                         { error: "Tiền mặt thực tế chênh lệch. Vui lòng nhập lý do." },
+                        { status: 422 },
+                    );
+                }
+
+                if (txError instanceof OpenSessionsNeedConfirmError) {
+                    return NextResponse.json(
+                        {
+                            error: "Còn phiên đang câu. Hãy xem danh sách và xác nhận trước khi chốt ca.",
+                            code: "OPEN_SESSIONS",
+                            openSessions: txError.sessions,
+                        },
                         { status: 422 },
                     );
                 }

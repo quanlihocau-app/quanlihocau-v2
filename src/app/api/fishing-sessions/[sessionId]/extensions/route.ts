@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { InvoiceStatus, Role, SessionStatus } from "@/generated/prisma/client";
 import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
+import { syncInvoiceTotals } from "@/lib/invoice-totals";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -234,27 +235,8 @@ export async function POST(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // 7. Recalculate Invoice totalAmountVnd, balanceDueVnd, and status
-                        const linesAgg = await tx.invoiceLine.aggregate({
-                            where: { invoiceId: invoice.id },
-                            _sum: { totalVnd: true },
-                        });
-                        const newTotalAmountVnd = linesAgg._sum.totalVnd ?? 0;
-                        const paidAmountVnd = invoice.paidAmountVnd ?? 0;
-                        const refundedAmountVnd = invoice.refundedAmountVnd ?? 0;
-                        const balanceDueVnd = Math.max(0, newTotalAmountVnd - paidAmountVnd + refundedAmountVnd);
-                        const newStatus = balanceDueVnd === 0
-                            ? InvoiceStatus.PAID
-                            : (paidAmountVnd > 0 ? InvoiceStatus.PARTIALLY_PAID : InvoiceStatus.DRAFT);
-
-                        await tx.invoice.update({
-                            where: { id: invoice.id },
-                            data: {
-                                totalAmountVnd: newTotalAmountVnd,
-                                balanceDueVnd,
-                                status: newStatus,
-                            },
-                        });
+                        const synced = await syncInvoiceTotals(tx, invoice.id, tenantContext.lakeId);
+                        const newTotalAmountVnd = synced?.totalAmountVnd ?? 0;
 
                         // 8. Create AuditEvent. priceVnd and packageName stay at the top level:
                         // closing a session rebuilds a missing invoice from those fields.

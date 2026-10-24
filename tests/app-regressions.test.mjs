@@ -194,6 +194,8 @@ test("Account changes discard catalog cache even if browser storage is blocked",
 
 test("Registration validates input and normalizes phone numbers before writing", async () => {
     let writtenPhone;
+    let writtenUser;
+    let writtenLake;
     let registrationCreatedSession = false;
     const phone = loadModule("../src/lib/phone.ts", {});
     const actions = loadModule("../src/app/actions/auth.ts", {
@@ -201,8 +203,8 @@ test("Registration validates input and normalizes phone numbers before writing",
             user: { findUnique: async () => null },
             $transaction: async (fn) => fn({
                 organization: { create: async () => ({ id: "org-1" }) },
-                lake: { create: async () => ({ id: "lake-1" }) },
-                user: { create: async ({ data }) => { writtenPhone = data.phone; return { ...data, id: "user-1" }; } },
+                lake: { create: async ({ data }) => { writtenLake = data; return { id: "lake-1" }; } },
+                user: { create: async ({ data }) => { writtenPhone = data.phone; writtenUser = data; return { ...data, id: "user-1" }; } },
                 membership: { create: async () => ({}) },
             }),
         } },
@@ -219,22 +221,33 @@ test("Registration validates input and normalizes phone numbers before writing",
     const result = await actions.registerUser({ email: " owner@example.com ", password: "Password123!", name: "Owner", phone: "090 123 4567" });
     assert.equal(result.success, true);
     assert.equal(writtenPhone, "+84901234567");
-    assert.equal(registrationCreatedSession, false, "Registration must continue to Google sign-in instead of silently creating a session");
+    assert.equal(registrationCreatedSession, false, "Registration must not create a session");
+    const phoneOnly = await actions.registerUser({ password: "Password123!", name: "Chủ hồ", phone: "0912345678", lakeName: "Hồ Thử" });
+    assert.equal(phoneOnly.success, true);
+    assert.equal(writtenUser.email, "p84912345678@phone.quanlihocau.local");
+    assert.equal(writtenLake.subscriptionPlan, "TRIAL");
+    assert.equal(writtenLake.subscriptionStatus, "TRIAL");
+    assert.equal(registrationCreatedSession, false);
 });
 
-test("Existing staff can log in by email while phone-number login is disabled", async () => {
+test("Existing staff can log in by email or phone number", async () => {
     const lookups = [];
     let session;
     const user = { id: "staff-1", email: "staff@example.com", name: "Staff", phone: "+84901234567", passwordHash: "hash", systemRole: "USER", isLocked: false };
+    const phone = loadModule("../src/lib/phone.ts", {});
     const actions = loadModule("../src/app/actions/auth.ts", {
         "@/lib/prisma": { prisma: { user: {
-            findUnique: async (args) => { lookups.push(args); return args.where.email === user.email ? user : null; },
+            findUnique: async (args) => {
+                lookups.push(args);
+                if (args.where.email === user.email || args.where.phone === user.phone) return user;
+                return null;
+            },
             update: async () => user,
         } } },
         bcryptjs: { compare: async () => true },
         "@/lib/auth": { setSessionCookie: async (value) => { session = value; } },
         "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
-        "next/navigation": {}, "@/lib/phone": {}, zod: { z },
+        "next/navigation": {}, "@/lib/phone": phone, zod: { z },
         "@/lib/auth-rate-limit": authRateLimit,
         "@/lib/vietqr": { TRIAL_DAYS: 30 },
         "@/lib/audit-log": { recordLoginAudit: async () => {} },
@@ -252,8 +265,9 @@ test("Existing staff can log in by email while phone-number login is disabled", 
     assert.deepEqual(JSON.parse(JSON.stringify(lookups[0])), { where: { email: "staff@example.com" }, include: membershipInclude });
     assert.equal(session.userId, "staff-1");
     const phoneLogin = await actions.loginUser({ email: "0901234567", password: "valid-password" });
-    assert.equal(phoneLogin.success, false);
+    assert.equal(phoneLogin.success, true);
     assert.deepEqual(JSON.parse(JSON.stringify(lookups[1])), { where: { email: "0901234567" }, include: membershipInclude });
+    assert.deepEqual(JSON.parse(JSON.stringify(lookups[2])), { where: { phone: "+84901234567" }, include: membershipInclude });
 });
 
 test("Tenant data follows qa_session when an older NextAuth account cookie remains", async () => {
@@ -328,11 +342,15 @@ const tenantModule = {
     requireTenantContext: async () => ({ lakeId: "lake-1", userId: "staff-1", lakeName: "Lake" }),
     AuthenticationError: class extends Error {}, ForbiddenError: class extends Error {},
 };
+const moneyModule = loadModule("../src/lib/money.ts", {});
+const invoiceTotals = loadModule("../src/lib/invoice-totals.ts", { "@/lib/money": moneyModule });
 function routeModule(path, prisma) {
     return loadModule(path, {
         "next/server": { NextResponse: Response }, zod: { z },
         "@/generated/prisma/client": { Role: roles, SessionStatus: sessionStatuses, InvoiceStatus: invoiceStatuses, Prisma: {} },
         "@/lib/prisma": { prisma }, "@/lib/tenant": tenantModule,
+        "@/lib/money": moneyModule,
+        "@/lib/invoice-totals": invoiceTotals,
         "@/lib/audit-log": {
             readRequestMeta: async () => ({ ip: null, userAgent: null }),
             writeStaffAudit: async (db, input) => {
@@ -365,9 +383,15 @@ test("Extending an expired session adds time from the old deadline and charges e
         },
         fishingSession: { findFirst: async () => session, update: async ({ data }) => { session.plannedEndAt = data.plannedEndAt; return session; } },
         package: { findFirst: async () => ({ id: "550e8400-e29b-41d4-a716-446655440000", name: "1 giờ", durationMinutes: 60, priceVnd: 30000 }) },
-        invoice: { findUnique: async () => ({ id: "invoice-1", status: "DRAFT", paidAmountVnd: 0 }), update: async ({ data }) => { invoiceTotal = data.totalAmountVnd; } },
+        invoice: {
+            findUnique: async () => ({ id: "invoice-1", status: "DRAFT", paidAmountVnd: 0 }),
+            findFirst: async () => ({ id: "invoice-1", status: "DRAFT", paidAmountVnd: 0 }),
+            update: async ({ data }) => { invoiceTotal = data.totalAmountVnd; return { id: "invoice-1", ...data }; },
+        },
+        payment: { findMany: async () => [] },
         invoiceLine: {
             create: async ({ data }) => { const line = { ...data, id: "extension-1", createdAt: new Date() }; lines.push(line); return line; },
+            findMany: async () => lines,
             aggregate: async () => ({ _sum: { totalVnd: lines.reduce((total, line) => total + line.totalVnd, 0) } }),
         },
         auditEvent: { create: async () => ({}) },
@@ -422,6 +446,7 @@ test("Expired session cards show both decisions immediately and keep the bill fr
         react: React,
         "./session-countdown": { SessionCountdown: () => React.createElement("span", null, "Clock") },
         "@/lib/ticker/session-ticker": { sessionTicker: { subscribe: () => () => {}, getNowMs: () => end } },
+        "@/lib/money": moneyModule,
     });
     const session = { id: "session-1", plannedEndAt: new Date(end).toISOString(), package: { name: "1 giờ", durationMinutes: 60, priceVnd: 100000, overtimeHourlyVnd: 30000 }, hutLinks: [], invoices: [{ lines: [], payments: [] }] };
     assert.equal(card.computeSessionFinancials(session, end).netBalance, 100000);

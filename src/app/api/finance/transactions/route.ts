@@ -8,6 +8,7 @@ import { assertClientIdsInLake, publicCustomer } from "@/lib/tenant-scope";
 import { generateFinancialCode } from "@/lib/financial/code-generator";
 import { assertPeriodNotLocked } from "@/lib/financial/period-guard";
 import { csvCell } from "@/lib/finance";
+import { postApprovedCash } from "@/lib/financial/post-approved-cash";
 import type { Prisma } from "@/generated/prisma/client";
 
 const createTransactionSchema = z.object({
@@ -297,68 +298,21 @@ export async function POST(request: Request) {
                 },
             });
 
-            // Tương thích ngược: Đồng bộ với bảng Payment & Expense/Invoice để các báo cáo ca/kết ca không bị lệch
-            if (type === "RECEIPT") {
-                const invoice = await tx.invoice.create({
-                    data: {
-                        lakeId,
-                        status: "PAID",
-                        totalAmountVnd: amountVnd,
-                        subtotalVnd: amountVnd,
-                        paidAmountVnd: amountVnd,
-                        balanceDueVnd: 0,
-                        lines: {
-                            create: {
-                                name: `Thu khác: [${code}] ${description}`,
-                                quantity: 1,
-                                unitPrice: amountVnd,
-                                totalVnd: amountVnd,
-                            },
-                        },
-                    },
-                });
-
-                const payment = await tx.payment.create({
-                    data: {
-                        lakeId,
-                        invoiceId: invoice.id,
-                        amountVnd,
-                        method: paymentMethod,
-                        direction: "IN",
-                        idempotencyKey: parsedKey.data,
-                    },
-                });
-
-                await tx.financialTransaction.update({
-                    where: { id: createdTx.id },
-                    data: { invoiceId: invoice.id, paymentId: payment.id },
-                });
-            } else {
-                // EXPENSE
-                const expense = await tx.expense.create({
-                    data: {
-                        lakeId,
-                        description: `[${code}] ${description}`,
-                        amountVnd,
-                    },
-                });
-
-                const payment = await tx.payment.create({
-                    data: {
-                        lakeId,
-                        expenseId: expense.id,
-                        amountVnd,
-                        method: paymentMethod,
-                        direction: "OUT",
-                        idempotencyKey: parsedKey.data,
-                    },
-                });
-
-                await tx.financialTransaction.update({
-                    where: { id: createdTx.id },
-                    data: { expenseId: expense.id, paymentId: payment.id },
-                });
-            }
+            // Phiếu nháp chưa làm tiền chuyển dịch. Chỉ phiếu đã duyệt mới tạo Payment.
+            const posted = status === "APPROVED"
+                ? await postApprovedCash(tx, {
+                    lakeId,
+                    transactionId: createdTx.id,
+                    type,
+                    amountVnd,
+                    paymentMethod,
+                    description,
+                    code,
+                    occurredAt: txDate,
+                    idempotencyKey: parsedKey.data,
+                    approvedById: tenantContext.userId,
+                })
+                : createdTx;
 
             // Ghi AuditEvent
             await tx.auditEvent.create({
@@ -380,7 +334,7 @@ export async function POST(request: Request) {
                 },
             });
 
-            return createdTx;
+            return posted;
         });
 
         return NextResponse.json(

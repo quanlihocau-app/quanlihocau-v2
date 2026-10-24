@@ -6,6 +6,7 @@ import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib
 import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
 import { assertClientIdsInLake, publicCustomer } from "@/lib/tenant-scope";
 import { assertPeriodNotLocked } from "@/lib/financial/period-guard";
+import { postApprovedCash } from "@/lib/financial/post-approved-cash";
 
 const updateDraftSchema = z.object({
     amountVnd: z.number().int().positive().optional(),
@@ -115,22 +116,48 @@ export async function PUT(
             accountId: parsed.data.accountId,
         });
 
-        const updated = await prisma.financialTransaction.update({
-            where: { id: transactionId },
-            data: {
-                ...(parsed.data.amountVnd ? { amountVnd: parsed.data.amountVnd } : {}),
-                ...(parsed.data.paymentMethod ? { paymentMethod: parsed.data.paymentMethod } : {}),
-                ...(parsed.data.categoryId !== undefined ? { categoryId: parsed.data.categoryId } : {}),
-                ...(parsed.data.accountId !== undefined ? { accountId: parsed.data.accountId } : {}),
-                ...(parsed.data.description ? { description: parsed.data.description } : {}),
-                ...(parsed.data.note !== undefined ? { note: parsed.data.note } : {}),
-                ...(parsed.data.status ? { status: parsed.data.status } : {}),
-                ...(parsed.data.status === "APPROVED" ? { approvedById: tenantContext.userId } : {}),
-            },
-            include: {
-                category: true,
-                account: true,
-            },
+        const approving = parsed.data.status === "APPROVED";
+        const updated = await prisma.$transaction(async (tx) => {
+            const draft = await tx.financialTransaction.update({
+                where: { id: transactionId },
+                data: {
+                    ...(parsed.data.amountVnd ? { amountVnd: parsed.data.amountVnd } : {}),
+                    ...(parsed.data.paymentMethod ? { paymentMethod: parsed.data.paymentMethod } : {}),
+                    ...(parsed.data.categoryId !== undefined ? { categoryId: parsed.data.categoryId } : {}),
+                    ...(parsed.data.accountId !== undefined ? { accountId: parsed.data.accountId } : {}),
+                    ...(parsed.data.description ? { description: parsed.data.description } : {}),
+                    ...(parsed.data.note !== undefined ? { note: parsed.data.note } : {}),
+                    ...(!approving && parsed.data.status ? { status: parsed.data.status } : {}),
+                },
+            });
+
+            if (!approving) {
+                return tx.financialTransaction.findFirstOrThrow({
+                    where: { id: transactionId },
+                    include: { category: true, account: true },
+                });
+            }
+
+            if (draft.paymentId) {
+                return tx.financialTransaction.update({
+                    where: { id: transactionId },
+                    data: { status: "APPROVED", approvedById: tenantContext.userId },
+                    include: { category: true, account: true },
+                });
+            }
+
+            return postApprovedCash(tx, {
+                lakeId,
+                transactionId,
+                type: draft.type,
+                amountVnd: draft.amountVnd,
+                paymentMethod: draft.paymentMethod,
+                description: draft.description,
+                code: draft.code,
+                occurredAt: draft.transactionDate,
+                idempotencyKey: draft.idempotencyKey || `approved:${draft.id}`,
+                approvedById: tenantContext.userId,
+            });
         });
 
         return NextResponse.json({ message: "Đã cập nhật phiếu nháp thành công.", transaction: updated });

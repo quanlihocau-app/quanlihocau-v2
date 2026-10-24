@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
+import { explainVndInputValidity, VND_INPUT_STEP } from "@/lib/vnd-amount";
 
 export interface PackageItem {
     id: string;
@@ -241,7 +242,11 @@ export function PackageManager({ packages, canManage }: PackageManagerProps) {
                                 label="Giá gói (VNĐ) *"
                                 type="number"
                                 min={0}
-                                step={1000}
+                                step={VND_INPUT_STEP}
+                                onInvalid={(event) => {
+                                    event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                                }}
+                                onInput={(event) => event.currentTarget.setCustomValidity("")}
                                 value={priceVnd}
                                 onChange={(e) =>
                                     setPriceVnd(
@@ -254,7 +259,11 @@ export function PackageManager({ packages, canManage }: PackageManagerProps) {
                                 label="Phụ thu quá giờ (VNĐ/giờ) *"
                                 type="number"
                                 min={0}
-                                step={1000}
+                                step={VND_INPUT_STEP}
+                                onInvalid={(event) => {
+                                    event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                                }}
+                                onInput={(event) => event.currentTarget.setCustomValidity("")}
                                 value={overtimeHourlyVnd}
                                 onChange={(e) =>
                                     setOvertimeHourlyVnd(
@@ -446,7 +455,11 @@ export function PackageManager({ packages, canManage }: PackageManagerProps) {
                                 label="Giá gói (VNĐ) *"
                                 type="number"
                                 min={0}
-                                step={1000}
+                                step={VND_INPUT_STEP}
+                                onInvalid={(event) => {
+                                    event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                                }}
+                                onInput={(event) => event.currentTarget.setCustomValidity("")}
                                 value={editPriceVnd}
                                 onChange={(e) =>
                                     setEditPriceVnd(
@@ -459,7 +472,11 @@ export function PackageManager({ packages, canManage }: PackageManagerProps) {
                                 label="Phụ thu quá giờ (VNĐ/giờ) *"
                                 type="number"
                                 min={0}
-                                step={1000}
+                                step={VND_INPUT_STEP}
+                                onInvalid={(event) => {
+                                    event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                                }}
+                                onInput={(event) => event.currentTarget.setCustomValidity("")}
                                 value={editOvertimeHourlyVnd}
                                 onChange={(e) =>
                                     setEditOvertimeHourlyVnd(

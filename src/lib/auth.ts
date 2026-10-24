@@ -18,6 +18,7 @@ import { recordLoginAudit, type LoginMembership } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { seedSampleLakeData } from "@/lib/onboarding/seed-sample-lake";
 import { sessionSecret, verifySignedSession } from "@/lib/session-signature";
+import { normalizeVietnamesePhone } from "@/lib/phone";
 import { TRIAL_DAYS } from "@/lib/vietqr";
 
 declare module "next-auth" {
@@ -68,6 +69,16 @@ async function findCredentialUser(identifier: string) {
         where: { email: identifier },
         include: credentialMembershipInclude,
     });
+    if (!user && !identifier.includes("@")) {
+        let phone: string | null = null;
+        try { phone = normalizeVietnamesePhone(identifier); } catch { phone = null; }
+        if (phone) {
+            user = await prisma.user.findUnique({
+                where: { phone },
+                include: credentialMembershipInclude,
+            });
+        }
+    }
     if (!user && !identifier.includes("@")) {
         user = await prisma.user.findUnique({
             where: { email: `${identifier}@hocau.com` },

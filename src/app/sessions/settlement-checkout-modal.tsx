@@ -9,6 +9,7 @@ import { usePrinter } from "@/lib/printing/use-printer";
 import { PaymentReceiptData } from "@/lib/printing/types";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
+import { PondTransferQr } from "@/components/payments/pond-transfer-qr";
 
 interface SettlementPreviewData {
     session: {
@@ -54,6 +55,10 @@ interface SettlementPreviewData {
         netBalanceVnd?: number;
         netDueVnd: number;
         refundVnd: number;
+        billVnd?: number;
+        fishOffsetVnd?: number;
+        cashReturnedVnd?: number;
+        settlementSummary?: string;
     };
 }
 
@@ -337,24 +342,32 @@ export function SettlementCheckoutModal({
                                 </div>
 
                                 <div className="rounded-2xl border border-[#CCCCCC] bg-[#FAFAF7] p-3.5 text-left text-xs space-y-1.5 font-serif shadow-xs">
-                                    <div className="flex justify-between font-normal text-[#555555]">
-                                        <span>Tổng hóa đơn:</span>
-                                        <span className="font-bold text-[#1A1A1A] font-serif">{formatVnd(completedReceipt.totalAmountVnd)}</span>
-                                    </div>
-                                    <div className="flex justify-between font-normal text-[#555555]">
-                                        <span>Đã thanh toán:</span>
-                                        <span className="font-bold text-[#2C4C3B] font-serif">{formatVnd(completedReceipt.paidAmountVnd)}</span>
-                                    </div>
-                                    {completedReceipt.refundAmountVnd && completedReceipt.refundAmountVnd > 0 ? (
-                                        <div className="flex justify-between font-bold text-[#9E2A2B] border-t border-[#E0E0E0] pt-1.5">
-                                            <span>Đã hoàn khách:</span>
-                                            <span className="font-serif">{formatVnd(completedReceipt.refundAmountVnd)}</span>
-                                        </div>
+                                    {completedReceipt.settlementSummary ? (
+                                        <p className="text-sm font-bold leading-snug text-[#1A1A1A]">
+                                            {completedReceipt.settlementSummary}
+                                        </p>
                                     ) : (
-                                        <div className="flex justify-between font-bold text-[#1A1A1A] border-t border-[#E0E0E0] pt-1.5">
-                                            <span>Còn lại:</span>
-                                            <span className="font-serif">{formatVnd(completedReceipt.remainingVnd)}</span>
-                                        </div>
+                                        <>
+                                            <div className="flex justify-between font-normal text-[#555555]">
+                                                <span>Tổng hóa đơn:</span>
+                                                <span className="font-bold text-[#1A1A1A] font-serif">{formatVnd(completedReceipt.totalAmountVnd)}</span>
+                                            </div>
+                                            <div className="flex justify-between font-normal text-[#555555]">
+                                                <span>Đã thanh toán:</span>
+                                                <span className="font-bold text-[#2C4C3B] font-serif">{formatVnd(completedReceipt.paidAmountVnd)}</span>
+                                            </div>
+                                            {completedReceipt.refundAmountVnd && completedReceipt.refundAmountVnd > 0 ? (
+                                                <div className="flex justify-between font-bold text-[#9E2A2B] border-t border-[#E0E0E0] pt-1.5">
+                                                    <span>Đã hoàn khách:</span>
+                                                    <span className="font-serif">{formatVnd(completedReceipt.refundAmountVnd)}</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex justify-between font-bold text-[#1A1A1A] border-t border-[#E0E0E0] pt-1.5">
+                                                    <span>Còn lại:</span>
+                                                    <span className="font-serif">{formatVnd(completedReceipt.remainingVnd)}</span>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
 
@@ -436,10 +449,10 @@ export function SettlementCheckoutModal({
                                             <span className="font-serif">+{formatVnd(preview.financials.overtimeTotalVnd ?? 0)}</span>
                                         </div>
                                     )}
-                                    {(preview.financials.fishBuybackTotalVnd ?? 0) > 0 && (
+                                    {((preview.financials.fishOffsetVnd ?? preview.financials.fishBuybackTotalVnd) ?? 0) > 0 && (
                                         <div className="flex justify-between text-[#2C4C3B] font-semibold">
-                                            <span>Thu cá hồ mua lại:</span>
-                                            <span className="font-serif">-{formatVnd(preview.financials.fishBuybackTotalVnd ?? 0)}</span>
+                                            <span>Cấn trừ cá:</span>
+                                            <span className="font-serif">-{formatVnd(preview.financials.fishOffsetVnd ?? preview.financials.fishBuybackTotalVnd ?? 0)}</span>
                                         </div>
                                     )}
                                     <div className="border-t border-[#E0E0E0] pt-1.5 flex justify-between font-bold text-[#1A1A1A]">
@@ -449,6 +462,12 @@ export function SettlementCheckoutModal({
                                 </div>
 
                                 {/* Highlight Result box: Net Due / Refund / Balanced */}
+                                {preview.financials.settlementSummary && (
+                                    <div className="rounded-2xl border border-[#CCCCCC] bg-white p-3 text-left text-sm font-bold leading-snug text-[#1A1A1A] shadow-xs">
+                                        {preview.financials.settlementSummary}
+                                    </div>
+                                )}
+                                {(preview.financials.refundVnd > 0 || preview.financials.netDueVnd > 0 || !preview.financials.settlementSummary) && (
                                 <div
                                     className={`rounded-2xl p-4 text-center border shadow-xs ${
                                         preview.financials.refundVnd > 0
@@ -473,6 +492,7 @@ export function SettlementCheckoutModal({
                                             : "0 đ"}
                                     </span>
                                 </div>
+                                )}
 
                                 {/* Payment Method Selector if netDue > 0 */}
                                 {preview.financials.netDueVnd > 0 && (
@@ -504,6 +524,12 @@ export function SettlementCheckoutModal({
                                                 🏦 Chuyển khoản (QR)
                                             </button>
                                         </div>
+                                        {paymentMethod === "BANK_TRANSFER" && preview.invoice && (
+                                            <PondTransferQr
+                                                amountVnd={preview.financials.netDueVnd}
+                                                orderCode={preview.invoice.id.slice(0, 8)}
+                                            />
+                                        )}
                                     </div>
                                 )}
 

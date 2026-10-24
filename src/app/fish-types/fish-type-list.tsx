@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
+import { explainVndInputValidity, VND_INPUT_STEP } from "@/lib/vnd-amount";
 
 export interface FishTypeItem {
     id: string;
@@ -399,7 +400,11 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
                                     type="number"
                                     required
                                     min={0}
-                                    step={1000}
+                                    step={VND_INPUT_STEP}
+                                    onInvalid={(event) => {
+                                        event.currentTarget.setCustomValidity(explainVndInputValidity(event.currentTarget.validity));
+                                    }}
+                                    onInput={(event) => event.currentTarget.setCustomValidity("")}
                                     disabled={editLoading}
                                     value={editPricePerKg}
                                     onChange={(e) => setEditPricePerKg(e.target.value)}
@@ -411,7 +416,7 @@ export function FishTypeList({ fishTypes, canManage }: FishTypeListProps) {
                                     </p>
                                 ) : (
                                     <p className="text-[11px] text-slate-400">
-                                        Nhập đơn giá tính theo 1 kg (bội số 1.000đ)
+                                        Nhập đơn giá nguyên đồng cho 1 kg, ví dụ 32.500
                                     </p>
                                 )}
                             </div>

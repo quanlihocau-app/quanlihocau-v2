@@ -1,5 +1,6 @@
 import { financialScope } from "@/lib/reports/financial-scope";
 import { csvCell, summarizeRevenue } from "@/lib/finance";
+import { lineInWindow } from "@/lib/money";
 import { NextRequest, NextResponse } from "next/server";
 import { getPageSession } from "@/lib/server-session";
 
@@ -54,8 +55,8 @@ export async function GET(request: NextRequest) {
         const invoicesQuery = prisma.invoice.findMany({
             where: {
                 ...scope.invoice,
-                createdAt: { gte: dateRange.from, lte: dateRange.to },
                 status: { not: InvoiceStatus.VOIDED },
+                AND: [{ lines: { some: { createdAt: { gte: dateRange.from, lte: dateRange.to } } } }],
             },
             include: {
                 customer: true,
@@ -71,6 +72,7 @@ export async function GET(request: NextRequest) {
             where: {
                 ...scope.expense,
                 createdAt: { gte: dateRange.from, lte: dateRange.to },
+                financialTransactions: { none: { status: "DRAFT" } },
             },
             include: { payments: true },
             orderBy: { createdAt: "desc" },
@@ -89,7 +91,10 @@ export async function GET(request: NextRequest) {
         const [invoices, expenses, fishBuybacks] = await Promise.all([invoicesQuery, expensesQuery, fishBuybacksQuery]);
 
         // Compute summaries
-        const { ticketRevenue, productRevenue, overtimeRevenue, otherRevenue, totalRevenue, refundAmount } = summarizeRevenue(invoices.map(inv => ({ ...inv, lines: inv.lines.filter(l => !scope.productId || l.productId === scope.productId) })));
+        const { ticketRevenue, productRevenue, overtimeRevenue, otherRevenue, totalRevenue, refundAmount } = summarizeRevenue(invoices.map(inv => ({
+            fishingSessionId: inv.fishingSessionId,
+            lines: inv.lines.filter(l => lineInWindow(l.createdAt, dateRange.from, dateRange.to) && (!scope.productId || l.productId === scope.productId)),
+        })));
         const totalExpense = expenses.reduce((acc, e) => acc + e.amountVnd, 0);
         const totalFishBuyback = fishBuybacks.reduce((acc, f) => acc + f.totalVnd, 0);
         const netProfit = totalRevenue - totalExpense - totalFishBuyback;
@@ -115,13 +120,13 @@ export async function GET(request: NextRequest) {
         rows.push([escapeCsv("Chỉ số"), escapeCsv("Số tiền (VNĐ)")].join(","));
         rows.push([escapeCsv("1. Doanh thu vé câu"), escapeCsv(ticketRevenue)].join(","));
         rows.push([escapeCsv("2. Doanh thu sản phẩm & dịch vụ"), escapeCsv(productRevenue)].join(","));
-        rows.push([escapeCsv("3. Tiền thêm giờ phụ trội"), escapeCsv(overtimeRevenue)].join(","));
+        rows.push([escapeCsv("3. Doanh thu thêm giờ"), escapeCsv(overtimeRevenue)].join(","));
         rows.push([escapeCsv("4. Thu khác"), escapeCsv(otherRevenue)].join(","));
         rows.push([escapeCsv("Giảm trừ hóa đơn"), escapeCsv(refundAmount)].join(","));
         rows.push([escapeCsv("TỔNG DOANH THU"), escapeCsv(totalRevenue)].join(","));
         rows.push([escapeCsv("5. Tổng phiếu chi (Chi phí vận hành)"), escapeCsv(totalExpense)].join(","));
         rows.push([escapeCsv("6. Tổng tiền thu mua cá cần thủ"), escapeCsv(totalFishBuyback)].join(","));
-        rows.push([escapeCsv("LỢI NHUẬN TẠM TÍNH"), escapeCsv(netProfit)].join(","));
+        rows.push([escapeCsv("DOANH THU TRỪ CHI VÀ THU CÁ"), escapeCsv(netProfit)].join(","));
         rows.push("");
 
         // Transactions block

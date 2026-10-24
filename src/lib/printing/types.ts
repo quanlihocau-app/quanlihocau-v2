@@ -116,6 +116,10 @@ export interface PaymentReceiptData {
     totalAmountVnd: number;
     /** Invoice amount due after line item credits such as fish buyback. */
     invoiceTotalVnd?: number;
+    billVnd?: number;
+    fishOffsetVnd?: number;
+    cashReturnedVnd?: number;
+    settlementSummary?: string;
     prepaidAmountVnd?: number;
     paidAmountVnd: number;
     paymentAmountVnd?: number;
@@ -127,6 +131,10 @@ export interface PaymentReceiptData {
     paymentTime: Date | string;
     cashierName?: string | null;
     isReprint?: boolean;
+    bankName?: string | null;
+    bankAccountNumber?: string | null;
+    bankAccountName?: string | null;
+    transferAmountVnd?: number;
 }
 
 export interface TestReceiptData {

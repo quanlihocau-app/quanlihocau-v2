@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { SessionActions } from "./session-actions";
+import { sessionBalancePresentation } from "@/lib/money";
 import {
     SessionGridCard,
     computeSessionFinancials,
@@ -833,27 +834,38 @@ export function SessionsClient({
                                                 </div>
                                             )}
                                             <div className="border-t border-[#CCCCCC] pt-2 flex items-center justify-between">
+                                                {(() => {
+                                                    const balanceView = sessionBalancePresentation({
+                                                        netBalanceVnd: netBalance,
+                                                        elapsedOvertimeMs: detailFinancials.elapsedOvertimeMs,
+                                                        recordedOvertimeVnd: liveOvertimeVnd,
+                                                    });
+                                                    return (
+                                                        <>
                                                 <div>
                                                     <p className="text-xs font-bold text-[#1A1A1A]">
-                                                        {netBalance < 0
+                                                        {balanceView.kind === "refund"
                                                             ? "HỒ THỐI LẠI TIỀN CHO KHÁCH"
-                                                            : netBalance > 0
+                                                            : balanceView.kind === "due"
                                                             ? "CẦN THU THÊM CỦA KHÁCH"
-                                                            : "ĐÃ THANH TOÁN ĐỦ"}
+                                                            : balanceView.label}
                                                     </p>
                                                     <p className="text-[10px] text-[#777777]">
                                                         (Chi phí - Đã thu trước - Thu cá)
                                                     </p>
                                                 </div>
+                                                {balanceView.showAmount && (
                                                 <span className={`text-base font-bold font-serif ${
-                                                    netBalance < 0 ? "text-[#9E2A2B]" : netBalance > 0 ? "text-[#8C5C00]" : "text-[#2C4C3B]"
+                                                    netBalance < 0 ? "text-[#9E2A2B]" : "text-[#8C5C00]"
                                                 }`}>
                                                     {netBalance < 0
                                                         ? `-${formatVnd(Math.abs(netBalance))}`
-                                                        : netBalance > 0
-                                                        ? `+${formatVnd(netBalance)}`
-                                                        : "0 đ"}
+                                                        : `+${formatVnd(netBalance)}`}
                                                 </span>
+                                                )}
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                     </>

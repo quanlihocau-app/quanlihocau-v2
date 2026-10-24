@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { Prisma, Role } from "@/generated/prisma/client";
+import { PaymentMethod, Prisma, Role } from "@/generated/prisma/client";
 import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
+import { syncInvoiceTotals } from "@/lib/invoice-totals";
+import { splitFishBuyback } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -29,6 +31,7 @@ const createBuybackSchema = z
             .positive("Trọng lượng cá phải lớn hơn 0.")),
         sessionId: z.string().uuid().optional(),
         invoiceId: z.string().uuid().optional(),
+        paymentMethod: z.enum(["CASH", "BANK_TRANSFER"]).optional(),
     })
     .strict();
 
@@ -166,31 +169,49 @@ export async function POST(request: Request) {
 
             let invoiceBeforeTotal: number | null = null;
             let invoiceAfterTotal: number | null = null;
+            let cashOutPaymentId: string | null = null;
+            let offsetVnd = 0;
+            let cashOutVnd = totalVnd;
             if (targetInvoiceId) {
-                // Deduct fish buyback from the customer's invoice with negative totalVnd
-                await tx.invoiceLine.create({
-                    data: {
-                        invoiceId: targetInvoiceId,
-                        fishBuybackId: created.id,
-                        name: `Thu cá: ${fishType.name} (${data.weight} kg)`,
-                        unitPrice: fishType.pricePerKg,
-                        quantity: new Prisma.Decimal(data.weight),
-                        totalVnd: -totalVnd,
-                    },
-                });
-
-                // Update invoice total amount
-                const invLines = await tx.invoiceLine.findMany({
+                const existingLines = await tx.invoiceLine.findMany({
                     where: { invoiceId: targetInvoiceId },
                     select: { totalVnd: true },
                 });
-                const updatedTotalAmount = invLines.reduce((s, l) => s + l.totalVnd, 0);
-                invoiceAfterTotal = updatedTotalAmount;
-                invoiceBeforeTotal = updatedTotalAmount + totalVnd;
-                await tx.invoice.update({
-                    where: { id: targetInvoiceId },
-                    data: { totalAmountVnd: updatedTotalAmount },
+                const billBefore = existingLines.reduce((sum, line) => sum + line.totalVnd, 0);
+                const split = splitFishBuyback(billBefore, totalVnd);
+                offsetVnd = split.offsetVnd;
+                cashOutVnd = split.cashOutVnd;
+                invoiceBeforeTotal = billBefore;
+                if (offsetVnd > 0) {
+                    // Only the part that nets the bill to 0 is an offset. The rest is cash.
+                    await tx.invoiceLine.create({
+                        data: {
+                            invoiceId: targetInvoiceId,
+                            fishBuybackId: created.id,
+                            name: `Thu cá: ${fishType.name} (${data.weight} kg)`,
+                            unitPrice: fishType.pricePerKg,
+                            quantity: new Prisma.Decimal(data.weight),
+                            totalVnd: -offsetVnd,
+                        },
+                    });
+                    const synced = await syncInvoiceTotals(tx, targetInvoiceId, tenantContext.lakeId);
+                    invoiceAfterTotal = synced?.totalAmountVnd ?? null;
+                } else {
+                    invoiceAfterTotal = billBefore;
+                }
+            }
+            if (cashOutVnd > 0) {
+                // Cash leaving the drawer: the whole buyback, or only the part above the bill.
+                const payout = await tx.payment.create({
+                    data: {
+                        lakeId: tenantContext.lakeId,
+                        amountVnd: cashOutVnd,
+                        method: (data.paymentMethod ?? "CASH") as PaymentMethod,
+                        direction: "OUT",
+                        idempotencyKey: crypto.randomUUID(),
+                    },
                 });
+                cashOutPaymentId = payout.id;
             }
 
             await writeStaffAudit(tx, {
@@ -214,8 +235,12 @@ export async function POST(request: Request) {
                     weight: data.weight,
                     pricePerKg: fishType.pricePerKg,
                     totalVnd,
+                    offsetVnd,
+                    cashOutVnd,
                     invoiceId: targetInvoiceId,
                     sessionId: data.sessionId || null,
+                    cashOutPaymentId,
+                    paymentMethod: cashOutVnd > 0 ? (data.paymentMethod ?? "CASH") : null,
                 },
                 ip: requestMeta.ip,
                 userAgent: requestMeta.userAgent,

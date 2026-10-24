@@ -7,13 +7,16 @@ import {
     InvoiceStatus,
     PaymentDirection,
     PaymentMethod,
+    Role,
 } from "@/generated/prisma/client";
+import { generatePondVietQrUrl } from "@/lib/vietqr";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
 import { safeRedirectPath } from "@/lib/navigation";
 
 import { InvoiceLinesSection } from "./invoice-lines-section";
 import { PrintReceiptButton } from "./print-receipt-button";
+import { VoidInvoiceButton } from "./void-invoice-button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { InvoiceStatusBadge } from "@/components/ui/badge";
@@ -118,6 +121,7 @@ export default async function InvoiceDetailPage({
                   fishingSession: {
                       select: {
                           id: true,
+                          status: true,
                           startAt: true,
                           endedAt: true,
                           packageNameSnapshot: true,
@@ -225,6 +229,26 @@ export default async function InvoiceDetailPage({
     );
     const paidAmount = Math.max(0, netPaid);
     const remaining = Math.max(0, invoice.totalAmountVnd - paidAmount);
+    const lakeBank = await prisma.lake.findUnique({
+        where: { id: tenantContext.lakeId },
+        select: { bankCode: true, bankName: true, bankAccountNumber: true, bankAccountName: true },
+    });
+    const pondQr = remaining > 0
+        ? generatePondVietQrUrl({
+            amount: remaining,
+            orderCode: invoice.id.slice(0, 8),
+            bankCode: lakeBank?.bankCode,
+            accountNumber: lakeBank?.bankAccountNumber,
+            accountName: lakeBank?.bankAccountName,
+        })
+        : null;
+    const sessionStatus = invoice.fishingSession?.status;
+    const canVoid = tenantContext.role === Role.OWNER
+        && invoice.status !== InvoiceStatus.VOIDED
+        && sessionStatus !== "ACTIVE"
+        && (invoice.status === InvoiceStatus.PAID
+            || invoice.status === InvoiceStatus.PARTIALLY_PAID
+            || sessionStatus === "COMPLETED");
 
     // Fetch active products & their stock if invoice is DRAFT
     const isDraft = invoice.status === InvoiceStatus.DRAFT;
@@ -318,6 +342,10 @@ export default async function InvoiceDetailPage({
             : "—",
         paymentTime: invoice.payments[0]?.createdAt || invoice.createdAt,
         cashierName: tenantContext.userName,
+        bankName: pondQr?.bankName,
+        bankAccountNumber: pondQr?.accountNumber,
+        bankAccountName: pondQr?.accountName,
+        transferAmountVnd: pondQr && !pondQr.missingAccount ? remaining : undefined,
     };
 
     return (
@@ -331,7 +359,12 @@ export default async function InvoiceDetailPage({
                         backHref={backHref}
                         backLabel="Danh sách hóa đơn"
                         badge={<InvoiceStatusBadge status={invoice.status} />}
-                        action={<PrintReceiptButton receiptData={printableReceiptData} />}
+                        action={
+                            <div className="flex items-center gap-2">
+                                {canVoid && <VoidInvoiceButton invoiceId={invoice.id} />}
+                                <PrintReceiptButton receiptData={printableReceiptData} />
+                            </div>
+                        }
                     />
                 </div>
 
@@ -346,6 +379,24 @@ export default async function InvoiceDetailPage({
                             <h1 className="text-xl font-bold text-[#27231F] sm:text-2xl mt-0.5">
                                 {tenantContext.lakeName}
                             </h1>
+                            {pondQr && (
+                                <div className="mt-3 max-w-xs space-y-2">
+                                    {pondQr.qrUrl ? (
+                                        <>
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={pondQr.qrUrl} alt="VietQR của hồ" className="h-40 w-40 rounded-lg border border-[#D9D2C8] bg-white p-1" />
+                                            <p className="text-[11px] text-[#27231F]">
+                                                {pondQr.bankName} · {pondQr.accountNumber} · {pondQr.accountName}
+                                                <br />Nội dung: {pondQr.memo}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <p className="text-[11px] font-medium text-amber-800">
+                                            Chủ hồ chưa khai báo tài khoản ngân hàng trong Cài đặt. Chưa có mã VietQR.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                             <p className="text-xs text-[#766F67] mt-1">
                                 Mã hóa đơn: <span className="font-mono font-semibold text-[#27231F]">{invoice.id}</span>
                             </p>

@@ -5,6 +5,7 @@ import { Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AuthenticationError, ForbiddenError, requireTenantContext } from "@/lib/tenant";
 import { assertSpotLimit } from "@/lib/subscription-guard";
+import { DUPLICATE_HUT_MESSAGE, duplicateHutName } from "@/lib/hut-name";
 
 export interface QuickActionResult<T = unknown> {
     ok: boolean;
@@ -59,6 +60,14 @@ export async function addQuickHutAction(input: {
         const trimmedName = input.name.trim();
         if (!trimmedName || trimmedName.length < 2) {
             return { ok: false, error: "Tên ô câu tối thiểu 2 ký tự." };
+        }
+
+        const existingHuts = await prisma.hut.findMany({
+            where: { lakeId: tenantContext.lakeId, deletedAt: null },
+            select: { name: true },
+        });
+        if (duplicateHutName(trimmedName, existingHuts)) {
+            return { ok: false, error: DUPLICATE_HUT_MESSAGE };
         }
 
         // Kiểm tra giới hạn số ô câu của gói cước SaaS

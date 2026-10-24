@@ -494,11 +494,11 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                             role="button" tabIndex={0}
                             onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setActiveTab("revenue"); } }}
                             onClick={() => setActiveTab("revenue")}
-                            title="Lợi nhuận tạm tính = Tổng doanh thu - Chi phí - Tiền mua cá. Bấm để xem chi tiết dòng tiền."
+                            title="Doanh thu trừ chi và thu cá. Không phải tiền trong két. Bấm để xem chi tiết dòng tiền."
                             className="cursor-pointer rounded-2xl border border-slate-800 bg-[#0F172A] p-3 text-white shadow-2xs hover:border-slate-600 transition-all active:scale-98"
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-                                <span>Lợi nhuận tạm tính</span>
+                                <span>Doanh thu trừ chi và thu cá</span>
                                 <span>📊</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif sm:text-lg tabular-nums">
@@ -562,7 +562,7 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                         >
                             <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                                 <span>
-                                    Tiền thêm giờ</span>
+                                    Doanh thu thêm giờ</span>
                                 <span>🔍</span>
                             </div>
                             <div className="mt-1 text-base font-bold font-serif text-[#D48806] tabular-nums">

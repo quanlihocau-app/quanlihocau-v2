@@ -9,6 +9,7 @@ import {
 import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import type { TenantContext } from "@/lib/tenant";
+import { resolveTicketCustomer } from "@/lib/ticket-customer";
 
 export const openSessionSchema = z.object({
     clientMutationId: z.string().uuid("clientMutationId không hợp lệ.").optional(),
@@ -178,15 +179,19 @@ export async function openSession(
                         phoneNormalized: string | null;
                     } | null = null;
 
-                    const customerMode = input.customer?.mode ?? (input.customerId ? "EXISTING" : "GUEST");
+                    const choice = resolveTicketCustomer({
+                        selectedCustomerId: input.customerId || input.customer?.id || null,
+                        selectedCustomerName: input.customer?.name || null,
+                        typedName: input.customer?.mode === "NEW" ? input.customer.name : null,
+                    });
 
-                    if (customerMode === "NEW") {
-                        if (!input.customer?.name || input.customer.name.trim().length < 2) {
+                    if (choice.mode === "NEW") {
+                        if (!choice.name || choice.name.trim().length < 2) {
                             throw new Error(
                                 "VALIDATION_ERROR: Tên khách hàng mới phải có ít nhất 2 ký tự.",
                             );
                         }
-                        const phone = input.customer.phone?.trim() || null;
+                        const phone = input.customer?.phone?.trim() || null;
 
                         if (phone) {
                             const existingCust = await tx.customer.findFirst({
@@ -210,7 +215,7 @@ export async function openSession(
                             const createdCustomer = await tx.customer.create({
                                 data: {
                                     lakeId: tenantContext.lakeId,
-                                    name: input.customer.name.trim(),
+                                    name: choice.name.trim(),
                                     phoneNormalized: phone,
                                 },
                             });
@@ -221,8 +226,8 @@ export async function openSession(
                                 phoneNormalized: createdCustomer.phoneNormalized,
                             };
                         }
-                    } else if (customerMode === "EXISTING" || input.customerId) {
-                        const targetId = input.customer?.id || input.customerId;
+                    } else if (choice.mode === "EXISTING" && choice.customerId) {
+                        const targetId = choice.customerId;
                         if (targetId) {
                             const existingCust = await tx.customer.findFirst({
                                 where: {

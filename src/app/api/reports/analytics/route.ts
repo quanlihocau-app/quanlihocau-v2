@@ -1,5 +1,7 @@
 import { financialScope } from "@/lib/reports/financial-scope";
 import { summarizeMoney, summarizeRevenue } from "@/lib/finance";
+import { fishingHoursFromMinutes, fishingSpan } from "@/lib/fishing-hours";
+import { isOvertimeLineName, lineInWindow } from "@/lib/money";
 import { NextRequest, NextResponse } from "next/server";
 import { getPageSession } from "@/lib/server-session";
 
@@ -30,12 +32,14 @@ interface InvoiceSummaryItem {
     id: string;
     createdAt: Date;
     status: InvoiceStatus;
+    fishingSessionId?: string | null;
     lines: Array<{
         productId: string | null;
         name: string;
         fishBuybackId: string | null;
         totalVnd: number;
         quantity: Prisma.Decimal | number;
+        createdAt: Date;
     }>;
 }
 
@@ -147,7 +151,7 @@ export async function GET(request: NextRequest) {
             // Invoices in range
             const invoiceWhere: Prisma.InvoiceWhereInput = {
                 ...scope.invoice,
-                createdAt: { gte: from, lte: to },
+                AND: [{ lines: { some: { createdAt: { gte: from, lte: to } } } }],
             };
             if (filterCustomerId) invoiceWhere.customerId = filterCustomerId;
 
@@ -174,6 +178,7 @@ export async function GET(request: NextRequest) {
             const paymentWhere: Prisma.PaymentWhereInput = {
                 ...scope.payment,
                 createdAt: { gte: from, lte: to },
+                financialTransactions: { none: { status: "DRAFT" } },
             };
             if (filterPaymentMethod) paymentWhere.method = filterPaymentMethod;
 
@@ -186,6 +191,7 @@ export async function GET(request: NextRequest) {
                 where: {
                     ...scope.expense,
                     createdAt: { gte: from, lte: to },
+                    financialTransactions: { none: { status: "DRAFT" } },
                 },
             });
 
@@ -198,10 +204,18 @@ export async function GET(request: NextRequest) {
                 include: { fishType: true },
             });
 
-            // Fishing sessions created in range
+            // Sessions that overlap the window, including ones opened earlier and still running.
             const sessionWhere: Prisma.FishingSessionWhereInput = {
-                ...scope.session,
-                createdAt: { gte: from, lte: to },
+                AND: [
+                    scope.session,
+                    {
+                        OR: [
+                            { createdAt: { gte: from, lte: to } },
+                            { status: SessionStatus.ACTIVE, startAt: { lte: to } },
+                            { endedAt: { gte: from }, startAt: { lte: to } },
+                        ],
+                    },
+                ],
             };
             if (filterCustomerId) sessionWhere.customerId = filterCustomerId;
             if (filterPackageId) sessionWhere.packageId = filterPackageId;
@@ -232,7 +246,10 @@ export async function GET(request: NextRequest) {
             // Calculate metrics strictly according to formula
             const validInvoices = invoices.filter(inv => inv.status !== InvoiceStatus.VOIDED);
             const { ticketRevenue, productRevenue, overtimeRevenue, otherRevenue, refundAmount, refundCount, totalRevenue } = summarizeRevenue(
-                validInvoices.map(inv => ({ ...inv, lines: inv.lines.filter(line => !filterProductId || line.productId === filterProductId) }))
+                validInvoices.map(inv => ({
+                    fishingSessionId: inv.fishingSessionId,
+                    lines: inv.lines.filter(line => lineInWindow(line.createdAt, from, to) && (!filterProductId || line.productId === filterProductId)),
+                }))
             );
             let totalReceivableDebt = 0;
             for (const inv of validInvoices) {
@@ -279,24 +296,34 @@ export async function GET(request: NextRequest) {
             let activeSessions = 0;
             let completedSessions = 0;
             let cancelledSessions = 0;
+            let createdInWindow = 0;
             let totalFishingMinutes = 0;
             let totalOvertimeMinutes = 0;
+            const now = new Date();
 
             for (const s of sessions) {
-                if (s.status === SessionStatus.ACTIVE) activeSessions++;
-                else if (s.status === SessionStatus.COMPLETED) completedSessions++;
-                else if (s.status === SessionStatus.CANCELLED) cancelledSessions++;
-
-                const endTime = s.endedAt || (s.status === SessionStatus.ACTIVE ? new Date() : s.plannedEndAt);
-                const durationMinutes = Math.max(0, Math.round((endTime.getTime() - s.startAt.getTime()) / 60000));
-                totalFishingMinutes += durationMinutes;
-
-                if (endTime.getTime() > s.plannedEndAt.getTime()) {
-                    totalOvertimeMinutes += Math.round((endTime.getTime() - s.plannedEndAt.getTime()) / 60000);
+                const createdHere = s.createdAt >= from && s.createdAt <= to;
+                if (createdHere) {
+                    createdInWindow += 1;
+                    if (s.status === SessionStatus.ACTIVE) activeSessions++;
+                    else if (s.status === SessionStatus.COMPLETED) completedSessions++;
+                    else if (s.status === SessionStatus.CANCELLED) cancelledSessions++;
                 }
+
+                const span = fishingSpan({
+                    startAt: s.startAt,
+                    endedAt: s.endedAt,
+                    plannedEndAt: s.plannedEndAt,
+                    status: s.status,
+                    now,
+                    windowFrom: from,
+                    windowTo: to,
+                });
+                totalFishingMinutes += span.minutes;
+                totalOvertimeMinutes += span.overtimeMinutes;
             }
 
-            const totalSessions = sessions.length;
+            const totalSessions = createdInWindow;
             const averageTicketValue = totalSessions > 0 ? Math.round(ticketRevenue / Math.max(1, completedSessions + activeSessions)) : 0;
 
             return {
@@ -322,8 +349,8 @@ export async function GET(request: NextRequest) {
                 activeSessions,
                 completedSessions,
                 cancelledSessions,
-                totalFishingHours: Math.round((totalFishingMinutes / 60) * 10) / 10,
-                totalOvertimeHours: Math.round((totalOvertimeMinutes / 60) * 10) / 10,
+                totalFishingHours: fishingHoursFromMinutes(totalFishingMinutes),
+                totalOvertimeHours: fishingHoursFromMinutes(totalOvertimeMinutes),
                 averageTicketValue,
                 // new metrics
                 totalFishCount,
@@ -403,41 +430,45 @@ export async function GET(request: NextRequest) {
         // Populate revenue and tickets into chart buckets
         for (const inv of primaryData.invoices) {
             if (inv.status === InvoiceStatus.VOIDED) continue;
-            const p = getVnParts(inv.createdAt);
-            let bucketKey = "";
-            let bucketLabel = "";
+            for (const line of inv.lines) {
+                if (!lineInWindow(line.createdAt, primaryRange.from, primaryRange.to)) continue;
+                if (filterProductId && line.productId !== filterProductId) continue;
+                const p = getVnParts(line.createdAt);
+                let bucketKey = "";
+                let bucketLabel = "";
 
-            if (grouping === "hourly") {
-                bucketKey = `${String(p.hours).padStart(2, "0")}:00`;
-                bucketLabel = `${p.hours}h`;
-            } else if (grouping === "daily") {
-                bucketKey = `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
-                bucketLabel = `${p.day}/${p.month}`;
-            } else if (grouping === "monthly") {
-                bucketKey = `${p.year}-${String(p.month).padStart(2, "0")}`;
-                bucketLabel = `T${p.month}/${p.year}`;
-            } else {
-                bucketKey = `${p.year}`;
-                bucketLabel = `${p.year}`;
+                if (grouping === "hourly") {
+                    bucketKey = `${String(p.hours).padStart(2, "0")}:00`;
+                    bucketLabel = `${p.hours}h`;
+                } else if (grouping === "daily") {
+                    bucketKey = `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
+                    bucketLabel = `${p.day}/${p.month}`;
+                } else if (grouping === "monthly") {
+                    bucketKey = `${p.year}-${String(p.month).padStart(2, "0")}`;
+                    bucketLabel = `T${p.month}/${p.year}`;
+                } else {
+                    bucketKey = `${p.year}`;
+                    bucketLabel = `${p.year}`;
+                }
+
+                if (!chartPointsMap.has(bucketKey)) {
+                    chartPointsMap.set(bucketKey, {
+                        key: bucketKey,
+                        label: bucketLabel,
+                        revenue: 0,
+                        expense: 0,
+                        profit: 0,
+                        sessions: 0,
+                        overtimeVnd: 0,
+                    });
+                }
+
+                const pt = chartPointsMap.get(bucketKey)!;
+                pt.revenue += summarizeRevenue([{ fishingSessionId: inv.fishingSessionId, lines: [line] }]).totalRevenue;
+                if (!line.fishBuybackId && !line.productId && isOvertimeLineName(line.name) && line.totalVnd > 0) {
+                    pt.overtimeVnd += line.totalVnd;
+                }
             }
-
-            if (!chartPointsMap.has(bucketKey)) {
-                chartPointsMap.set(bucketKey, {
-                    key: bucketKey,
-                    label: bucketLabel,
-                    revenue: 0,
-                    expense: 0,
-                    profit: 0,
-                    sessions: 0,
-                    overtimeVnd: 0,
-                });
-            }
-
-            const pt = chartPointsMap.get(bucketKey)!;
-            pt.revenue += summarizeRevenue([{ ...inv, lines: inv.lines.filter(l => !filterProductId || l.productId === filterProductId) }]).totalRevenue;
-
-            const otLine = inv.lines.find((l) => l.name.toLowerCase().includes("thêm giờ") || l.name.toLowerCase().includes("phụ trội"));
-            if (otLine) pt.overtimeVnd += otLine.totalVnd;
         }
 
         // Populate expenses into chart buckets
@@ -565,6 +596,7 @@ export async function GET(request: NextRequest) {
         // 9. Customer summary
         const customerVisitMap = new Map<string, { id: string; name: string; phone: string | null; sessions: number; totalSpent: number }>();
         for (const s of primaryData.sessions) {
+            if (s.createdAt < primaryRange.from || s.createdAt > primaryRange.to) continue;
             if (s.customer) {
                 if (!customerVisitMap.has(s.customer.id)) {
                     customerVisitMap.set(s.customer.id, {
@@ -587,19 +619,27 @@ export async function GET(request: NextRequest) {
 
         // Top 5 câu nhiều giờ nhất (tính tổng giờ câu từ sessions có customer)
         const customerHoursMap = new Map<string, { id: string; name: string; phone: string | null; totalMinutes: number }>();
+        const hoursNow = new Date();
         for (const s of primaryData.sessions) {
             if (!s.customer) continue;
-            const endTime = s.endedAt || s.plannedEndAt;
-            const mins = Math.max(0, Math.round((endTime.getTime() - s.startAt.getTime()) / 60000));
+            const span = fishingSpan({
+                startAt: s.startAt,
+                endedAt: s.endedAt,
+                plannedEndAt: s.plannedEndAt,
+                status: s.status,
+                now: hoursNow,
+                windowFrom: primaryRange.from,
+                windowTo: primaryRange.to,
+            });
             if (!customerHoursMap.has(s.customer.id)) {
                 customerHoursMap.set(s.customer.id, { id: s.customer.id, name: s.customer.name, phone: s.customer.phoneNormalized, totalMinutes: 0 });
             }
-            customerHoursMap.get(s.customer.id)!.totalMinutes += mins;
+            customerHoursMap.get(s.customer.id)!.totalMinutes += span.minutes;
         }
         const top5MostHours = Array.from(customerHoursMap.values())
             .sort((a, b) => b.totalMinutes - a.totalMinutes)
             .slice(0, 5)
-            .map(c => ({ ...c, totalHours: Math.round((c.totalMinutes / 60) * 10) / 10 }));
+            .map(c => ({ ...c, totalHours: fishingHoursFromMinutes(c.totalMinutes) }));
 
         // Top 5 chi tiêu nhiều nhất (same as topCustomers but slice 5)
         const top5MostSpent = Array.from(customerVisitMap.values())

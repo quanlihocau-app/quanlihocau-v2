@@ -176,7 +176,10 @@ export function buildPaymentReceiptEscPos(
         builder.twoCols("Tru tien ca thu lai:", `-${formatVnd(fishTotal)}`);
     }
     builder.divider("-");
-    builder.bold(true).twoCols("TONG HOA DON:", formatVnd(data.invoiceTotalVnd ?? data.totalAmountVnd)).bold(false);
+    builder.bold(true).twoCols("TONG HOA DON:", formatVnd(data.billVnd ?? data.invoiceTotalVnd ?? data.totalAmountVnd)).bold(false);
+    if (data.settlementSummary) {
+        builder.text(data.settlementSummary);
+    }
     if (prepaidTotal > 0) {
         builder.twoCols("Ve da thanh toan:", formatVnd(prepaidTotal));
     }
@@ -210,6 +213,18 @@ export function buildPaymentReceiptEscPos(
     builder.twoCols("Thoi gian:", formatDateTime(data.paymentTime));
     if (data.cashierName) {
         builder.twoCols("Thu ngan:", data.cashierName);
+    }
+
+    if (data.bankAccountNumber && data.bankAccountName) {
+        builder.divider("-");
+        builder.align("center");
+        builder.text("CHUYEN KHOAN");
+        if (data.bankName) builder.text(data.bankName);
+        builder.text(`STK: ${data.bankAccountNumber}`);
+        builder.text(data.bankAccountName);
+        if (data.transferAmountVnd && data.transferAmountVnd > 0) {
+            builder.text(`So tien: ${formatVnd(data.transferAmountVnd)}`);
+        }
     }
 
     builder.divider("=");

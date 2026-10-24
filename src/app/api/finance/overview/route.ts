@@ -4,6 +4,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireTenantContext, AuthenticationError, ForbiddenError } from "@/lib/tenant";
 import { assertFinancialPermission, FINANCE_ROLES } from "@/lib/financial/permissions";
+import { collectionSides, summarizeRevenue } from "@/lib/money";
+import { formatVnDateInput } from "@/lib/reports/date-utils";
 
 const querySchema = z.object({
     from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Định dạng ngày bắt đầu YYYY-MM-DD không đúng."),
@@ -37,45 +39,42 @@ export async function GET(request: Request) {
         const prevStart = new Date(prevEnd.getTime() - durationMs);
 
         // 1. Dữ liệu kỳ hiện tại
+        const notDraft = { financialTransactions: { none: { status: "DRAFT" as const } } };
         const [
-            receiptsAgg,
+            payments,
             expensesAgg,
-            invoicesList,
+            revenueLines,
+            fishAgg,
             debtsReceivableAgg,
             debtsPayableAgg,
             accountsList,
             categoriesList,
         ] = await Promise.all([
-            // Tổng thực thu trong kỳ
-            prisma.financialTransaction.aggregate({
-                where: {
-                    lakeId,
-                    type: "RECEIPT",
-                    status: "APPROVED",
-                    transactionDate: { gte: currentStart, lte: currentEnd },
-                },
+            prisma.payment.findMany({
+                where: { lakeId, createdAt: { gte: currentStart, lte: currentEnd }, ...notDraft },
+                select: { amountVnd: true, direction: true, method: true, expenseId: true, invoiceId: true, createdAt: true },
+            }),
+            prisma.expense.aggregate({
+                where: { lakeId, createdAt: { gte: currentStart, lte: currentEnd }, ...notDraft },
                 _sum: { amountVnd: true },
             }),
-            // Tổng thực chi trong kỳ
-            prisma.financialTransaction.aggregate({
+            prisma.invoiceLine.findMany({
                 where: {
-                    lakeId,
-                    type: "EXPENSE",
-                    status: "APPROVED",
-                    transactionDate: { gte: currentStart, lte: currentEnd },
-                },
-                _sum: { amountVnd: true },
-            }),
-            // Doanh thu bán hàng / vé câu / dịch vụ
-            prisma.invoice.findMany({
-                where: {
-                    lakeId,
                     createdAt: { gte: currentStart, lte: currentEnd },
-                    status: { not: "VOIDED" },
+                    invoice: { lakeId, status: { not: "VOIDED" } },
                 },
-                include: {
-                    lines: true,
+                select: {
+                    name: true,
+                    totalVnd: true,
+                    productId: true,
+                    fishBuybackId: true,
+                    createdAt: true,
+                    invoice: { select: { fishingSessionId: true } },
                 },
+            }),
+            prisma.fishBuyback.aggregate({
+                where: { lakeId, createdAt: { gte: currentStart, lte: currentEnd } },
+                _sum: { totalVnd: true },
             }),
             // Công nợ phải thu (khách còn nợ)
             prisma.debt.aggregate({
@@ -108,50 +107,56 @@ export async function GET(request: Request) {
         ]);
 
         // 2. Dữ liệu kỳ trước để so sánh %
-        const [prevReceiptsAgg, prevExpensesAgg, prevInvoicesList] = await Promise.all([
-            prisma.financialTransaction.aggregate({
-                where: {
-                    lakeId,
-                    type: "RECEIPT",
-                    status: "APPROVED",
-                    transactionDate: { gte: prevStart, lte: prevEnd },
-                },
+        const [prevPayments, prevExpensesAgg, prevLines, prevFishAgg] = await Promise.all([
+            prisma.payment.findMany({
+                where: { lakeId, createdAt: { gte: prevStart, lte: prevEnd }, ...notDraft },
+                select: { amountVnd: true, direction: true, method: true, expenseId: true, invoiceId: true, createdAt: true },
+            }),
+            prisma.expense.aggregate({
+                where: { lakeId, createdAt: { gte: prevStart, lte: prevEnd }, ...notDraft },
                 _sum: { amountVnd: true },
             }),
-            prisma.financialTransaction.aggregate({
+            prisma.invoiceLine.findMany({
                 where: {
-                    lakeId,
-                    type: "EXPENSE",
-                    status: "APPROVED",
-                    transactionDate: { gte: prevStart, lte: prevEnd },
-                },
-                _sum: { amountVnd: true },
-            }),
-            prisma.invoice.findMany({
-                where: {
-                    lakeId,
                     createdAt: { gte: prevStart, lte: prevEnd },
-                    status: { not: "VOIDED" },
+                    invoice: { lakeId, status: { not: "VOIDED" } },
                 },
-                select: { totalAmountVnd: true },
+                select: {
+                    name: true,
+                    totalVnd: true,
+                    productId: true,
+                    fishBuybackId: true,
+                    createdAt: true,
+                    invoice: { select: { fishingSessionId: true } },
+                },
+            }),
+            prisma.fishBuyback.aggregate({
+                where: { lakeId, createdAt: { gte: prevStart, lte: prevEnd } },
+                _sum: { totalVnd: true },
             }),
         ]);
 
-        // Tính tổng doanh thu ghi nhận từ hóa đơn (Invoiced Revenue)
-        const totalRevenueVnd = invoicesList.reduce((sum, inv) => sum + inv.totalAmountVnd, 0);
-        const prevRevenueVnd = prevInvoicesList.reduce((sum, inv) => sum + inv.totalAmountVnd, 0);
+        const revenueOf = (lines: typeof revenueLines) => summarizeRevenue(lines.map((line) => ({
+            fishingSessionId: line.invoice.fishingSessionId,
+            lines: [line],
+        }))).totalRevenue;
+        const totalRevenueVnd = revenueOf(revenueLines);
+        const prevRevenueVnd = revenueOf(prevLines);
+        const fishBuybackVnd = fishAgg._sum.totalVnd || 0;
+        const prevFishBuybackVnd = prevFishAgg._sum.totalVnd || 0;
 
-        const totalReceiptsVnd = receiptsAgg._sum.amountVnd || 0;
+        const collected = collectionSides(payments);
+        const prevCollected = collectionSides(prevPayments);
+        const totalReceiptsVnd = collected.cashCollectedVnd + collected.transferCollectedVnd;
         const totalExpensesVnd = expensesAgg._sum.amountVnd || 0;
         const netCashFlowVnd = totalReceiptsVnd - totalExpensesVnd;
 
-        const prevReceiptsVnd = prevReceiptsAgg._sum.amountVnd || 0;
+        const prevReceiptsVnd = prevCollected.cashCollectedVnd + prevCollected.transferCollectedVnd;
         const prevExpensesVnd = prevExpensesAgg._sum.amountVnd || 0;
         const prevNetCashFlowVnd = prevReceiptsVnd - prevExpensesVnd;
 
-        // Lợi nhuận ước tính = Doanh thu - Chi phí
-        const estimatedProfitVnd = totalRevenueVnd - totalExpensesVnd;
-        const prevEstimatedProfitVnd = prevRevenueVnd - prevExpensesVnd;
+        const estimatedProfitVnd = totalRevenueVnd - totalExpensesVnd - fishBuybackVnd;
+        const prevEstimatedProfitVnd = prevRevenueVnd - prevExpensesVnd - prevFishBuybackVnd;
 
         // Hàm tính tỷ lệ % tăng/giảm an toàn
         function computeGrowth(current: number, previous: number) {
@@ -202,37 +207,33 @@ export async function GET(request: Request) {
         );
 
         // 3. Chuỗi thời gian (Daily Trend) cho biểu đồ
-        const dailyTransactions = await prisma.financialTransaction.findMany({
-            where: {
-                lakeId,
-                status: "APPROVED",
-                transactionDate: { gte: currentStart, lte: currentEnd },
-            },
-            select: {
-                type: true,
-                amountVnd: true,
-                transactionDate: true,
-            },
+        const chartExpenses = await prisma.expense.findMany({
+            where: { lakeId, createdAt: { gte: currentStart, lte: currentEnd }, ...notDraft },
+            select: { amountVnd: true, createdAt: true },
         });
 
         const dailyMap = new Map<string, { date: string; receipts: number; expenses: number; net: number }>();
 
         // Khởi tạo các mốc ngày trong khoảng lọc
-        const curDate = new Date(currentStart);
-        while (curDate <= currentEnd) {
-            const dateKey = curDate.toISOString().split("T")[0];
-            dailyMap.set(dateKey, { date: dateKey, receipts: 0, expenses: 0, net: 0 });
-            curDate.setDate(curDate.getDate() + 1);
+        for (let cursor = currentStart.getTime(); cursor <= currentEnd.getTime(); cursor += 86_400_000) {
+            const dateKey = formatVnDateInput(new Date(cursor));
+            if (!dailyMap.has(dateKey)) dailyMap.set(dateKey, { date: dateKey, receipts: 0, expenses: 0, net: 0 });
         }
 
-        for (const tx of dailyTransactions) {
-            const dateKey = new Date(tx.transactionDate).toISOString().split("T")[0];
+        for (const payment of payments) {
+            const sides = collectionSides([payment]);
+            const collectedVnd = sides.cashCollectedVnd + sides.transferCollectedVnd;
+            if (collectedVnd === 0) continue;
+            const dateKey = formatVnDateInput(payment.createdAt);
             const entry = dailyMap.get(dateKey) || { date: dateKey, receipts: 0, expenses: 0, net: 0 };
-            if (tx.type === "RECEIPT") {
-                entry.receipts += tx.amountVnd;
-            } else {
-                entry.expenses += tx.amountVnd;
-            }
+            entry.receipts += collectedVnd;
+            entry.net = entry.receipts - entry.expenses;
+            dailyMap.set(dateKey, entry);
+        }
+        for (const expense of chartExpenses) {
+            const dateKey = formatVnDateInput(expense.createdAt);
+            const entry = dailyMap.get(dateKey) || { date: dateKey, receipts: 0, expenses: 0, net: 0 };
+            entry.expenses += expense.amountVnd;
             entry.net = entry.receipts - entry.expenses;
             dailyMap.set(dateKey, entry);
         }
@@ -280,7 +281,7 @@ export async function GET(request: Request) {
                 estimatedProfit: {
                     valueVnd: estimatedProfitVnd,
                     growthPct: computeGrowth(estimatedProfitVnd, prevEstimatedProfitVnd),
-                    tooltip: "Lợi nhuận ước tính = Tổng doanh thu ghi nhận - Tổng chi phí thực tế phát sinh.",
+                    tooltip: "Doanh thu trừ chi và thu cá. Không phải tiền trong két. Thu cá chỉ trừ một lần.",
                 },
                 totalReceipts: {
                     valueVnd: totalReceiptsVnd,

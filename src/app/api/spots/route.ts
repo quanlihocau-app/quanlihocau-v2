@@ -9,6 +9,7 @@ import {
     requireTenantContext,
 } from "@/lib/tenant";
 import { assertSpotLimit } from "@/lib/subscription-guard";
+import { DUPLICATE_HUT_MESSAGE, duplicateHutName } from "@/lib/hut-name";
 
 const createSpotSchema = z.object({
     name: z.string().trim().min(2, "Tên ô câu tối thiểu 2 ký tự").max(100, "Tên ô câu tối đa 100 ký tự"),
@@ -91,6 +92,14 @@ export async function POST(request: Request) {
                 { error: "Khu vực không tồn tại hoặc không thuộc hồ câu này." },
                 { status: 404 },
             );
+        }
+
+        const existingHuts = await prisma.hut.findMany({
+            where: { lakeId: tenantContext.lakeId, deletedAt: null },
+            select: { name: true },
+        });
+        if (duplicateHutName(parsed.data.name, existingHuts)) {
+            return NextResponse.json({ error: DUPLICATE_HUT_MESSAGE }, { status: 409 });
         }
 
         const spot = await prisma.hut.create({

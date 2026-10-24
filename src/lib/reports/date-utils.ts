@@ -74,6 +74,17 @@ export function formatVnDateInput(date: Date): string {
     return `${p.year}-${mm}-${dd}`;
 }
 
+/** Midnight in Asia/Ho_Chi_Minh for the calendar day that contains `date`. */
+export function startOfVnDay(date = new Date()): Date {
+    const parts = getVnParts(date);
+    return createVnDate(parts.year, parts.month, parts.day, 0, 0, 0, 0);
+}
+
+export function endOfVnDay(date = new Date()): Date {
+    const parts = getVnParts(date);
+    return createVnDate(parts.year, parts.month, parts.day, 23, 59, 59, 999);
+}
+
 /**
  * Format a Date to "HH:mm" in VN time
  */

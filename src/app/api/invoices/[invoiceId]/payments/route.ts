@@ -7,6 +7,7 @@ import {
     PaymentMethod,
     Role,
 } from "@/generated/prisma/client";
+import { syncInvoiceTotals } from "@/lib/invoice-totals";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -211,19 +212,9 @@ export async function POST(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // h. Update Invoice status
-                        const newPaidTotal = paidAmount + amountVnd;
-                        const newStatus =
-                            newPaidTotal >= invoice.totalAmountVnd
-                                ? InvoiceStatus.PAID
-                                : InvoiceStatus.PARTIALLY_PAID;
-
-                        await tx.invoice.update({
-                            where: { id: invoice.id },
-                            data: {
-                                status: newStatus,
-                            },
-                        });
+                        // h. Recompute paid and balance from every payment, including this one.
+                        const synced = await syncInvoiceTotals(tx, invoice.id, tenantContext.lakeId);
+                        const newStatus = synced?.status ?? InvoiceStatus.PARTIALLY_PAID;
 
                         // i. Create AuditEvent
                         await tx.auditEvent.create({

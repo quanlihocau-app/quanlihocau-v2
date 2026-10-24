@@ -6,6 +6,7 @@ import {
     PaymentDirection,
     Role,
 } from "@/generated/prisma/client";
+import { syncInvoiceTotals } from "@/lib/invoice-totals";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -158,41 +159,8 @@ export async function POST(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // g. Recalculate net paid amount for the invoice
-                        const allPayments = await tx.payment.findMany({
-                            where: {
-                                invoiceId: invoice.id,
-                                lakeId: tenantContext.lakeId,
-                            },
-                            select: {
-                                amountVnd: true,
-                                direction: true,
-                            },
-                        });
-
-                        const netPaid = allPayments.reduce(
-                            (sum, p) =>
-                                p.direction === PaymentDirection.IN
-                                    ? sum + p.amountVnd
-                                    : sum - p.amountVnd,
-                            0,
-                        );
-                        const paidAmount = Math.max(0, netPaid);
-
-                        // If paidAmount is 0 => DRAFT, if > 0 => PARTIALLY_PAID (or PAID if >= total)
-                        const newStatus =
-                            paidAmount <= 0
-                                ? InvoiceStatus.DRAFT
-                                : paidAmount >= invoice.totalAmountVnd
-                                ? InvoiceStatus.PAID
-                                : InvoiceStatus.PARTIALLY_PAID;
-
-                        await tx.invoice.update({
-                            where: { id: invoice.id },
-                            data: {
-                                status: newStatus,
-                            },
-                        });
+                        const synced = await syncInvoiceTotals(tx, invoice.id, tenantContext.lakeId);
+                        const newStatus = synced?.status ?? InvoiceStatus.DRAFT;
 
                         // h. Create AuditEvent
                         await tx.auditEvent.create({

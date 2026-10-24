@@ -104,7 +104,7 @@ function LoginForm() {
           {registered && (
             <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2.5 text-xs text-emerald-300">
               <span className="shrink-0">✓</span>
-              <span>Đăng ký thành công! Hãy đăng nhập bằng Google có cùng email.</span>
+              <span>Đăng ký thành công! Đăng nhập bằng số điện thoại hoặc email và mật khẩu vừa tạo.</span>
             </div>
           )}
           {(oauthError || errorMsg) && (
@@ -125,7 +125,7 @@ function LoginForm() {
 
             <div>
               <label className="mb-1 block text-[11px] font-medium text-white/60">
-                Tên đăng nhập hoặc Email
+                Số điện thoại, tên đăng nhập hoặc email
               </label>
               <input
                 type="text"
@@ -135,7 +135,7 @@ function LoginForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Ví dụ: hienql hoặc email@..."
+                placeholder="0901234567, tên đăng nhập hoặc email"
                 className="h-10 w-full rounded-xl border border-white/15 bg-white/10 px-3 text-sm text-white placeholder-white/25 transition focus:border-emerald-400 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-emerald-400"
               />
             </div>

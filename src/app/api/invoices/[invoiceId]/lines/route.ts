@@ -7,6 +7,7 @@ import {
     Role,
 } from "@/generated/prisma/client";
 import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
+import { syncInvoiceTotals } from "@/lib/invoice-totals";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -304,32 +305,9 @@ export async function POST(request: Request, { params }: RouteParams) {
                             },
                         });
 
-                        // Recalculate and update Invoice totalAmountVnd
-                        const linesAgg = await tx.invoiceLine.aggregate({
-                            where: {
-                                invoiceId: invoice.id,
-                            },
-                            _sum: {
-                                totalVnd: true,
-                            },
-                        });
-
-                        const newTotalAmountVnd = linesAgg._sum.totalVnd ?? 0;
-                        const paidAmountVnd = txInvoice.paidAmountVnd ?? 0;
-                        const refundedAmountVnd = txInvoice.refundedAmountVnd ?? 0;
-                        const balanceDueVnd = Math.max(0, newTotalAmountVnd - paidAmountVnd + refundedAmountVnd);
-                        const newStatus = balanceDueVnd === 0
-                            ? InvoiceStatus.PAID
-                            : (paidAmountVnd > 0 ? InvoiceStatus.PARTIALLY_PAID : InvoiceStatus.DRAFT);
-
-                        const updatedInvoice = await tx.invoice.update({
-                            where: { id: invoice.id },
-                            data: {
-                                totalAmountVnd: newTotalAmountVnd,
-                                balanceDueVnd,
-                                status: newStatus,
-                            },
-                        });
+                        const synced = await syncInvoiceTotals(tx, invoice.id, tenantContext.lakeId);
+                        const newTotalAmountVnd = synced?.totalAmountVnd ?? 0;
+                        const updatedInvoice = synced ?? txInvoice;
 
                         await writeStaffAudit(tx, {
                             lakeId: tenantContext.lakeId,
