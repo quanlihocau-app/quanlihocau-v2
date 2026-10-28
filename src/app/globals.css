@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "../styles/brand-tokens.css";
+@import "../styles/brand-landing.css";
 
 .finance-ui button, .finance-ui a { touch-action: manipulation; }
 
@@ -76,8 +78,9 @@ body:has([role="dialog"][aria-modal="true"]) .quick-actions {
   --ring: #16A34A;
   --radius: 16px;
 
-  /* Typography: Times New Roman editorial stack (Preserved strictly) */
-  --font-serif: "Times New Roman", Times, "Liberation Serif", serif;
+  /* Keep existing font-serif utilities compatible with the app's UI font. */
+  --font-ui: Arial, "Helvetica Neue", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: var(--font-ui);
   --font-sans: "Times New Roman", Times, "Liberation Serif", serif;
 
   /* Vibrant Emerald Green System Palette */
@@ -133,10 +136,7 @@ body:has([role="dialog"][aria-modal="true"]) .quick-actions {
 }
 
 .luxury-pos header span {
-  border-radius: 9999px !important;
-  background: #DCFCE7 !important;
-  color: #16A34A !important;
-  border: 1px solid #BBF7D0 !important;
+  color: inherit;
 }
 
 .luxury-pos main {
@@ -208,7 +208,7 @@ body:has([role="dialog"][aria-modal="true"]) .quick-actions {
 html, body {
   background-color: #F8FAFC;
   color: #0F172A;
-  font-family: "Times New Roman", Times, "Liberation Serif", serif;
+  font-family: var(--font-ui);
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -219,9 +219,19 @@ html, body {
   overscroll-behavior: none;
 }
 
-/* Enforce Times New Roman on all typography */
+/* One readable UI font, including legacy font-serif components. */
 h1, h2, h3, h4, h5, h6, p, span, a, button, input, select, textarea, table, th, td, label {
-  font-family: "Times New Roman", Times, "Liberation Serif", serif;
+  font-family: var(--font-ui);
+}
+
+/* Plain text sits directly on its surface; intentional badges keep their fill. */
+.mobile-pos-shell :where(h1, h2, h3, h4, h5, h6, p, label, span, strong, small, mark):not([class*="bg-"]):not(.badge-pill):not(.badge-online) {
+  background-color: transparent;
+  text-shadow: none;
+}
+
+.mobile-pos-shell mark {
+  color: inherit;
 }
 
 /* Headings scale */
@@ -253,6 +263,31 @@ input, select, textarea {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+}
+
+/* Stable digit widths keep amounts, counters and running clocks aligned. */
+.mobile-pos-shell {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.home-shift-stats > a {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: minmax(2rem, auto) auto;
+  align-content: start;
+  text-align: left;
+}
+
+.home-shift-stats > a > p:first-child {
+  align-self: baseline;
+  line-height: 2rem;
+  padding-top: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.home-shift-stats > a > p:last-child {
+  line-height: 1.5;
 }
 
 /* App shell: modern card container */
@@ -303,14 +338,14 @@ input, select, textarea {
   font-size: 11px;
   font-weight: 700;
   background: #DCFCE7;
-  color: #16A34A;
+  color: #166534;
   border: 1px solid #BBF7D0;
 }
 
 /* Online badge */
 .badge-online {
   background: #DCFCE7;
-  color: #16A34A;
+  color: #166534;
   border: 1px solid #86EFAC;
 }
 
@@ -652,7 +687,7 @@ nav button:active, nav a:active {
   box-shadow: none !important;
 }
 
-/* Văn bản đậm nét dưới nắng chói */
+/* Keep text weight readable without overriding each surface's foreground. */
 .outdoor-high-contrast p,
 .outdoor-high-contrast span,
 .outdoor-high-contrast label,
@@ -660,8 +695,12 @@ nav button:active, nav a:active {
 .outdoor-high-contrast h2,
 .outdoor-high-contrast h3,
 .outdoor-high-contrast h4 {
-  color: #000000 !important;
-  font-weight: 700 !important;
+  font-weight: 700;
+}
+
+/* Nested labels follow the button's light/dark foreground, including disabled. */
+.outdoor-high-contrast :is(button, [role="button"]) :is(span, p, strong, small) {
+  color: inherit !important;
 }
 
 /* Nút bấm ở chế độ ngoài trời: viền đen dày, tương phản cực mạnh */
@@ -732,5 +771,60 @@ nav button:active, nav a:active {
 
 .outdoor-high-contrast .hut-occupied-outdoor span {
   color: #334155 !important;
+}
+
+/* Screen-only readability; never change receipt dimensions or business state. */
+@media screen {
+  .mobile-pos-shell { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  .mobile-pos-frame main { min-width: 0; }
+  .mobile-pos-shell :is(input, select, textarea) { min-height: 44px; }
+  .mobile-pos-shell :is(button, a, input, select, textarea):focus-visible {
+    outline: 3px solid #1b523e;
+    outline-offset: 3px;
+  }
+  .home-shift-stats > a p { overflow-wrap: anywhere; }
+
+  .outdoor-high-contrast {
+    --brand-primary: #174d36;
+    --brand-primary-hover: #103b29;
+    --brand-ink: #111111;
+    --brand-muted: #263a30;
+    --brand-border: #53665a;
+    --brand-rule: #53665a;
+    --color-text-muted: #1e293b;
+    --color-text-subtle: #334155;
+  }
+  .outdoor-high-contrast .mobile-pos-shell { font-size: 16px; }
+  .outdoor-high-contrast .mobile-pos-shell :is(.text-xs, .text-\[10px\], .text-\[11px\]) {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  /* These exact green foregrounds sit on white/pale green surfaces. Keep white
+     text on solid buttons and semantic red/amber warnings intact. */
+  .outdoor-high-contrast .mobile-pos-shell .text-\[\#16A34A\] { color: #166534 !important; }
+  .outdoor-high-contrast .mobile-pos-shell .bg-\[\#16A34A\] { background-color: #166534 !important; }
+  .outdoor-high-contrast .mobile-pos-shell :is(input, select, textarea) {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border: 2px solid #334155 !important;
+    font-weight: 600;
+  }
+  .outdoor-high-contrast .mobile-pos-shell :is(input, textarea)::placeholder {
+    color: #475569;
+    opacity: 1;
+  }
+  .outdoor-high-contrast .mobile-pos-shell > .mobile-pos-frame > nav {
+    background: #ffffff !important;
+    border-top: 2px solid #334155 !important;
+  }
+  .outdoor-high-contrast .mobile-pos-shell nav a[aria-current="page"] {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  .home-welcome-content { flex-direction: column; align-items: stretch; gap: 12px; }
+  .home-welcome-content > a { min-height: 44px; margin-left: 0; }
 }
 

@@ -225,9 +225,9 @@ export function HomeMobileView({
                                 Sẵn sàng phục vụ
                             </span>
                         </div>
-                        <div className="flex items-center justify-between pt-1 gap-2">
+                        <div className="home-welcome-content flex items-center justify-between pt-1 gap-2">
                             <div className="min-w-0 flex-1">
-                                <h2 className="text-base font-bold text-[#0F172A] leading-tight font-serif truncate">
+                                <h2 className="text-base font-bold text-[#0F172A] leading-snug font-serif break-words">
                                     {lakeName}
                                 </h2>
                                 <p className="text-xs text-slate-500 font-serif mt-0.5 leading-relaxed">
@@ -254,7 +254,7 @@ export function HomeMobileView({
                             </span>
                         </div>
 
-                        <div className="grid grid-cols-3 divide-x divide-slate-100 text-center py-3">
+                        <div className="home-shift-stats grid grid-cols-[1fr_1fr_1.5fr] divide-x divide-slate-100 py-3">
                             <Link
                                 href="/sessions"
                                 title="Bấm để xem danh sách phiên đang câu"
@@ -284,7 +284,7 @@ export function HomeMobileView({
                                 title="Bấm để xem Báo cáo ca hôm nay"
                                 className="px-2 cursor-pointer hover:bg-emerald-50/50 transition-all active:scale-95 group"
                             >
-                                <p className="text-base sm:text-lg font-bold text-[#16A34A] tabular-nums font-serif pt-1 truncate group-hover:scale-105 transition-transform">
+                                <p className="text-base sm:text-lg font-bold text-[#16A34A] tabular-nums font-serif">
                                     {todayRevenue.toLocaleString("vi-VN")}đ
                                 </p>
                                 <p className="text-[11px] font-semibold text-slate-500 mt-0.5 group-hover:text-[#16A34A]">
@@ -293,7 +293,7 @@ export function HomeMobileView({
                             </Link>
                         </div>
 
-                        <div className="flex divide-x divide-slate-100 border-t border-slate-100 bg-slate-50/50 text-xs font-bold">
+                        <div className="grid grid-cols-3 items-stretch divide-x divide-slate-100 border-t border-slate-100 bg-slate-50/50 text-xs font-bold [&>a]:flex [&>a]:items-center [&>a]:justify-center [&>a]:px-1">
                             <Link
                                 href="/sessions/new"
                                 prefetch={true}
@@ -332,7 +332,7 @@ export function HomeMobileView({
                             <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-[10px] font-bold text-[#16A34A]">1 chạm</span>
                         </div>
 
-                        <div className="grid grid-cols-4 gap-2.5">
+                        <div className="grid grid-cols-3 min-[400px]:grid-cols-4 gap-2.5">
                             {filteredActions.map((item) => (
                                 <Link
                                     key={item.title}
@@ -343,10 +343,10 @@ export function HomeMobileView({
                                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#DCFCE7] text-[#16A34A] mb-1.5 shadow-2xs">
                                         {item.icon}
                                     </div>
-                                    <span className="text-[11px] font-bold text-[#0F172A] leading-tight line-clamp-1">
+                                    <span className="flex min-h-8 items-center justify-center text-[11px] font-bold text-[#0F172A] leading-4">
                                         {item.title}
                                     </span>
-                                    <span className="text-[10px] text-slate-500 leading-none mt-0.5">
+                                    <span className="min-h-7 text-[10px] text-slate-500 leading-[14px] mt-0.5">
                                         {item.subtitle}
                                     </span>
                                 </Link>
@@ -388,7 +388,7 @@ export function HomeMobileView({
                                 {recentSessions.map((s) => (
                                     <Link
                                         key={s.id}
-                                        href="/sessions"
+                                        href={`/sessions?sessionId=${encodeURIComponent(s.id)}`}
                                         className="flex items-center justify-between p-3 transition-colors hover:bg-slate-50 active:bg-slate-100"
                                     >
                                         <div className="space-y-0.5 min-w-0 flex-1">
@@ -433,7 +433,7 @@ export function HomeMobileView({
                                 {recentInvoices.map((inv) => (
                                     <Link
                                         key={inv.id}
-                                        href={`/invoices/${inv.id}`}
+                                        href={`/invoices/${encodeURIComponent(inv.id)}?returnTo=%2Fhome`}
                                         title="Bấm để xem chi tiết hóa đơn"
                                         className="flex items-center justify-between p-3 hover:bg-slate-50 cursor-pointer transition-colors active:bg-slate-100"
                                     >

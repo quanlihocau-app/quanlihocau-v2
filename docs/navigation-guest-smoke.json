@@ -1,0 +1,657 @@
+{
+  "mode": "isolated guest GET-only; no database",
+  "passed": true,
+  "failures": [],
+  "results": [
+    {
+      "target": "/403",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/activity",
+      "status": 307,
+      "location": "/invoices/history"
+    },
+    {
+      "target": "/admin/lakes",
+      "status": 307,
+      "location": "/login?redirect=%2Fadmin%2Flakes"
+    },
+    {
+      "target": "/admin/orders",
+      "status": 307,
+      "location": "/login?redirect=%2Fadmin%2Forders"
+    },
+    {
+      "target": "/admin/otp",
+      "status": 307,
+      "location": "/login?redirect=%2Fadmin%2Fotp"
+    },
+    {
+      "target": "/admin/users",
+      "status": 307,
+      "location": "/login?redirect=%2Fadmin%2Fusers"
+    },
+    {
+      "target": "/bang-gia",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/cashbook",
+      "status": 307,
+      "location": "/login?redirect=%2Fcashbook"
+    },
+    {
+      "target": "/cashbook/isolated-no-such-id",
+      "status": 307,
+      "location": "/login?redirect=%2Fcashbook%2Fisolated-no-such-id"
+    },
+    {
+      "target": "/chinh-sach-bao-mat",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/customers",
+      "status": 307,
+      "location": "/login?redirect=%2Fcustomers"
+    },
+    {
+      "target": "/dashboard",
+      "status": 307,
+      "location": "/login?redirect=%2Fdashboard"
+    },
+    {
+      "target": "/dieu-khoan",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/expenses/cashbook",
+      "status": 307,
+      "location": "/login?redirect=%2Fexpenses%2Fcashbook"
+    },
+    {
+      "target": "/expenses",
+      "status": 307,
+      "location": "/login?redirect=%2Fexpenses"
+    },
+    {
+      "target": "/expenses/isolated-no-such-id",
+      "status": 307,
+      "location": "/login?redirect=%2Fexpenses%2Fisolated-no-such-id"
+    },
+    {
+      "target": "/facilities",
+      "status": 307,
+      "location": "/login?redirect=%2Ffacilities"
+    },
+    {
+      "target": "/finance/categories",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/finance/debts",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/finance/funds",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/finance/overview",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/finance",
+      "status": 307,
+      "location": "/finance/overview"
+    },
+    {
+      "target": "/finance/reports",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/finance/transactions",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/fish-buybacks",
+      "status": 307,
+      "location": "/login?redirect=%2Ffish-buybacks"
+    },
+    {
+      "target": "/fish-types",
+      "status": 307,
+      "location": "/login?redirect=%2Ffish-types"
+    },
+    {
+      "target": "/home",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/huan-tran",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/inventory",
+      "status": 307,
+      "location": "/login?redirect=%2Finventory"
+    },
+    {
+      "target": "/invoices/history",
+      "status": 307,
+      "location": "/login?redirect=%2Finvoices%2Fhistory"
+    },
+    {
+      "target": "/invoices",
+      "status": 307,
+      "location": "/login?redirect=%2Finvoices"
+    },
+    {
+      "target": "/invoices/isolated-no-such-id",
+      "status": 307,
+      "location": "/login?redirect=%2Finvoices%2Fisolated-no-such-id"
+    },
+    {
+      "target": "/login",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/preview",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/pricing",
+      "status": 307,
+      "location": "/login?redirect=%2Fpricing"
+    },
+    {
+      "target": "/products",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/prototype/mobile-pos",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/register",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/reports/daily",
+      "status": 307,
+      "location": "/login?redirect=%2Freports%2Fdaily"
+    },
+    {
+      "target": "/reports",
+      "status": 307,
+      "location": "/login?redirect=%2Freports"
+    },
+    {
+      "target": "/sessions/new",
+      "status": 307,
+      "location": "/login?redirect=%2Fsessions%2Fnew"
+    },
+    {
+      "target": "/sessions",
+      "status": 307,
+      "location": "/login?redirect=%2Fsessions"
+    },
+    {
+      "target": "/settings/guide",
+      "status": 307,
+      "location": "/login?redirect=%2Fsettings%2Fguide"
+    },
+    {
+      "target": "/settings/members",
+      "status": 307,
+      "location": "/login?redirect=%2Fsettings%2Fmembers"
+    },
+    {
+      "target": "/settings/nhat-ky",
+      "status": 307,
+      "location": "/login?redirect=%2Fsettings%2Fnhat-ky"
+    },
+    {
+      "target": "/settings",
+      "status": 307,
+      "location": "/login?redirect=%2Fsettings"
+    },
+    {
+      "target": "/settings/printer",
+      "status": 307,
+      "location": "/login?redirect=%2Fsettings%2Fprinter"
+    },
+    {
+      "target": "/thiet-bi-may-in",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/verify-phone",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/api/admin/impersonate/exit",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/admin/lakes",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/admin/lakes/isolated-no-such-id/impersonate",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/admin/lakes/isolated-no-such-id/subscription",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/admin/orders",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/admin/orders/isolated-no-such-id/confirm",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/admin/otp",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/admin/plans",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/admin/users",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/admin/users/isolated-no-such-id/change-plan",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/admin/users/isolated-no-such-id/extend-subscription",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/admin/users/isolated-no-such-id/extend-trial",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/admin/users/isolated-no-such-id/lock",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/admin/users/isolated-no-such-id/revoke-sessions",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/admin/users/isolated-no-such-id",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/areas",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/audit-events",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/auth/send-otp",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/auth/sync-session",
+      "status": 307,
+      "location": "/login?error=GoogleSignIn"
+    },
+    {
+      "target": "/api/auth/verify-otp",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/auth/session",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/api/cashbook",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/cron/subscriptions",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/customers",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/customers/isolated-no-such-id",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/expenses",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/finance/accounts",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/finance/categories",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/finance/categories/isolated-no-such-id",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/finance/debts",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/finance/debts/isolated-no-such-id/payments",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/finance/overview",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/finance/periods",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/finance/reconcile",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/finance/reports",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/finance/transactions",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/finance/transactions/isolated-no-such-id",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/finance/transfers",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/fish-buybacks",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/fish-types",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/fish-types/isolated-no-such-id",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/fishing-sessions",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/fishing-sessions/isolated-no-such-id/extensions",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/fishing-sessions/isolated-no-such-id",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/huts",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/inventory-movements",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/invoices/retail",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/invoices",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/invoices/isolated-no-such-id/lines",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/invoices/isolated-no-such-id/lines/isolated-no-such-id",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/invoices/isolated-no-such-id/payments",
+      "status": 400,
+      "location": null
+    },
+    {
+      "target": "/api/invoices/isolated-no-such-id/void",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/lake/profile",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/me",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/members",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/members/isolated-no-such-id",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/memberships",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/packages",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/packages/isolated-no-such-id",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/payments/isolated-no-such-id/reverse",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/ping",
+      "status": 200,
+      "location": null
+    },
+    {
+      "target": "/api/print-jobs",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/print-jobs/isolated-no-such-id",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/products",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/products/isolated-no-such-id",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/receipts",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/register",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/reports/analytics",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/reports/daily/close",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/reports/daily",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/reports/drilldown",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/reports/export",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/settings",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/spots",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/subscription/orders",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/subscription/orders/isolated-no-such-id",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/webhooks/bank",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/sessions?sessionId=isolated-session",
+      "status": 307,
+      "location": "/login?redirect=%2Fsessions%3FsessionId%3Disolated-session"
+    },
+    {
+      "target": "/sessions/new?customerId=isolated-customer",
+      "status": 307,
+      "location": "/login?redirect=%2Fsessions%2Fnew%3FcustomerId%3Disolated-customer"
+    },
+    {
+      "target": "/invoices/isolated-invoice?returnTo=%2Finvoices%2Fhistory",
+      "status": 307,
+      "location": "/login?redirect=%2Finvoices%2Fisolated-invoice%3FreturnTo%3D%252Finvoices%252Fhistory"
+    }
+  ]
+}

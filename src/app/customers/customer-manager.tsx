@@ -405,7 +405,7 @@ export function CustomerManager({
                                     <div className="flex items-center justify-between border-t border-[#E2DDD2]/60 pt-2 mt-1">
                                         <div className="flex items-center gap-1.5">
                                             <Link
-                                                href={`/sessions/new?phone=${encodeURIComponent(customer.phoneNormalized || "")}&name=${encodeURIComponent(customer.name)}`}
+                                                href={`/sessions/new?customerId=${encodeURIComponent(customer.id)}`}
                                                 className="inline-flex items-center gap-1 rounded-lg bg-[#16A34A] text-white px-2 py-1 text-[11px] font-bold hover:bg-[#15803D] transition-colors"
                                             >
                                                 <span>＋</span>
@@ -494,7 +494,7 @@ export function CustomerManager({
                                             <td className="px-4 py-3.5 text-right">
                                                 <div className="flex items-center justify-end gap-1.5">
                                                     <Link
-                                                        href={`/sessions/new?phone=${encodeURIComponent(customer.phoneNormalized || "")}&name=${encodeURIComponent(customer.name)}`}
+                                                        href={`/sessions/new?customerId=${encodeURIComponent(customer.id)}`}
                                                         className="inline-flex items-center gap-1 rounded-lg bg-[#16A34A] text-white px-2.5 py-1 text-xs font-bold hover:bg-[#15803D] transition-colors"
                                                     >
                                                         ＋ Tạo vé

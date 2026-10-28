@@ -1,0 +1,2660 @@
+{
+  "pages": [
+    "/403",
+    "/activity",
+    "/admin/lakes",
+    "/admin/orders",
+    "/admin/otp",
+    "/admin/users",
+    "/bang-gia",
+    "/cashbook",
+    "/cashbook/[paymentId]",
+    "/chinh-sach-bao-mat",
+    "/customers",
+    "/dashboard",
+    "/dieu-khoan",
+    "/expenses/cashbook",
+    "/expenses",
+    "/expenses/[expenseId]",
+    "/facilities",
+    "/finance/categories",
+    "/finance/debts",
+    "/finance/funds",
+    "/finance/overview",
+    "/finance",
+    "/finance/reports",
+    "/finance/transactions",
+    "/fish-buybacks",
+    "/fish-types",
+    "/home",
+    "/inventory",
+    "/invoices/history",
+    "/invoices",
+    "/invoices/[invoiceId]",
+    "/login",
+    "/",
+    "/preview",
+    "/pricing",
+    "/products",
+    "/prototype/mobile-pos",
+    "/register",
+    "/reports/daily",
+    "/reports",
+    "/sessions/new",
+    "/sessions",
+    "/settings/guide",
+    "/settings/members",
+    "/settings/nhat-ky",
+    "/settings",
+    "/settings/printer",
+    "/thiet-bi-may-in",
+    "/verify-phone"
+  ],
+  "apis": [
+    "/api/admin/impersonate/exit",
+    "/api/admin/lakes",
+    "/api/admin/lakes/[lakeId]/impersonate",
+    "/api/admin/lakes/[lakeId]/subscription",
+    "/api/admin/orders",
+    "/api/admin/orders/[orderId]/confirm",
+    "/api/admin/otp",
+    "/api/admin/plans",
+    "/api/admin/users",
+    "/api/admin/users/[userId]/change-plan",
+    "/api/admin/users/[userId]/extend-subscription",
+    "/api/admin/users/[userId]/extend-trial",
+    "/api/admin/users/[userId]/lock",
+    "/api/admin/users/[userId]/revoke-sessions",
+    "/api/admin/users/[userId]",
+    "/api/areas",
+    "/api/audit-events",
+    "/api/auth/send-otp",
+    "/api/auth/sync-session",
+    "/api/auth/verify-otp",
+    "/api/auth/[...nextauth]",
+    "/api/cashbook",
+    "/api/cron/subscriptions",
+    "/api/customers",
+    "/api/customers/[customerId]",
+    "/api/expenses",
+    "/api/finance/accounts",
+    "/api/finance/categories",
+    "/api/finance/categories/[categoryId]",
+    "/api/finance/debts",
+    "/api/finance/debts/[debtId]/payments",
+    "/api/finance/overview",
+    "/api/finance/periods",
+    "/api/finance/reconcile",
+    "/api/finance/reports",
+    "/api/finance/transactions",
+    "/api/finance/transactions/[transactionId]",
+    "/api/finance/transfers",
+    "/api/fish-buybacks",
+    "/api/fish-types",
+    "/api/fish-types/[fishTypeId]",
+    "/api/fishing-sessions",
+    "/api/fishing-sessions/[sessionId]/extensions",
+    "/api/fishing-sessions/[sessionId]",
+    "/api/huts",
+    "/api/inventory-movements",
+    "/api/invoices/retail",
+    "/api/invoices",
+    "/api/invoices/[invoiceId]/lines",
+    "/api/invoices/[invoiceId]/lines/[lineId]",
+    "/api/invoices/[invoiceId]/payments",
+    "/api/invoices/[invoiceId]/void",
+    "/api/lake/profile",
+    "/api/me",
+    "/api/members",
+    "/api/members/[membershipId]",
+    "/api/memberships",
+    "/api/packages",
+    "/api/packages/[packageId]",
+    "/api/payments/[paymentId]/reverse",
+    "/api/ping",
+    "/api/print-jobs",
+    "/api/print-jobs/[jobId]",
+    "/api/products",
+    "/api/products/[productId]",
+    "/api/receipts",
+    "/api/register",
+    "/api/reports/analytics",
+    "/api/reports/daily/close",
+    "/api/reports/daily",
+    "/api/reports/drilldown",
+    "/api/reports/export",
+    "/api/settings",
+    "/api/spots",
+    "/api/subscription/orders",
+    "/api/subscription/orders/[orderId]",
+    "/api/webhooks/bank"
+  ],
+  "references": [
+    {
+      "file": "src/app/403/page.tsx",
+      "line": 27,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/403/page.tsx",
+      "line": 33,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/actions/auth.ts",
+      "line": 371,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/activity/page.tsx",
+      "line": 4,
+      "kind": "navigate",
+      "target": "/invoices/history"
+    },
+    {
+      "file": "src/app/admin/lakes/lakes-admin-client.tsx",
+      "line": 138,
+      "kind": "fetch",
+      "target": "/api/admin/lakes"
+    },
+    {
+      "file": "src/app/admin/lakes/lakes-admin-client.tsx",
+      "line": 184,
+      "kind": "fetch",
+      "target": "/api/admin/lakes/__dynamic__/subscription"
+    },
+    {
+      "file": "src/app/admin/lakes/lakes-admin-client.tsx",
+      "line": 214,
+      "kind": "fetch",
+      "target": "/api/admin/lakes/__dynamic__/impersonate"
+    },
+    {
+      "file": "src/app/admin/layout.tsx",
+      "line": 18,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/admin/layout.tsx",
+      "line": 28,
+      "kind": "navigate",
+      "target": "/403"
+    },
+    {
+      "file": "src/app/admin/layout.tsx",
+      "line": 35,
+      "kind": "navigate",
+      "target": "/403"
+    },
+    {
+      "file": "src/app/admin/layout.tsx",
+      "line": 46,
+      "kind": "link",
+      "target": "/admin/lakes"
+    },
+    {
+      "file": "src/app/admin/layout.tsx",
+      "line": 82,
+      "kind": "link",
+      "target": "/admin/users"
+    },
+    {
+      "file": "src/app/admin/layout.tsx",
+      "line": 88,
+      "kind": "link",
+      "target": "/admin/lakes"
+    },
+    {
+      "file": "src/app/admin/layout.tsx",
+      "line": 94,
+      "kind": "link",
+      "target": "/admin/orders"
+    },
+    {
+      "file": "src/app/admin/layout.tsx",
+      "line": 100,
+      "kind": "link",
+      "target": "/admin/otp"
+    },
+    {
+      "file": "src/app/admin/layout.tsx",
+      "line": 119,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/admin/orders/orders-admin-client.tsx",
+      "line": 94,
+      "kind": "fetch",
+      "target": "/api/admin/orders"
+    },
+    {
+      "file": "src/app/admin/orders/orders-admin-client.tsx",
+      "line": 169,
+      "kind": "fetch",
+      "target": "/api/admin/orders/__dynamic__/confirm"
+    },
+    {
+      "file": "src/app/admin/otp/otp-admin-client.tsx",
+      "line": 58,
+      "kind": "fetch",
+      "target": "/api/admin/otp"
+    },
+    {
+      "file": "src/app/admin/users/page.tsx",
+      "line": 21,
+      "kind": "navigate",
+      "target": "/403"
+    },
+    {
+      "file": "src/app/admin/users/users-admin-client.tsx",
+      "line": 181,
+      "kind": "fetch",
+      "target": "/api/admin/users"
+    },
+    {
+      "file": "src/app/admin/users/users-admin-client.tsx",
+      "line": 224,
+      "kind": "fetch",
+      "target": "/api/admin/users/__dynamic__"
+    },
+    {
+      "file": "src/app/admin/users/users-admin-client.tsx",
+      "line": 316,
+      "kind": "fetch",
+      "target": "/api/admin/users/__dynamic__/lock"
+    },
+    {
+      "file": "src/app/admin/users/users-admin-client.tsx",
+      "line": 374,
+      "kind": "fetch",
+      "target": "/api/admin/users/__dynamic__/extend-trial"
+    },
+    {
+      "file": "src/app/admin/users/users-admin-client.tsx",
+      "line": 424,
+      "kind": "fetch",
+      "target": "/api/admin/users/__dynamic__/change-plan"
+    },
+    {
+      "file": "src/app/admin/users/users-admin-client.tsx",
+      "line": 480,
+      "kind": "fetch",
+      "target": "/api/admin/users/__dynamic__/extend-subscription"
+    },
+    {
+      "file": "src/app/admin/users/users-admin-client.tsx",
+      "line": 511,
+      "kind": "fetch",
+      "target": "/api/admin/users/__dynamic__/revoke-sessions"
+    },
+    {
+      "file": "src/app/api/reports/drilldown/route.ts",
+      "line": 116,
+      "kind": "link",
+      "target": "/invoices/__dynamic__"
+    },
+    {
+      "file": "src/app/api/reports/drilldown/route.ts",
+      "line": 156,
+      "kind": "link",
+      "target": "/invoices/__dynamic__"
+    },
+    {
+      "file": "src/app/api/reports/drilldown/route.ts",
+      "line": 194,
+      "kind": "link",
+      "target": "/invoices/__dynamic__"
+    },
+    {
+      "file": "src/app/api/reports/drilldown/route.ts",
+      "line": 223,
+      "kind": "link",
+      "target": "/fish-buybacks"
+    },
+    {
+      "file": "src/app/api/reports/drilldown/route.ts",
+      "line": 254,
+      "kind": "link",
+      "target": "/expenses/__dynamic__"
+    },
+    {
+      "file": "src/app/api/reports/drilldown/route.ts",
+      "line": 287,
+      "kind": "link",
+      "target": "/invoices/__dynamic__"
+    },
+    {
+      "file": "src/app/api/reports/drilldown/route.ts",
+      "line": 322,
+      "kind": "link",
+      "target": "/cashbook/__dynamic__"
+    },
+    {
+      "file": "src/app/api/reports/drilldown/route.ts",
+      "line": 414,
+      "kind": "link",
+      "target": "/invoices/__dynamic__"
+    },
+    {
+      "file": "src/app/api/reports/drilldown/route.ts",
+      "line": 414,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 106,
+      "kind": "link",
+      "target": "/"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 117,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 123,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 188,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 250,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 316,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 428,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 449,
+      "kind": "link",
+      "target": "/"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 451,
+      "kind": "link",
+      "target": "/bang-gia"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 453,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/bang-gia/page.tsx",
+      "line": 455,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/app/cashbook/page.tsx",
+      "line": 7,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/chinh-sach-bao-mat/page.tsx",
+      "line": 34,
+      "kind": "link",
+      "target": "/"
+    },
+    {
+      "file": "src/app/chinh-sach-bao-mat/page.tsx",
+      "line": 49,
+      "kind": "link",
+      "target": "/dieu-khoan"
+    },
+    {
+      "file": "src/app/chinh-sach-bao-mat/page.tsx",
+      "line": 55,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/app/chinh-sach-bao-mat/page.tsx",
+      "line": 134,
+      "kind": "link",
+      "target": "/dieu-khoan"
+    },
+    {
+      "file": "src/app/chinh-sach-bao-mat/page.tsx",
+      "line": 138,
+      "kind": "link",
+      "target": "/bang-gia"
+    },
+    {
+      "file": "src/app/customers/customer-manager.tsx",
+      "line": 86,
+      "kind": "fetch",
+      "target": "/api/customers"
+    },
+    {
+      "file": "src/app/customers/customer-manager.tsx",
+      "line": 158,
+      "kind": "fetch",
+      "target": "/api/customers"
+    },
+    {
+      "file": "src/app/customers/customer-manager.tsx",
+      "line": 224,
+      "kind": "fetch",
+      "target": "/api/customers/__dynamic__"
+    },
+    {
+      "file": "src/app/customers/customer-manager.tsx",
+      "line": 262,
+      "kind": "fetch",
+      "target": "/api/customers/__dynamic__"
+    },
+    {
+      "file": "src/app/customers/customer-manager.tsx",
+      "line": 408,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/app/customers/customer-manager.tsx",
+      "line": 415,
+      "kind": "link",
+      "target": "/reports"
+    },
+    {
+      "file": "src/app/customers/customer-manager.tsx",
+      "line": 497,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/app/customers/customer-manager.tsx",
+      "line": 503,
+      "kind": "link",
+      "target": "/reports"
+    },
+    {
+      "file": "src/app/customers/page.tsx",
+      "line": 24,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/customers/page.tsx",
+      "line": 71,
+      "kind": "link",
+      "target": "/home"
+    },
+    {
+      "file": "src/app/dashboard/page.tsx",
+      "line": 5,
+      "kind": "navigate",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/dieu-khoan/page.tsx",
+      "line": 34,
+      "kind": "link",
+      "target": "/"
+    },
+    {
+      "file": "src/app/dieu-khoan/page.tsx",
+      "line": 49,
+      "kind": "link",
+      "target": "/bang-gia"
+    },
+    {
+      "file": "src/app/dieu-khoan/page.tsx",
+      "line": 55,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/app/dieu-khoan/page.tsx",
+      "line": 147,
+      "kind": "link",
+      "target": "/chinh-sach-bao-mat"
+    },
+    {
+      "file": "src/app/dieu-khoan/page.tsx",
+      "line": 151,
+      "kind": "link",
+      "target": "/bang-gia"
+    },
+    {
+      "file": "src/app/expenses/cashbook/cashbook-view.tsx",
+      "line": 69,
+      "kind": "fetch",
+      "target": "/api/cashbook"
+    },
+    {
+      "file": "src/app/expenses/cashbook/cashbook-view.tsx",
+      "line": 88,
+      "kind": "fetch",
+      "target": "/api/receipts"
+    },
+    {
+      "file": "src/app/expenses/cashbook/cashbook-view.tsx",
+      "line": 88,
+      "kind": "fetch",
+      "target": "/api/expenses"
+    },
+    {
+      "file": "src/app/expenses/cashbook/cashbook-view.tsx",
+      "line": 103,
+      "kind": "fetch",
+      "target": "/api/cashbook"
+    },
+    {
+      "file": "src/app/expenses/cashbook/cashbook-view.tsx",
+      "line": 114,
+      "kind": "link",
+      "target": "/reports/daily"
+    },
+    {
+      "file": "src/app/expenses/cashbook/cashbook-view.tsx",
+      "line": 155,
+      "kind": "link",
+      "target": "/cashbook/__dynamic__"
+    },
+    {
+      "file": "src/app/expenses/cashbook/page.tsx",
+      "line": 7,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/expenses/expense-manager.tsx",
+      "line": 98,
+      "kind": "fetch",
+      "target": "/api/expenses"
+    },
+    {
+      "file": "src/app/expenses/expense-manager.tsx",
+      "line": 142,
+      "kind": "fetch",
+      "target": "/api/expenses"
+    },
+    {
+      "file": "src/app/expenses/expense-manager.tsx",
+      "line": 178,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/expenses/expense-manager.tsx",
+      "line": 199,
+      "kind": "link",
+      "target": "/cashbook"
+    },
+    {
+      "file": "src/app/expenses/page.tsx",
+      "line": 21,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/facilities/facility-forms.tsx",
+      "line": 30,
+      "kind": "fetch",
+      "target": "/api/areas"
+    },
+    {
+      "file": "src/app/facilities/facility-forms.tsx",
+      "line": 114,
+      "kind": "fetch",
+      "target": "/api/huts"
+    },
+    {
+      "file": "src/app/facilities/page.tsx",
+      "line": 24,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/facilities/page.tsx",
+      "line": 87,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/finance/categories/categories-view.tsx",
+      "line": 38,
+      "kind": "fetch",
+      "target": "/api/finance/categories"
+    },
+    {
+      "file": "src/app/finance/categories/categories-view.tsx",
+      "line": 57,
+      "kind": "fetch",
+      "target": "/api/finance/categories"
+    },
+    {
+      "file": "src/app/finance/categories/categories-view.tsx",
+      "line": 87,
+      "kind": "fetch",
+      "target": "/api/finance/categories/__dynamic__"
+    },
+    {
+      "file": "src/app/finance/categories/categories-view.tsx",
+      "line": 106,
+      "kind": "fetch",
+      "target": "/api/finance/categories/__dynamic__"
+    },
+    {
+      "file": "src/app/finance/debts/debts-view.tsx",
+      "line": 70,
+      "kind": "fetch",
+      "target": "/api/finance/accounts"
+    },
+    {
+      "file": "src/app/finance/debts/debts-view.tsx",
+      "line": 97,
+      "kind": "fetch",
+      "target": "/api/finance/debts"
+    },
+    {
+      "file": "src/app/finance/debts/debts-view.tsx",
+      "line": 142,
+      "kind": "fetch",
+      "target": "/api/finance/debts/__dynamic__/payments"
+    },
+    {
+      "file": "src/app/finance/funds/funds-view.tsx",
+      "line": 56,
+      "kind": "fetch",
+      "target": "/api/finance/accounts"
+    },
+    {
+      "file": "src/app/finance/funds/funds-view.tsx",
+      "line": 66,
+      "kind": "fetch",
+      "target": "/api/finance/transfers"
+    },
+    {
+      "file": "src/app/finance/funds/funds-view.tsx",
+      "line": 75,
+      "kind": "fetch",
+      "target": "/api/finance/reconcile"
+    },
+    {
+      "file": "src/app/finance/funds/funds-view.tsx",
+      "line": 94,
+      "kind": "fetch",
+      "target": "/api/finance/accounts"
+    },
+    {
+      "file": "src/app/finance/funds/funds-view.tsx",
+      "line": 138,
+      "kind": "fetch",
+      "target": "/api/finance/transfers"
+    },
+    {
+      "file": "src/app/finance/funds/funds-view.tsx",
+      "line": 179,
+      "kind": "fetch",
+      "target": "/api/finance/reconcile"
+    },
+    {
+      "file": "src/app/finance/overview/overview-view.tsx",
+      "line": 64,
+      "kind": "fetch",
+      "target": "/api/finance/overview"
+    },
+    {
+      "file": "src/app/finance/overview/overview-view.tsx",
+      "line": 160,
+      "kind": "link",
+      "target": "/finance/transactions"
+    },
+    {
+      "file": "src/app/finance/overview/overview-view.tsx",
+      "line": 166,
+      "kind": "link",
+      "target": "/finance/transactions"
+    },
+    {
+      "file": "src/app/finance/overview/overview-view.tsx",
+      "line": 172,
+      "kind": "link",
+      "target": "/finance/funds"
+    },
+    {
+      "file": "src/app/finance/overview/overview-view.tsx",
+      "line": 178,
+      "kind": "link",
+      "target": "/finance/debts"
+    },
+    {
+      "file": "src/app/finance/overview/overview-view.tsx",
+      "line": 351,
+      "kind": "link",
+      "target": "/finance/debts"
+    },
+    {
+      "file": "src/app/finance/overview/overview-view.tsx",
+      "line": 367,
+      "kind": "link",
+      "target": "/finance/debts"
+    },
+    {
+      "file": "src/app/finance/overview/overview-view.tsx",
+      "line": 381,
+      "kind": "link",
+      "target": "/finance/funds"
+    },
+    {
+      "file": "src/app/finance/overview/overview-view.tsx",
+      "line": 411,
+      "kind": "link",
+      "target": "/finance/categories"
+    },
+    {
+      "file": "src/app/finance/page.tsx",
+      "line": 4,
+      "kind": "navigate",
+      "target": "/finance/overview"
+    },
+    {
+      "file": "src/app/finance/transactions/transactions-view.tsx",
+      "line": 84,
+      "kind": "fetch",
+      "target": "/api/finance/categories"
+    },
+    {
+      "file": "src/app/finance/transactions/transactions-view.tsx",
+      "line": 92,
+      "kind": "fetch",
+      "target": "/api/finance/accounts"
+    },
+    {
+      "file": "src/app/finance/transactions/transactions-view.tsx",
+      "line": 133,
+      "kind": "fetch",
+      "target": "/api/finance/transactions"
+    },
+    {
+      "file": "src/app/finance/transactions/transactions-view.tsx",
+      "line": 181,
+      "kind": "fetch",
+      "target": "/api/finance/transactions/__dynamic__"
+    },
+    {
+      "file": "src/app/fish-buybacks/create-buyback-form.tsx",
+      "line": 112,
+      "kind": "fetch",
+      "target": "/api/fish-buybacks"
+    },
+    {
+      "file": "src/app/fish-buybacks/page.tsx",
+      "line": 25,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/fish-buybacks/page.tsx",
+      "line": 103,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/fish-types/create-fish-type-form.tsx",
+      "line": 40,
+      "kind": "fetch",
+      "target": "/api/fish-types"
+    },
+    {
+      "file": "src/app/fish-types/fish-type-list.tsx",
+      "line": 124,
+      "kind": "fetch",
+      "target": "/api/fish-types/__dynamic__"
+    },
+    {
+      "file": "src/app/fish-types/fish-type-list.tsx",
+      "line": 158,
+      "kind": "fetch",
+      "target": "/api/fish-types/__dynamic__"
+    },
+    {
+      "file": "src/app/fish-types/page.tsx",
+      "line": 24,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/fish-types/page.tsx",
+      "line": 66,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/home/page.tsx",
+      "line": 16,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/home/page.tsx",
+      "line": 22,
+      "kind": "navigate",
+      "target": "/admin/lakes"
+    },
+    {
+      "file": "src/app/home/page.tsx",
+      "line": 24,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 39,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 49,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 59,
+      "kind": "link",
+      "target": "/customers"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 69,
+      "kind": "link",
+      "target": "/reports/daily"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 79,
+      "kind": "link",
+      "target": "/reports"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 89,
+      "kind": "link",
+      "target": "/cashbook"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 95,
+      "kind": "link",
+      "target": "/invoices/history"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 105,
+      "kind": "link",
+      "target": "/finance/overview"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 115,
+      "kind": "link",
+      "target": "/inventory"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 125,
+      "kind": "link",
+      "target": "/pricing"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 136,
+      "kind": "link",
+      "target": "/fish-buybacks"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 146,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 196,
+      "kind": "link",
+      "target": "/admin/lakes"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 238,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 259,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 271,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 283,
+      "kind": "link",
+      "target": "/reports/daily"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 298,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 305,
+      "kind": "link",
+      "target": "/reports/daily"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 313,
+      "kind": "link",
+      "target": "/reports"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 367,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 380,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 391,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 425,
+      "kind": "link",
+      "target": "/invoices/history"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 436,
+      "kind": "link",
+      "target": "/invoices/__dynamic__"
+    },
+    {
+      "file": "src/app/inventory/inventory-movement-form.tsx",
+      "line": 88,
+      "kind": "fetch",
+      "target": "/api/inventory-movements"
+    },
+    {
+      "file": "src/app/inventory/page.tsx",
+      "line": 25,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/inventory/page.tsx",
+      "line": 130,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/invoices/create-invoice-button.tsx",
+      "line": 28,
+      "kind": "fetch",
+      "target": "/api/invoices"
+    },
+    {
+      "file": "src/app/invoices/history/history-view.tsx",
+      "line": 635,
+      "kind": "link",
+      "target": "/invoices/__dynamic__"
+    },
+    {
+      "file": "src/app/invoices/history/history-view.tsx",
+      "line": 736,
+      "kind": "link",
+      "target": "/invoices/__dynamic__"
+    },
+    {
+      "file": "src/app/invoices/history/page.tsx",
+      "line": 20,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/invoices/page.tsx",
+      "line": 23,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/invoices/payment-history.tsx",
+      "line": 88,
+      "kind": "fetch",
+      "target": "/api/payments/__dynamic__/reverse"
+    },
+    {
+      "file": "src/app/invoices/record-payment-button.tsx",
+      "line": 126,
+      "kind": "fetch",
+      "target": "/api/invoices/__dynamic__/payments"
+    },
+    {
+      "file": "src/app/invoices/sales-pos.tsx",
+      "line": 172,
+      "kind": "fetch",
+      "target": "/api/invoices"
+    },
+    {
+      "file": "src/app/invoices/sales-pos.tsx",
+      "line": 197,
+      "kind": "fetch",
+      "target": "/api/invoices/__dynamic__/lines"
+    },
+    {
+      "file": "src/app/invoices/sales-pos.tsx",
+      "line": 230,
+      "kind": "fetch",
+      "target": "/api/invoices"
+    },
+    {
+      "file": "src/app/invoices/sales-pos.tsx",
+      "line": 246,
+      "kind": "fetch",
+      "target": "/api/invoices/__dynamic__/lines"
+    },
+    {
+      "file": "src/app/invoices/sales-pos.tsx",
+      "line": 271,
+      "kind": "fetch",
+      "target": "/api/invoices/__dynamic__/payments"
+    },
+    {
+      "file": "src/app/invoices/sales-pos.tsx",
+      "line": 311,
+      "kind": "link",
+      "target": "/invoices/history"
+    },
+    {
+      "file": "src/app/invoices/sales-pos.tsx",
+      "line": 631,
+      "kind": "link",
+      "target": "/invoices/__dynamic__"
+    },
+    {
+      "file": "src/app/invoices/[invoiceId]/invoice-lines-section.tsx",
+      "line": 153,
+      "kind": "fetch",
+      "target": "/api/invoices/__dynamic__/lines"
+    },
+    {
+      "file": "src/app/invoices/[invoiceId]/invoice-lines-section.tsx",
+      "line": 193,
+      "kind": "fetch",
+      "target": "/api/invoices/__dynamic__/lines/__dynamic__"
+    },
+    {
+      "file": "src/app/invoices/[invoiceId]/page.tsx",
+      "line": 83,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/invoices/[invoiceId]/void-invoice-button.tsx",
+      "line": 17,
+      "kind": "fetch",
+      "target": "/api/invoices/__dynamic__/void"
+    },
+    {
+      "file": "src/app/layout.tsx",
+      "line": 195,
+      "kind": "link",
+      "target": "/apple-touch-icon.png"
+    },
+    {
+      "file": "src/app/layout.tsx",
+      "line": 196,
+      "kind": "link",
+      "target": "/favicon-32x32.png"
+    },
+    {
+      "file": "src/app/layout.tsx",
+      "line": 197,
+      "kind": "link",
+      "target": "/favicon-16x16.png"
+    },
+    {
+      "file": "src/app/login/page.tsx",
+      "line": 225,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/app/login/page.tsx",
+      "line": 232,
+      "kind": "link",
+      "target": "/dieu-khoan"
+    },
+    {
+      "file": "src/app/login/page.tsx",
+      "line": 234,
+      "kind": "link",
+      "target": "/chinh-sach-bao-mat"
+    },
+    {
+      "file": "src/app/not-found.tsx",
+      "line": 11,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/not-found.tsx",
+      "line": 12,
+      "kind": "link",
+      "target": "/"
+    },
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 163,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/pricing/package-manager.tsx",
+      "line": 74,
+      "kind": "fetch",
+      "target": "/api/packages"
+    },
+    {
+      "file": "src/app/pricing/package-manager.tsx",
+      "line": 139,
+      "kind": "fetch",
+      "target": "/api/packages/__dynamic__"
+    },
+    {
+      "file": "src/app/pricing/package-manager.tsx",
+      "line": 175,
+      "kind": "fetch",
+      "target": "/api/packages/__dynamic__"
+    },
+    {
+      "file": "src/app/pricing/page.tsx",
+      "line": 23,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/pricing/page.tsx",
+      "line": 62,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/products/create-product-form.tsx",
+      "line": 56,
+      "kind": "fetch",
+      "target": "/api/products"
+    },
+    {
+      "file": "src/app/products/page.tsx",
+      "line": 26,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/products/page.tsx",
+      "line": 74,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/products/product-list.tsx",
+      "line": 110,
+      "kind": "fetch",
+      "target": "/api/products/__dynamic__"
+    },
+    {
+      "file": "src/app/products/product-list.tsx",
+      "line": 149,
+      "kind": "fetch",
+      "target": "/api/products/__dynamic__"
+    },
+    {
+      "file": "src/app/register/page.tsx",
+      "line": 49,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/register/page.tsx",
+      "line": 78,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/register/page.tsx",
+      "line": 80,
+      "kind": "link",
+      "target": "/dieu-khoan"
+    },
+    {
+      "file": "src/app/register/page.tsx",
+      "line": 80,
+      "kind": "link",
+      "target": "/chinh-sach-bao-mat"
+    },
+    {
+      "file": "src/app/register/page.tsx",
+      "line": 95,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/reports/daily/daily-report-view.tsx",
+      "line": 497,
+      "kind": "fetch",
+      "target": "/api/reports/daily/close"
+    },
+    {
+      "file": "src/app/reports/daily/page.tsx",
+      "line": 20,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/reports/page.tsx",
+      "line": 21,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 285,
+      "kind": "fetch",
+      "target": "/api/reports/analytics"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 317,
+      "kind": "fetch",
+      "target": "/api/reports/export"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 424,
+      "kind": "navigate",
+      "target": "/reports/daily"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 624,
+      "kind": "navigate",
+      "target": "/customers"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 638,
+      "kind": "navigate",
+      "target": "/fish-buybacks"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 652,
+      "kind": "navigate",
+      "target": "/fish-buybacks"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 669,
+      "kind": "navigate",
+      "target": "/fish-buybacks"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 945,
+      "kind": "navigate",
+      "target": "/products"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 985,
+      "kind": "navigate",
+      "target": "/customers"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 995,
+      "kind": "navigate",
+      "target": "/customers"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 1014,
+      "kind": "navigate",
+      "target": "/customers"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 1024,
+      "kind": "navigate",
+      "target": "/customers"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 1043,
+      "kind": "navigate",
+      "target": "/customers"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 1053,
+      "kind": "navigate",
+      "target": "/customers"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 1135,
+      "kind": "navigate",
+      "target": "/invoices/history"
+    },
+    {
+      "file": "src/app/sessions/add-product-modal.tsx",
+      "line": 148,
+      "kind": "fetch",
+      "target": "/api/invoices/__dynamic__/lines"
+    },
+    {
+      "file": "src/app/sessions/fish-buyback-modal.tsx",
+      "line": 91,
+      "kind": "fetch",
+      "target": "/api/fish-types"
+    },
+    {
+      "file": "src/app/sessions/fish-buyback-modal.tsx",
+      "line": 121,
+      "kind": "fetch",
+      "target": "/api/fish-buybacks"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 480,
+      "kind": "fetch",
+      "target": "/api/fishing-sessions"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 559,
+      "kind": "navigate",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 575,
+      "kind": "fetch",
+      "target": "/api/huts"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 629,
+      "kind": "fetch",
+      "target": "/api/customers"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 715,
+      "kind": "fetch",
+      "target": "/api/fishing-sessions"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 888,
+      "kind": "navigate",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 977,
+      "kind": "fetch",
+      "target": "/api/fishing-sessions"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 1163,
+      "kind": "navigate",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 1200,
+      "kind": "link",
+      "target": "/customers"
+    },
+    {
+      "file": "src/app/sessions/new/page.tsx",
+      "line": 16,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/sessions/new/page.tsx",
+      "line": 44,
+      "kind": "navigate",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/sessions/new/retail-pos-form.tsx",
+      "line": 164,
+      "kind": "fetch",
+      "target": "/api/customers"
+    },
+    {
+      "file": "src/app/sessions/new/retail-pos-form.tsx",
+      "line": 268,
+      "kind": "fetch",
+      "target": "/api/invoices/retail"
+    },
+    {
+      "file": "src/app/sessions/new/retail-pos-form.tsx",
+      "line": 885,
+      "kind": "link",
+      "target": "/invoices/history"
+    },
+    {
+      "file": "src/app/sessions/page.tsx",
+      "line": 29,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/sessions/page.tsx",
+      "line": 36,
+      "kind": "navigate",
+      "target": "/admin/lakes"
+    },
+    {
+      "file": "src/app/sessions/page.tsx",
+      "line": 299,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/app/sessions/session-actions.tsx",
+      "line": 147,
+      "kind": "fetch",
+      "target": "/api/fishing-sessions/__dynamic__"
+    },
+    {
+      "file": "src/app/sessions/session-actions.tsx",
+      "line": 200,
+      "kind": "fetch",
+      "target": "/api/fishing-sessions/__dynamic__"
+    },
+    {
+      "file": "src/app/sessions/session-actions.tsx",
+      "line": 272,
+      "kind": "fetch",
+      "target": "/api/fishing-sessions/__dynamic__/extensions"
+    },
+    {
+      "file": "src/app/sessions/sessions-client.tsx",
+      "line": 437,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/app/sessions/sessions-client.tsx",
+      "line": 452,
+      "kind": "link",
+      "target": "/invoices/history"
+    },
+    {
+      "file": "src/app/sessions/settlement-checkout-modal.tsx",
+      "line": 123,
+      "kind": "fetch",
+      "target": "/api/fishing-sessions/__dynamic__"
+    },
+    {
+      "file": "src/app/sessions/settlement-checkout-modal.tsx",
+      "line": 219,
+      "kind": "fetch",
+      "target": "/api/fishing-sessions/__dynamic__"
+    },
+    {
+      "file": "src/app/settings/guide/page.tsx",
+      "line": 68,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/settings/guide/page.tsx",
+      "line": 123,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/app/settings/guide/page.tsx",
+      "line": 242,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/app/settings/lake-profile-form.tsx",
+      "line": 44,
+      "kind": "fetch",
+      "target": "/api/lake/profile"
+    },
+    {
+      "file": "src/app/settings/members/create-member-form.tsx",
+      "line": 47,
+      "kind": "fetch",
+      "target": "/api/members"
+    },
+    {
+      "file": "src/app/settings/members/deactivate-member-button.tsx",
+      "line": 34,
+      "kind": "fetch",
+      "target": "/api/members/__dynamic__"
+    },
+    {
+      "file": "src/app/settings/members/page.tsx",
+      "line": 57,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/settings/members/page.tsx",
+      "line": 107,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/settings/members/page.tsx",
+      "line": 143,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/settings/members/reset-password-button.tsx",
+      "line": 39,
+      "kind": "fetch",
+      "target": "/api/members/__dynamic__"
+    },
+    {
+      "file": "src/app/settings/negative-inventory-toggle.tsx",
+      "line": 31,
+      "kind": "fetch",
+      "target": "/api/settings"
+    },
+    {
+      "file": "src/app/settings/nhat-ky/page.tsx",
+      "line": 47,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/settings/nhat-ky/page.tsx",
+      "line": 63,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/settings/nhat-ky/page.tsx",
+      "line": 168,
+      "kind": "link",
+      "target": "/settings/nhat-ky"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 44,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 189,
+      "kind": "link",
+      "target": "/admin/lakes"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 217,
+      "kind": "link",
+      "target": "/cashbook"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 226,
+      "kind": "link",
+      "target": "/customers"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 237,
+      "kind": "link",
+      "target": "/facilities"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 248,
+      "kind": "link",
+      "target": "/pricing"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 259,
+      "kind": "link",
+      "target": "/fish-types"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 270,
+      "kind": "link",
+      "target": "/products"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 282,
+      "kind": "link",
+      "target": "/settings/members"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 294,
+      "kind": "link",
+      "target": "/settings/nhat-ky"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 306,
+      "kind": "link",
+      "target": "/settings/printer"
+    },
+    {
+      "file": "src/app/settings/page.tsx",
+      "line": 337,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/settings/printer/page.tsx",
+      "line": 14,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/settings/printer/page.tsx",
+      "line": 31,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/app/settings/printer/page.tsx",
+      "line": 50,
+      "kind": "link",
+      "target": "/settings/guide"
+    },
+    {
+      "file": "src/app/settings/printer-settings.tsx",
+      "line": 547,
+      "kind": "link",
+      "target": "/downloads/QuanLiHoCau-PrintBridge.exe"
+    },
+    {
+      "file": "src/app/thiet-bi-may-in/page.tsx",
+      "line": 34,
+      "kind": "link",
+      "target": "/"
+    },
+    {
+      "file": "src/app/thiet-bi-may-in/page.tsx",
+      "line": 49,
+      "kind": "link",
+      "target": "/bang-gia"
+    },
+    {
+      "file": "src/app/thiet-bi-may-in/page.tsx",
+      "line": 55,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/app/thiet-bi-may-in/page.tsx",
+      "line": 256,
+      "kind": "link",
+      "target": "/bang-gia"
+    },
+    {
+      "file": "src/app/thiet-bi-may-in/page.tsx",
+      "line": 260,
+      "kind": "link",
+      "target": "/dieu-khoan"
+    },
+    {
+      "file": "src/app/verify-phone/page.tsx",
+      "line": 14,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/app/verify-phone/page.tsx",
+      "line": 17,
+      "kind": "navigate",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/app/verify-phone/verify-phone-client.tsx",
+      "line": 57,
+      "kind": "fetch",
+      "target": "/api/auth/send-otp"
+    },
+    {
+      "file": "src/app/verify-phone/verify-phone-client.tsx",
+      "line": 92,
+      "kind": "fetch",
+      "target": "/api/auth/verify-otp"
+    },
+    {
+      "file": "src/app/verify-phone/verify-phone-client.tsx",
+      "line": 110,
+      "kind": "navigate",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/finance/finance-nav.tsx",
+      "line": 10,
+      "kind": "link",
+      "target": "/finance/overview"
+    },
+    {
+      "file": "src/components/finance/finance-nav.tsx",
+      "line": 11,
+      "kind": "link",
+      "target": "/finance/transactions"
+    },
+    {
+      "file": "src/components/finance/finance-nav.tsx",
+      "line": 12,
+      "kind": "link",
+      "target": "/finance/funds"
+    },
+    {
+      "file": "src/components/finance/finance-nav.tsx",
+      "line": 13,
+      "kind": "link",
+      "target": "/finance/debts"
+    },
+    {
+      "file": "src/components/finance/finance-nav.tsx",
+      "line": 14,
+      "kind": "link",
+      "target": "/finance/categories"
+    },
+    {
+      "file": "src/components/finance/finance-nav.tsx",
+      "line": 15,
+      "kind": "link",
+      "target": "/finance/reports"
+    },
+    {
+      "file": "src/components/finance/transaction-detail.tsx",
+      "line": 11,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/components/finance/transaction-detail.tsx",
+      "line": 40,
+      "kind": "link",
+      "target": "/invoices/__dynamic__"
+    },
+    {
+      "file": "src/components/finance/transaction-detail.tsx",
+      "line": 41,
+      "kind": "link",
+      "target": "/cashbook/__dynamic__"
+    },
+    {
+      "file": "src/components/finance/transaction-detail.tsx",
+      "line": 42,
+      "kind": "link",
+      "target": "/reports"
+    },
+    {
+      "file": "src/components/guide/new-owner-checklist.tsx",
+      "line": 4,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/components/guide/new-owner-checklist.tsx",
+      "line": 5,
+      "kind": "link",
+      "target": "/facilities"
+    },
+    {
+      "file": "src/components/guide/new-owner-checklist.tsx",
+      "line": 6,
+      "kind": "link",
+      "target": "/pricing"
+    },
+    {
+      "file": "src/components/guide/new-owner-checklist.tsx",
+      "line": 7,
+      "kind": "link",
+      "target": "/products"
+    },
+    {
+      "file": "src/components/guide/new-owner-checklist.tsx",
+      "line": 8,
+      "kind": "link",
+      "target": "/fish-types"
+    },
+    {
+      "file": "src/components/guide/new-owner-checklist.tsx",
+      "line": 9,
+      "kind": "link",
+      "target": "/settings/printer"
+    },
+    {
+      "file": "src/components/guide/new-owner-checklist.tsx",
+      "line": 10,
+      "kind": "link",
+      "target": "/settings/members"
+    },
+    {
+      "file": "src/components/landing/brand-landing-page.tsx",
+      "line": 12,
+      "kind": "link",
+      "target": "/"
+    },
+    {
+      "file": "src/components/landing/brand-landing-page.tsx",
+      "line": 18,
+      "kind": "link",
+      "target": "/bang-gia"
+    },
+    {
+      "file": "src/components/landing/brand-landing-page.tsx",
+      "line": 19,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/landing/brand-landing-page.tsx",
+      "line": 19,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/components/landing/brand-landing-page.tsx",
+      "line": 85,
+      "kind": "link",
+      "target": "/bang-gia"
+    },
+    {
+      "file": "src/components/landing/brand-landing-page.tsx",
+      "line": 85,
+      "kind": "link",
+      "target": "/thiet-bi-may-in"
+    },
+    {
+      "file": "src/components/landing/brand-landing-page.tsx",
+      "line": 85,
+      "kind": "link",
+      "target": "/dieu-khoan"
+    },
+    {
+      "file": "src/components/landing/brand-landing-page.tsx",
+      "line": 85,
+      "kind": "link",
+      "target": "/chinh-sach-bao-mat"
+    },
+    {
+      "file": "src/components/landing/loss-calculator.tsx",
+      "line": 182,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/components/landing/mobile-contact-bar.tsx",
+      "line": 20,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/landing/mobile-contact-bar.tsx",
+      "line": 30,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/components/landing/mobile-contact-bar.tsx",
+      "line": 38,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 39,
+      "kind": "link",
+      "target": "/"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 84,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 93,
+      "kind": "link",
+      "target": "/bang-gia"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 99,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 105,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 158,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 158,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 165,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 165,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 692,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 692,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 698,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 698,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 925,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 925,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 932,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 932,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 981,
+      "kind": "link",
+      "target": "/register"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 985,
+      "kind": "link",
+      "target": "/bang-gia"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 989,
+      "kind": "link",
+      "target": "/thiet-bi-may-in"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 993,
+      "kind": "link",
+      "target": "/dieu-khoan"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 997,
+      "kind": "link",
+      "target": "/chinh-sach-bao-mat"
+    },
+    {
+      "file": "src/components/landing/official-landing-page.tsx",
+      "line": 1001,
+      "kind": "link",
+      "target": "/login"
+    },
+    {
+      "file": "src/components/layout/mobile-app-header.tsx",
+      "line": 127,
+      "kind": "fetch",
+      "target": "/api/admin/impersonate/exit"
+    },
+    {
+      "file": "src/components/layout/mobile-app-header.tsx",
+      "line": 130,
+      "kind": "navigate",
+      "target": "/admin/lakes"
+    },
+    {
+      "file": "src/components/layout/mobile-bottom-nav.tsx",
+      "line": 18,
+      "kind": "link",
+      "target": "/home"
+    },
+    {
+      "file": "src/components/layout/mobile-bottom-nav.tsx",
+      "line": 38,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/layout/mobile-bottom-nav.tsx",
+      "line": 60,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/components/layout/mobile-bottom-nav.tsx",
+      "line": 80,
+      "kind": "link",
+      "target": "/reports"
+    },
+    {
+      "file": "src/components/layout/mobile-bottom-nav.tsx",
+      "line": 100,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/components/layout/mobile-bottom-nav.tsx",
+      "line": 122,
+      "kind": "link",
+      "target": "/admin/lakes"
+    },
+    {
+      "file": "src/components/layout/quick-actions.tsx",
+      "line": 13,
+      "kind": "navigate",
+      "target": "/cashbook"
+    },
+    {
+      "file": "src/components/payments/pond-transfer-qr.tsx",
+      "line": 27,
+      "kind": "fetch",
+      "target": "/api/lake/profile"
+    },
+    {
+      "file": "src/components/reports/drilldown-drawer.tsx",
+      "line": 47,
+      "kind": "fetch",
+      "target": "/api/reports/drilldown"
+    },
+    {
+      "file": "src/components/subscription/subscription-access-banner.tsx",
+      "line": 36,
+      "kind": "fetch",
+      "target": "/api/me"
+    },
+    {
+      "file": "src/components/subscription/subscription-access-banner.tsx",
+      "line": 72,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/components/subscription/subscription-access-banner.tsx",
+      "line": 79,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/components/subscription/subscription-modal.tsx",
+      "line": 75,
+      "kind": "fetch",
+      "target": "/api/subscription/orders/__dynamic__"
+    },
+    {
+      "file": "src/components/subscription/subscription-modal.tsx",
+      "line": 102,
+      "kind": "fetch",
+      "target": "/api/subscription/orders/__dynamic__"
+    },
+    {
+      "file": "src/components/subscription/subscription-modal.tsx",
+      "line": 129,
+      "kind": "fetch",
+      "target": "/api/subscription/orders"
+    },
+    {
+      "file": "src/components/ui/page-recovery.tsx",
+      "line": 28,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/components/ui/page-recovery.tsx",
+      "line": 29,
+      "kind": "link",
+      "target": "/invoices"
+    },
+    {
+      "file": "src/hooks/use-fishing-catalog.ts",
+      "line": 47,
+      "kind": "fetch",
+      "target": "/api/huts"
+    },
+    {
+      "file": "src/hooks/use-fishing-catalog.ts",
+      "line": 77,
+      "kind": "fetch",
+      "target": "/api/packages"
+    },
+    {
+      "file": "src/hooks/use-products.ts",
+      "line": 20,
+      "kind": "fetch",
+      "target": "/api/products"
+    },
+    {
+      "file": "src/lib/finance-page.ts",
+      "line": 9,
+      "kind": "navigate",
+      "target": "/login"
+    },
+    {
+      "file": "src/lib/finance-page.ts",
+      "line": 12,
+      "kind": "navigate",
+      "target": "/403"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 47,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 106,
+      "kind": "link",
+      "target": "/pricing"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 178,
+      "kind": "link",
+      "target": "/inventory"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 252,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 339,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 400,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 471,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 545,
+      "kind": "link",
+      "target": "/sessions/new"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 605,
+      "kind": "link",
+      "target": "/invoices"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 665,
+      "kind": "link",
+      "target": "/settings"
+    },
+    {
+      "file": "src/lib/guides/onboarding-data.ts",
+      "line": 724,
+      "kind": "link",
+      "target": "/sessions"
+    },
+    {
+      "file": "src/lib/network/use-network-status.ts",
+      "line": 33,
+      "kind": "fetch",
+      "target": "/api/ping"
+    },
+    {
+      "file": "src/lib/printing/print-manager.ts",
+      "line": 749,
+      "kind": "fetch",
+      "target": "/api/print-jobs"
+    },
+    {
+      "file": "src/lib/printing/print-manager.ts",
+      "line": 768,
+      "kind": "fetch",
+      "target": "/api/print-jobs/__dynamic__"
+    },
+    {
+      "file": "src/lib/printing/print-manager.ts",
+      "line": 777,
+      "kind": "fetch",
+      "target": "/api/print-jobs/__dynamic__"
+    },
+    {
+      "file": "src/lib/printing/print-manager.ts",
+      "line": 787,
+      "kind": "fetch",
+      "target": "/api/print-jobs/__dynamic__"
+    },
+    {
+      "file": "src/lib/printing/print-manager.ts",
+      "line": 813,
+      "kind": "fetch",
+      "target": "/api/print-jobs"
+    }
+  ],
+  "errors": [],
+  "manual": [
+    {
+      "file": "src/app/admin/lakes/lakes-admin-client.tsx",
+      "line": 221,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/expenses/cashbook/cashbook-view.tsx",
+      "line": 113,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/expenses/cashbook/cashbook-view.tsx",
+      "line": 114,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/expenses/cashbook/cashbook-view.tsx",
+      "line": 134,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/finance/debts/debts-view.tsx",
+      "line": 59,
+      "kind": "fetch",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/finance/reports/reports-view.tsx",
+      "line": 35,
+      "kind": "fetch",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/finance/transactions/transactions-view.tsx",
+      "line": 73,
+      "kind": "fetch",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/home-mobile-view.tsx",
+      "line": 339,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/invoices/[invoiceId]/page.tsx",
+      "line": 212,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/invoices/[invoiceId]/page.tsx",
+      "line": 359,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/login/page.tsx",
+      "line": 79,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/reports/daily/daily-report-view.tsx",
+      "line": 395,
+      "kind": "fetch",
+      "target": "/api/reports/daily__dynamic__",
+      "reason": "Dynamic suffix/path requires runtime verification"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 432,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 818,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 835,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 851,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/reports/reports-view.tsx",
+      "line": 851,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 2633,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 2771,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 3000,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/sessions/new/open-session-form.tsx",
+      "line": 3147,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/settings/guide/page.tsx",
+      "line": 485,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/settings/nhat-ky/page.tsx",
+      "line": 169,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/settings/nhat-ky/page.tsx",
+      "line": 207,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/app/settings/nhat-ky/page.tsx",
+      "line": 211,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/components/finance/finance-nav.tsx",
+      "line": 27,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/components/finance/transaction-detail.tsx",
+      "line": 28,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/components/finance/transaction-detail.tsx",
+      "line": 43,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/components/guide/new-owner-checklist.tsx",
+      "line": 21,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/components/guide/onboarding-modal.tsx",
+      "line": 114,
+      "kind": "navigate",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/components/landing/brand-landing-page.tsx",
+      "line": 30,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/components/landing/brand-landing-page.tsx",
+      "line": 81,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/components/layout/mobile-bottom-nav.tsx",
+      "line": 178,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/components/ui/page-header.tsx",
+      "line": 28,
+      "kind": "link",
+      "reason": "Computed target: requires runtime verification"
+    },
+    {
+      "file": "src/lib/network/fetch-json.ts",
+      "line": 13,
+      "kind": "fetch",
+      "reason": "Computed target: requires runtime verification"
+    }
+  ],
+  "demoControls": [
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 482,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 595,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 598,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 624,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 627,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 645,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 678,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 681,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 685,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/app/preview/page.tsx",
+      "line": 688,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/components/landing/dual-phone-hero-mockup.tsx",
+      "line": 172,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/components/landing/dual-phone-hero-mockup.tsx",
+      "line": 194,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/components/landing/interactive-app-showcase.tsx",
+      "line": 261,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    },
+    {
+      "file": "src/components/landing/interactive-app-showcase.tsx",
+      "line": 312,
+      "kind": "button",
+      "reason": "No event handler, form or disabled state"
+    }
+  ]
+}

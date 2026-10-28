@@ -42,6 +42,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Local safety regressions
+        run: npm run test:safety
+      - name: Navigation source audit
+        run: npm run check:navigation
       - name: Prisma validate and generate
         run: |
           npx prisma validate
@@ -54,6 +58,8 @@ jobs:
           npx tsc --noEmit
       - name: Production build
         run: npm run build
+      - name: Isolated guest navigation smoke
+        run: npm run test:guest-navigation
       - name: Registration and npm tests
         shell: bash
         run: |

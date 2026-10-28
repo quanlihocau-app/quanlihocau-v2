@@ -163,11 +163,11 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
 
     return (
         <nav
-            aria-label="Mobile Navigation"
+            aria-label="Điều hướng chính"
             style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
             className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg z-50 border-t border-slate-100 bg-[#FFFFFF] print:hidden shadow-[0_-4px_24px_rgba(0,0,0,0.08)] font-serif"
         >
-            <div className="flex h-[56px] items-stretch justify-around px-0 relative">
+            <div className="flex min-h-[60px] items-stretch justify-around px-0 relative">
                 {navItems.map((item) => {
                     const active = item.isActive(pathname);
                     const isPending = pendingHref === item.href && !active;
@@ -178,6 +178,7 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
                             href={item.href}
                             prefetch={true}
                             data-no-auto-center="true"
+                            aria-current={active ? "page" : undefined}
                             onClick={() => {
                                 if (!active) {
                                     setPendingHref(item.href);
@@ -185,23 +186,23 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
                             }}
                             className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-center select-none cursor-pointer font-serif transition-colors active:opacity-70 ${
                                 active
-                                    ? "text-[#16A34A]"
+                                    ? "text-[#166534]"
                                     : isPending
-                                      ? "text-[#16A34A]"
-                                      : "text-slate-400"
+                                      ? "text-[#166534]"
+                                      : "text-slate-600"
                             }`}
                         >
                             {/* Active indicator pill */}
                             <div
                                 className={`flex h-7 w-10 items-center justify-center rounded-2xl transition-all duration-150 ${
                                     active
-                                        ? "bg-[#DCFCE7] text-[#16A34A]"
-                                        : "bg-transparent text-slate-400"
+                                        ? "bg-[#DCFCE7] text-[#166534]"
+                                        : "bg-transparent text-slate-600"
                                 }`}
                             >
                                 {isPending ? (
                                     <svg
-                                        className="h-4 w-4 animate-spin text-[#16A34A]"
+                                        className="h-4 w-4 animate-spin text-[#166534]"
                                         fill="none"
                                         viewBox="0 0 24 24"
                                     >
@@ -225,10 +226,10 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
                             </div>
 
                             <span
-                                className={`text-[10px] leading-tight font-serif ${
+                                className={`text-xs leading-tight font-serif ${
                                     active
-                                        ? "font-bold text-[#16A34A]"
-                                        : "font-medium text-slate-400"
+                                        ? "font-bold text-[#166534]"
+                                        : "font-semibold text-slate-600"
                                 }`}
                             >
                                 {isPending ? "Đang mở…" : item.label}

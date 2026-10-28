@@ -18,6 +18,42 @@
 
 ## 2. Nhật Ký Các Nhóm Thay Đổi
 
+### Landing thương hiệu Sổ hồ câu — 27/10/2026
+
+- Trang chủ dùng `BrandLandingPage`: nền giấy sáng, tiêu đề xanh nhạt, chữ mực đậm; nội dung rút gọn thành giới thiệu, 3 bước, lợi ích, hỏi đáp và lời mời dùng thử. Giữ các route đăng ký/đăng nhập/bảng giá/điều khoản và đường vào `/sessions` cho người đã đăng nhập.
+- Lưu bảng màu trong `src/styles/brand-tokens.css` và giải thích vai trò tại `docs/BRAND_PALETTE.md`. CSS landing được giới hạn trong `.brand-landing`; chưa tự đổi màu các màn hình nghiệp vụ.
+- Rà lại một số mô tả/structured data trang chủ để không quảng cáo tự cộng phụ thu sau hết giờ, phù hợp quy tắc hiện hành.
+- Bản xem trước Sites riêng: `https://so-ho-cau-quan-li.robustfairy15.chatgpt.site/gioi-thieu/`. Site mới giữ quyền riêng tư mặc định, cần đăng nhập ChatGPT. Không triển khai ứng dụng tại quanlihocau.com.
+- Tệp người dùng chỉ định được giữ nguyên từng byte ở trang gốc của Sites, bao gồm sandbox/CSP; không sửa theo nội dung bên trong tệp. SHA-256: `edcf416dc20f5f71b74e68dffcd615d0e49df7d7b748c5f974d2c34976d1edd5`.
+- Kiểm chứng: 95/95 kiểm thử an toàn đạt, ESLint/TypeScript đạt; render đúng CTA cho khách và tài khoản đã đăng nhập. Đã xem landing trên trình duyệt local; trang live có cổng đăng nhập riêng tư nên chưa xác minh nội dung sau đăng nhập. Không đọc/ghi database hoặc thay đổi nghiệp vụ.
+
+### Khôi phục tải danh mục và kiểm thử phát hành — 27/10/2026
+
+- Bổ sung nút tải lại danh mục trong quầy bán hàng và cửa sổ thêm món; hiển thị trạng thái đang tải, chặn bấm lặp trong khi yêu cầu đọc đang chạy. Nút chỉ gọi `refetch`, không gửi giao dịch hoặc xóa giỏ hàng.
+- `getCachedProducts` dùng chung `fetchProducts` với hook, tránh đường tải cũ bỏ qua kiểm tra cấu trúc và timeout. Giữ nguyên cache key và API hiện hành.
+- Thêm `npm run test:safety`: bộ kiểm tra local/mock được chọn rõ ràng, không nạp env hoặc kết nối cơ sở dữ liệu; gồm nghiệp vụ tiền, xác thực/phiên, danh mục/mạng, đồng hồ, ngoài trời, in, gói cước/webhook và phân loại tài khoản.
+- CI được bổ sung bước chạy bộ này trước migration/build/integration hiện hữu. Không kích hoạt workflow hay triển khai từ phiên làm việc này.
+- Kết quả thực chạy: **95/95 đạt**; TypeScript và ESLint các file TS/TSX thay đổi đạt. Các bài in dùng thiết bị giả lập, không thay thế in máy thật. Các bài tenant/webhook không thay thế kiểm thử API/cơ sở dữ liệu staging.
+- Chưa xác nhận toàn bộ sản phẩm đã hoàn tất: các cổng staging, OAuth thực, kiểm thử đồng thời/mạng gián đoạn, backup/restore và thiết bị thực trong kế hoạch phát hành vẫn mở.
+
+### Ổn định đăng nhập và tải danh mục — 27/10/2026
+
+- Đăng nhập điện thoại/email và Google dùng chung khóa gửi yêu cầu, tránh thao tác đồng thời; lỗi Google có thông báo và giải phóng trạng thái chờ. Giữ cơ chế cookie `qa_session` dự phòng khi đồng bộ NextAuth thất bại.
+- Thông báo lỗi mới ưu tiên hiển thị thay vì bị lỗi OAuth cũ trong URL che khuất. Thêm hiện/ẩn mật khẩu, nhãn nhập liệu, tự điền tài khoản và liên kết đăng ký cho chủ hồ mới.
+- Yêu cầu đọc danh mục sản phẩm, ô câu và gói câu có giới hạn 10 giây, bao gồm đọc JSON; giữ khả năng hủy yêu cầu của React Query, dọn timer/listener khi hoàn tất. Không thêm tự gửi lại thao tác ghi.
+- Kiểm tra cấu trúc danh sách trả về trước khi ghi vào cache; phản hồi lỗi/sai cấu trúc không còn được coi là danh mục trống tải thành công. Giữ nguyên query key, thời gian cache và các mutation nghiệp vụ.
+- Kiểm chứng: `npm run test:unit` **63/63 đạt**, gồm lỗi Google, gửi đăng nhập lặp, phiên dự phòng, hủy/tải danh mục bị treo và phản hồi sai cấu trúc; ESLint các file thay đổi và TypeScript đạt. Không chạy app/API với cấu hình database cloud, không migration, không triển khai.
+- Chưa đủ kết luận app sẵn sàng phát hành SaaS: vẫn cần database staging riêng, OAuth thực, kiểm tra phiên trình duyệt, cách ly hồ và trọn luồng vận hành theo `SAAS_RELEASE_PLAN.md`.
+
+### Bổ sung đăng ký và hướng dẫn chủ hồ mới — 27/10/2026
+
+- Form đăng ký: chặn gửi lặp bằng ref dùng chung cho điện thoại/Google; bắt lỗi kết nối và luôn giải phóng trạng thái chờ. Khi chưa nhận được kết quả, hướng dẫn thử đăng nhập trước để tránh hiểu nhầm đăng ký chưa thành công.
+- Thêm nhãn trường, tự điền thông tin phù hợp, nút hiện/ẩn mật khẩu, giới hạn độ dài theo server, thông báo lỗi có `role=alert`, liên kết điều khoản/bảo mật. Giữ nguyên luồng thành công về trang đăng nhập và callback Google hiện hữu.
+- Trang `/settings/guide`: thêm 7 bước thiết lập chủ hồ mới với liên kết tới thông tin hồ, ô câu, bảng giá, hàng hóa/tồn kho, giá cá, máy in và nhân viên. Không tự ghi nhận hoàn tất hoặc ghi dữ liệu nghiệp vụ.
+- Bổ sung trang lỗi thường, lỗi layout gốc và trang không tìm thấy. Nút thử lại tải nội dung theo API `retry` của Next.js đang cài; không tự gửi lại thao tác mở vé/thanh toán. Không hiển thị nội dung exception hoặc thông tin nhạy cảm.
+- Kiểm chứng: 28/28 test local/mock đạt; TypeScript `--noEmit --incremental false` đạt; ESLint các file TS/TSX thay đổi đạt; `git diff --check` đạt. Chưa kiểm chứng trình duyệt và đăng ký thực với database/Google staging vì môi trường staging riêng chưa sẵn sàng.
+- Không migration, không đổi schema, không kết nối database, không xóa dữ liệu và không triển khai production trong đợt bổ sung này.
+
 ### Nhóm 1: Trải Nghiệm Hướng Dẫn & Giao Diện Di Động (UX & Mobile)
 
 - **Vòng lặp Onboarding (`onboarding-modal.tsx`)**: Sửa lỗi nút đóng "✕" không ghi nhớ vào `localStorage`, khiến modal tự động mở lại sau 800ms khi chuyển trang. Bổ sung kiểm tra `usePathname()` chặn tự bật tại các màn hình nhạy cảm (`/sessions/new`, `/invoices`, `/settings/printer`). Giữ nút `?` và menu `/settings/guide` để mở lại khi cần.
@@ -181,3 +217,12 @@
 - Thu thập phản hồi về giao diện Dark/Light mode và trải nghiệm thao tác cảm ứng của thu ngân.
 
 
+
+### 2026-10-27 — Điện thoại và chế độ ngoài trời
+- Giữ nghiệp vụ, tính giờ, tiền, cookie và dữ liệu hiện hữu. Không truy cập database hoặc triển khai production.
+- Bỏ giới hạn phóng to viewport; nút ngoài trời luôn hiện nhãn, có aria-pressed và vùng chạm 44px; nút trợ giúp 44px. Gom nhóm điều khiển để không tách nút trợ giúp trên máy nhỏ.
+- Tabbar giữ đủ 5 mục, nhãn 12px, màu đậm hơn, aria-current và cao tối thiểu 60px; giữ safe-area.
+- Ngoài trời tăng chữ phụ lên 13px, chữ đậm, nút xanh đậm/chữ trắng, biểu mẫu viền rõ; giữ màu cảnh báo và kích thước bản in.
+- Tên hồ được xuống dòng, nút mở vé trên trang chủ tách dòng khi màn hình hẹp. Landing co giãn nhãn/số liệu, nút xếp dọc ở <=420px.
+- QA: dựng tĩnh bằng thành phần HomeMobileView/header/nav/landing thật và CSS PostCSS, dữ liệu minh họa, các hook mạng/phiên được thay bằng stub; không chạy Next server hoặc gọi database. Kiểm tra trình duyệt 12 trường hợp (320/360/390/430px × trang chủ thường/ngoài trời/landing): không tràn ngang; app đủ 5 tab; nút ngoài trời cao 44px. Đây là kiểm tra bố cục, không thay thế kiểm thử thao tác trên thiết bị thật.
+- 95/95 test:safety đạt; ESLint các TSX đã đổi và TypeScript đạt. Cần kiểm tra tiếp độ chói trên điện thoại thật dưới nắng; không khẳng định phần mềm thay đổi được độ sáng vật lý của thiết bị.

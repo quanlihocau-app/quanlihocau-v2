@@ -75,6 +75,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                         id: true,
                         name: true,
                         email: true,
+                        systemRole: true,
                     },
                 },
             },
@@ -89,6 +90,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
         // Handle RESET_PASSWORD action
         if (parsed.data.action === "RESET_PASSWORD") {
+            // Prevent resetting password of an OWNER, SUPER_ADMIN or self
+            if (membership.role === Role.OWNER || membership.user.systemRole === "SUPER_ADMIN" || membership.userId === tenantContext.userId) {
+                return NextResponse.json(
+                    { error: "Không thể đặt lại mật khẩu cho tài khoản Chủ sở hữu hoặc Quản trị viên." },
+                    { status: 403 },
+                );
+            }
+
             const newPasswordHash = await bcrypt.hash(parsed.data.newPassword, 12);
             await prisma.$transaction(async (tx) => {
                 await tx.user.update({
@@ -96,6 +105,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                     data: {
                         passwordHash: newPasswordHash,
                         isLocked: false,
+                        sessionVersion: { increment: 1 },
                     },
                 });
 
@@ -151,10 +161,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
             );
         }
 
-        // Prevent deactivating any OWNER membership
-        if (membership.role === Role.OWNER) {
+        // Prevent deactivating any OWNER or SUPER_ADMIN membership
+        if (membership.role === Role.OWNER || membership.user.systemRole === "SUPER_ADMIN") {
             return NextResponse.json(
-                { error: "Không thể vô hiệu hóa tài khoản Chủ sở hữu (OWNER)." },
+                { error: "Không thể vô hiệu hóa tài khoản Chủ sở hữu hoặc Quản trị viên." },
                 { status: 403 },
             );
         }
@@ -174,6 +184,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
             });
 
             if (updateResult.count === 1) {
+                // Invalidate any active sessions for the deactivated user
+                await tx.user.update({
+                    where: { id: membership.userId },
+                    data: {
+                        sessionVersion: { increment: 1 },
+                    },
+                });
+
                 await tx.auditEvent.create({
                     data: {
                         lakeId: tenantContext.lakeId,

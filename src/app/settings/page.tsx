@@ -125,7 +125,7 @@ export default async function SettingsPage() {
                             CÀI ĐẶT HỆ THỐNG
                         </h1>
                     </div>
-                    <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#16A34A] border border-[#BBF7D0] shadow-2xs font-serif shrink-0 whitespace-nowrap">
+                    <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-1 text-[11px] font-bold text-[#166534] border border-[#BBF7D0] shadow-2xs font-serif shrink-0 whitespace-nowrap">
                         {roleBadge}
                     </span>
                 </div>

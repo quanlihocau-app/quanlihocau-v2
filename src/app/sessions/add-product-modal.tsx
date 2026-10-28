@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ModalPortal } from "@/components/ui/modal-portal";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 import { getQueryClient } from "@/lib/query-client";
-import { productCatalogKeys, useProducts } from "@/hooks/use-products";
+import { fetchProducts, productCatalogKeys, useProducts } from "@/hooks/use-products";
+import { CatalogLoadError } from "@/components/ui/catalog-load-error";
 
 export interface Product {
     id: string;
@@ -21,12 +22,7 @@ function formatPrice(vnd: number): string {
 export async function getCachedProducts(): Promise<Product[]> {
     return getQueryClient().fetchQuery({
         queryKey: productCatalogKeys.list(),
-        queryFn: async ({ signal }) => {
-            const response = await fetch("/api/products", { signal });
-            if (!response.ok) throw new Error("Không thể tải danh sách sản phẩm.");
-            const data = (await response.json()) as { products?: Product[] };
-            return data.products ?? [];
-        },
+        queryFn: ({ signal }) => fetchProducts(signal),
     });
 }
 
@@ -295,9 +291,7 @@ export function AddProductModal({
                                 <span className="text-xs">Đang tải danh sách sản phẩm…</span>
                             </div>
                         ) : loadError ? (
-                            <div className="rounded-xl border border-[#FFCCC7] bg-[#FFF1F0] p-3 text-center text-xs text-[#A8071A]">
-                                {loadError}
-                            </div>
+                            <CatalogLoadError onRetry={() => { void productQuery.refetch(); }} isRetrying={productQuery.isFetching} />
                         ) : filtered.length === 0 ? (
                             <div className="rounded-xl border border-[#CCCCCC] bg-[#FAFAF7] p-6 text-center text-xs text-[#666666]">
                                 {search ? `Không tìm thấy sản phẩm nào khớp với "${search}".` : "Chưa có sản phẩm nào."}

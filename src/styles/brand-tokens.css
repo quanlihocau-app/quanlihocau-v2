@@ -1,0 +1,19 @@
+/* Quản Lí Hồ Câu · Sổ hồ câu. Shared tokens; no business behavior. */
+:root {
+    --brand-primary: #24684f;
+    --brand-primary-hover: #1b523e;
+    --brand-on-primary: #ffffff;
+    --brand-header: #e5f3e9;
+    --brand-background: #f8faf4;
+    --brand-paper: #fffef9;
+    --brand-ink: #203d32;
+    --brand-muted: #53665a;
+    --brand-border: #d6e2d6;
+    --brand-rule: #d9e5ef;
+    --brand-margin: #e6b8a8;
+    --brand-accent: #a54f26;
+    --brand-warning: #805313;
+    --brand-warning-background: #fff2d8;
+    --brand-danger: #b42318;
+    --brand-danger-background: #fff1ed;
+}

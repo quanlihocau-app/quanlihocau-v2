@@ -159,8 +159,8 @@ export async function registerUser(input: RegisterInput) {
           name: name.trim(),
           phone: normalizedPhone,
           systemRole: 'USER',
-          phoneVerified: Boolean(phone && phone.trim().length > 0),
-          phoneVerifiedAt: phone && phone.trim().length > 0 ? new Date() : null,
+          phoneVerified: false,
+          phoneVerifiedAt: null,
         },
         select: {
           id: true,

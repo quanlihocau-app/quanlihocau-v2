@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -69,6 +70,7 @@ function ModalPortal({ children }: { children: React.ReactNode }) {
 }
 
 interface OpenSessionFormProps {
+    initialCustomerId?: string;
     customers: SelectCustomer[];
     packages: SelectPackage[];
     huts: SelectHut[];
@@ -129,6 +131,7 @@ const quickCustomerSchema = z.object({
 });
 
 export function OpenSessionForm({
+    initialCustomerId,
     customers: initialCustomers,
     packages,
     huts: initialHuts,
@@ -144,9 +147,10 @@ export function OpenSessionForm({
     // Customer state
     const [customerList, setCustomerList] =
         useState<SelectCustomer[]>(initialCustomers);
-    const [customerSearch, setCustomerSearch] = useState("");
+    const initialCustomer = initialCustomers.find((c) => c.id === initialCustomerId);
+    const [customerSearch, setCustomerSearch] = useState(initialCustomer?.name || "");
     const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
-        null,
+        initialCustomer?.id ?? null,
     );
     const [showQuickAddCustomer, setShowQuickAddCustomer] = useState(false);
     const [newCustomerName, setNewCustomerName] = useState("");
@@ -240,7 +244,11 @@ export function OpenSessionForm({
     const [reconnectNotice, setReconnectNotice] = useState<string | null>(null);
     const [isDraftRestored, setIsDraftRestored] = useState(false);
 
-    const DRAFT_KEY = "qlhc_ticket_form_draft";
+    // A ticket opened for a specific customer must not inherit another draft's
+    // customer, goods or money. Keep the general draft intact under its old key.
+    const DRAFT_KEY = initialCustomer
+        ? `qlhc_ticket_form_draft:customer:${initialCustomer.id}`
+        : "qlhc_ticket_form_draft";
 
     // Khôi phục draft từ localStorage sau khi mount
     useEffect(() => {
@@ -292,7 +300,7 @@ export function OpenSessionForm({
         }, 0);
 
         return () => clearTimeout(restoreTimer);
-    }, [packageList, hutList, customerList]);
+    }, [packageList, hutList, customerList, DRAFT_KEY]);
 
     // Tự động lưu draft khi người dùng thay đổi dữ liệu
     useEffect(() => {
@@ -320,6 +328,7 @@ export function OpenSessionForm({
             // bỏ qua
         }
     }, [
+        DRAFT_KEY,
         selectedPackageId,
         selectedHutIds,
         selectedCustomerId,
@@ -1184,6 +1193,13 @@ export function OpenSessionForm({
         }
         return map;
     }, [hutList]);
+
+    if (initialCustomerId && !initialCustomer) {
+        return <div className="space-y-3">
+            <InlineAlert type="error" message="Khách hàng này không còn trong danh bạ của hồ. Vui lòng chọn lại khách trước khi tạo vé." />
+            <Link href="/customers" className="inline-flex min-h-11 items-center font-bold text-emerald-800 underline">Về danh bạ khách hàng</Link>
+        </div>;
+    }
 
     return (
         <>

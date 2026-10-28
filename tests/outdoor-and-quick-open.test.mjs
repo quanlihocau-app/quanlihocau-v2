@@ -56,10 +56,10 @@ test("4. Luồng Mở vé nhanh (Quick Open) trong open-session-form.tsx", () =>
     // Phải có cờ inFlight và isQuickOpening chống bấm lặp
     assert.ok(formCode.includes("quickOpenInFlightRef"), "Thiếu quickOpenInFlightRef chống bấm lặp");
     assert.ok(formCode.includes("isQuickOpening"), "Thiếu state isQuickOpening");
-    // Nút mở nhanh phải có min-h-[58px] đạt chuẩn 56px-64px
-    assert.ok(formCode.includes("min-h-[58px]"), "Nút mở nhanh phải đạt chiều cao >= 56px");
-    // Ô câu trong grid phải có min-h-[56px]
-    assert.ok(formCode.includes("min-h-[56px] h-14 sm:h-16"), "Nút ô câu phải có chiều cao min-h-[56px]");
+    // Nút mở nhanh dùng Tailwind spacing: min-h-14.5 = 58px, h-15 = 60px, sm:h-16 = 64px.
+    assert.ok(formCode.includes("min-h-14.5 h-15 sm:h-16"), "Nút mở nhanh phải đạt chiều cao 58px-64px");
+    // Ô câu dùng min-h-14/h-14 (56px), tăng lên 64px trên màn hình rộng.
+    assert.ok(formCode.includes("min-h-14 h-14 sm:h-16"), "Nút ô câu phải có chiều cao tối thiểu 56px");
 });
 
 test("5. Nút toggle Chế độ ngoài trời trên MobileAppHeader", () => {

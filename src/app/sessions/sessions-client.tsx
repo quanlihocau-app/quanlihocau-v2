@@ -109,6 +109,7 @@ export interface SerializableFishType {
 export type SerializablePackage = ActionPackage;
 
 interface SessionsClientProps {
+    initialSessionId?: string;
     activeSessions: SerializableSession[];
     packages: SerializablePackage[];
     fishTypes?: SerializableFishType[];
@@ -120,6 +121,7 @@ interface SessionsClientProps {
 
 
 export function SessionsClient({
+    initialSessionId,
     activeSessions,
     packages,
     fishTypes = [],
@@ -131,7 +133,9 @@ export function SessionsClient({
     const [sessions, setSessions] = useState<SerializableSession[]>(activeSessions);
     const [prevActiveSessions, setPrevActiveSessions] = useState(activeSessions);
     const [selectedId, setSelectedId] = useState<string>(
-        activeSessions[0]?.id ?? "",
+        initialSessionId
+            ? activeSessions.find((s) => s.id === initialSessionId)?.id ?? ""
+            : activeSessions[0]?.id ?? "",
     );
     const [settlementSessionId, setSettlementSessionId] = useState<string | null>(null);
 
@@ -149,7 +153,9 @@ export function SessionsClient({
     });
 
     // Modal Tùy chỉnh phóng to giữa màn hình khi bấm chọn ô
-    const [isActionModalOpen, setIsActionModalOpen] = useState<boolean>(false);
+    const [isActionModalOpen, setIsActionModalOpen] = useState<boolean>(
+        () => Boolean(initialSessionId && activeSessions.some((s) => s.id === initialSessionId)),
+    );
 
     // Hướng dẫn nhanh cho người mới (mặc định mở, có thể thu gọn)
     const [isGuideOpen, setIsGuideOpen] = useState<boolean>(() => {
@@ -195,7 +201,7 @@ export function SessionsClient({
 
     const selectedSession =
         sessions.find((s) => s.id === selectedId) ??
-        sessions[0] ??
+        (initialSessionId ? null : sessions[0]) ??
         null;
     const selectedSessionFinancials = selectedSession
         ? computeSessionFinancials(selectedSession, nowMs)
@@ -402,7 +408,7 @@ export function SessionsClient({
                         </svg>
                     </div>
                     <p className="text-base font-bold text-[#0F172A] font-serif">
-                        Hiện chưa có khách nào đang câu
+                        {initialSessionId ? "Phiên được chọn đã kết thúc hoặc không còn khả dụng" : "Hiện chưa có khách nào đang câu"}
                     </p>
                     
                     {/* Hướng dẫn 3 bước cực dễ hiểu cho người mới */}
@@ -441,6 +447,11 @@ export function SessionsClient({
 
     return (
         <div className="font-serif">
+            {initialSessionId && !sessions.some((s) => s.id === initialSessionId) && (
+                <p role="status" className="mb-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                    Phiên được chọn đã kết thúc hoặc không còn khả dụng trong hồ này. Chọn phiên khác hoặc <Link href="/invoices/history" className="font-bold underline">xem lịch sử vé</Link>.
+                </p>
+            )}
             {/* ── Bảng Hướng Dẫn Trực Quan Cho Người Mới (Dễ hiểu cho học sinh lớp 5) ── */}
             <div className="mb-3 rounded-2xl border border-emerald-200/90 bg-linear-to-r from-emerald-50/80 via-white to-emerald-50/80 p-3 shadow-2xs font-serif transition-all">
                 <div className="flex items-center justify-between">

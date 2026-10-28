@@ -8,15 +8,20 @@
     "start": "next start",
     "lint": "eslint",
     "test:unit": "node --test --test-timeout=15000 tests/money.test.mjs tests/saas-finance-complete.test.mjs tests/finance.test.mjs tests/app-regressions.test.mjs tests/custom-start-time.test.mjs tests/verification-timer-comprehensive.mjs",
+    "test:safety": "node --test --test-timeout=15000 tests/money.test.mjs tests/saas-finance-complete.test.mjs tests/finance.test.mjs tests/app-regressions.test.mjs tests/custom-start-time.test.mjs tests/verification-timer-comprehensive.mjs tests/stale-session.test.mjs tests/outdoor-and-quick-open.test.mjs tests/printing-flow.test.mjs tests/printing-serial.test.mjs tests/printing-windows-usb.test.mjs tests/billing-safety.test.mjs tests/test-account-classification.test.mjs tests/navigation.test.mjs",
     "test:integration": "node --test --test-concurrency=1 --env-file=.env.test tests/settlement-and-reporting.test.mjs tests/prepaid-and-postpaid-billing.test.mjs tests/finance-flow.integration.test.mjs",
     "postinstall": "prisma generate",
-    "test": "node --test --test-concurrency=1 --env-file=.env.test tests/money.test.mjs tests/audit-log.test.mjs tests/stale-session.test.mjs tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs tests/speedsms-and-otp-security.test.mjs tests/comprehensive-reporting.test.mjs tests/test-auth-and-subscription.test.mjs tests/prepaid-and-postpaid-billing.test.mjs tests/admin-user-management.test.mjs tests/admin-manual-order-confirm.test.mjs"
+    "test": "node --test --test-concurrency=1 --env-file=.env.test tests/money.test.mjs tests/audit-log.test.mjs tests/stale-session.test.mjs tests/inventory-product.test.mjs tests/retail-and-history.test.mjs tests/session-flow.test.mjs tests/settlement-and-reporting.test.mjs tests/subscription-and-webhook.test.mjs tests/phone-otp-auth.test.mjs tests/speedsms-and-otp-security.test.mjs tests/comprehensive-reporting.test.mjs tests/test-auth-and-subscription.test.mjs tests/prepaid-and-postpaid-billing.test.mjs tests/admin-user-management.test.mjs tests/admin-manual-order-confirm.test.mjs",
+    "check:navigation": "node scripts/check-navigation.mjs",
+    "build:isolated": "node scripts/build-isolated.mjs",
+    "test:guest-navigation": "node scripts/smoke-navigation-isolated.mjs",
+    "check:release": "npm run check:navigation && npm run test:safety && npm run lint && tsc --noEmit --incremental false && npm run build:isolated && npm run test:guest-navigation"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",
     "@google/genai": "^2.30.0",
     "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "7.10.0",
+    "@prisma/client": "^7.10.1",
     "@tanstack/query-sync-storage-persister": "^5.102.8",
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-query-persist-client": "^5.102.8",
@@ -27,7 +32,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "sonner": "^2.0.8",
-    "zod": "^4.5.4"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -38,8 +43,11 @@
     "dotenv": "17.4.2",
     "eslint": "^9",
     "eslint-config-next": "^16.4.1",
-    "prisma": "^7.10.0",
+    "prisma": "^7.10.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "fast-uri": "3.1.9"
   }
 }

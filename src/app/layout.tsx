@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { founder } from "@/lib/founder";
 import { Suspense } from "react";
 
 import { PageProgressBar } from "@/components/ui/page-progress-bar";
@@ -28,8 +29,8 @@ export const metadata: Metadata = {
         "đồng hồ phiên câu",
         "báo cáo ca hồ câu",
     ],
-    authors: [{ name: "Quản Lý Hồ Câu", url: "https://quanlihocau.com" }],
-    creator: "Quản Lý Hồ Câu",
+    authors: [{ name: "Huân Trần (Trần Anh Huân)", url: "https://quanlihocau.com/huan-tran" }],
+    creator: "Huân Trần (Trần Anh Huân)",
     publisher: "Quản Lý Hồ Câu",
     robots: {
         index: true,
@@ -108,17 +109,18 @@ export const viewport: Viewport = {
     ],
     width: "device-width",
     initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
+    userScalable: true,
     viewportFit: "cover",
 };
 
 const jsonLdSchema = {
     "@context": "https://schema.org",
     "@graph": [
+        founder,
         {
             "@type": "SoftwareApplication",
             "@id": "https://quanlihocau.com/#software",
+            "creator": { "@id": founder["@id"] },
             "name": "Quản Lý Hồ Câu",
             "alternateName": ["App Cho Chủ Hồ", "Ứng dụng Quản Lý Hồ Câu"],
             "operatingSystem": "All",
@@ -170,6 +172,7 @@ const jsonLdSchema = {
         {
             "@type": "Organization",
             "@id": "https://quanlihocau.com/#organization",
+            "founder": { "@id": founder["@id"] },
             "name": "Quản Lý Hồ Câu",
             "url": "https://quanlihocau.com",
             "logo": "https://quanlihocau.com/icons/icon-512x512.png",
@@ -206,7 +209,7 @@ export default function RootLayout({
                 />
                 <script
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema).replace(/</g, "\\u003c") }}
                 />
             </head>
             <body className="min-h-full flex flex-col bg-[#FAFAF7] text-[#1A1A1A] selection:bg-[#EAEFEA] selection:text-[#2C4C3B]">

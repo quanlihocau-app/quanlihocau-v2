@@ -105,6 +105,8 @@ export function TicketOrRetailSwitcher({
             {/* Tab Views */}
             {activeTab === "ticket" ? (
                 <OpenSessionForm
+                    key={searchParams.get("customerId") || "new-ticket"}
+                    initialCustomerId={searchParams.get("customerId") || undefined}
                     customers={customers}
                     packages={packages}
                     huts={huts}

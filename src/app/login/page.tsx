@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { loginUser } from '@/app/actions/auth'
 import { signIn } from 'next-auth/react'
@@ -21,7 +21,7 @@ const OAUTH_ERRORS: Record<string, string> = {
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectUrl = searchParams.get('redirect') || '/dashboard'
+  const redirectUrl = searchParams.get('redirect') || searchParams.get('callbackUrl') || '/dashboard'
   const errorParam = searchParams.get('error')
   const registered = searchParams.get('registered') === '1'
 
@@ -30,6 +30,8 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const inFlight = useRef(false)
 
   const oauthError = errorParam
     ? (OAUTH_ERRORS[errorParam] ?? OAUTH_ERRORS.Default)
@@ -37,37 +39,49 @@ function LoginForm() {
 
   // ── Google OAuth (primary) ────────────────────────────────────
   const handleGoogleSignIn = async () => {
+    if (inFlight.current) return
+    inFlight.current = true
     setGoogleLoading(true)
     setErrorMsg('')
-    await signIn('google', {
-      callbackUrl: `/api/auth/sync-session?next=${encodeURIComponent(safeRedirectPath(redirectUrl))}`,
-    })
-    // stays loading until navigation completes
+    try {
+      const result = await signIn('google', {
+        callbackUrl: `/api/auth/sync-session?next=${encodeURIComponent(safeRedirectPath(redirectUrl))}`,
+      })
+      if (result?.error) setErrorMsg('Không thể đăng nhập với Google. Vui lòng thử lại.')
+    } catch {
+      setErrorMsg('Chưa kết nối được với Google. Vui lòng thử lại hoặc dùng số điện thoại và mật khẩu.')
+    } finally {
+      inFlight.current = false
+      setGoogleLoading(false)
+    }
   }
 
   // ── Email/Password (staff & manager login) ───────────────────
   const handleLegacyLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (inFlight.current) return
+    inFlight.current = true
     setLoading(true)
     setErrorMsg('')
     try {
       const result = await loginUser({ email, password })
       if (!result.success) {
         setErrorMsg(result.message)
-        setLoading(false)
         return
       }
       try {
         const resolvedEmail = (result as { email?: string }).email || email
         await signIn('credentials', { redirect: false, email: resolvedEmail, password })
-      } catch (err) {
-        console.warn('NextAuth credentials sync notice:', err)
+      } catch {
+        // The existing qa_session remains the credentials session fallback.
       }
       clearCatalogCache()
       router.push(safeRedirectPath(redirectUrl))
       router.refresh()
     } catch {
       setErrorMsg('Không thể kết nối đến hệ thống.')
+    } finally {
+      inFlight.current = false
       setLoading(false)
     }
   }
@@ -108,26 +122,29 @@ function LoginForm() {
             </div>
           )}
           {(oauthError || errorMsg) && (
-            <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-300">
+            <div role="alert" className="mb-4 flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-300">
               <span className="shrink-0">⚠</span>
-              <span>{oauthError ?? errorMsg}</span>
+              <span>{errorMsg || oauthError}</span>
             </div>
           )}
 
           {/* ── Section 1: Staff / Manager Credentials Login ─────────── */}
-          <form onSubmit={handleLegacyLogin} className="space-y-3.5">
+          <form onSubmit={handleLegacyLogin} aria-busy={isLoading} className="space-y-3.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                Nhân viên &amp; Thu ngân
+                Chủ hồ, nhân viên &amp; thu ngân
               </span>
               <span className="text-[10px] text-white/40">Đăng nhập ca</span>
             </div>
 
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-white/60">
+              <label htmlFor="login-account" className="mb-1 block text-[11px] font-medium text-white/60">
                 Số điện thoại, tên đăng nhập hoặc email
               </label>
               <input
+                id="login-account"
+                name="username"
+                autoComplete="username"
                 type="text"
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -141,11 +158,13 @@ function LoginForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-white/60">
+              <label htmlFor="login-password" className="mb-1 block text-[11px] font-medium text-white/60">
                 Mật khẩu
               </label>
               <input
-                type="password"
+                id="login-password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
                 value={password}
@@ -153,6 +172,9 @@ function LoginForm() {
                 placeholder="Nhập mật khẩu"
                 className="h-10 w-full rounded-xl border border-white/15 bg-white/10 px-3 text-sm text-white placeholder-white/25 transition focus:border-emerald-400 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-emerald-400"
               />
+              <button type="button" aria-controls="login-password" aria-pressed={showPassword} onClick={() => setShowPassword((value) => !value)} className="min-h-11 text-xs font-semibold text-emerald-300 underline">
+                {showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              </button>
             </div>
 
             <button
@@ -199,6 +221,9 @@ function LoginForm() {
             )}
             <span>{googleLoading ? 'Đang chuyển đến Google…' : 'Chủ hồ: Đăng nhập bằng Google'}</span>
           </button>
+          <p className="mt-5 text-center text-sm text-white/70">
+            Chủ hồ mới? <a href="/register" className="inline-flex min-h-11 items-center font-semibold text-emerald-300 underline">Tạo tài khoản hồ câu</a>
+          </p>
         </div>
 
         {/* Footer */}

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useProducts, type CachedProduct as Product } from "@/hooks/use-products";
+import { CatalogLoadError } from "@/components/ui/catalog-load-error";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 
 export interface ActiveSession {
@@ -65,7 +66,8 @@ function SessionDropdownItem({ session }: { session: ActiveSession }) {
 export function SalesPos({ activeSessions }: SalesPosProps) {
     const router = useRouter();
 
-    const { data: cachedProducts, isLoading: isQueryLoading, error: queryError } = useProducts();
+    const productQuery = useProducts();
+    const { data: cachedProducts, isLoading: isQueryLoading, error: queryError } = productQuery;
     const products = cachedProducts ?? [];
     const isLoadingProducts = isQueryLoading && products.length === 0;
     const loadError = queryError ? (queryError instanceof Error ? queryError.message : "Không thể kết nối đến máy chủ.") : "";
@@ -465,9 +467,7 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                             </svg>
                         </div>
                     ) : loadError ? (
-                        <div className="rounded-2xl border border-[#D9534F]/30 bg-[#FCEEED] p-3 text-center text-xs text-[#D9534F]">
-                            {loadError}
-                        </div>
+                        <CatalogLoadError onRetry={() => { void productQuery.refetch(); }} isRetrying={productQuery.isFetching} />
                     ) : filteredProducts.length === 0 ? (
                         <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-4 text-center text-xs text-[#66716A]">
                             {search ? "Không tìm thấy sản phẩm." : "Hệ thống chưa có sản phẩm nào."}

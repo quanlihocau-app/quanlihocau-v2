@@ -6,7 +6,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { z } from "zod";
 
-import { SystemRole, Prisma, Role } from "@/generated/prisma/client";
+import { SystemRole, Role } from "@/generated/prisma/client";
 import {
     authFailureState,
     authLockMessage,
@@ -228,6 +228,9 @@ export const authOptions: NextAuthOptions = {
                             await tx.membership.create({
                                 data: { userId: owner.id, lakeId: lake.id, role: "OWNER" },
                             });
+                            // Keep Google onboarding atomic with account creation so a new
+                            // owner cannot be left with an empty sample lake after a seed error.
+                            await seedSampleLakeData(tx, lake.id, ownerName, owner.id);
                             return { lakeId: lake.id, ownerId: owner.id };
                         },
                         {
@@ -239,15 +242,6 @@ export const authOptions: NextAuthOptions = {
                     createdLake = result ?? null;
                     console.log("[auth:signIn] Created new user, lake, and org for:", email);
 
-                    // Khởi tạo bộ dữ liệu mẫu sau khi transaction người dùng và hồ đã commit thành công
-                    if (result?.lakeId) {
-                        try {
-                            await seedSampleLakeData(prisma as unknown as Prisma.TransactionClient, result.lakeId, ownerName, result.ownerId);
-                            console.log("[auth:signIn] Seeded sample data for lake:", result.lakeId);
-                        } catch (seedErr) {
-                            console.warn("[auth:signIn] Non-fatal: seedSampleLakeData warning:", seedErr);
-                        }
-                    }
                 } catch (txErr) {
                     console.error("[auth:signIn] Error in user creation transaction:", txErr);
                 }

@@ -967,6 +967,15 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                         </div>
                     </div>
                 </section>
+
+                <section className="border-t border-[#143B25] bg-[#061F13] py-16 text-white" aria-labelledby="nha-sang-lap">
+                    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                        <p className="text-sm font-semibold text-[#52D879]">Câu chuyện nhà sáng lập</p>
+                        <h2 id="nha-sang-lap" className="mt-3 text-3xl font-bold">Huân Trần — người đứng sau Quản Lý Hồ Câu</h2>
+                        <p className="mt-5 max-w-3xl leading-8 text-[#D5E5D1]">Huân Trần (Trần Anh Huân) sáng lập và tự phát triển quanlihocau.com bằng vibe coding với sự hỗ trợ của AI. Từ công cụ phục vụ hồ câu của mình, anh đưa sản phẩm đến các chủ hồ có cùng nhu cầu quản lý.</p>
+                        <Link href="/huan-tran" className="mt-6 inline-flex min-h-11 items-center font-semibold text-[#52D879] underline">Tìm hiểu Huân Trần: từ video AI đến Quản Lý Hồ Câu →</Link>
+                    </div>
+                </section>
             </main>
 
             {/* ── 11. FOOTER ───────────────────────────────────────────────────── */}

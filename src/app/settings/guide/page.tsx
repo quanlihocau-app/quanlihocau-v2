@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ONBOARDING_STEPS } from "@/lib/guides/onboarding-data";
 import { openGuideModal } from "@/components/guide/onboarding-modal";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
+import { NewOwnerChecklist } from "@/components/guide/new-owner-checklist";
 
 type CategoryFilter = "ALL" | "OPERATION" | "SETUP" | "REPORT";
 
@@ -86,6 +87,8 @@ export default function GuidePage() {
                     11 Bài học
                 </span>
             </div>
+
+            <NewOwnerChecklist />
 
             {/* Quick Practice Banner */}
             <div className="rounded-2xl border border-[#4F9D5A]/30 bg-linear-to-br from-[#E8F3E5] via-[#E2F0DE] to-[#D5E8D1] p-4 space-y-3 shadow-xs mb-4">

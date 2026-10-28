@@ -1,0 +1,85 @@
+name: CI & Preview Deploy
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  # -------------------------------------------------
+  # 1️⃣ Install, lint, type‑check
+  # -------------------------------------------------
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+  # -------------------------------------------------
+  # 2️⃣ Run test suite (uses .env.test)
+  # -------------------------------------------------
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: Run tests
+        run: |
+          cp .env.test .env
+          npm test
+
+  # -------------------------------------------------
+  # 3️⃣ Build (next build) + generate Prisma client
+  # -------------------------------------------------
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: Generate Prisma client
+        run: npx prisma generate
+      - name: Build Next.js
+        run: npm run build
+
+  # -------------------------------------------------
+  # 4️⃣ Deploy to Vercel (preview for PR, production for push)
+  # -------------------------------------------------
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Vercel (Production)
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: .
+

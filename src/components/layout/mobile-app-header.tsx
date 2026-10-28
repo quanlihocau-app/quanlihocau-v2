@@ -33,15 +33,15 @@ export function MobileAppHeader({
         <>
             <header
                 style={{ paddingTop: "max(10px, env(safe-area-inset-top, 10px))" }}
-                className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-100 bg-[#FFFFFF] px-4 pb-2.5 shrink-0 gap-3 font-serif shadow-2xs"
+                className="sticky top-0 z-30 flex flex-wrap items-center justify-between border-b border-slate-100 bg-[#FFFFFF] px-4 pb-2.5 shrink-0 gap-3 font-serif shadow-2xs"
             >
                 {/* Lake name & Avatar & Realtime Clock */}
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="flex items-center gap-2.5 min-w-0 basis-full">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[#DCFCE7] font-bold text-[#16A34A] font-serif text-sm shadow-2xs">
                         {lakeName ? lakeName.slice(0, 2).toUpperCase() : "HC"}
                     </div>
                     <div className="min-w-0 flex-1">
-                        <h2 className="text-[15px] font-bold text-[#0F172A] leading-tight truncate font-serif">
+                        <h2 className="text-[15px] font-bold text-[#0F172A] leading-snug break-words font-serif">
                             {lakeName}
                         </h2>
                         <div className="mt-0.5 font-serif text-xs text-[#64748B]">
@@ -51,7 +51,8 @@ export function MobileAppHeader({
                 </div>
 
                 {/* Badges + Help ? Button */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex w-full flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
                     {roleBadge && (
                         <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-700 font-serif">
                             {roleBadge}
@@ -65,9 +66,9 @@ export function MobileAppHeader({
                                 Nối lại…
                             </span>
                         ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[#DCFCE7] px-2.5 py-0.5 text-[11px] font-bold text-[#16A34A] font-serif">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#DCFCE7] px-2.5 py-0.5 text-xs font-bold text-[#166534] font-serif">
                                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
-                                Online
+                                Đã kết nối
                             </span>
                         )
                     ) : (
@@ -77,6 +78,8 @@ export function MobileAppHeader({
                         </span>
                     )}
 
+                    </div>
+                    <div className="flex items-center gap-1.5">
                     {/* Outdoor High-Contrast Mode Toggle Button */}
                     <button
                         type="button"
@@ -84,14 +87,16 @@ export function MobileAppHeader({
                         className={`inline-flex h-8 items-center gap-1 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer font-serif active:scale-95 ${
                             isOutdoorMode
                                 ? "bg-amber-400 text-black border-black ring-2 ring-black font-extrabold shadow-sm"
-                                : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300"
+                                : "border-slate-300 bg-slate-50 text-slate-800 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300"
                         }`}
                         aria-label={isOutdoorMode ? "Tắt chế độ ngoài trời tương phản cao" : "Bật chế độ ngoài trời tương phản cao"}
+                        aria-pressed={isOutdoorMode}
+                        style={{ minHeight: 44 }}
                         title={isOutdoorMode ? "Đang bật chế độ ngoài trời (nắng gắt)" : "Bật chế độ tương phản cao dưới nắng gắt"}
                     >
-                        <span>☀️</span>
-                        <span className="hidden xs:inline text-[10px] uppercase tracking-tight">
-                            {isOutdoorMode ? "Nắng: Bật" : "Nắng gắt"}
+                        <span aria-hidden="true">☀️</span>
+                        <span className="text-xs">
+                            {isOutdoorMode ? "Ngoài trời: Bật" : "Ngoài trời"}
                         </span>
                     </button>
 
@@ -99,12 +104,13 @@ export function MobileAppHeader({
                     <button
                         type="button"
                         onClick={() => openGuideModal()}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 hover:bg-emerald-50 hover:text-[#16A34A] hover:border-[#BBF7D0] active:scale-95 transition-all cursor-pointer font-serif"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-slate-50 text-base font-bold text-slate-800 hover:bg-emerald-50 hover:text-[#166534] hover:border-[#BBF7D0] active:scale-95 transition-all cursor-pointer font-serif"
                         aria-label="Xem hướng dẫn sử dụng"
                         title="Hướng dẫn sử dụng nhanh"
                     >
                         ?
                     </button>
+                    </div>
                 </div>
             </header>
 

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { getPageSession } from "@/lib/server-session";
-import { OfficialLandingPage } from "@/components/landing/official-landing-page";
+import { BrandLandingPage as OfficialLandingPage } from "@/components/landing/brand-landing-page";
 
 export const metadata: Metadata = {
     title: "Phần Mềm Quản Lý Hồ Câu — App Cho Chủ Hồ Trên Điện Thoại | Quản Lý Hồ Câu",
     description:
-        "Phần mềm quản lý hồ câu & App cho chủ hồ câu trên điện thoại: đếm giờ phiên câu tự động, tính phụ thu lố giờ, quản lý nhân viên từ xa, bán mồi nước, thu mua cá, in bill 58mm và hạn chế thất thoát. Tài khoản mới dùng thử miễn phí 30 ngày.",
+        "Quản Lý Hồ Câu do Huân Trần (Trần Anh Huân) sáng lập: ghi vé, theo dõi giờ câu, thêm hàng, thu mua cá và đối chiếu tiền ca trên điện thoại. Dùng thử 30 ngày.",
     keywords: [
         "phần mềm quản lý hồ câu",
         "app cho chủ hồ",
@@ -21,6 +21,8 @@ export const metadata: Metadata = {
         "tính giờ phiên câu",
         "máy in bill hồ câu",
         "quanlihocau",
+        "Huân Trần",
+        "Trần Anh Huân",
     ],
     openGraph: {
         title: "Phần Mềm Quản Lý Hồ Câu — App Cho Chủ Hồ Trên Điện Thoại",
@@ -48,6 +50,7 @@ const homeJsonLd = {
         {
             "@type": "WebSite",
             "@id": "https://quanlihocau.com/#website",
+            "publisher": { "@id": "https://quanlihocau.com/#organization" },
             "url": "https://quanlihocau.com",
             "name": "Quản Lý Hồ Câu",
             "alternateName": ["App Cho Chủ Hồ", "QuanLiHoCau"],
@@ -57,18 +60,19 @@ const homeJsonLd = {
         {
             "@type": "SoftwareApplication",
             "@id": "https://quanlihocau.com/#software",
+            "creator": { "@id": "https://quanlihocau.com/huan-tran#person" },
             "name": "Quản Lý Hồ Câu",
             "alternateName": "App Quản Lý Hồ Câu Cho Chủ Hồ",
             "operatingSystem": "iOS, Android, Windows, macOS, Web",
             "applicationCategory": "BusinessApplication",
             "applicationSubCategory": "Fishing Pond POS & Management System",
             "description":
-                "Phần mềm quản lý hồ câu dịch vụ toàn diện và app cho chủ hồ trên điện thoại: tính giờ phiên câu theo thời gian thực, tự động tính phụ thu lố giờ, bán mồi nước ăn uống, thu mua cá và kiểm soát ca làm việc từ xa.",
+                "Sổ hồ câu trên điện thoại: ghi vé, theo dõi thời gian, gia hạn theo xác nhận, thêm hàng, thu mua cá và đối chiếu tiền cuối ca.",
             "url": "https://quanlihocau.com",
             "featureList": [
                 "Đồng hồ đếm ngược phiên câu theo thời gian thực từng giây",
-                "Tự động tính tiền phụ thu khi cần thủ câu lố thời gian quy định",
-                "Sơ đồ bờ hồ trực quan, chạm mở vé nhanh trong 3 giây",
+                "Cảnh báo thời gian để chủ hồ chọn gia hạn hoặc kết thúc",
+                "Chọn ô số và gói câu trên sơ đồ hồ",
                 "Bán mồi câu, đồ ăn, nước giải khát cộng dồn trực tiếp vào vé đang câu",
                 "Cân cá thu mua và cấn trừ tiền tự động vào hóa đơn",
                 "Theo dõi doanh thu thời gian thực và quản lý nhân viên từ xa trên điện thoại",
@@ -116,7 +120,7 @@ const homeJsonLd = {
                     "name": "Phần mềm quản lý hồ câu là gì và gồm những tính năng gì?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Quản Lý Hồ Câu (quanlihocau.com) là phần mềm chuyên biệt hoạt động trên điện thoại và máy tính dành cho các hồ câu dịch vụ. Phần mềm gồm các tính năng cốt lõi: mở vé theo sơ đồ ô câu, đồng hồ đếm ngược phiên câu, tự tính phụ thu lố giờ, bán mồi nước cộng vào vé, cân cá thu mua cấn trừ bill, in bill 58mm và báo cáo doanh thu từ xa cho chủ hồ.",
+                        "text": "Quản Lí Hồ Câu là sổ hồ câu trên điện thoại: ghi vé theo ô số, theo dõi giờ, thêm hàng, thu mua cá và đối chiếu thu chi cuối ca.",
                     },
                 },
                 {
@@ -132,7 +136,7 @@ const homeJsonLd = {
                     "name": "Phần mềm tự động tính tiền quá giờ cho cần thủ như thế nào?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Hệ thống có đồng hồ đếm ngược chính xác từng giây theo gói câu (ví dụ ca 3 tiếng, ca 4 tiếng). Khi hết giờ, ứng dụng tự phát cảnh báo và tự động tính tiền phụ thu theo số phút câu lố dựa trên cấu hình giá của hồ, giúp chủ hồ và nhân viên không phải tự nhẩm tính hay tranh cãi với khách.",
+                        "text": "App hiển thị giờ vào, giờ ra dự kiến và đồng hồ theo gói câu. Khi hết giờ, nhân viên chọn gia hạn hoặc kết thúc; số tiền thay đổi theo thao tác xác nhận và bảng giá hiện hành của hồ.",
                     },
                 },
                 {
@@ -195,7 +199,7 @@ export default async function HomePage() {
         <>
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd).replace(/</g, "\\u003c") }}
             />
             <OfficialLandingPage isLoggedIn={Boolean(session?.user)} />
         </>

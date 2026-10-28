@@ -75,6 +75,9 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('X-Frame-Options', 'SAMEORIGIN')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  }
   return response
 }
 
@@ -198,8 +201,7 @@ export async function proxy(request: NextRequest) {
 
   // Nếu chưa đăng nhập, điều hướng sang /login kèm param redirect
   const loginUrl = new URL('/login', request.url)
-  const redirectPath = pathname === '/settings/printer' && request.nextUrl.searchParams.get('setup') === 'windows'
-    ? `${pathname}?setup=windows` : pathname
+  const redirectPath = `${pathname}${request.nextUrl.search}`
   loginUrl.searchParams.set('redirect', redirectPath)
   const response = applySecurityHeaders(NextResponse.redirect(loginUrl))
   expireStaleCookies(response, stale)

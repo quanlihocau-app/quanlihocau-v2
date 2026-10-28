@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchJson } from "@/lib/network/fetch-json";
 import {
     addQuickHutAction,
     deleteQuickHutAction,
@@ -43,11 +44,11 @@ export function useFishingSpots(initialData?: FishingHut[]) {
     const query = useQuery({
         queryKey: catalogKeys.spots(),
         queryFn: async ({ signal }) => {
-            const res = await fetch("/api/huts", { signal });
-            if (!res.ok) {
+            const data = await fetchJson("/api/huts", signal);
+            if (!Array.isArray(data)) {
                 throw new Error("Không thể tải danh sách ô câu.");
             }
-            return (await res.json()) as FishingHut[];
+            return data as FishingHut[];
         },
         initialData,
         staleTime: 1000 * 60 * 5, // 5 phút không gọi lại API thừa thãi
@@ -73,11 +74,11 @@ export function useFishingPackages(initialData?: FishingPackage[]) {
     return useQuery({
         queryKey: catalogKeys.packages(),
         queryFn: async ({ signal }) => {
-            const res = await fetch("/api/packages", { signal });
-            if (!res.ok) {
+            const data = await fetchJson("/api/packages", signal);
+            if (!Array.isArray(data)) {
                 throw new Error("Không thể tải danh sách gói câu.");
             }
-            return (await res.json()) as FishingPackage[];
+            return data as FishingPackage[];
         },
         initialData,
         staleTime: 1000 * 60 * 10, // 10 phút

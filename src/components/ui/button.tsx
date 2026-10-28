@@ -45,17 +45,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         const variantClasses = {
             primary:
-                "bg-[#16A34A] text-white hover:bg-[#15803D] active:bg-[#166534] shadow-md shadow-emerald-600/20 border-0",
+                "bg-[#15803D] text-white hover:bg-[#166534] active:bg-[#14532D] shadow-md shadow-emerald-600/20 border-0",
             success:
-                "bg-[#16A34A] text-white hover:bg-[#15803D] active:bg-[#166534] shadow-md shadow-emerald-600/20 border-0",
+                "bg-[#15803D] text-white hover:bg-[#166534] active:bg-[#14532D] shadow-md shadow-emerald-600/20 border-0",
             warning:
-                "bg-[#D97706] text-white hover:bg-[#B45309] active:bg-[#92400E] shadow-md shadow-amber-600/20 border-0",
+                "bg-[#B45309] text-white hover:bg-[#92400E] active:bg-[#78350F] shadow-md shadow-amber-600/20 border-0",
             danger:
                 "bg-[#DC2626] text-white hover:bg-[#B91C1C] active:bg-[#991B1B] shadow-md shadow-red-600/20 border-0",
             secondary:
                 "bg-[#F1F5F9] text-[#334155] hover:bg-[#E2E8F0] active:bg-[#CBD5E1] border-0",
             outline:
-                "border-2 border-[#16A34A] bg-white text-[#16A34A] hover:bg-[#F0FDF4] active:bg-[#DCFCE7]",
+                "border-2 border-[#15803D] bg-white text-[#166534] hover:bg-[#F0FDF4] active:bg-[#DCFCE7]",
             ghost:
                 "bg-transparent text-[#0F172A] hover:bg-[#F1F5F9] active:bg-[#E2E8F0]",
         }[variant];

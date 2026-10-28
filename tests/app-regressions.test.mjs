@@ -32,8 +32,168 @@ const authRateLimit = {
     recordAuthFailure: async () => {},
 };
 
-function authModule(user = { email: "owner@example.com", systemRole: "USER", sessionVersion: 2, isLocked: false }) {
+test("Catalog requests abort stalled JSON bodies and release timeout resources", async () => {
+    let timeout;
+    let cleared = false;
+    const network = loadModule("../src/lib/network/fetch-json.ts", {}, {
+        AbortController,
+        setTimeout: (callback) => { timeout = callback; return callback; },
+        clearTimeout: () => { cleared = true; },
+        fetch: async (_url, { signal }) => ({ ok: true, json: () => new Promise((_resolve, reject) => {
+            signal.addEventListener("abort", () => reject(new Error("Aborted")));
+        }) }),
+    });
+    const request = network.fetchJson("/api/products");
+    await new Promise((resolve) => setImmediate(resolve));
+    timeout();
+    await assert.rejects(request, /Aborted/);
+    assert.equal(cleared, true);
+});
+
+test("Catalog requests preserve caller cancellation and reject HTTP errors", async () => {
+    let receivedSignal;
+    const network = loadModule("../src/lib/network/fetch-json.ts", {}, {
+        AbortController, setTimeout, clearTimeout,
+        fetch: async (_url, { signal }) => {
+            receivedSignal = signal;
+            if (signal.aborted) throw new Error("Aborted");
+            return { ok: false, json: () => assert.fail("Error responses must not be cached as data") };
+        },
+    });
+    const caller = new AbortController();
+    caller.abort();
+    await assert.rejects(network.fetchJson("/api/products", caller.signal), /Aborted/);
+    assert.equal(receivedSignal.aborted, true);
+    await assert.rejects(network.fetchJson("/api/products"), /Không thể tải dữ liệu/);
+});
+
+test("Malformed catalog responses do not replace cached lists with successful empty data", async () => {
+    const queries = [];
+    let payload = { error: "unexpected gateway response" };
+    const modules = {
+        "@tanstack/react-query": { useQuery: (options) => { queries.push(options); return { data: [] }; } },
+        "@/lib/network/fetch-json": { fetchJson: async () => payload },
+        "@/app/sessions/quick-create-actions": {},
+    };
+    loadModule("../src/hooks/use-products.ts", modules).useProducts();
+    const fishing = loadModule("../src/hooks/use-fishing-catalog.ts", modules);
+    fishing.useFishingSpots();
+    fishing.useFishingPackages();
+    for (const query of queries) await assert.rejects(query.queryFn({ signal: undefined }), /Không thể tải danh sách/);
+    payload = { products: [] };
+    assert.equal((await queries[0].queryFn({})).length, 0, "A genuine empty product catalog is valid");
+    payload = [];
+    for (const query of queries.slice(1)) assert.equal((await query.queryFn({})).length, 0);
+});
+
+test("Login releases busy state after Google failure and prevents concurrent credential requests", async () => {
+    const states = [];
+    let calls = 0;
+    let resolveLogin;
+    let navigations = 0;
+    const login = loadModule("../src/app/login/page.tsx", {
+        react: {
+            Suspense: React.Suspense,
+            useState: (initial) => {
+                const index = states.length;
+                states.push(initial);
+                return [initial, (value) => { states[index] = value; }];
+            },
+            useRef: (current) => ({ current }),
+        },
+        "next/navigation": {
+            useRouter: () => ({ push: () => { navigations++; }, refresh() {} }),
+            useSearchParams: () => new URLSearchParams("error=OAuthCallback"),
+        },
+        "next-auth/react": { signIn: async () => { throw new Error("Google unavailable"); } },
+        "@/app/actions/auth": { loginUser: () => { calls++; return new Promise((resolve) => { resolveLogin = resolve; }); } },
+        "@/lib/query-client": { clearCatalogCache() {} },
+        "@/lib/navigation": { safeRedirectPath: (path) => path },
+    }, { React });
+    const wrapper = login.default();
+    const tree = wrapper.props.children.type();
+    function find(element, predicate) {
+        if (!element || typeof element !== "object") return undefined;
+        if (predicate(element)) return element;
+        for (const child of React.Children.toArray(element.props?.children)) {
+            const result = find(child, predicate);
+            if (result) return result;
+        }
+    }
+    const google = find(tree, (element) => element.props?.id === "btn-google-signin");
+    await google.props.onClick();
+    assert.equal(states[3], false);
+    assert.match(states[4], /Chưa kết nối được với Google/);
+    const form = find(tree, (element) => element.type === "form");
+    const first = form.props.onSubmit({ preventDefault() {} });
+    await form.props.onSubmit({ preventDefault() {} });
+    await google.props.onClick();
+    assert.equal(calls, 1);
+    resolveLogin({ success: false, message: "Thông tin đăng nhập không đúng" });
+    await first;
+    assert.equal(states[2], false);
+    assert.equal(states[4], "Thông tin đăng nhập không đúng");
+    assert.equal(navigations, 0);
+    const second = form.props.onSubmit({ preventDefault() {} });
+    resolveLogin({ success: true });
+    await second;
+    assert.equal(calls, 2);
+    assert.equal(navigations, 1, "Existing qa_session fallback still permits successful credentials login");
+});
+
+test("Registration recovers from interrupted requests and blocks duplicate submissions", async () => {
+    const states = [];
+    let calls = 0;
+    let rejectRequest;
+    const page = loadModule("../src/app/register/page.tsx", {
+        react: {
+            useState: (initial) => {
+                const index = states.length;
+                states.push(initial);
+                return [initial, (value) => { states[index] = value; }];
+            },
+            useRef: (current) => ({ current }),
+        },
+        "next/navigation": { useRouter: () => ({ push: () => assert.fail("Failed registration must not navigate") }) },
+        "next-auth/react": { signIn: async () => { throw new Error("provider unavailable"); } },
+        "@/app/actions/auth": { registerUser: () => {
+            calls++;
+            return new Promise((_resolve, reject) => { rejectRequest = reject; });
+        } },
+    }, { React });
+    const tree = page.default();
+    function find(element, predicate) {
+        if (!element || typeof element !== "object") return undefined;
+        if (predicate(element)) return element;
+        for (const child of React.Children.toArray(element.props?.children)) {
+            const result = find(child, predicate);
+            if (result) return result;
+        }
+    }
+    const form = find(tree, (element) => element.type === "form");
+    const first = form.props.onSubmit({ preventDefault() {} });
+    await form.props.onSubmit({ preventDefault() {} });
+    assert.equal(calls, 1);
+    rejectRequest(new Error("connection interrupted"));
+    await first;
+    assert.equal(states[0], false, "Busy state must be released after a transport error");
+    assert.match(states[5], /thử đăng nhập/);
+    const google = find(tree, (element) => element.type === "button" && element.props.onClick?.name === "registerWithGoogle");
+    await google.props.onClick();
+    assert.equal(states[0], false);
+    assert.match(states[5], /Google/);
+    const second = form.props.onSubmit({ preventDefault() {} });
+    assert.equal(calls, 2, "The user can retry after an error");
+    rejectRequest(new Error("still interrupted"));
+    await second;
+});
+
+function authModule(
+    user = { email: "owner@example.com", systemRole: "USER", sessionVersion: 2, isLocked: false },
+    { prisma: prismaOverride, seedSampleLakeData: seedSampleLakeDataOverride } = {},
+) {
     let cookie;
+    const prismaMock = prismaOverride || { user: { findUnique: async () => user } };
     const signature = loadModule("../src/lib/session-signature.ts", { crypto, "node:crypto": crypto });
     const auth = loadModule("../src/lib/auth.ts", {
         crypto,
@@ -42,8 +202,8 @@ function authModule(user = { email: "owner@example.com", systemRole: "USER", ses
         bcryptjs: {}, "next-auth/providers/credentials": () => ({}), "next-auth/providers/google": () => ({}),
         zod: { z: { string: () => ({ trim() { return this; }, min() { return this; }, email() { return this; } }), object: () => ({}) } },
         "@/generated/prisma/client": { SystemRole: {}, Role: { OWNER: "OWNER" }, Prisma: {} }, "@/lib/phone": {},
-        "@/lib/prisma": { prisma: { user: { findUnique: async () => user } } },
-        "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
+        "@/lib/prisma": { prisma: prismaMock },
+        "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: seedSampleLakeDataOverride || (async () => ({})) },
         "@/lib/auth-rate-limit": authRateLimit,
         "@/lib/session-signature": signature,
         "@/lib/vietqr": { TRIAL_DAYS: 30 },
@@ -74,6 +234,99 @@ test("Google sign-in requires a verified email and accepts an existing unlocked 
         account: { provider: "google" },
         profile: { email_verified: false },
     }), false);
+});
+
+test("New Google account seeds its sample lake inside the account transaction", async () => {
+    let lookups = 0;
+    let inTransaction = false;
+    let seededWith;
+    const tx = {
+        organization: { create: async () => ({ id: "org-new" }) },
+        lake: { create: async () => ({ id: "lake-new" }) },
+        user: { create: async () => ({ id: "user-new" }) },
+        membership: { create: async () => ({}) },
+    };
+    const prisma = {
+        user: {
+            findUnique: async () => {
+                lookups += 1;
+                return lookups === 1 ? null : { id: "user-new", name: "New Owner", isLocked: false };
+            },
+        },
+        $transaction: async (callback) => {
+            inTransaction = true;
+            try { return await callback(tx); }
+            finally { inTransaction = false; }
+        },
+    };
+    const { auth } = authModule(null, {
+        prisma,
+        seedSampleLakeData: async (transaction, lakeId, ownerName, ownerId) => {
+            assert.equal(inTransaction, true);
+            assert.equal(transaction, tx);
+            assert.deepEqual([lakeId, ownerName, ownerId], ["lake-new", "New Owner", "user-new"]);
+            seededWith = transaction;
+        },
+    });
+    const callback = auth.authOptions.callbacks.signIn;
+
+    assert.equal(await callback({
+        user: { email: "new@example.com", name: "New Owner" },
+        account: { provider: "google" },
+        profile: { email_verified: true },
+    }), true);
+    assert.equal(seededWith, tx);
+});
+
+test("Google onboarding denies sign-in when sample seeding fails", async () => {
+    let seedAttempted = false;
+    let transactionRejected = false;
+    const tx = {
+        organization: { create: async () => ({ id: "org-failure" }) },
+        lake: { create: async () => ({ id: "lake-failure" }) },
+        user: { create: async () => ({ id: "user-failure" }) },
+        membership: { create: async () => ({}) },
+    };
+    const { auth } = authModule(null, {
+        prisma: {
+            user: { findUnique: async () => null },
+            $transaction: async (callback) => {
+                try { return await callback(tx); }
+                catch (error) { transactionRejected = true; throw error; }
+            },
+        },
+        seedSampleLakeData: async () => { seedAttempted = true; throw new Error("synthetic seed failure"); },
+    });
+    assert.equal(await auth.authOptions.callbacks.signIn({
+        user: { email: "failure@example.com", name: "Failure fixture" },
+        account: { provider: "google" }, profile: { email_verified: true },
+    }), false);
+    assert.equal(seedAttempted, true);
+    assert.equal(transactionRejected, true, "Seed errors must escape the transaction callback");
+});
+
+test("Existing Google owner bypasses onboarding without changing verification or session version", async () => {
+    const user = {
+        id: "existing-owner", email: "existing@example.com", name: "Existing owner",
+        systemRole: "USER", isLocked: false, phoneVerified: true, sessionVersion: 7,
+        memberships: [{ lakeId: "existing-lake", role: "OWNER" }],
+    };
+    const before = JSON.stringify(user);
+    const { auth } = authModule(user, {
+        prisma: { user: { findUnique: async () => user },
+            $transaction: async () => { assert.fail("Existing users must not create onboarding data"); } },
+        seedSampleLakeData: async () => { assert.fail("Existing lakes must not be seeded"); },
+    });
+    assert.equal(await auth.authOptions.callbacks.signIn({
+        user: { email: user.email }, account: { provider: "google" }, profile: { email_verified: true },
+    }), true);
+    assert.equal(JSON.stringify(user), before);
+    const token = await auth.authOptions.callbacks.jwt({ token: { email: user.email, sessionVersion: 7 } });
+    assert.equal(token.id, user.id);
+    assert.equal(token.sessionVersion, 7);
+    assert.equal(token.phoneVerified, true);
+    const revoked = await auth.authOptions.callbacks.jwt({ token: { email: user.email, sessionVersion: 6 } });
+    assert.equal(Object.keys(revoked).length, 0);
 });
 
 test("Signed sessions reject tampering, expired tokens and malformed extra segments", () => {
@@ -221,6 +474,8 @@ test("Registration validates input and normalizes phone numbers before writing",
     const result = await actions.registerUser({ email: " owner@example.com ", password: "Password123!", name: "Owner", phone: "090 123 4567" });
     assert.equal(result.success, true);
     assert.equal(writtenPhone, "+84901234567");
+    assert.equal(writtenUser.phoneVerified, false, "A phone number must not be marked verified before OTP confirmation");
+    assert.equal(writtenUser.phoneVerifiedAt, null);
     assert.equal(registrationCreatedSession, false, "Registration must not create a session");
     const phoneOnly = await actions.registerUser({ password: "Password123!", name: "Chủ hồ", phone: "0912345678", lakeName: "Hồ Thử" });
     assert.equal(phoneOnly.success, true);

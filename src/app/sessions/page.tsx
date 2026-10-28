@@ -19,7 +19,10 @@ export const metadata: Metadata = {
     title: "Sơ đồ hồ & Phiên câu",
 };
 
-export default async function SessionsPage() {
+export default async function SessionsPage({ searchParams }: {
+    searchParams?: Promise<{ sessionId?: string }>;
+}) {
+    const initialSessionId = (await searchParams)?.sessionId || undefined;
     const session = await getPageSession();
 
     if (!session?.user?.email) {
@@ -306,6 +309,8 @@ export default async function SessionsPage() {
 
                     {/* ── Client Component: handles selection, modals, actions ── */}
                     <SessionsClient
+                        key={initialSessionId || "session-board"}
+                        initialSessionId={initialSessionId}
                         activeSessions={serializedSessions}
                         packages={serializedPackages}
                         fishTypes={fishTypes}

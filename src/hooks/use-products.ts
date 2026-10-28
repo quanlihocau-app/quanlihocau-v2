@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { fetchJson } from "@/lib/network/fetch-json";
 
 export interface CachedProduct {
     id: string;
@@ -15,6 +16,14 @@ export const productCatalogKeys = {
     list: () => [...productCatalogKeys.all, "list"] as const,
 };
 
+export async function fetchProducts(signal?: AbortSignal): Promise<CachedProduct[]> {
+    const data = await fetchJson("/api/products", signal);
+    if (!data || typeof data !== "object" || !("products" in data) || !Array.isArray(data.products)) {
+        throw new Error("Không thể tải danh sách sản phẩm.");
+    }
+    return data.products as CachedProduct[];
+}
+
 /**
  * Hook lấy danh mục sản phẩm (mồi câu, đồ uống, thức ăn) với bộ nhớ đệm React Query:
  * - Hiển thị tức thì 0ms từ cache RAM / LocalStorage.
@@ -24,14 +33,7 @@ export const productCatalogKeys = {
 export function useProducts(initialData?: CachedProduct[]) {
     return useQuery({
         queryKey: productCatalogKeys.list(),
-        queryFn: async ({ signal }) => {
-            const res = await fetch("/api/products", { signal });
-            if (!res.ok) {
-                throw new Error("Không thể tải danh sách sản phẩm.");
-            }
-            const data = (await res.json()) as { products?: CachedProduct[] };
-            return data.products || [];
-        },
+        queryFn: ({ signal }) => fetchProducts(signal),
         initialData,
         staleTime: 1000 * 60 * 5, // 5 phút
         gcTime: 1000 * 60 * 60 * 24, // 24 giờ trong bộ nhớ

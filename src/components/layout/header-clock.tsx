@@ -42,7 +42,7 @@ export const HeaderClock = memo(function HeaderClock() {
 
     return (
         <div
-            className="flex items-center gap-1.5 text-left shrink-0 mt-0.5"
+            className="flex flex-wrap items-center gap-x-3 gap-y-1 text-left mt-0.5"
             title="Thời gian thực máy chủ"
         >
             <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-[#16A34A] bg-[#DCFCE7]/70 border border-[#BBF7D0] px-1.5 py-0.5 rounded-lg tabular-nums shadow-3xs">

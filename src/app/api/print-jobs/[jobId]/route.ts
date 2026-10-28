@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireTenantContext } from "@/lib/tenant";
+import { AuthenticationError, ForbiddenError, requireTenantContext } from "@/lib/tenant";
 import { Role } from "@/generated/prisma/client";
 import { createInternalErrorResponse } from "@/lib/api-error";
 
@@ -54,6 +54,9 @@ export async function PATCH(
             job: updated,
         });
     } catch (err: unknown) {
+        if (err instanceof AuthenticationError || err instanceof ForbiddenError) {
+            return NextResponse.json({ ok: false, error: err.message }, { status: err instanceof AuthenticationError ? 401 : 403 });
+        }
         if (err && typeof err === "object" && "statusCode" in err) {
             const apiErr = err as { statusCode: number; message: string };
             return NextResponse.json({ ok: false, error: apiErr.message }, { status: apiErr.statusCode });

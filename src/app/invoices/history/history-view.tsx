@@ -632,7 +632,7 @@ export function HistoryView({
                                                         {isTicket ? "VÉ CÂU" : "BÁN LẺ"}
                                                     </span>
                                                     <Link
-                                                        href={`/invoices/${invoice.id}`}
+                                                        href={`/invoices/${encodeURIComponent(invoice.id)}?returnTo=%2Finvoices%2Fhistory`}
                                                         className="text-xs font-bold text-[#2C4C3B] hover:underline"
                                                     >
                                                         HĐ #{invoice.id.slice(0, 8)}
@@ -733,7 +733,7 @@ export function HistoryView({
 
                                             <div className="flex items-center gap-2">
                                                 <Link
-                                                    href={`/invoices/${invoice.id}`}
+                                                    href={`/invoices/${encodeURIComponent(invoice.id)}?returnTo=%2Finvoices%2Fhistory`}
                                                     className="inline-flex h-7 items-center justify-center rounded-xs border border-[#CCCCCC] bg-white px-3 text-xs font-semibold text-[#1A1A1A] hover:bg-[#F2F2F0] transition-colors"
                                                 >
                                                     Chi tiết
