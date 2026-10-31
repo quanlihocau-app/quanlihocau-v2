@@ -124,7 +124,8 @@ model Organization {
 }
 
 
-  id                     String              @id @default(uuid())
+model Lake {
+  id                     String   @id @default(uuid())
   organizationId         String
   name                   String
   contactPhone           String?
@@ -132,15 +133,15 @@ model Organization {
   bankName               String?
   bankAccountNumber      String?
   bankAccountName        String?
-  allowNegativeInventory Boolean             @default(false)
+  allowNegativeInventory Boolean @default(false)
   // SHA-256 of the optional read-only bot token. Null until the owner creates one.
   // The plaintext token is never stored.
-  auditReadTokenHash     String?             @unique
-  subscriptionStatus     SubscriptionStatus  @default(TRIAL)
-  subscriptionPlan       PlanTier            @default(TRIAL)
+  auditReadTokenHash     String? @unique
+  subscriptionStatus     SubscriptionStatus @default(TRIAL)
+  subscriptionPlan       PlanTier @default(TRIAL)
   subscriptionExpiresAt  DateTime?
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
   deletedAt              DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -159,9 +160,9 @@ model Organization {
   fishTypes          FishType[]
   fishBuybacks       FishBuyback[]
   shifts             Shift[]
-  auditEvents           AuditEvent[]
-  idempotencyKeys       IdempotencyKey[]
-  subscriptionOrders    SubscriptionOrder[]
+  auditEvents        AuditEvent[]
+  idempotencyKeys    IdempotencyKey[]
+  subscriptionOrders SubscriptionOrder[]
   financialCategories   FinancialCategory[]
   financialAccounts     FinancialAccount[]
   financialTransactions FinancialTransaction[]
@@ -170,10 +171,13 @@ model Organization {
   financialPeriods      FinancialPeriod[]
   reconciliations       ReconciliationRecord[]
   printJobs             PrintJob[]
+  notifications         Notification[]
 
   @@index([subscriptionStatus])
   @@index([subscriptionExpiresAt])
 }
+
+
 
 model User {
   id              String     @id @default(uuid())
@@ -195,6 +199,8 @@ model User {
   memberships                  Membership[]
   createdFinancialTransactions FinancialTransaction[] @relation("CreatedTransactions")
   approvedFinancialTransactions FinancialTransaction[] @relation("ApprovedTransactions")
+  sentNotifications     Notification[] @relation("NotificationFrom")
+  receivedNotifications Notification[] @relation("NotificationTo")
 
   @@index([createdAt])
   @@index([isLocked])
@@ -215,25 +221,10 @@ model Membership {
 
   // Ensure a user cannot have duplicate membership in same lake
   @@unique([userId, lakeId])
+  // Ensure only one OWNER per lake
+  @@unique([lakeId, role])
 
   // Owner is now tracked via LakeOwner model; other roles can repeat
-}
-
-  id        String    @id @default(uuid())
-  userId    String
-  lakeId    String
-  role      Role
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  user User @relation(fields: [userId], references: [id])
-  lake Lake @relation(fields: [lakeId], references: [id])
-
-  @@unique([userId, lakeId])
-
-  // Ensure only one OWNER (or any given role) per lake
-
 }
 
 // -----------------------------------------------------------------------------
@@ -688,7 +679,7 @@ model OtpDeliveryLog {
 }
 
 // -----------------------------------------------------------------------------
-// SAAS FINANCIAL MANAGEMENT (PHÂN HỆ QUẢN LÝ TÀI CHÍNH & THU CHI)
+// SAAS FINANCIAL MANAGEMENT (PHÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡N HÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â  QUÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢N LÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â TÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬I CHÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂNH & THU CHI)
 // -----------------------------------------------------------------------------
 
 model FinancialCategory {
@@ -865,7 +856,7 @@ model DebtPayment {
 model FinancialPeriod {
   id          String    @id @default(uuid())
   lakeId      String
-  name        String    // Kỳ tài chính: "Tháng 10/2026"
+  name        String    // KÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â i chÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­nh: "ThÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ng 10/2026"
   startDate   DateTime
   endDate     DateTime
   isLocked    Boolean   @default(false)
@@ -903,7 +894,7 @@ model ReconciliationRecord {
 }
 
 // -----------------------------------------------------------------------------
-// PRINT JOBS (Cloud Print Spooler cho trạm in bàn)
+// PRINT JOBS (Cloud Print Spooler cho trÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡m in bÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â n)
 // -----------------------------------------------------------------------------
 
 enum PrintJobStatus {
@@ -917,13 +908,13 @@ model PrintJob {
   id          String         @id @default(uuid())
   lakeId      String
   jobType     String         // "SESSION_TICKET" | "PAYMENT_RECEIPT" | "TEST"
-  targetName  String?        // Tên vé / số hóa đơn (ví dụ: "Vé #A1 - Ca 5h")
-  payloadJson String         // Dữ liệu vé/hóa đơn theo định dạng SessionTicketData hoặc PaymentReceiptData
+  targetName  String?        // TÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªn vÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© / sÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œ hÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³a ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡n (vÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­ dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥: "VÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© #A1 - Ca 5h")
+  payloadJson String         // DÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ liÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡u vÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©/hÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³a ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡n theo ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¹nh dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ng SessionTicketData hoÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·c PaymentReceiptData
   status      PrintJobStatus @default(PENDING)
   createdById String?
   createdByName String?
   printedAt   DateTime?
-  printedBy   String?        // Tên trạm in bàn đã nhận lệnh
+  printedBy   String?        // TÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âªn trÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡m in bÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â n ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£ nhÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂºÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­n lÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â»ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¡nh
   error       String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
