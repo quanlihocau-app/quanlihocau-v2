@@ -2,11 +2,11 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import { Role } from "@/generated/prisma/client";
 
 // GET – list members of a lake
-export async function GET(request: Request, { params }: { params: { lakeId: string } }) {
-  const { lakeId } = params;
+export async function GET(request: Request, { params }: { params: Promise<{ lakeId: string }> }) {
+  const { lakeId } = await params;
   const members = await prisma.membership.findMany({
     where: { lakeId },
     include: { user: true },
@@ -15,8 +15,8 @@ export async function GET(request: Request, { params }: { params: { lakeId: stri
 }
 
 // POST – add a member (owner/manager/staff)
-export async function POST(request: Request, { params }: { params: { lakeId: string } }) {
-  const { lakeId } = params;
+export async function POST(request: Request, { params }: { params: Promise<{ lakeId: string }> }) {
+  const { lakeId } = await params;
   const { email, role } = await request.json();
   if (!email || !role) {
     return NextResponse.json({ error: "email and role are required" }, { status: 400 });
@@ -48,8 +48,8 @@ export async function POST(request: Request, { params }: { params: { lakeId: str
 }
 
 // DELETE – remove a member (by membership id)
-export async function DELETE(request: Request, { params }: { params: { lakeId: string } }) {
-  const { lakeId } = params;
+export async function DELETE(request: Request, { params }: { params: Promise<{ lakeId: string }> }) {
+  const { lakeId } = await params;
   const { membershipId } = await request.json();
   if (!membershipId) {
     return NextResponse.json({ error: "membershipId required" }, { status: 400 });
