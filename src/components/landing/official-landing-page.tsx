@@ -314,11 +314,11 @@ export function OfficialLandingPage({ isLoggedIn = false }: OfficialLandingPageP
                                     </div>
                                     <h3 className="text-lg font-black text-white">Hồ câu đài & câu đơn</h3>
                                     <p className="text-xs sm:text-sm text-[#C4D9CC] leading-relaxed">
-                                        Đặc thù tính theo ca 3h, 4h, 5h hoặc tính giờ lẻ. Phần mềm tự động đếm ngược từng giây, báo chuông hết giờ và tự nhảy tiền phụ thu khi cần thủ câu lố thời gian.
+                                        Đặc thù tính theo ca 3h, 4h, 5h hoặc tính giờ lẻ. Phần mềm tự động đếm ngược từng giây, báo chuông hết giờ và cho phép nhân viên tùy chỉnh kết thúc hoặc gia hạn theo ý khách hàng.
                                     </p>
                                 </div>
                                 <div className="pt-3 border-t border-[#1A452C] text-[11px] font-bold text-[#52D879]">
-                                    ✓ Đếm giờ • Phụ thu lố giờ tự động
+                                    ✓ Đếm giờ • Báo hết giờ & linh hoạt gia hạn
                                 </div>
                             </div>
 

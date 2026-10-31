@@ -133,7 +133,7 @@ const homeJsonLd = {
                 },
                 {
                     "@type": "Question",
-                    "name": "Phần mềm tự động tính tiền quá giờ cho cần thủ như thế nào?",
+                    "name": "Phần mềm tính tiền phụ thu quá giờ như thế nào?",
                     "acceptedAnswer": {
                         "@type": "Answer",
                         "text": "App hiển thị giờ vào, giờ ra dự kiến và đồng hồ theo gói câu. Khi hết giờ, nhân viên chọn gia hạn hoặc kết thúc; số tiền thay đổi theo thao tác xác nhận và bảng giá hiện hành của hồ.",

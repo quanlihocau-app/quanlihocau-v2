@@ -57,7 +57,7 @@ const pricingJsonLd = {
             "@type": "Product",
             "name": "Phần mềm Quản Lý Hồ Câu",
             "description":
-                "Phần mềm quản lý hồ câu dịch vụ toàn diện trên điện thoại và máy tính: mở vé, đếm giờ, phụ thu quá giờ, bán lẻ đồ câu, thu mua cá, quản lý kho và đối soát ca.",
+                "Phần mềm quản lý hồ câu dịch vụ toàn diện trên điện thoại và máy tính: mở vé, đếm giờ, cảnh báo hết giờ và tùy chỉnh gia hạn theo ý khách, bán lẻ đồ câu, thu mua cá, quản lý kho và đối soát ca.",
             "brand": {
                 "@type": "Brand",
                 "name": "Quản Lý Hồ Câu",
@@ -94,7 +94,9 @@ function formatVnd(amount: number) {
 
 export default function PublicPricingPage() {
     return (
-        <div className="min-h-screen bg-[#061F13] text-[#E8F3E5]">
+        <div className="min-h-screen bg-[#061F13] text-[#E8F3E5] relative" style={{ backgroundImage: "url('/images/hero-bg.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            {/* Overlay for dimming and blur */}
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }}
@@ -142,6 +144,10 @@ export default function PublicPricingPage() {
                         Đầu tư nhỏ, yên tâm vận hành trọn vẹn hồ câu. Chi phí cố định theo chu kỳ 30 ngày,
                         không tự động trừ tiền trong tài khoản. Gia hạn bằng VietQR đúng số tiền, gói kích hoạt khi khoản chuyển được xác nhận.
                     </p>
+                    <div className="relative mt-8 flex items-center justify-center">
+                        <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                        <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                    </div>
                 </div>
 
                 {/* Pricing Grid */}
@@ -158,6 +164,10 @@ export default function PublicPricingPage() {
                             <p className="text-xs text-emerald-200/70">
                                 Dành cho chủ hồ mới muốn làm quen và chạy thử thực tế ca câu tại quầy.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                             <div className="pt-2">
                                 <span className="text-3xl font-extrabold text-white">0 đ</span>
                                 <span className="text-xs text-emerald-300/70 ml-1.5">/ dùng thử</span>
@@ -205,12 +215,20 @@ export default function PublicPricingPage() {
                             <p className="text-xs text-emerald-200/70">
                                 Phù hợp cho hồ câu mini, hồ đơn, hoặc hồ gia đình tự quản lý dưới 30 ô câu.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                             <div className="pt-2">
                                 <span className="text-3xl font-extrabold text-white">
                                     {formatVnd(PLAN_PRICING.SILVER.priceVnd)}
                                 </span>
                                 <span className="text-xs text-emerald-300/70 ml-1.5">/ {PLAN_PRICING.SILVER.durationDays} ngày</span>
                                 <p className="mt-1 text-[11px] text-emerald-200/70">Năm: {formatVnd(planCharge("SILVER", "YEARLY").amountVnd)} / 12 tháng (đóng 10 tháng)</p>
+                                <div className="relative mt-8 flex items-center justify-center">
+                                    <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                    <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                                </div>
                             </div>
 
                             <ul className="space-y-2.5 pt-4 border-t border-emerald-800/40 text-xs text-emerald-100">
@@ -228,7 +246,7 @@ export default function PublicPricingPage() {
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <span className="text-emerald-400 font-bold">✓</span>
-                                    <span>Tự động tính phụ thu quá giờ theo ca</span>
+                                    <span>Cảnh báo hết giờ, tùy chỉnh gia hạn hoặc kết thúc theo ý khách</span>
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <span className="text-emerald-400 font-bold">✓</span>
@@ -271,12 +289,20 @@ export default function PublicPricingPage() {
                             <p className="text-xs text-emerald-200/70">
                                 Dành cho hồ câu chuyên nghiệp, hồ lớn nhiều khu vực, cần nhiều nhân viên trực quầy.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                             <div className="pt-2">
                                 <span className="text-3xl font-extrabold text-white">
                                     {formatVnd(PLAN_PRICING.GOLD.priceVnd)}
                                 </span>
                                 <span className="text-xs text-emerald-300/70 ml-1.5">/ {PLAN_PRICING.GOLD.durationDays} ngày</span>
                                 <p className="mt-1 text-[11px] text-amber-100/80">Năm: {formatVnd(planCharge("GOLD", "YEARLY").amountVnd)} / 12 tháng (đóng 10 tháng)</p>
+                                <div className="relative mt-8 flex items-center justify-center">
+                                    <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                    <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                                </div>
                             </div>
 
                             <ul className="space-y-2.5 pt-4 border-t border-emerald-800/40 text-xs text-emerald-100">
@@ -332,33 +358,65 @@ export default function PublicPricingPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                         <div className="rounded-xl border border-emerald-800/30 bg-[#061F13]/50 p-4 space-y-2">
                             <p className="font-bold text-white">Không Tự Động Trừ Tiền</p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                             <p className="text-emerald-200/70 leading-relaxed">
                                 Chúng tôi không liên kết trừ tiền thẻ tự động. Khi gần hết hạn chu kỳ,
                                 hệ thống hiển thị thông báo để chủ hồ tự quyết định gia hạn.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                         </div>
 
                         <div className="rounded-xl border border-emerald-800/30 bg-[#061F13]/50 p-4 space-y-2">
                             <p className="font-bold text-white">Bảo Toàn Dữ Liệu Hồ</p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                             <p className="text-emerald-200/70 leading-relaxed">
                                 Khi gói thuê bao hết hạn, dữ liệu lịch sử vé câu, khách hàng và báo cáo
                                 vẫn được lưu trữ an toàn, không bị xóa. Bạn có thể gia hạn bất kỳ lúc nào để tiếp tục.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                         </div>
 
                         <div className="rounded-xl border border-emerald-800/30 bg-[#061F13]/50 p-4 space-y-2">
                             <p className="font-bold text-white">Thanh Toán VietQR Ngân Hàng</p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                             <p className="text-emerald-200/70 leading-relaxed">
                                 Gia hạn bằng cách quét VietQR đúng số tiền và đúng nội dung. Gói được kích hoạt khi khoản chuyển đúng số tiền được xác nhận, không tự trừ tài khoản.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                         </div>
 
                         <div className="rounded-xl border border-emerald-800/30 bg-[#061F13]/50 p-4 space-y-2">
                             <p className="font-bold text-white">Phí Chuyển Khoản</p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                             <p className="text-emerald-200/70 leading-relaxed">
                                 Giá niêm yết là số tiền thực nhận của gói dịch vụ. Các khoản phí phát sinh
                                 từ ngân hàng của người gửi (nếu có) do bên gửi chi trả.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -379,6 +437,10 @@ export default function PublicPricingPage() {
                                 bạn có thể tạo thêm tối đa 2 tài khoản nhân sự (STAFF hoặc MANAGER) để cùng trực quầy.
                                 Từ người thứ 3 trở đi, hồ cần Gói Vàng.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                         </div>
 
                         <div className="rounded-xl border border-emerald-800/30 bg-[#0B2E1D]/50 p-4 space-y-2">
@@ -390,6 +452,10 @@ export default function PublicPricingPage() {
                                 từ 31 ô trở lên (hoặc nhiều hồ con trong cùng một cơ sở), vui lòng chọn Gói Vàng để
                                 không bị giới hạn số ô.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                         </div>
 
                         <div className="rounded-xl border border-emerald-800/30 bg-[#0B2E1D]/50 p-4 space-y-2">
@@ -399,6 +465,10 @@ export default function PublicPricingPage() {
                             <p className="text-xs text-emerald-200/80 leading-relaxed">
                                 Được. Thanh toán tháng cộng 30 ngày, thanh toán năm cộng 365 ngày, nối vào hạn hiện tại nếu hạn đó còn trong tương lai. Hạn cũ không bị cắt.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                         </div>
 
                         <div className="rounded-xl border border-emerald-800/30 bg-[#0B2E1D]/50 p-4 space-y-2">
@@ -410,6 +480,10 @@ export default function PublicPricingPage() {
                                 trong giờ hoạt động thực tế của hồ. Chúng tôi cung cấp tài liệu hướng dẫn từng bước
                                 kèm sơ đồ trực quan ngay trong ứng dụng tại mục Cài đặt -&gt; Hướng dẫn sử dụng.
                             </p>
+                            <div className="relative mt-8 flex items-center justify-center">
+                                <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                                <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -423,6 +497,10 @@ export default function PublicPricingPage() {
                         Đăng ký tài khoản trong 1 phút, không cần cài đặt phần mềm phức tạp,
                         dùng trực tiếp ngay trên điện thoại hoặc máy tính bảng.
                     </p>
+                    <div className="relative mt-8 flex items-center justify-center">
+                        <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                        <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                    </div>
                     <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
                             href="/register"
@@ -445,6 +523,10 @@ export default function PublicPricingPage() {
             {/* Footer */}
             <footer className="mt-16 border-t border-emerald-900/60 bg-[#04160D] py-8 text-center text-xs text-emerald-300/60 space-y-2">
                 <p>© 2026 Quản Lý Hồ Câu — Giải pháp vận hành thông minh cho các hồ câu tại Việt Nam.</p>
+                <div className="relative mt-8 flex items-center justify-center">
+                    <img src="/images/minh.jpg" alt="Anh Minh" className="w-32 h-32 rounded-full border-4 border-white shadow-lg" />
+                    <span className="absolute bottom-[-1.5rem] left-1/2 -translate-x-1/2 text-sm text-white bg-black/50 px-2 py-1 rounded">Vinh danh Huân Trần</span>
+                </div>
                 <div className="flex items-center justify-center gap-4 text-[11px]">
                     <Link href="/" className="hover:text-emerald-200">Trang chủ</Link>
                     <span>•</span>

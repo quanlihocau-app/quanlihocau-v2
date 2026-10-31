@@ -126,7 +126,7 @@ const jsonLdSchema = {
             "operatingSystem": "All",
             "applicationCategory": "BusinessApplication",
             "applicationSubCategory": "Fishing Pond POS & Management System",
-            "description": "Phần mềm quản lý hồ câu dịch vụ chuyên nghiệp và app cho chủ hồ: tính tiền phiên câu theo giờ, tự động tính phụ thu quá giờ, bán lẻ đồ câu, kiểm soát thất thoát và báo cáo doanh thu.",
+            "description": "Phần mềm quản lý hồ câu dịch vụ chuyên nghiệp và app cho chủ hồ: tính tiền phiên câu theo giờ, cảnh báo hết giờ, nhân viên quyết định gia hạn hoặc kết thúc, phụ thu chỉ khi xác nhận, bán lẻ đồ câu, kiểm soát thất thoát và báo cáo doanh thu.",
             "url": "https://quanlihocau.com",
             "featureList": [
                 "Đồng hồ đếm ngược phiên câu theo thời gian thực từng giây",

@@ -98,7 +98,7 @@ export const ONBOARDING_STEPS: GuideStep[] = [
         instructions: [
             "Vào mục Cài đặt -> Biểu giá & Gói câu để thêm các ca câu (Ca 2 tiếng, Ca 4 tiếng).",
             "Nhập Thời lượng (Phút) ví dụ 240 phút cho ca 4 tiếng và giá tiền VNĐ.",
-            "Điền Phụ thu quá giờ (VNĐ/h) nếu khách câu vượt thời gian quy định.",
+            "Điền mức phí phụ thu (VNĐ/h) nếu khách câu vượt thời gian; phí chỉ tính khi nhân viên xác nhận.",
             "Vào mục Cơ sở vật chất để tạo danh sách ô câu (Ô 01, Ô VIP...).",
         ],
         tips: "Đặt tên ô ngắn gọn như Ô 1, Ô 2, Chòi VIP để màn hình hiển thị gọn gàng trên điện thoại.",

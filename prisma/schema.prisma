@@ -123,7 +123,7 @@ model Organization {
   subscriptionOrders SubscriptionOrder[]
 }
 
-model Lake {
+
   id                     String              @id @default(uuid())
   organizationId         String
   name                   String
@@ -202,6 +202,23 @@ model User {
 }
 
 model Membership {
+  id        String @id @default(uuid())
+  userId    String
+  lakeId    String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+  lake Lake @relation(fields: [lakeId], references: [id])
+
+  // Ensure a user cannot have duplicate membership in same lake
+  @@unique([userId, lakeId])
+
+  // Owner is now tracked via LakeOwner model; other roles can repeat
+}
+
   id        String    @id @default(uuid())
   userId    String
   lakeId    String
@@ -214,6 +231,9 @@ model Membership {
   lake Lake @relation(fields: [lakeId], references: [id])
 
   @@unique([userId, lakeId])
+
+  // Ensure only one OWNER (or any given role) per lake
+
 }
 
 // -----------------------------------------------------------------------------
@@ -913,3 +933,18 @@ model PrintJob {
   @@index([lakeId, status, createdAt])
 }
 
+
+model Notification {
+  id          String   @id @default(uuid())
+  lakeId      String?
+  fromUserId  String?
+  toUserId    String?
+  title       String?
+  body        String?
+  createdAt   DateTime @default(now())
+  read        Boolean  @default(false)
+
+  lake        Lake?    @relation(fields: [lakeId], references: [id])
+  fromUser    User?    @relation("NotificationFrom", fields: [fromUserId], references: [id])
+  toUser      User?    @relation("NotificationTo", fields: [toUserId], references: [id])
+}

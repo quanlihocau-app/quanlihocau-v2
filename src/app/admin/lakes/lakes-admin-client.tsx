@@ -393,6 +393,7 @@ export function LakesAdminClient({
                                 <th className="px-4 py-3.5">Hạn thuê bao</th>
                                 <th className="px-4 py-3.5">Sử dụng trong tháng</th>
                                 <th className="px-4 py-3.5 text-right sm:px-6">Thao tác</th>
+          <th className="px-4 py-3.5 text-right sm:px-6">Quản lý</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#D9D2C8]">
