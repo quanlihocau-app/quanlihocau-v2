@@ -7,7 +7,7 @@ import { createHash, randomBytes } from "node:crypto";
  * Legacy rows stay valid: the viewer treats a missing before/after as the old shape.
  *
  * Retention is a policy, not a job: keep about 90 days and delete by hand
- * after selling hours, once anh HuÃ¢n has approved it.
+ * after selling hours, once anh Huân has approved it.
  */
 
 export const AUDIT_RETENTION_DAYS = 90;
@@ -311,18 +311,18 @@ export type PresentedAudit = {
 };
 
 const ACTION_LABELS: Record<string, string> = {
-    FISHING_SESSION_OPENED: "Má»Ÿ phiÃªn",
-    FISHING_SESSION_COMPLETED: "ÄÃ³ng phiÃªn",
-    FISHING_SESSION_CANCELLED: "Há»§y phiÃªn",
-    FISHING_SESSION_EXTENDED: "Gia háº¡n",
-    FISH_BUYBACK_CREATED: "Thu cÃ¡ / trá»« bill",
-    INVOICE_CREATED: "Táº¡o hÃ³a Ä‘Æ¡n",
-    INVOICE_PREPAID: "Thu trÆ°á»›c",
-    INVOICE_PRODUCT_LINE_ADDED: "Sá»­a bill (thÃªm dÃ²ng)",
-    INVOICE_PRODUCT_LINE_REMOVED: "Sá»­a bill (xÃ³a dÃ²ng)",
-    LOGIN_SUCCEEDED: "ÄÄƒng nháº­p thÃ nh cÃ´ng",
-    LOGIN_FAILED: "ÄÄƒng nháº­p tháº¥t báº¡i",
-    AUDIT_READ_TOKEN_ROTATED: "Äá»•i token Ä‘á»c nháº­t kÃ½",
+    FISHING_SESSION_OPENED: "Mở phiên",
+    FISHING_SESSION_COMPLETED: "Đóng phiên",
+    FISHING_SESSION_CANCELLED: "Hủy phiên",
+    FISHING_SESSION_EXTENDED: "Gia hạn",
+    FISH_BUYBACK_CREATED: "Thu cá / trừ bill",
+    INVOICE_CREATED: "Tạo hóa đơn",
+    INVOICE_PREPAID: "Thu trước",
+    INVOICE_PRODUCT_LINE_ADDED: "Sửa bill (thêm dòng)",
+    INVOICE_PRODUCT_LINE_REMOVED: "Sửa bill (xóa dòng)",
+    LOGIN_SUCCEEDED: "Đăng nhập thành công",
+    LOGIN_FAILED: "Đăng nhập thất bại",
+    AUDIT_READ_TOKEN_ROTATED: "Đổi token đọc nhật ký",
 };
 
 export function actionLabel(action: string): string {
@@ -429,15 +429,15 @@ export function generateAuditReadToken(): string {
 }
 
 export const AUDIT_ACTION_OPTIONS = [
-    { value: "ALL", label: "Má»i thao tÃ¡c" },
-    { value: "FISHING_SESSION_OPENED", label: "Má»Ÿ phiÃªn" },
-    { value: "FISHING_SESSION_COMPLETED", label: "ÄÃ³ng phiÃªn" },
-    { value: "FISHING_SESSION_CANCELLED", label: "Há»§y phiÃªn" },
-    { value: "FISHING_SESSION_EXTENDED", label: "Gia háº¡n" },
-    { value: "FISH_BUYBACK_CREATED", label: "Thu cÃ¡ / trá»« bill" },
-    { value: "INVOICE_PRODUCT_LINE_ADDED", label: "Sá»­a bill (thÃªm)" },
-    { value: "INVOICE_PRODUCT_LINE_REMOVED", label: "Sá»­a bill (xÃ³a dÃ²ng)" },
-    { value: "INVOICE_CREATED", label: "Táº¡o hÃ³a Ä‘Æ¡n" },
-    { value: "LOGIN_SUCCEEDED", label: "ÄÄƒng nháº­p thÃ nh cÃ´ng" },
-    { value: "LOGIN_FAILED", label: "ÄÄƒng nháº­p tháº¥t báº¡i" },
+    { value: "ALL", label: "Mọi thao tác" },
+    { value: "FISHING_SESSION_OPENED", label: "Mở phiên" },
+    { value: "FISHING_SESSION_COMPLETED", label: "Đóng phiên" },
+    { value: "FISHING_SESSION_CANCELLED", label: "Hủy phiên" },
+    { value: "FISHING_SESSION_EXTENDED", label: "Gia hạn" },
+    { value: "FISH_BUYBACK_CREATED", label: "Thu cá / trừ bill" },
+    { value: "INVOICE_PRODUCT_LINE_ADDED", label: "Sửa bill (thêm)" },
+    { value: "INVOICE_PRODUCT_LINE_REMOVED", label: "Sửa bill (xóa dòng)" },
+    { value: "INVOICE_CREATED", label: "Tạo hóa đơn" },
+    { value: "LOGIN_SUCCEEDED", label: "Đăng nhập thành công" },
+    { value: "LOGIN_FAILED", label: "Đăng nhập thất bại" },
 ] as const;
