@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
     ...privateRouteMetadata,
-    title: "Nhật ký thao tác",
+    title: "Nhat ky thao tac",
 };
 
 type Search = {
@@ -50,7 +50,7 @@ export default async function StaffAuditPage({
     if (!tenant) {
         return (
             <main className="mx-auto max-w-lg px-6 py-16 text-center">
-                <h1 className="text-xl font-bold text-[#8B1E1E]">Chưa có quyền truy cập</h1>
+                <h1 className="text-xl font-bold text-[#8B1E1E]">Chua co quyen truy cap</h1>
             </main>
         );
     }
@@ -58,10 +58,10 @@ export default async function StaffAuditPage({
     if (!canViewStaffAudit(tenant.role)) {
         return (
             <main className="mx-auto max-w-lg px-6 py-16 text-center">
-                <h1 className="text-xl font-bold text-[#17201A]">Nhật ký chỉ dành cho chủ hồ</h1>
-                <p className="mt-2 text-sm text-[#66716A]">Nhân viên không xem được trang này.</p>
+                <h1 className="text-xl font-bold text-[#17201A]">Nhat ky chi danh cho chu ho</h1>
+                <p className="mt-2 text-sm text-[#66716A]">Nhan vien khong xem duoc trang nay.</p>
                 <Link href="/sessions" className="mt-6 inline-flex h-11 items-center rounded-full bg-[#4F9D5A] px-5 text-sm font-semibold text-white">
-                    Về màn hình Đang câu
+                    Ve man hinh Dang cau
                 </Link>
             </main>
         );
@@ -124,27 +124,27 @@ export default async function StaffAuditPage({
                 <MobileAppHeader lakeName={tenant.lakeName} isSupportMode={tenant.isSupportMode} />
                 <main className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
                     <div>
-                        <h1 className="text-lg font-bold text-[#17201A]">Nhật ký thao tác</h1>
+                        <h1 className="text-lg font-bold text-[#17201A]">Nhat ky thao tac</h1>
                         <p className="mt-1 text-xs leading-5 text-[#66716A]">
-                            Ai làm gì, lúc nào, đổi trường nào. Chỉ xem, không sửa và không xóa.
-                            Nên giữ khoảng {AUDIT_RETENTION_DAYS} ngày; khi cần dọn, làm tay sau giờ bán và báo trước cho hồ.
+                            Ai lam gi, luc nao, doi truong nao. Chi xem, khong sua va khong xoa.
+                            Nen giu khoang {AUDIT_RETENTION_DAYS} ngay; khi can don, lam tay sau gio ban va bao truoc cho ho.
                         </p>
                     </div>
 
                     <form method="get" className="grid grid-cols-1 gap-2 rounded-2xl border border-[#E3E8E3] bg-white p-3 sm:grid-cols-2">
                         <label className="text-xs text-[#66716A]">
-                            Nhân viên
+                            Nhan vien
                             <select name="actor" defaultValue={filters.actor} className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] bg-white px-2 text-sm text-[#17201A]">
-                                <option value="">Tất cả</option>
+                                <option value="">Tat ca</option>
                                 {members.map((member) => (
                                     <option key={member.userId} value={member.userId}>
-                                        {member.user.name} · {roleLabel(member.role)}
+                                        {member.user.name} - {roleLabel(member.role)}
                                     </option>
                                 ))}
                             </select>
                         </label>
                         <label className="text-xs text-[#66716A]">
-                            Thao tác
+                            Thao tac
                             <select name="action" defaultValue={filters.action} className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] bg-white px-2 text-sm text-[#17201A]">
                                 {AUDIT_ACTION_OPTIONS.map((option) => (
                                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -152,31 +152,31 @@ export default async function StaffAuditPage({
                             </select>
                         </label>
                         <label className="text-xs text-[#66716A]">
-                            Từ ngày
+                            Tu ngay
                             <input type="date" name="from" defaultValue={filters.from} className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] px-2 text-sm" />
                         </label>
                         <label className="text-xs text-[#66716A]">
-                            Đến ngày
+                            Den ngay
                             <input type="date" name="to" defaultValue={filters.to} className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] px-2 text-sm" />
                         </label>
                         <label className="text-xs text-[#66716A] sm:col-span-2">
-                            Mã phiên, hóa đơn hoặc đối tượng
+                            Ma phien, hoa don hoac doi tuong
                             <input name="entity" defaultValue={filters.entity} placeholder="UUID" className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] px-3 text-sm" />
                         </label>
                         <div className="flex gap-2 sm:col-span-2">
-                            <button type="submit" className="h-10 flex-1 rounded-full bg-[#4F9D5A] text-sm font-semibold text-white">Lọc</button>
-                            <Link href="/settings/nhat-ky" className="inline-flex h-10 items-center rounded-full border border-[#E3E8E3] px-4 text-sm">Xóa lọc</Link>
+                            <button type="submit" className="h-10 flex-1 rounded-full bg-[#4F9D5A] text-sm font-semibold text-white">Loc</button>
+                            <Link href="/settings/nhat-ky" className="inline-flex h-10 items-center rounded-full border border-[#E3E8E3] px-4 text-sm">Xoa loc</Link>
                             <a href={csvHref} className="inline-flex h-10 items-center rounded-full border border-[#E3E8E3] px-4 text-sm">CSV</a>
                         </div>
                     </form>
 
                     {query.clamped ? (
-                        <p className="text-xs text-[#8A5A20]">Khoảng ngày đã được giới hạn trong {AUDIT_RETENTION_DAYS} ngày.</p>
+                        <p className="text-xs text-[#8A5A20]">Khoang ngay da duoc gioi han trong {AUDIT_RETENTION_DAYS} ngay.</p>
                     ) : null}
 
                     {entries.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-[#E3E8E3] bg-white px-4 py-8 text-center text-sm text-[#66716A]">
-                            Không có dòng nào trong khoảng này.
+                            Khong co dong nao trong khoang nay.
                         </p>
                     ) : (
                         <ol className="space-y-2">
@@ -188,14 +188,14 @@ export default async function StaffAuditPage({
                                             <div>
                                                 <p className="text-sm font-semibold text-[#17201A]">{entry.actionLabel}</p>
                                                 <p className="mt-0.5 text-xs text-[#66716A]">
-                                                    {name} · {roleLabel(entry.actorRole)} · {formatWhen(entry.createdAt)}
+                                                    {name} ({roleLabel(entry.actorRole)}) - {formatWhen(entry.createdAt)}
                                                 </p>
                                             </div>
-                                            <span className="shrink-0 font-mono text-[10px] text-[#8A938D]">{entry.entityType}</span>
+                                            <span className="shrink-0 rounded-full bg-[#F0F4F0] px-2 py-0.5 font-mono text-[10px] text-[#8A938D]">{entry.entityType}</span>
                                         </div>
-                                        <p className="mt-2 break-all font-mono text-[11px] text-[#66716A]">{entry.entityId}</p>
+                                        <p className="mt-1 break-all font-mono text-[11px] text-[#8A938D]">{entry.entityId}</p>
                                         <DiffView before={entry.before} after={entry.after} legacy={entry.legacy} />
-                                        {entry.ip ? <p className="mt-2 text-[11px] text-[#8A938D]">{entry.ip}</p> : null}
+                                        {entry.ip ? <p className="mt-1 text-[11px] text-[#8A938D]">IP: {entry.ip}</p> : null}
                                     </li>
                                 );
                             })}
@@ -204,7 +204,7 @@ export default async function StaffAuditPage({
 
                     <div className="flex items-center justify-between text-sm">
                         {page > 1 ? (
-                            <Link href={buildHref(filters, page - 1, false)} className="text-[#246B38]">Trang trước</Link>
+                            <Link href={buildHref(filters, page - 1, false)} className="text-[#246B38]">Trang truoc</Link>
                         ) : <span />}
                         <span className="text-xs text-[#66716A]">Trang {page}</span>
                         {hasNext ? (
@@ -222,6 +222,44 @@ export default async function StaffAuditPage({
     );
 }
 
+// ---- Nhan hang tieng Viet cho cac truong du lieu ----
+const FIELD_LABELS: Record<string, string> = {
+    status: "Trang thai",
+    totalAmountVnd: "Tong tien",
+    paidAmountVnd: "Da thanh toan",
+    balanceDueVnd: "Con no",
+    priceVnd: "Gia (VND)",
+    price: "Gia",
+    quantity: "So luong",
+    name: "Ten",
+    amountVnd: "So tien (VND)",
+    method: "Hinh thuc",
+    direction: "Chieu giao dich",
+    note: "Ghi chu",
+    reason: "Ly do",
+    packageId: "Ma goi cau",
+    packageName: "Ten goi cau",
+    addedMinutes: "Them thoi gian (phut)",
+    previousPlannedEndAt: "Gio ket thuc cu",
+    newPlannedEndAt: "Gio ket thuc moi",
+    startAt: "Gio bat dau",
+    plannedEndAt: "Gio du kien ket thuc",
+    endedAt: "Gio ket thuc thuc te",
+    hutIds: "Leu / Cho ngoi",
+    customerId: "Ma khach hang",
+    refundedVnd: "Hoan tien (VND)",
+    settlement: "Thanh toan ket ca",
+    paymentMethod: "Phuong thuc thanh toan",
+    weight: "Can nang (kg)",
+    totalVnd: "Tong tien (VND)",
+    fishTypeId: "Loai ca",
+};
+
+function fieldLabel(key: string): string {
+    return FIELD_LABELS[key] ?? key;
+}
+
+// ---- Component hien thi truoc / sau khi thay doi ----
 function DiffView({
     before,
     after,
@@ -234,15 +272,17 @@ function DiffView({
     const keys = [...new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})])];
     if (keys.length === 0) {
         if (!legacy) return null;
-        return <pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-[11px] text-[#66716A]">{JSON.stringify(legacy)}</pre>;
+        return <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-[#F8FAF8] p-2 text-[11px] text-[#66716A]">{JSON.stringify(legacy, null, 2)}</pre>;
     }
     return (
-        <dl className="mt-2 space-y-1">
+        <dl className="mt-2 space-y-1 rounded-lg bg-[#F8FAF8] p-2">
             {keys.map((key) => (
-                <div key={key} className="text-[11px] leading-4 text-[#17201A]">
-                    <dt className="inline font-semibold">{key}: </dt>
+                <div key={key} className="text-[11px] leading-5 text-[#17201A]">
+                    <dt className="inline font-semibold text-[#3A3A3A]">{fieldLabel(key)}: </dt>
                     <dd className="inline break-all">
-                        {showValue(before?.[key])} → {showValue(after?.[key])}
+                        <span className="text-[#8A938D] line-through">{showValue(before?.[key])}</span>
+                        <span className="mx-1 text-[#8A938D]">&#8594;</span>
+                        <span className="font-medium text-[#246B38]">{showValue(after?.[key])}</span>
                     </dd>
                 </div>
             ))}
@@ -251,7 +291,7 @@ function DiffView({
 }
 
 function showValue(value: unknown): string {
-    if (value === undefined || value === null) return "—";
+    if (value === undefined || value === null) return "(trong)";
     if (typeof value === "string") return value;
     return JSON.stringify(value);
 }
@@ -268,14 +308,14 @@ function formatWhen(iso: string): string {
 }
 
 function roleLabel(role: string | null | undefined): string {
-    if (role === "OWNER") return "Chủ hồ";
-    if (role === "MANAGER") return "Quản lý";
-    if (role === "STAFF") return "Nhân viên";
-    return role || "—";
+    if (role === "OWNER") return "Chu ho";
+    if (role === "MANAGER") return "Quan ly";
+    if (role === "STAFF") return "Nhan vien";
+    return role || "---";
 }
 
 function shortId(value: string): string {
-    return value.length > 12 ? `${value.slice(0, 8)}…` : value;
+    return value.length > 12 ? `${value.slice(0, 8)}...` : value;
 }
 
 function clampPage(value: string | undefined): number {
