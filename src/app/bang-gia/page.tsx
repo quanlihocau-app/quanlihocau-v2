@@ -85,6 +85,43 @@ const pricingJsonLd = {
                 },
             ],
         },
+        {
+            "@type": "FAQPage",
+            "mainEntity": [
+                {
+                    "@type": "Question",
+                    "name": "Ai được tính là nhân viên trong Gói Bạc?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Mỗi hồ luôn có 1 tài khoản Chủ hồ (OWNER) có toàn quyền quản trị. Với Gói Bạc, bạn có thể tạo thêm tối đa 2 tài khoản nhân sự (STAFF hoặc MANAGER) để cùng trực quầy. Từ người thứ 3 trở đi, hồ cần nâng lên Gói Vàng."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Nếu hồ của tôi có hơn 30 ô câu thì sao?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Gói Bạc giới hạn tối đa 30 ô câu được kích hoạt trong hồ. Nếu hồ của bạn có quy mô từ 31 ô trở lên (hoặc nhiều hồ con trong cùng một cơ sở), vui lòng chọn Gói Vàng để không bị giới hạn số ô."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Tôi có thể gia hạn sớm trước khi hết hạn không?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Được. Thanh toán tháng cộng 30 ngày, thanh toán năm cộng 365 ngày, nối vào hạn hiện tại nếu hạn đó còn trong tương lai. Hạn cũ không bị cắt."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Hỗ trợ kỹ thuật được thực hiện như thế nào?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Đội ngũ kỹ thuật hỗ trợ trực tiếp qua Zalo và hotline (0855 550 813) trong giờ hoạt động thực tế của hồ. Cung cấp tài liệu hướng dẫn từng bước kèm sơ đồ trực quan ngay trong ứng dụng."
+                    }
+                }
+            ]
+        },
     ],
 };
 

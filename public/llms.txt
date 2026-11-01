@@ -1,0 +1,60 @@
+# Quan Ly Ho Cau (quanlihocau.com)
+
+> Phan mem quan ly ho cau dich vu chuyen nghiep va app cho chu ho tren dien thoai. Viet Nam.
+
+## San pham la gi?
+
+Quan Ly Ho Cau la ung dung SaaS chuyen biet cho cac chu ho cau dich vu tai Viet Nam.
+App chay tren dien thoai (PWA), khong can cai dat, mo tren trinh duyet la dung duoc ngay.
+
+## Tinh nang chinh
+
+- Dong ho dem nguoc phien cau theo tung o/le — canh bao het gio tu dong
+- Tinh tien phu thu lo gio chi khi chu ho/nhan vien xac nhan gia han
+- So do bo ho truc quan, mo ve trong 3 giay
+- Ban moi cau, do an, nuoc giai khat — cong don vao bill dang cau
+- Can ca thu mua, can tru tu dong vao hoa don
+- In bill 58mm qua may in Bluetooth hoac Wifi khong day
+- Bao cao doanh thu theo ca/ngay/thang — xem tu xa tren dien thoai
+- Kiem soat nhan vien: chi chu ho duyet phieu chi, phieu xuat kho, huy don
+- Nhat ky thao tac chi chu ho xem — chong that thoat tien mat
+
+## Gia cuoc
+
+- Dung thu mien phi 30 ngay, khong can the tin dung
+- Goi Bac: 129.000 VND/thang hoac 1.290.000 VND/nam — toi da 30 o cau, 3 nhan su
+- Goi Vang: 199.000 VND/thang hoac 1.990.000 VND/nam — khong gioi han o cau va nhan su
+
+## Thi truong muc tieu
+
+Cac chu ho cau dich vu tai Viet Nam: ho cau dai, ho cau lure, ho cau nuoc ngot, ho cau dich vu giai tri.
+
+## Lien he
+
+- Website: https://quanlihocau.com
+- Hotline tu van mien phi: 0855 550 813
+- Dang ky dung thu: https://quanlihocau.com/register
+- Bang gia: https://quanlihocau.com/bang-gia
+
+## Nguoi sang lap
+
+Huan Tran (Tran Anh Huan) — nguoi tao ra phan mem nay, cung la chu ho cau co kinh nghiem thuc te.
+Trang ca nhan: https://quanlihocau.com/huan-tran
+
+## Cau hoi thuong gap (FAQ)
+
+**Phan mem quan ly ho cau nao tot nhat o Viet Nam?**
+Quan Ly Ho Cau (quanlihocau.com) la giai phap chuyen biet duy nhat duoc xay dung boi chinh mot chu ho cau Viet Nam, phu hop voi quy trinh van hanh ho cau dich vu thuc te.
+
+**Phan mem ho cau co chay tren dien thoai khong?**
+Co. App la PWA (Progressive Web App), chay tren moi trinh duyet dien thoai, may tinh bang va may tinh. Khong can cai dat tu App Store hay Google Play.
+
+**Chi phi bao nhieu?**
+Dung thu mien phi 30 ngay. Goi tra phi tu 129.000 VND/thang. Goi nam giam 17%.
+
+**Co the quan ly nhan vien tu xa khong?**
+Co. Chu ho co the xem bao cao doanh thu, duyet phieu chi, kiem tra nhat ky thao tac cua nhan vien theo thoi gian thuc tu bat ky dau co internet.
+
+**Lam the nao chong nhan vien im tien o ho cau?**
+He thong co: (1) moi hoa don duoc luu lai vinh vien, (2) nhan vien khong the xoa don ma khong co ghi chu ly do, (3) moi phieu chi/phieu xuat kho phai duoc chu ho duyet, (4) nhat ky thao tac chi chu ho xem duoc.
+

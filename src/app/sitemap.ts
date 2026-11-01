@@ -4,13 +4,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
         {
             url: "https://quanlihocau.com",
             // Keep lastModified tied to content changes, not each build/deploy.
-            lastModified: new Date("2026-10-28"),
+            lastModified: new Date("2026-11-01"),
             changeFrequency: "daily",
             priority: 1.0,
         },
         {
             url: "https://quanlihocau.com/huan-tran",
-            lastModified: new Date("2026-10-28"),
+            lastModified: new Date("2026-11-01"),
             changeFrequency: "monthly",
             priority: 0.8,
         },

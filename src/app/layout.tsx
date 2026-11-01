@@ -184,6 +184,58 @@ const jsonLdSchema = {
                 "areaServed": "VN",
                 "availableLanguage": "Vietnamese",
             },
+            "sameAs": [
+                "https://www.facebook.com/koka.tran",
+                "https://www.youtube.com/@hocaukimthong.lamdong/shorts",
+                "https://www.tiktok.com/@hocaukimthong49"
+            ],
+        },
+        {
+            "@type": "WebSite",
+            "@id": "https://quanlihocau.com/#website",
+            "url": "https://quanlihocau.com",
+            "name": "Quản Lý Hồ Câu",
+            "description": "Phần mềm quản lý hồ câu & App cho chủ hồ câu trên điện thoại: Hồ đông vẫn nhàn, tiền hàng vẫn rõ.",
+            "publisher": { "@id": "https://quanlihocau.com/#organization" },
+            "inLanguage": "vi-VN",
+        },
+        {
+            "@type": "FAQPage",
+            "@id": "https://quanlihocau.com/#faq",
+            "mainEntity": [
+                {
+                    "@type": "Question",
+                    "name": "Phần mềm quản lý hồ câu nào tốt nhất trên điện thoại?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Quản Lý Hồ Câu (quanlihocau.com) là phần mềm chuyên biệt chạy trên mọi điện thoại (PWA), giúp chủ hồ đếm giờ phiên câu, cảnh báo hết giờ, bán mồi nước, thu mua cá, quản lý nhân viên và hạn chế thất thoát từ xa."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Chủ hồ câu làm thế nào để quản lý từ xa và chống nhân viên ỉm tiền?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Hệ thống Quản Lý Hồ Câu lưu lại mọi phiên câu và lịch sử hóa đơn. Các thao tác sửa giá, lập phiếu chi, xuất kho hoặc hủy đơn đều yêu cầu ghi chú lý do và phải được Chủ hồ phê duyệt thì mới có hiệu lực. Nhật ký hoạt động chỉ Chủ hồ và Quản trị viên xem được."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "App quản lý hồ câu có cần cài đặt qua App Store hay CH Play không?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Không cần cài đặt phức tạp. Ứng dụng chạy trực tiếp trên trình duyệt điện thoại (PWA) chỉ cần mở link quanlihocau.com là dùng được ngay, có thể thêm biểu tượng ra màn hình chính như ứng dụng thông thường."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Chi phí sử dụng phần mềm Quản Lý Hồ Câu là bao nhiêu?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Chủ hồ được dùng thử miễn phí 30 ngày. Sau đó có Gói Bạc 129.000đ/tháng (tối đa 30 ô, chủ hồ và 2 nhân viên) và Gói Vàng 199.000đ/tháng (không giới hạn ô câu và nhân sự). Thanh toán theo năm được tặng 2 tháng."
+                    }
+                }
+            ]
         },
     ],
 };

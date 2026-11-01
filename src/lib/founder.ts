@@ -11,7 +11,11 @@ export const founder = {
     name: "Huân Trần",
     alternateName: ["Trần Anh Huân", "Huan Tran", "Tran Anh Huan"],
     url: "https://quanlihocau.com/huan-tran",
-    sameAs: [founderLinks.facebook],
+    sameAs: [
+        founderLinks.facebook,
+        founderLinks.youtube,
+        founderLinks.tiktok,
+    ],
     jobTitle: "Nhà sáng lập Quản Lý Hồ Câu",
     description: "Huân Trần (Trần Anh Huân) là nhà sáng lập và người phát triển ứng dụng Quản Lý Hồ Câu bằng phương pháp vibe coding, xuất phát từ nhu cầu vận hành hồ câu của mình.",
     knowsAbout: ["Quản lý hồ câu", "Video AI", "Vibe coding"],
