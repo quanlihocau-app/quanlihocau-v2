@@ -172,6 +172,7 @@ model Lake {
   reconciliations       ReconciliationRecord[]
   printJobs             PrintJob[]
   notifications         Notification[]
+  approvalRequests      ApprovalRequest[]
 
   @@index([subscriptionStatus])
   @@index([subscriptionExpiresAt])
@@ -938,4 +939,26 @@ model Notification {
   lake        Lake?    @relation(fields: [lakeId], references: [id])
   fromUser    User?    @relation("NotificationFrom", fields: [fromUserId], references: [id])
   toUser      User?    @relation("NotificationTo", fields: [toUserId], references: [id])
+}
+
+
+model ApprovalRequest {
+  id              String    @id @default(uuid())
+  lakeId          String
+  type            String
+  status          String    @default("PENDING")
+  requestedBy     String
+  requestedByName String?
+  note            String
+  payload         String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  reviewNote      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  lake Lake @relation(fields: [lakeId], references: [id])
+
+  @@index([lakeId, status])
+  @@index([lakeId, createdAt])
 }

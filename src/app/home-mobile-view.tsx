@@ -6,6 +6,7 @@ import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { SearchBar } from "@/components/ui/search-bar";
 import { Badge, SessionStatusBadge } from "@/components/ui/badge";
+import { PendingApprovalsSection } from "@/components/approvals/pending-approvals-section";
 
 export interface HomeMobileViewProps {
     lakeName: string;
@@ -242,6 +243,8 @@ export function HomeMobileView({
                             </Link>
                         </div>
                     </div>
+
+                    {roleBadge === "OWNER" && <PendingApprovalsSection />}
 
                     {/* ── Bảng Số Liệu Ca Trực (Đồng bộ Xanh Lá Hiện Đại) ──── */}
                     <div className="rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">

@@ -104,6 +104,23 @@ export async function GET(request: NextRequest) {
         const lakeId = tenantContext.lakeId;
         const { searchParams } = new URL(request.url);
 
+        // Bảo mật: Nhân viên không được xem báo cáo tháng/lợi nhuận nhiều ngày
+        if (tenantContext.role !== "OWNER") {
+            const requestedPreset = searchParams.get("preset");
+            if (requestedPreset && requestedPreset !== "today") {
+                return NextResponse.json(
+                    { error: "Forbidden: Nhân viên chỉ được xem số liệu ca/ngày hôm nay." },
+                    { status: 403 }
+                );
+            }
+            if (searchParams.get("from") || searchParams.get("to")) {
+                return NextResponse.json(
+                    { error: "Forbidden: Nhân viên không có quyền xem báo cáo khoảng ngày." },
+                    { status: 403 }
+                );
+            }
+        }
+
         const preset = (searchParams.get("preset") as DatePreset) || "today";
         const customFrom = searchParams.get("from") || undefined;
         const customTo = searchParams.get("to") || undefined;
