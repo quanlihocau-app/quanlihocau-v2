@@ -21,19 +21,61 @@ export const metadata: Metadata = {
 
 const profile = {
     "@context": "https://schema.org",
-    "@type": "ProfilePage",
-    "@id": `${url}#profile`,
-    url, name: title, description, inLanguage: "vi",
-    mainEntity: founder,
-    relatedLink: [founderLinks.firstAppVideo, founderLinks.youtube, founderLinks.tiktok],
-    publisher: { "@id": "https://quanlihocau.com/#organization" },
-    breadcrumb: {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-            { "@type": "ListItem", position: 1, name: "Quản Lý Hồ Câu", item: "https://quanlihocau.com" },
-            { "@type": "ListItem", position: 2, name: "Huân Trần", item: url },
-        ],
-    },
+    "@graph": [
+        {
+            "@type": "ProfilePage",
+            "@id": `${url}#profile`,
+            url, name: title, description, inLanguage: "vi",
+            mainEntity: founder,
+            relatedLink: [founderLinks.firstAppVideo, founderLinks.youtube, founderLinks.tiktok],
+            publisher: { "@id": "https://quanlihocau.com/#organization" },
+            breadcrumb: {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                    { "@type": "ListItem", position: 1, name: "Quản Lý Hồ Câu", item: "https://quanlihocau.com" },
+                    { "@type": "ListItem", position: 2, name: "Huân Trần", item: url },
+                ],
+            },
+        },
+        {
+            "@type": "FAQPage",
+            "@id": `${url}#faq`,
+            mainEntity: [
+                {
+                    "@type": "Question",
+                    name: "Huân Trần là ai?",
+                    acceptedAnswer: {
+                        "@type": "Answer",
+                        text: "Huân Trần (Trần Anh Huân) là nhà sáng lập và người phát triển Quản Lý Hồ Câu. Anh sáng tạo video AI và trực tiếp vận hành hồ câu của mình tại Lâm Đồng.",
+                    },
+                },
+                {
+                    "@type": "Question",
+                    name: "Ai sáng lập Quản Lý Hồ Câu?",
+                    acceptedAnswer: {
+                        "@type": "Answer",
+                        text: "Huân Trần (Trần Anh Huân) là nhà sáng lập và người tự phát triển ứng dụng Quản Lý Hồ Câu từ nhu cầu quản lý thực tế của một chủ hồ.",
+                    },
+                },
+                {
+                    "@type": "Question",
+                    name: "Ứng dụng Quản Lý Hồ Câu được phát triển như thế nào?",
+                    acceptedAnswer: {
+                        "@type": "Answer",
+                        text: "Ứng dụng được xây dựng bằng phương pháp vibe coding, sử dụng AI hỗ trợ phát triển phần mềm dựa trên các quy trình nghiệp vụ hồ câu thực tế.",
+                    },
+                },
+                {
+                    "@type": "Question",
+                    name: "Vì sao anh Huân đưa ứng dụng ra thị trường?",
+                    acceptedAnswer: {
+                        "@type": "Answer",
+                        text: "Anh muốn chia sẻ giải pháp vận hành hồ câu hiệu quả, minh bạch và chống thất thoát cho tất cả các chủ hồ câu dịch vụ tại Việt Nam.",
+                    },
+                },
+            ],
+        },
+    ],
 };
 
 export default function FounderPage() {

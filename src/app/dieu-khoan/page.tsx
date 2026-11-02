@@ -25,9 +25,33 @@ export const metadata: Metadata = {
     },
 };
 
+
+const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Trang chủ",
+            "item": "https://quanlihocau.com"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Điều khoản dịch vụ",
+            "item": "https://quanlihocau.com/dieu-khoan"
+        }
+    ]
+};
+
 export default function TermsOfServicePage() {
     return (
         <div className="min-h-screen bg-[#FBF9F5] text-[#27231F]">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+            />
             {/* Header */}
             <header className="sticky top-0 z-20 border-b border-[#D9D2C8] bg-white/95 backdrop-blur-md px-4 py-3.5 sm:px-8">
                 <div className="mx-auto flex max-w-5xl items-center justify-between">
