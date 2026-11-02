@@ -1,10 +1,14 @@
-import React from "react";
+﻿import React from "react";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     variant?: "default" | "success" | "warning" | "danger" | "info" | "neutral";
     icon?: React.ReactNode;
 }
 
+/**
+ * Badge â€” Brand-standard status chip.
+ * Clean 1px border, no heavy shadows. Text 12px semibold, readable for seniors.
+ */
 export function Badge({
     children,
     variant = "default",
@@ -13,17 +17,17 @@ export function Badge({
     ...props
 }: BadgeProps) {
     const variantClasses = {
-        default: "bg-[#F1F5F9] text-[#0F172A] border border-[#E2E8F0]",
-        success: "bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]",
-        warning: "bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A]",
-        danger: "bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA]",
-        info: "bg-[#F0F9FF] text-[#0284C7] border border-[#BAE6FD]",
-        neutral: "bg-[#F1F5F9] text-[#64748B] border border-[#E2E8F0]",
+        default: "bg-[#E8F0EC] text-[#1B3B2B] border border-[#1B3B2B]/20",
+        success: "bg-[#F0FDF4] text-[#166534] border border-[#166534]/20",
+        warning: "bg-[#FFFBEB] text-[#92400E] border border-[#92400E]/20",
+        danger:  "bg-[#FEF2F2] text-[#B91C1C] border border-[#B91C1C]/20",
+        info:    "bg-[#EFF6FF] text-[#1E40AF] border border-[#1E40AF]/20",
+        neutral: "bg-[#F8FAF8] text-[#4B5563] border border-[#E5E7EB]",
     }[variant];
 
     return (
         <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-normal font-serif ${variantClasses} ${className}`}
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-xs font-semibold ${variantClasses} ${className}`}
             {...props}
         >
             {icon && <span className="shrink-0">{icon}</span>}
@@ -38,11 +42,9 @@ export function SessionStatusBadge({ status }: { status: string }) {
             return (
                 <Badge
                     variant="success"
-                    icon={
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#16A34A]" />
-                    }
+                    icon={<span className="h-1.5 w-1.5 rounded-md bg-[#166534]" />}
                 >
-                    Đang câu
+                    Äang cÃ¢u
                 </Badge>
             );
         case "COMPLETED":
@@ -55,7 +57,7 @@ export function SessionStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    Đã hoàn thành
+                    ÄÃ£ hoÃ n thÃ nh
                 </Badge>
             );
         case "CANCELLED":
@@ -68,7 +70,7 @@ export function SessionStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    Đã hủy
+                    ÄÃ£ há»§y
                 </Badge>
             );
         default:
@@ -88,7 +90,7 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    Tạm tính
+                    Táº¡m tÃ­nh
                 </Badge>
             );
         case "PAID":
@@ -101,7 +103,7 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    Đã thanh toán
+                    ÄÃ£ thanh toÃ¡n
                 </Badge>
             );
         case "PARTIALLY_PAID":
@@ -114,7 +116,7 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    Thanh toán 1 phần
+                    Thanh toÃ¡n 1 pháº§n
                 </Badge>
             );
         case "VOIDED":
@@ -127,10 +129,11 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    Đã hủy (VOIDED)
+                    ÄÃ£ há»§y (VOIDED)
                 </Badge>
             );
         default:
             return <Badge variant="neutral">{status}</Badge>;
     }
 }
+

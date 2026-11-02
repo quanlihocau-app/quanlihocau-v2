@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @import "../styles/brand-tokens.css";
 @import "../styles/brand-landing.css";
 
@@ -68,39 +68,39 @@ body:has([role="dialog"][aria-modal="true"]) .quick-actions {
 }
 
 :root {
-  --background: #F8FAFC;
-  --foreground: #0F172A;
-  --muted-foreground: #475569;
+  --background: #FFFFFF; /* brand */
+  --foreground: #111827;
+  --muted-foreground: #4B5563;
   --card: #FFFFFF;
   --card-foreground: #0F172A;
-  --border: #E2E8F0;
+  --border: #E5E7EB;
   --input: #CBD5E1;
-  --ring: #16A34A;
-  --radius: 16px;
+  --ring: #1B3B2B;
+  --radius: 8px; /* brand: vuong van nhe */
 
   /* Keep existing font-serif utilities compatible with the app's UI font. */
-  --font-ui: Arial, "Helvetica Neue", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-serif: var(--font-ui);
-  --font-sans: "Times New Roman", Times, "Liberation Serif", serif;
+  --font-ui: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: "Times New Roman", Times, "Liberation Serif", serif;
+  --font-sans: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   /* Vibrant Emerald Green System Palette */
-  --color-primary: #16A34A;
-  --color-primary-dark: #15803D;
-  --color-primary-hover: #15803D;
-  --color-selected: #DCFCE7;
+  --color-primary: #1B3B2B;
+  --color-primary-dark: #142d20;
+  --color-primary-hover: #142d20;
+  --color-selected: #E8F0EC;
   --color-surface: #FFFFFF;
-  --color-surface-secondary: #F1F5F9;
-  --color-text-main: #0F172A;
-  --color-text-muted: #475569;
-  --color-text-subtle: #64748B;
-  --color-border-main: #E2E8F0;
-  --color-border-strong: #CBD5E1;
+  --color-surface-secondary: #F8FAF8;
+  --color-text-main: #111827;
+  --color-text-muted: #4B5563;
+  --color-text-subtle: #9CA3AF;
+  --color-border-main: #E5E7EB;
+  --color-border-strong: #D1D5DB;
 
-  --color-success: #16A34A;
+  --color-success: #166534;
   --color-success-bg: #F0FDF4;
-  --color-warning: #D97706;
+  --color-warning: #92400E;
   --color-warning-bg: #FFFBEB;
-  --color-danger: #DC2626;
+  --color-danger: #B91C1C;
   --color-danger-bg: #FEF2F2;
 }
 
@@ -215,7 +215,7 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
-  /* Ngăn bounce scroll trên iOS */
+  /* NgÄƒn bounce scroll trÃªn iOS */
   overscroll-behavior: none;
 }
 
@@ -246,15 +246,15 @@ h4, h5, h6 { font-weight: 700; }
   min-width: 44px;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   CRITICAL FIX: iOS sẽ tự zoom vào khi font-size < 16px trên input.
-   Đặt font-size 16px để tránh zoom - sau đó dùng CSS scale để vẫn trông nhỏ.
-   ──────────────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   CRITICAL FIX: iOS sáº½ tá»± zoom vÃ o khi font-size < 16px trÃªn input.
+   Äáº·t font-size 16px Ä‘á»ƒ trÃ¡nh zoom - sau Ä‘Ã³ dÃ¹ng CSS scale Ä‘á»ƒ váº«n trÃ´ng nhá».
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 input, select, textarea {
   font-size: 16px !important;
 }
 
-/* Safe bottom padding helper: dùng cho main content khi có fixed tabbar */
+/* Safe bottom padding helper: dÃ¹ng cho main content khi cÃ³ fixed tabbar */
 .pb-tab-safe {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
 }
@@ -364,7 +364,7 @@ input, select, textarea {
 
 .mobile-pos-frame {
   width: 100%;
-  max-width: 32rem; /* 512px: Chuẩn màn hình di động rộng sắc nét hơn */
+  max-width: 32rem; /* 512px: Chuáº©n mÃ n hÃ¬nh di Ä‘á»™ng rá»™ng sáº¯c nÃ©t hÆ¡n */
   min-height: 100dvh;
   background-color: #FFFFFF;
   display: flex;
@@ -516,8 +516,8 @@ a, button, [role="button"], input, select, textarea {
   touch-action: manipulation;
 }
 
-/* Khi focus vào input/select, đảm bảo không bị che bởi tabbar:
-   scroll container cha tự adjust để input visible */
+/* Khi focus vÃ o input/select, Ä‘áº£m báº£o khÃ´ng bá»‹ che bá»Ÿi tabbar:
+   scroll container cha tá»± adjust Ä‘á»ƒ input visible */
 input:focus, textarea:focus, select:focus {
   scroll-margin-bottom: 80px;
   scroll-margin-top: 20px;
@@ -571,41 +571,41 @@ body {
   min-height: 100dvh;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   MOBILE POS FRAME: scroll container chính — nội dung cuộn trong frame,
-   tabbar và header luôn cố định.
-   ──────────────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   MOBILE POS FRAME: scroll container chÃ­nh â€” ná»™i dung cuá»™n trong frame,
+   tabbar vÃ  header luÃ´n cá»‘ Ä‘á»‹nh.
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .mobile-pos-frame {
-  /* Đảm bảo frame chiếm đúng viewport hiện tại (dvh co theo keyboard) */
+  /* Äáº£m báº£o frame chiáº¿m Ä‘Ãºng viewport hiá»‡n táº¡i (dvh co theo keyboard) */
   min-height: 100dvh;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    HAPTIC FEEDBACK: active states cho touch
-   ──────────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 button:active, [role="button"]:active {
   transition: transform 60ms ease-out;
 }
 
-/* Ngoại lệ: không scale nút trong nav (tránh giật) */
+/* Ngoáº¡i lá»‡: khÃ´ng scale nÃºt trong nav (trÃ¡nh giáº­t) */
 nav button:active, nav a:active {
   transform: none;
   opacity: 0.7;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   UTILITY: Đảm bảo page content không bị che bởi tabbar
-   ──────────────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   UTILITY: Äáº£m báº£o page content khÃ´ng bá»‹ che bá»Ÿi tabbar
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .has-bottom-nav {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px) !important;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   SECTION TITLE: Tiêu đề mục/phần dùng chung toàn app
-   Đồng bộ phong cách nổi bật, dễ đọc trên mọi trang mobile.
-   ──────────────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   SECTION TITLE: TiÃªu Ä‘á» má»¥c/pháº§n dÃ¹ng chung toÃ n app
+   Äá»“ng bá»™ phong cÃ¡ch ná»•i báº­t, dá»… Ä‘á»c trÃªn má»i trang mobile.
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-/* Dùng cho tiêu đề các mục trong Card/Form (Tạo vé, Cài đặt, ...) */
+/* DÃ¹ng cho tiÃªu Ä‘á» cÃ¡c má»¥c trong Card/Form (Táº¡o vÃ©, CÃ i Ä‘áº·t, ...) */
 .section-title {
   display: flex;
   align-items: center;
@@ -618,7 +618,7 @@ nav button:active, nav a:active {
   line-height: 1.1;
 }
 
-/* Thanh xanh lá dọc bên trái đặc trưng của app */
+/* Thanh xanh lÃ¡ dá»c bÃªn trÃ¡i Ä‘áº·c trÆ°ng cá»§a app */
 .section-title::before {
   content: "";
   display: inline-block;
@@ -629,7 +629,7 @@ nav button:active, nav a:active {
   flex-shrink: 0;
 }
 
-/* Dùng cho tiêu đề mục nhỏ hơn (trong Card mục con) */
+/* DÃ¹ng cho tiÃªu Ä‘á» má»¥c nhá» hÆ¡n (trong Card má»¥c con) */
 .section-title-sm {
   display: flex;
   align-items: center;
@@ -652,13 +652,13 @@ nav button:active, nav a:active {
   flex-shrink: 0;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   CHẾ ĐỘ NGOÀI TRỜI ĐỘ TƯƠNG PHẢN CAO (OUTDOOR HIGH-CONTRAST MODE)
-   Tối ưu cho nhân viên thao tác dưới ánh nắng gắt, tay ướt hoặc dính thính:
-   - Nền sáng chữ đen đậm (#000000)
-   - Viền dày 2px-3px đen tuyền
-   - Trạng thái hover, focus, disabled, lỗi hiển thị cực kỳ rõ nét
-   ──────────────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   CHáº¾ Äá»˜ NGOÃ€I TRá»œI Äá»˜ TÆ¯Æ NG PHáº¢N CAO (OUTDOOR HIGH-CONTRAST MODE)
+   Tá»‘i Æ°u cho nhÃ¢n viÃªn thao tÃ¡c dÆ°á»›i Ã¡nh náº¯ng gáº¯t, tay Æ°á»›t hoáº·c dÃ­nh thÃ­nh:
+   - Ná»n sÃ¡ng chá»¯ Ä‘en Ä‘áº­m (#000000)
+   - Viá»n dÃ y 2px-3px Ä‘en tuyá»n
+   - Tráº¡ng thÃ¡i hover, focus, disabled, lá»—i hiá»ƒn thá»‹ cá»±c ká»³ rÃµ nÃ©t
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .outdoor-high-contrast {
   --background: #FFFFFF;
   --foreground: #000000;
@@ -678,7 +678,7 @@ nav button:active, nav a:active {
   color: #000000 !important;
 }
 
-/* Thẻ và Khung viền sắc nét */
+/* Tháº» vÃ  Khung viá»n sáº¯c nÃ©t */
 .outdoor-high-contrast .card,
 .outdoor-high-contrast [class*="rounded-2xl"],
 .outdoor-high-contrast [class*="rounded-3xl"] {
@@ -703,7 +703,7 @@ nav button:active, nav a:active {
   color: inherit !important;
 }
 
-/* Nút bấm ở chế độ ngoài trời: viền đen dày, tương phản cực mạnh */
+/* NÃºt báº¥m á»Ÿ cháº¿ Ä‘á»™ ngoÃ i trá»i: viá»n Ä‘en dÃ y, tÆ°Æ¡ng pháº£n cá»±c máº¡nh */
 .outdoor-high-contrast button,
 .outdoor-high-contrast [role="button"] {
   border-color: #000000 !important;
@@ -717,7 +717,7 @@ nav button:active, nav a:active {
   outline-offset: 2px !important;
 }
 
-/* Trạng thái lỗi (Error) ngoài trời: viền đỏ đậm, chữ đỏ đen rõ ràng */
+/* Tráº¡ng thÃ¡i lá»—i (Error) ngoÃ i trá»i: viá»n Ä‘á» Ä‘áº­m, chá»¯ Ä‘á» Ä‘en rÃµ rÃ ng */
 .outdoor-high-contrast .bg-red-50,
 .outdoor-high-contrast .bg-rose-50,
 .outdoor-high-contrast [class*="border-red"],
@@ -728,7 +728,7 @@ nav button:active, nav a:active {
   color: #7F1D1D !important;
 }
 
-/* Trạng thái vô hiệu hóa (Disabled): vân sọc hoặc viền đứt đoạn rõ nét */
+/* Tráº¡ng thÃ¡i vÃ´ hiá»‡u hÃ³a (Disabled): vÃ¢n sá»c hoáº·c viá»n Ä‘á»©t Ä‘oáº¡n rÃµ nÃ©t */
 .outdoor-high-contrast button:disabled,
 .outdoor-high-contrast [aria-disabled="true"],
 .outdoor-high-contrast button[disabled] {
@@ -739,7 +739,7 @@ nav button:active, nav a:active {
   cursor: not-allowed !important;
 }
 
-/* Chòi/Ô câu đang chọn ở chế độ ngoài trời */
+/* ChÃ²i/Ã” cÃ¢u Ä‘ang chá»n á»Ÿ cháº¿ Ä‘á»™ ngoÃ i trá»i */
 .outdoor-high-contrast .hut-selected-outdoor {
   background-color: #15803D !important;
   color: #FFFFFF !important;
@@ -751,7 +751,7 @@ nav button:active, nav a:active {
   color: #FFFFFF !important;
 }
 
-/* Chòi/Ô câu trống ở chế độ ngoài trời */
+/* ChÃ²i/Ã” cÃ¢u trá»‘ng á»Ÿ cháº¿ Ä‘á»™ ngoÃ i trá»i */
 .outdoor-high-contrast .hut-available-outdoor {
   background-color: #FFFFFF !important;
   color: #000000 !important;
@@ -762,7 +762,7 @@ nav button:active, nav a:active {
   color: #000000 !important;
 }
 
-/* Chòi/Ô câu bận ở chế độ ngoài trời */
+/* ChÃ²i/Ã” cÃ¢u báº­n á»Ÿ cháº¿ Ä‘á»™ ngoÃ i trá»i */
 .outdoor-high-contrast .hut-occupied-outdoor {
   background-color: #CBD5E1 !important;
   color: #334155 !important;
@@ -827,4 +827,7 @@ nav button:active, nav a:active {
   .home-welcome-content { flex-direction: column; align-items: stretch; gap: 12px; }
   .home-welcome-content > a { min-height: 44px; margin-left: 0; }
 }
+
+
+
 

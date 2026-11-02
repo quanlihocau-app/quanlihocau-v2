@@ -246,8 +246,16 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="vi" className="h-full antialiased font-serif">
+        <html lang="vi" className="h-full antialiased">
             <head>
+                {/* Brand Font: Be Vietnam Pro (body) — preconnect for speed */}
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+                <link
+                    href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+                    rel="stylesheet"
+                />
                 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
                 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
                 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
@@ -264,7 +272,10 @@ export default function RootLayout({
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema).replace(/</g, "\\u003c") }}
                 />
             </head>
-            <body className="min-h-full flex flex-col bg-[#FAFAF7] text-[#1A1A1A] selection:bg-[#EAEFEA] selection:text-[#2C4C3B]">
+            <body
+                className="min-h-full flex flex-col bg-white text-[#111827] selection:bg-[#E8F0EC] selection:text-[#1B3B2B]"
+                style={{ fontFamily: "'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif" }}
+            >
                 <Providers>
                     <Suspense fallback={null}>
                         <PageProgressBar />

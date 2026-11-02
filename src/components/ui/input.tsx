@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 
 export interface InputProps
     extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -7,17 +7,23 @@ export interface InputProps
     helperText?: string;
 }
 
+/**
+ * Input â€” Brand-standard text input.
+ * 48px height, #E5E7EB border, focus ring #1B3B2B, sans-serif body text.
+ */
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ({ label, error, helperText, className = "", id, ...props }, ref) => {
-        const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
-        const resolvedInputMode = props.inputMode || (props.type === "number" ? "decimal" : undefined);
+        const inputId =
+            id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+        const resolvedInputMode =
+            props.inputMode || (props.type === "number" ? "decimal" : undefined);
 
         return (
-            <div className="space-y-1 w-full font-serif">
+            <div className="flex flex-col gap-1.5 w-full">
                 {label && (
                     <label
                         htmlFor={inputId}
-                        className="block text-xs font-bold text-[#1A1A1A] uppercase tracking-wide font-serif"
+                        className="text-sm font-medium text-[#111827]"
                     >
                         {label}
                     </label>
@@ -26,16 +32,23 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     id={inputId}
                     ref={ref}
                     inputMode={resolvedInputMode}
-                    className={`h-12 w-full rounded-2xl border bg-[#F8FAFC] px-3.5 text-base font-normal text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-white focus:border-2 focus:border-[#16A34A] transition-all font-serif shadow-2xs ${
+                    className={[
+                        "h-12 w-full rounded-lg border bg-white px-4",
+                        "text-sm text-[#111827] placeholder:text-[#9CA3AF]",
+                        "focus:outline-none focus:border-[#1B3B2B] focus:ring-1 focus:ring-[#1B3B2B]",
+                        "transition-colors",
                         error
-                            ? "border-[#DC2626] focus:border-[#DC2626] bg-[#FEF2F2]/50 text-[#DC2626]"
-                            : "border-[#CBD5E1]"
-                    } ${className}`}
+                            ? "border-[#B91C1C] bg-[#FEF2F2] text-[#B91C1C]"
+                            : "border-[#E5E7EB]",
+                        className,
+                    ].join(" ")}
                     {...props}
                 />
-                {error && <p className="text-xs font-semibold text-[#DC2626] font-serif">{error}</p>}
+                {error && (
+                    <p className="text-xs font-medium text-[#B91C1C]">{error}</p>
+                )}
                 {helperText && !error && (
-                    <p className="text-xs text-[#64748B] font-serif">{helperText}</p>
+                    <p className="text-xs text-[#4B5563]">{helperText}</p>
                 )}
             </div>
         );
@@ -51,16 +64,24 @@ export interface SelectProps
     helperText?: string;
 }
 
+/**
+ * Select â€” Brand-standard dropdown.
+ * Same 48px height, matching border/focus design as Input.
+ */
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-    ({ label, error, helperText, children, className = "", id, ...props }, ref) => {
-        const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+    (
+        { label, error, helperText, children, className = "", id, ...props },
+        ref,
+    ) => {
+        const selectId =
+            id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
 
         return (
-            <div className="space-y-1.5 w-full font-serif">
+            <div className="flex flex-col gap-1.5 w-full">
                 {label && (
                     <label
                         htmlFor={selectId}
-                        className="block text-xs font-bold text-[#0F172A] uppercase tracking-wide font-serif"
+                        className="text-sm font-medium text-[#111827]"
                     >
                         {label}
                     </label>
@@ -68,18 +89,25 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 <select
                     id={selectId}
                     ref={ref}
-                    className={`h-12 w-full rounded-2xl border bg-[#F8FAFC] px-3.5 text-base font-normal text-[#0F172A] focus:outline-none focus:bg-white focus:border-2 focus:border-[#16A34A] transition-all cursor-pointer font-serif shadow-2xs ${
+                    className={[
+                        "h-12 w-full rounded-lg border bg-white px-4",
+                        "text-sm text-[#111827]",
+                        "focus:outline-none focus:border-[#1B3B2B] focus:ring-1 focus:ring-[#1B3B2B]",
+                        "transition-colors cursor-pointer",
                         error
-                            ? "border-[#DC2626] focus:border-[#DC2626] bg-[#FEF2F2]/50 text-[#DC2626]"
-                            : "border-[#CBD5E1]"
-                    } ${className}`}
+                            ? "border-[#B91C1C] bg-[#FEF2F2] text-[#B91C1C]"
+                            : "border-[#E5E7EB]",
+                        className,
+                    ].join(" ")}
                     {...props}
                 >
                     {children}
                 </select>
-                {error && <p className="text-xs font-semibold text-[#DC2626] font-serif">{error}</p>}
+                {error && (
+                    <p className="text-xs font-medium text-[#B91C1C]">{error}</p>
+                )}
                 {helperText && !error && (
-                    <p className="text-xs text-[#64748B] font-serif">{helperText}</p>
+                    <p className="text-xs text-[#4B5563]">{helperText}</p>
                 )}
             </div>
         );
@@ -87,3 +115,4 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 );
 
 Select.displayName = "Select";
+
