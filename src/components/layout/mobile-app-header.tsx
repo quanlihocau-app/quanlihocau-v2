@@ -83,7 +83,7 @@ export function MobileAppHeader({
                         ? "#000000"
                         : "linear-gradient(180deg, #031A0F 0%, #082E1C 50%, #041D12 100%)",
                 }}
-                className={`sticky top-0 z-30 shrink-0 font-serif transition-colors relative overflow-hidden ${
+                className={`sticky top-0 z-30 shrink-0 font-serif transition-colors overflow-hidden ${
                     isOutdoorMode
                         ? "border-b-2 border-amber-400 text-white shadow-md"
                         : "text-white border-b border-emerald-700/40 shadow-[0_4px_24px_rgba(2,26,15,0.45)]"
@@ -100,7 +100,7 @@ export function MobileAppHeader({
                     />
                 )}
 
-                <div className="relative px-3.5 sm:px-4 pb-2.5 space-y-2.5">
+                <div className="px-3.5 sm:px-4 pb-2.5 space-y-2.5">
                     {/* ── Top Bar: Tên App & Hotline Nổi Bật ─────────── */}
                     <div className="flex items-center justify-between gap-2 pt-0.5 border-b border-emerald-800/30 pb-1.5">
                         {/* App Brand Name */}

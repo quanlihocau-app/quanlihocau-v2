@@ -1057,10 +1057,10 @@ export function DailyReportView({
                 {/* ── CHỐT CA MODAL CHUYÊN NGHIỆP ─────────────────────── */}
                 {isModalOpen && (
                     <div
-                        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-2xs modal-backdrop-animate font-serif"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs modal-backdrop-animate font-serif"
                         onClick={onBackdropClick}
                     >
-                        <div className="w-full max-w-md sm:rounded-2xl rounded-t-3xl bg-white border border-slate-200 overflow-hidden flex flex-col modal-content-animate font-serif max-h-[92dvh] overflow-y-auto shadow-2xl">
+                        <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 overflow-hidden flex flex-col modal-content-animate font-serif max-h-[88dvh] overflow-y-auto shadow-2xl pb-[max(1rem,env(safe-area-inset-bottom,1rem))]">
                             {/* Modal Header */}
                             <div className="flex items-center justify-between border-b border-slate-100 p-4 sticky top-0 bg-white z-10">
                                 <div className="flex items-center gap-2">
