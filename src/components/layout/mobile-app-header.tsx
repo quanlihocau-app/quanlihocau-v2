@@ -34,32 +34,34 @@ export function MobileAppHeader({
     const { isOutdoorMode, toggleOutdoorMode } = useOutdoorMode();
     const effectiveOnline = isOnlineProp !== undefined ? isOnlineProp : autoOnline;
 
-    const [currentLakeName, setCurrentLakeName] = useState(lakeName);
-    const [currentPhone, setCurrentPhone] = useState(propPhone || "0855 550 813");
+    const [overrideLakeName, setOverrideLakeName] = useState<string | null>(null);
+    const [overridePhone, setOverridePhone] = useState<string | null>(null);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
-    // Sync if lakeName prop changes
-    useEffect(() => {
-        setCurrentLakeName(lakeName);
-    }, [lakeName]);
+    const currentLakeName = overrideLakeName ?? lakeName;
+    const currentPhone = overridePhone ?? propPhone ?? "0855 550 813";
 
-    // Fetch lake contactPhone on mount if not provided
+    // Fetch lake contactPhone and name on mount if available
     useEffect(() => {
         let isMounted = true;
         fetch("/api/me/account")
             .then((res) => (res.ok ? res.json() : null))
             .then((data) => {
                 if (isMounted && data) {
-                    if (data.lake?.name) setCurrentLakeName(data.lake.name);
+                    if (data.lake?.name && !overrideLakeName) {
+                        setOverrideLakeName(data.lake.name);
+                    }
                     const phone = data.lake?.contactPhone || data.user?.phone;
-                    if (phone) setCurrentPhone(phone);
+                    if (phone && !overridePhone) {
+                        setOverridePhone(phone);
+                    }
                 }
             })
             .catch(() => {});
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [overrideLakeName, overridePhone]);
 
     // Extract short name for avatar
     const avatarInitials = currentLakeName
@@ -75,11 +77,16 @@ export function MobileAppHeader({
     return (
         <>
             <header
-                style={{ paddingTop: "max(10px, env(safe-area-inset-top, 10px))" }}
+                style={{
+                    paddingTop: "max(10px, env(safe-area-inset-top, 10px))",
+                    background: isOutdoorMode
+                        ? "#000000"
+                        : "linear-gradient(180deg, #031A0F 0%, #082E1C 50%, #041D12 100%)",
+                }}
                 className={`sticky top-0 z-30 shrink-0 font-serif transition-colors relative overflow-hidden ${
                     isOutdoorMode
-                        ? "bg-black border-b-2 border-amber-400 text-white shadow-md"
-                        : "bg-linear-to-b from-[#031A0F] via-[#082E1C] to-[#041D12] text-white border-b border-emerald-700/40 shadow-[0_4px_24px_rgba(2,26,15,0.45)]"
+                        ? "border-b-2 border-amber-400 text-white shadow-md"
+                        : "text-white border-b border-emerald-700/40 shadow-[0_4px_24px_rgba(2,26,15,0.45)]"
                 }`}
             >
                 {/* ── Luxury Specular Sheen (Vệt sáng sang trọng trên nền xanh đậm) ── */}
@@ -94,7 +101,7 @@ export function MobileAppHeader({
                 )}
 
                 <div className="relative px-3.5 sm:px-4 pb-2.5 space-y-2.5">
-                    {/* ── Top Bar: Tên App & Số Điện Thoại Nổi Bật ─────────── */}
+                    {/* ── Top Bar: Tên App & Hotline Nổi Bật ─────────── */}
                     <div className="flex items-center justify-between gap-2 pt-0.5 border-b border-emerald-800/30 pb-1.5">
                         {/* App Brand Name */}
                         <div className="flex items-center gap-1.5">
@@ -106,24 +113,24 @@ export function MobileAppHeader({
                             </span>
                         </div>
 
-                        {/* Hotline / Số điện thoại nổi bật */}
+                        {/* Hotline / Số điện thoại hồ nổi bật */}
                         <a
                             href={`tel:${currentPhone.replace(/\s+/g, "")}`}
                             className="group inline-flex items-center gap-1.5 rounded-full bg-emerald-950/80 hover:bg-emerald-900/90 border border-emerald-500/40 px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-amber-300 hover:text-amber-200 transition-all shadow-xs cursor-pointer active:scale-95"
                             title="Bấm để gọi hotline / số điện thoại hồ"
                         >
-                            <span className="text-[10px] sm:text-xs animate-bounce">📞</span>
+                            <span className="text-[10px] sm:text-xs">📞</span>
                             <span className="font-mono tracking-tight">{currentPhone}</span>
                         </a>
                     </div>
 
-                    {/* ── Middle Bar: Tên Hồ & Avatar (Bấm vào xổ menu) ───── */}
+                    {/* ── Middle Bar: Tên Hồ & Avatar (Bấm vào xổ menu) + Đồng Hồ ───── */}
                     <div className="flex items-center justify-between gap-3 min-w-0">
                         {/* Clickable Lake Identity (Avatar + Name) */}
                         <button
                             type="button"
                             onClick={() => setIsAccountModalOpen(true)}
-                            className="group flex items-center gap-2.5 min-w-0 text-left cursor-pointer active:scale-[0.99] transition-all p-1 -m-1 rounded-2xl hover:bg-emerald-900/30"
+                            className="group flex items-center gap-2.5 min-w-0 text-left cursor-pointer active:scale-[0.98] transition-all p-1 -m-1 rounded-2xl hover:bg-emerald-900/40 focus:outline-hidden"
                             title="Bấm vào để tùy chỉnh tài khoản, đổi tên hồ, đổi mật khẩu..."
                             aria-haspopup="dialog"
                         >
@@ -136,7 +143,7 @@ export function MobileAppHeader({
                                 </span>
                             </div>
 
-                            {/* Lake Name & Clock */}
+                            {/* Lake Name & Subtitle */}
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">
                                     <h2 className="text-[15px] sm:text-[17px] font-extrabold text-white group-hover:text-emerald-200 transition-colors leading-snug truncate drop-shadow-xs">
@@ -146,11 +153,17 @@ export function MobileAppHeader({
                                         ⚙️
                                     </span>
                                 </div>
-                                <div className="mt-0.5">
-                                    <HeaderClock theme={isOutdoorMode ? "light" : "dark"} />
-                                </div>
+                                <p className="text-[10px] text-emerald-300/70 group-hover:text-amber-200/90 transition-colors flex items-center gap-1">
+                                    <span>Tùy chỉnh tài khoản</span>
+                                    <span>▾</span>
+                                </p>
                             </div>
                         </button>
+
+                        {/* Realtime Clock */}
+                        <div className="shrink-0">
+                            <HeaderClock theme={isOutdoorMode ? "light" : "dark"} />
+                        </div>
                     </div>
 
                     {/* ── Bottom Bar: Badges, Offline Status & Quick Actions ── */}
@@ -270,8 +283,8 @@ export function MobileAppHeader({
                 isOpen={isAccountModalOpen}
                 onClose={() => setIsAccountModalOpen(false)}
                 initialLakeName={currentLakeName}
-                onLakeNameChange={(newName) => setCurrentLakeName(newName)}
-                onPhoneChange={(newPhone) => setCurrentPhone(newPhone)}
+                onLakeNameChange={(newName) => setOverrideLakeName(newName)}
+                onPhoneChange={(newPhone) => setOverridePhone(newPhone)}
             />
         </>
     );

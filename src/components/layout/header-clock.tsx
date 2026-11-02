@@ -48,10 +48,12 @@ export const HeaderClock = memo(function HeaderClock({ theme = "dark" }: HeaderC
 
     return (
         <div
+            suppressHydrationWarning
             className="flex flex-wrap items-center gap-x-2 gap-y-1 text-left"
             title="Thời gian thực máy chủ (GMT+7)"
         >
             <span
+                suppressHydrationWarning
                 className={`inline-flex items-center gap-1 font-mono text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums transition-colors ${
                     isDark
                         ? "text-emerald-300 bg-emerald-950/90 border border-emerald-500/40 shadow-xs shadow-emerald-950/50"
@@ -64,6 +66,7 @@ export const HeaderClock = memo(function HeaderClock({ theme = "dark" }: HeaderC
                 {timeStr}
             </span>
             <span
+                suppressHydrationWarning
                 className={`inline-flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded-md tabular-nums transition-colors ${
                     isDark
                         ? "text-emerald-200/80 bg-emerald-900/40 border border-emerald-700/30"

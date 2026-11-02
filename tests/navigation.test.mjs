@@ -73,6 +73,7 @@ test("Home entity links preserve the session ID and return from invoice to home"
         "@/components/layout/mobile-bottom-nav": { MobileBottomNav: "nav" },
         "@/components/ui/search-bar": { SearchBar: "search" },
         "@/components/ui/badge": { Badge: "badge", SessionStatusBadge: "status" },
+        "@/components/approvals/pending-approvals-section": { PendingApprovalsSection: () => null },
     });
     const links = elements(HomeMobileView({ lakeName: "Synthetic lake", activeSessionsCount: 1, totalHutsCount: 10, todayRevenue: 160000,
         recentSessions: [{ id: "session-b", customerName: "B", huts: ["Ô số 2"], status: "ACTIVE", packageName: "4h" }],

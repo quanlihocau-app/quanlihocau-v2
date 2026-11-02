@@ -269,6 +269,11 @@
       "location": null
     },
     {
+      "target": "/api/admin/lakes/isolated-no-such-id/members",
+      "status": 401,
+      "location": null
+    },
+    {
       "target": "/api/admin/lakes/isolated-no-such-id/subscription",
       "status": 405,
       "location": null
@@ -326,6 +331,16 @@
     {
       "target": "/api/admin/users/isolated-no-such-id",
       "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/approvals",
+      "status": 403,
+      "location": null
+    },
+    {
+      "target": "/api/approvals/isolated-no-such-id",
+      "status": 405,
       "location": null
     },
     {
@@ -516,6 +531,31 @@
     {
       "target": "/api/lake/profile",
       "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/me/account",
+      "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/me/change-lake-name",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/me/change-password",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/me/change-phone",
+      "status": 405,
+      "location": null
+    },
+    {
+      "target": "/api/me/revoke-sessions",
+      "status": 405,
       "location": null
     },
     {

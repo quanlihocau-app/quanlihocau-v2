@@ -54,13 +54,16 @@ export function AccountSettingsModal({
     const [confirmPassword, setConfirmPassword] = useState("");
     const [phoneInput, setPhoneInput] = useState("");
 
+    // Handle close with reset
+    const handleClose = () => {
+        setActiveView("MENU");
+        setMessage(null);
+        onClose();
+    };
+
     // Load account data when modal opens
     useEffect(() => {
-        if (!isOpen) {
-            setActiveView("MENU");
-            setMessage(null);
-            return;
-        }
+        if (!isOpen) return;
 
         let isMounted = true;
         setIsLoading(true);
@@ -255,7 +258,7 @@ export function AccountSettingsModal({
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in font-serif">
             {/* Backdrop click to close */}
-            <div className="absolute inset-0" onClick={onClose} />
+            <div className="absolute inset-0" onClick={handleClose} />
 
             {/* Modal Dialog Card */}
             <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-emerald-600/30 bg-[#061F13] text-stone-100 shadow-2xl p-5 sm:p-6 z-10 space-y-4">
@@ -291,7 +294,7 @@ export function AccountSettingsModal({
                     </div>
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="h-8 w-8 rounded-full bg-emerald-950 text-stone-300 hover:text-white hover:bg-emerald-900 flex items-center justify-center text-sm font-bold transition-all cursor-pointer border border-emerald-700/40"
                     >
                         ✕
@@ -317,26 +320,32 @@ export function AccountSettingsModal({
                     <div className="space-y-4">
                         {/* Profile Info Summary Box */}
                         <div className="rounded-2xl border border-emerald-500/20 bg-linear-to-br from-emerald-950/80 to-[#0A2E1C]/90 p-3.5 space-y-1.5">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-emerald-300 font-semibold">Tên hồ:</span>
-                                <span className="text-xs font-bold text-white">{accountData?.lake?.name || initialLakeName}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-emerald-300 font-semibold">Tài khoản:</span>
-                                <span className="text-xs font-medium text-stone-200">{accountData?.user?.name || "Người dùng"}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-emerald-300 font-semibold">Số điện thoại:</span>
-                                <span className="text-xs font-bold text-amber-300">
-                                    {accountData?.user?.phone || accountData?.lake?.contactPhone || "Chưa cập nhật"}
-                                </span>
-                            </div>
-                            <div className="flex items-center justify-between pt-1 border-t border-emerald-800/30">
-                                <span className="text-[11px] text-stone-400">Vai trò:</span>
-                                <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-400/30">
-                                    {roleTitle}
-                                </span>
-                            </div>
+                            {isLoading && !accountData ? (
+                                <p className="text-xs text-emerald-300 animate-pulse text-center py-2">Đang tải thông tin tài khoản...</p>
+                            ) : (
+                                <>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-emerald-300 font-semibold">Tên hồ:</span>
+                                        <span className="text-xs font-bold text-white">{accountData?.lake?.name || initialLakeName}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-emerald-300 font-semibold">Tài khoản:</span>
+                                        <span className="text-xs font-medium text-stone-200">{accountData?.user?.name || "Người dùng"}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-emerald-300 font-semibold">Số điện thoại:</span>
+                                        <span className="text-xs font-bold text-amber-300">
+                                            {accountData?.user?.phone || accountData?.lake?.contactPhone || "Chưa cập nhật"}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between pt-1 border-t border-emerald-800/30">
+                                        <span className="text-[11px] text-stone-400">Vai trò:</span>
+                                        <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-400/30">
+                                            {roleTitle}
+                                        </span>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         {/* Menu Actions List */}
