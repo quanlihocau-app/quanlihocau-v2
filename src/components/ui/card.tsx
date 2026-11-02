@@ -11,17 +11,17 @@ export function Card({
     ...props
 }: CardProps) {
     const variantClasses = {
-        default: "border-[#E2E8F0] bg-white text-[#0F172A] shadow-2xs",
-        muted: "border-[#E2E8F0] bg-[#F8FAFC] text-[#475569]",
-        selected: "border-2 border-[#16A34A] bg-[#F0FDF4] text-[#0F172A] shadow-xs",
-        highlight: "border-2 border-[#16A34A] bg-[#DCFCE7]/40 text-[#0F172A]",
-        warning: "border-2 border-[#D97706]/40 bg-[#FFFBEB] text-[#0F172A]",
-        danger: "border-2 border-[#DC2626]/40 bg-[#FEF2F2] text-[#0F172A]",
+        default: "border-[#E5E7EB] bg-white text-[#111827] shadow-2xs",
+        muted: "border-[#E5E7EB] bg-[#F8FAF8] text-[#4B5563]",
+        selected: "border-2 border-[#1B3B2B] bg-[#E8F0EC]/50 text-[#111827] shadow-xs",
+        highlight: "border border-[#1B3B2B] bg-[#E8F0EC]/40 text-[#111827]",
+        warning: "border border-[#92400E]/40 bg-[#FFFBEB] text-[#111827]",
+        danger: "border border-[#B91C1C]/40 bg-[#FEF2F2] text-[#111827]",
     }[variant];
 
     return (
         <div
-            className={`rounded-2xl border p-4 transition-all font-serif ${variantClasses} ${className}`}
+            className={`rounded-xl border p-4 transition-all font-serif ${variantClasses} ${className}`}
             {...props}
         >
             {children}
@@ -42,14 +42,14 @@ export function CardHeader({
 }) {
     return (
         <div
-            className={`flex items-start justify-between gap-3 border-b border-[#E0E0E0] pb-2.5 ${className}`}
+            className={`flex items-start justify-between gap-3 border-b border-[#E5E7EB] pb-2.5 ${className}`}
         >
             <div>
-                <h3 className="text-base font-bold text-[#1A1A1A] sm:text-lg font-serif">
+                <h3 className="text-base font-bold text-[#111827] sm:text-lg font-serif">
                     {title}
                 </h3>
                 {subtitle && (
-                    <p className="mt-0.5 text-xs text-[#555555] font-serif">{subtitle}</p>
+                    <p className="mt-0.5 text-xs text-[#4B5563] font-serif">{subtitle}</p>
                 )}
             </div>
             {action && <div className="shrink-0">{action}</div>}

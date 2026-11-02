@@ -1,14 +1,10 @@
-﻿import React from "react";
+import React from "react";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     variant?: "default" | "success" | "warning" | "danger" | "info" | "neutral";
     icon?: React.ReactNode;
 }
 
-/**
- * Badge â€” Brand-standard status chip.
- * Clean 1px border, no heavy shadows. Text 12px semibold, readable for seniors.
- */
 export function Badge({
     children,
     variant = "default",
@@ -20,14 +16,14 @@ export function Badge({
         default: "bg-[#E8F0EC] text-[#1B3B2B] border border-[#1B3B2B]/20",
         success: "bg-[#F0FDF4] text-[#166534] border border-[#166534]/20",
         warning: "bg-[#FFFBEB] text-[#92400E] border border-[#92400E]/20",
-        danger:  "bg-[#FEF2F2] text-[#B91C1C] border border-[#B91C1C]/20",
-        info:    "bg-[#EFF6FF] text-[#1E40AF] border border-[#1E40AF]/20",
+        danger: "bg-[#FEF2F2] text-[#B91C1C] border border-[#B91C1C]/20",
+        info: "bg-[#EFF6FF] text-[#1E40AF] border border-[#1E40AF]/20",
         neutral: "bg-[#F8FAF8] text-[#4B5563] border border-[#E5E7EB]",
     }[variant];
 
     return (
         <span
-            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-xs font-semibold ${variantClasses} ${className}`}
+            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-[11px] font-bold tracking-normal font-serif ${variantClasses} ${className}`}
             {...props}
         >
             {icon && <span className="shrink-0">{icon}</span>}
@@ -42,9 +38,11 @@ export function SessionStatusBadge({ status }: { status: string }) {
             return (
                 <Badge
                     variant="success"
-                    icon={<span className="h-1.5 w-1.5 rounded-md bg-[#166534]" />}
+                    icon={
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#166534]" />
+                    }
                 >
-                    Äang cÃ¢u
+                    Đang câu
                 </Badge>
             );
         case "COMPLETED":
@@ -57,7 +55,7 @@ export function SessionStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    ÄÃ£ hoÃ n thÃ nh
+                    Đã hoàn thành
                 </Badge>
             );
         case "CANCELLED":
@@ -70,7 +68,7 @@ export function SessionStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    ÄÃ£ há»§y
+                    Đã hủy
                 </Badge>
             );
         default:
@@ -90,7 +88,7 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    Táº¡m tÃ­nh
+                    Tạm tính
                 </Badge>
             );
         case "PAID":
@@ -103,7 +101,7 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    ÄÃ£ thanh toÃ¡n
+                    Đã thanh toán
                 </Badge>
             );
         case "PARTIALLY_PAID":
@@ -116,7 +114,7 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    Thanh toÃ¡n 1 pháº§n
+                    Thanh toán 1 phần
                 </Badge>
             );
         case "VOIDED":
@@ -129,11 +127,10 @@ export function InvoiceStatusBadge({ status }: { status: string }) {
                         </svg>
                     }
                 >
-                    ÄÃ£ há»§y (VOIDED)
+                    Đã hủy (VOIDED)
                 </Badge>
             );
         default:
             return <Badge variant="neutral">{status}</Badge>;
     }
 }
-

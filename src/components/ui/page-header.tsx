@@ -1,7 +1,15 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import React from "react";
 
-export interface PageHeaderProps {
+export function PageHeader({
+    title,
+    subtitle,
+    backHref,
+    backLabel = "Quay lại",
+    badge,
+    action,
+    className = "",
+}: {
     title: string;
     subtitle?: string;
     backHref?: string;
@@ -9,31 +17,17 @@ export interface PageHeaderProps {
     badge?: React.ReactNode;
     action?: React.ReactNode;
     className?: string;
-}
-
-/**
- * PageHeader â€” Brand-standard inner page header.
- * Uses 48px back button (WCAG AAA), serif title, clean border structure.
- */
-export function PageHeader({
-    title,
-    subtitle,
-    backHref,
-    backLabel = "Quay láº¡i",
-    badge,
-    action,
-    className = "",
-}: PageHeaderProps) {
+}) {
     return (
         <header
-            className={`flex items-center justify-between gap-3 px-4 py-3 bg-white border-b border-[#E5E7EB] ${className}`}
+            className={`mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center ${className}`}
         >
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3">
                 {backHref && (
                     <Link
                         href={backHref}
                         aria-label={backLabel}
-                        className="flex h-12 w-12 min-w-12 items-center justify-center rounded-lg border border-[#E5E7EB] bg-white text-[#111827] hover:bg-[#F8FAF8] active:bg-[#E8F0EC] transition-colors shrink-0"
+                        className="flex h-11 w-11 min-w-11 items-center justify-center rounded-lg border border-[#E5E7EB] bg-white text-[#111827] transition-colors hover:bg-[#F8FAF8] active:scale-95"
                     >
                         <svg
                             className="h-5 w-5"
@@ -50,22 +44,20 @@ export function PageHeader({
                         </svg>
                     </Link>
                 )}
-                <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <h1 className="text-xl font-bold font-serif text-[#111827] leading-tight truncate">
+                <div>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-xl font-bold tracking-tight text-[#111827] sm:text-2xl font-serif">
                             {title}
                         </h1>
-                        {badge && <div className="shrink-0">{badge}</div>}
+                        {badge && <div>{badge}</div>}
                     </div>
                     {subtitle && (
-                        <p className="mt-0.5 text-sm text-[#4B5563]">{subtitle}</p>
+                        <p className="mt-0.5 text-xs text-[#4B5563]">{subtitle}</p>
                     )}
                 </div>
             </div>
 
-            {action && (
-                <div className="flex items-center gap-2 shrink-0">{action}</div>
-            )}
+            {action && <div className="flex items-center gap-2 shrink-0">{action}</div>}
         </header>
     );
 }
@@ -81,4 +73,3 @@ export function Skeleton({
         />
     );
 }
-

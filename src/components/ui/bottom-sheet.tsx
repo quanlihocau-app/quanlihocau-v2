@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -11,15 +11,9 @@ export interface BottomSheetProps {
     children: React.ReactNode;
     footer?: React.ReactNode;
     className?: string;
-    /** "center" = centered dialog (default). "bottom" = slide-up sheet on mobile */
     position?: "center" | "bottom";
 }
 
-/**
- * BottomSheet / Modal â€” Brand-standard dialog.
- * Clean white surface, 1px #E5E7EB borders, serif heading, 48px close button.
- * No heavy shadows, no rounded-3xl spam, no dark overlay blur.
- */
 export function BottomSheet({
     isOpen,
     onClose,
@@ -28,7 +22,6 @@ export function BottomSheet({
     children,
     footer,
     className = "",
-    position = "center",
 }: BottomSheetProps) {
     const [mounted, setMounted] = useState(false);
 
@@ -37,17 +30,19 @@ export function BottomSheet({
         return () => clearTimeout(timer);
     }, []);
 
-    // Escape key + body scroll lock
+    // Handle Escape key to close & body scroll lock
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && isOpen) onClose();
+            if (e.key === "Escape" && isOpen) {
+                onClose();
+            }
         };
         if (isOpen) {
-            const prev = document.body.style.overflow;
+            const originalOverflow = document.body.style.overflow;
             document.body.style.overflow = "hidden";
             window.addEventListener("keydown", handleKeyDown);
             return () => {
-                document.body.style.overflow = prev;
+                document.body.style.overflow = originalOverflow;
                 window.removeEventListener("keydown", handleKeyDown);
             };
         }
@@ -55,19 +50,9 @@ export function BottomSheet({
 
     if (!isOpen || !mounted) return null;
 
-    const panelClasses =
-        position === "bottom"
-            ? "relative w-full max-w-lg flex flex-col bg-white rounded-t-xl border border-[#E5E7EB] border-b-0 max-h-[88dvh] overflow-hidden"
-            : `relative my-auto flex max-h-[88dvh] w-full max-w-lg flex-col bg-white overflow-hidden rounded-xl border border-[#E5E7EB] ${className}`;
-
-    const overlayClasses =
-        position === "bottom"
-            ? "fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0"
-            : "fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4";
-
-    const modal = (
+    const modalContent = (
         <div
-            className={overlayClasses}
+            className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-black/50 backdrop-blur-2xs modal-backdrop-animate font-serif"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
@@ -75,20 +60,20 @@ export function BottomSheet({
             role="dialog"
         >
             <div
-                className={panelClasses}
+                className={`relative my-auto flex max-h-[90dvh] w-full max-w-lg flex-col bg-white overflow-hidden rounded-xl border border-[#E5E7EB] shadow-xl modal-content-animate ${className}`}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                {/* Header */}
                 {(title || description) && (
-                    <div className="flex items-start justify-between border-b border-[#E5E7EB] bg-white px-5 py-4 shrink-0">
-                        <div className="min-w-0 pr-2">
+                    <div className="flex items-start justify-between border-b border-[#E5E7EB] bg-[#FFFFFF] px-5 sm:px-6 py-4 shrink-0">
+                        <div>
                             {title && (
-                                <h3 className="text-base font-bold font-serif text-[#111827] leading-snug">
+                                <h3 className="text-base font-bold text-[#111827] font-serif">
                                     {title}
                                 </h3>
                             )}
                             {description && (
-                                <p className="mt-0.5 text-sm text-[#4B5563]">
+                                <p className="mt-0.5 text-xs text-[#1B3B2B] font-bold uppercase tracking-wider font-serif">
                                     {description}
                                 </p>
                             )}
@@ -96,14 +81,14 @@ export function BottomSheet({
                         <button
                             type="button"
                             onClick={onClose}
-                            aria-label="ÄÃ³ng"
-                            className="flex h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-lg border border-[#E5E7EB] bg-white text-[#4B5563] hover:bg-[#F8FAF8] active:bg-[#E8F0EC] transition-colors cursor-pointer"
+                            aria-label="Đóng"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F8FAF8] text-[#4B5563] hover:bg-[#E8F0EC] transition-colors cursor-pointer border border-[#E5E7EB]"
                         >
                             <svg
-                                className="h-5 w-5"
+                                className="h-4 w-4"
                                 fill="none"
                                 viewBox="0 0 24 24"
-                                strokeWidth={2}
+                                strokeWidth={2.2}
                                 stroke="currentColor"
                             >
                                 <path
@@ -116,14 +101,18 @@ export function BottomSheet({
                     </div>
                 )}
 
-                {/* â”€â”€ Content (scrollable) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-                <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 scroll-smooth">
+                {/* Content */}
+                <div
+                    className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 scroll-smooth"
+                >
                     {children}
                 </div>
 
-                {/* â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                {/* Optional Footer */}
                 {footer && (
-                    <div className="border-t border-[#E5E7EB] bg-[#F8FAF8] px-5 py-3.5 shrink-0">
+                    <div
+                        className="border-t border-[#E5E7EB] bg-[#F8FAF8] px-5 py-3 shrink-0"
+                    >
                         {footer}
                     </div>
                 )}
@@ -131,6 +120,5 @@ export function BottomSheet({
         </div>
     );
 
-    return createPortal(modal, document.body);
+    return createPortal(modalContent, document.body);
 }
-
