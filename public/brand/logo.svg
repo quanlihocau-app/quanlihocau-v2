@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" role="img" aria-label="Quản Lý Hồ Câu logo">
+  <!-- Nền tròn màu xanh rừng -->
+  <rect width="200" height="200" rx="40" fill="#1B3B2B"/>
+
+  <!-- Sóng nước (hồ) — 3 lớp -->
+  <path d="M28 130 Q50 118 72 130 Q94 142 116 130 Q138 118 160 130 Q170 136 172 142" stroke="#4a8f63" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M22 145 Q46 132 70 145 Q94 158 118 145 Q142 132 166 145 Q172 149 174 154" stroke="#4a8f63" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+  <path d="M28 160 Q52 148 76 160 Q100 172 124 160 Q148 148 172 160" stroke="#4a8f63" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.35"/>
+
+  <!-- Cần câu -->
+  <line x1="62" y1="30" x2="148" y2="118" stroke="#8fba9a" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Đầu cần -->
+  <circle cx="62" cy="30" r="4" fill="#c9e0c9"/>
+  <!-- Dây câu -->
+  <path d="M148 118 Q160 100 155 125" stroke="#c9e0c9" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Con cá — hướng phải, thân ellipse -->
+  <ellipse cx="100" cy="110" rx="28" ry="14" fill="#E8F0EC" transform="rotate(-15 100 110)"/>
+  <!-- Vảy cá highlight -->
+  <ellipse cx="96" cy="107" rx="16" ry="9" fill="#d4e6da" transform="rotate(-15 96 107)" opacity="0.6"/>
+  <!-- Đuôi cá -->
+  <path d="M122 97 L138 85 L133 100 L138 115 Z" fill="#E8F0EC"/>
+  <!-- Mắt cá -->
+  <circle cx="80" cy="108" r="3" fill="#1B3B2B"/>
+  <circle cx="79" cy="107" r="1" fill="#ffffff" opacity="0.8"/>
+  <!-- Miệng cá -->
+  <path d="M72 112 Q70 115 74 116" stroke="#1B3B2B" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+  <!-- Chữ "HC" nhỏ ở góc dưới phải — thương hiệu -->
+  <text x="148" y="184" font-family="'Be Vietnam Pro', Arial, sans-serif" font-size="13" font-weight="700" fill="#8fba9a" letter-spacing="1" text-anchor="middle" opacity="0.9">HC</text>
+</svg>

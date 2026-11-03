@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { TRIAL_DAYS } from "@/lib/vietqr";
 
 export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
@@ -8,7 +9,10 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
         <div className="brand-landing">
             <a href="#noi-dung" className="brand-skip">Đến nội dung chính</a>
             <header className="brand-header"><div className="brand-wrap brand-header-inner">
-                <Link href="/" className="brand-logo" aria-label="Quản Lí Hồ Câu — Trang chủ"><span className="brand-mark" aria-hidden="true">h<span>c</span></span><span><strong className="brand-name">Quản Lí Hồ Câu</strong><span className="brand-domain">quanlihocau.com</span></span></Link>
+                <Link href="/" className="brand-logo" aria-label="Quản Lí Hồ Câu — Trang chủ">
+                    <Image src="/brand/logo.svg" alt="Logo Quản Lý Hồ Câu" width={48} height={48} priority className="brand-logo-img" />
+                    <span><strong className="brand-name">Quản Lí Hồ Câu</strong><span className="brand-domain">quanlihocau.com</span></span>
+                </Link>
                 <nav className="brand-nav" aria-label="Điều hướng trang giới thiệu"><a href="#cach-dung" className="brand-desktop-link">Cách dùng</a><a href="#tinh-nang" className="brand-desktop-link">Tính năng</a><Link href="/bang-gia" className="brand-desktop-link">Bảng giá</Link><Link href={isLoggedIn ? "/sessions" : "/login"} className="brand-login">{isLoggedIn ? "Vào app" : "Đăng nhập"} ↗</Link></nav>
             </div></header>
             <main id="noi-dung">

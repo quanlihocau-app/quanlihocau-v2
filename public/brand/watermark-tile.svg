@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80" fill="none" width="120" height="80">
+  <!-- Con cá nhỏ, thanh lịch -->
+  <ellipse cx="46" cy="38" rx="14" ry="7" fill="#1B3B2B" transform="rotate(-10 46 38)"/>
+  <path d="M58 32 L66 26 L63 35 L66 44 Z" fill="#1B3B2B"/>
+  <circle cx="36" cy="37" r="2" fill="#E8F0EC"/>
+  <!-- Sóng nước -->
+  <path d="M8 58 Q22 52 36 58 Q50 64 64 58 Q78 52 92 58" stroke="#1B3B2B" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M14 68 Q28 62 42 68 Q56 74 70 68 Q84 62 98 68" stroke="#1B3B2B" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <!-- Cần câu -->
+  <line x1="24" y1="8" x2="50" y2="32" stroke="#1B3B2B" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+  <circle cx="24" cy="8" r="2" fill="#1B3B2B" opacity="0.7"/>
+  <path d="M50 32 Q56 24 54 36" stroke="#1B3B2B" stroke-width="1" fill="none" opacity="0.7"/>
+</svg>
