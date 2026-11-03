@@ -775,7 +775,7 @@ nav button:active, nav a:active {
 
 /* Screen-only readability; never change receipt dimensions or business state. */
 @media screen {
-  .mobile-pos-shell { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  .mobile-pos-shell { -webkit-text-size-adjust: 100%; }
   .mobile-pos-frame main { min-width: 0; }
   .mobile-pos-shell :is(input, select, textarea) { min-height: 44px; }
   .mobile-pos-shell :is(button, a, input, select, textarea):focus-visible {
