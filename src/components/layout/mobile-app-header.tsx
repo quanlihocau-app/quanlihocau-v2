@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { clearCatalogCache } from "@/lib/query-client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -105,9 +106,7 @@ export function MobileAppHeader({
                     <div className="flex items-center justify-between gap-2 pt-0.5 border-b border-emerald-800/30 pb-1.5">
                         {/* App Brand Name */}
                         <div className="flex items-center gap-1.5">
-                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-linear-to-br from-emerald-400 to-green-600 text-slate-950 font-black text-xs shadow-xs">
-                                🎣
-                            </span>
+                            <Image src="/brand/logo.svg" alt="Logo" width={20} height={20} className="h-5 w-5 rounded-md object-contain shadow-xs shrink-0" />
                             <span className="text-[11px] sm:text-xs font-black tracking-wider uppercase text-emerald-300 drop-shadow-xs">
                                 QUẢN LÝ HỒ CÂU
                             </span>
