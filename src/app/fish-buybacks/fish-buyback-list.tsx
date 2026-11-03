@@ -12,6 +12,8 @@ export interface FishBuybackItem {
     pricePerKg: number;
     totalVnd: number;
     createdAt: Date | string;
+    customerName?: string | null;
+    customerPhone?: string | null;
 }
 
 interface FishBuybackListProps {
@@ -40,7 +42,10 @@ export function FishBuybackList({ buybacks }: FishBuybackListProps) {
     const filteredBuybacks = buybacks.filter((b) => {
         const query = search.toLowerCase().trim();
         if (!query) return true;
-        return b.fishTypeName.toLowerCase().includes(query);
+        const matchFish = b.fishTypeName.toLowerCase().includes(query);
+        const matchCustomer = b.customerName?.toLowerCase().includes(query);
+        const matchPhone = b.customerPhone?.toLowerCase().includes(query);
+        return matchFish || Boolean(matchCustomer) || Boolean(matchPhone);
     });
 
     return (
@@ -51,7 +56,7 @@ export function FishBuybackList({ buybacks }: FishBuybackListProps) {
                     <Input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Tìm kiếm theo tên loại cá..."
+                        placeholder="Tìm kiếm theo tên cá, cần thủ, SĐT..."
                     />
                 </div>
                 <div className="text-xs text-slate-500 font-medium">
@@ -90,9 +95,24 @@ export function FishBuybackList({ buybacks }: FishBuybackListProps) {
                                     {formatVnd(b.totalVnd)}
                                 </span>
                             </div>
+
+                            {/* Angler info & Time */}
+                            <div className="flex items-center justify-between text-[11px] text-slate-600 border-t border-[#E2DDD2]/60 pt-2">
+                                <div className="flex flex-wrap items-center gap-1">
+                                    <span className="font-semibold text-slate-900">
+                                        {b.customerName || "Khách vãng lai"}
+                                    </span>
+                                    {b.customerPhone && (
+                                        <span className="font-mono text-slate-500">
+                                            ({b.customerPhone})
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-slate-400">{formatDateTime(b.createdAt)}</span>
+                            </div>
+
                             <div className="flex items-center justify-between text-[11px] text-slate-500">
                                 <span>{b.weight} kg • {formatVnd(b.pricePerKg)}/kg</span>
-                                <span>{formatDateTime(b.createdAt)}</span>
                             </div>
                         </div>
                     ))
@@ -105,6 +125,8 @@ export function FishBuybackList({ buybacks }: FishBuybackListProps) {
                     <thead className="border-b border-[#E2DDD2] bg-[#F8F6F0] text-[11px] font-bold uppercase tracking-wider text-slate-500">
                         <tr>
                             <th className="px-4 py-3.5">Thời gian</th>
+                            <th className="px-4 py-3.5">Cần thủ</th>
+                            <th className="px-4 py-3.5">Số điện thoại</th>
                             <th className="px-4 py-3.5">Loại cá</th>
                             <th className="px-4 py-3.5 text-right">Khối lượng</th>
                             <th className="px-4 py-3.5 text-right">Đơn giá thu mua</th>
@@ -115,7 +137,7 @@ export function FishBuybackList({ buybacks }: FishBuybackListProps) {
                         {filteredBuybacks.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={5}
+                                    colSpan={7}
                                     className="px-4 py-8 text-center text-xs text-slate-400"
                                 >
                                     {search
@@ -129,8 +151,22 @@ export function FishBuybackList({ buybacks }: FishBuybackListProps) {
                                     key={b.id}
                                     className="hover:bg-[#F8F6F0]/60 transition-colors"
                                 >
-                                    <td className="px-4 py-3.5 text-xs text-slate-500">
+                                    <td className="px-4 py-3.5 text-xs text-slate-500 whitespace-nowrap">
                                         {formatDateTime(b.createdAt)}
+                                    </td>
+                                    <td className="px-4 py-3.5">
+                                        {b.customerName ? (
+                                            <span className="font-semibold text-slate-900">
+                                                {b.customerName}
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                                                Khách vãng lai
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3.5 text-xs font-mono text-slate-600 whitespace-nowrap">
+                                        {b.customerPhone || "—"}
                                     </td>
                                     <td className="px-4 py-3.5">
                                         <div className="flex flex-wrap items-center gap-1.5 font-bold text-slate-900">

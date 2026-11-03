@@ -54,6 +54,31 @@ export async function GET() {
                         deletedAt: true,
                     },
                 },
+                invoiceLines: {
+                    take: 5,
+                    include: {
+                        invoice: {
+                            select: {
+                                customer: {
+                                    select: {
+                                        name: true,
+                                        phoneNormalized: true,
+                                    },
+                                },
+                                fishingSession: {
+                                    select: {
+                                        customer: {
+                                            select: {
+                                                name: true,
+                                                phoneNormalized: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
             },
             orderBy: {
                 createdAt: "desc",
@@ -61,16 +86,27 @@ export async function GET() {
             take: 100,
         });
 
-        const safeBuybacks = buybacks.map((b) => ({
-            id: b.id,
-            fishTypeId: b.fishTypeId,
-            fishTypeName: b.fishType.name,
-            isFishTypeDeleted: b.fishType.deletedAt !== null,
-            weight: Number(b.weight),
-            pricePerKg: b.pricePerKg,
-            totalVnd: b.totalVnd,
-            createdAt: b.createdAt,
-        }));
+        const safeBuybacks = buybacks.map((b) => {
+            const lineWithCust =
+                b.invoiceLines?.find(
+                    (l) => l.invoice?.customer || l.invoice?.fishingSession?.customer,
+                ) || b.invoiceLines?.[0];
+            const invoice = lineWithCust?.invoice;
+            const customer = invoice?.customer || invoice?.fishingSession?.customer;
+
+            return {
+                id: b.id,
+                fishTypeId: b.fishTypeId,
+                fishTypeName: b.fishType.name,
+                isFishTypeDeleted: b.fishType.deletedAt !== null,
+                weight: Number(b.weight),
+                pricePerKg: b.pricePerKg,
+                totalVnd: b.totalVnd,
+                createdAt: b.createdAt,
+                customerName: customer?.name || null,
+                customerPhone: customer?.phoneNormalized || null,
+            };
+        });
 
         return NextResponse.json({ buybacks: safeBuybacks }, { status: 200 });
     } catch (error) {

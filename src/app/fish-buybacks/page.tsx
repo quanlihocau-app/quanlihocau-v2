@@ -76,6 +76,31 @@ export default async function FishBuybacksPage() {
                     deletedAt: true,
                 },
             },
+            invoiceLines: {
+                take: 5,
+                include: {
+                    invoice: {
+                        select: {
+                            customer: {
+                                select: {
+                                    name: true,
+                                    phoneNormalized: true,
+                                },
+                            },
+                            fishingSession: {
+                                select: {
+                                    customer: {
+                                        select: {
+                                            name: true,
+                                            phoneNormalized: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         },
         orderBy: {
             createdAt: "desc",
@@ -83,16 +108,27 @@ export default async function FishBuybacksPage() {
         take: 100,
     });
 
-    const buybacks = rawBuybacks.map((b) => ({
-        id: b.id,
-        fishTypeId: b.fishTypeId,
-        fishTypeName: b.fishType.name,
-        isFishTypeDeleted: b.fishType.deletedAt !== null,
-        weight: Number(b.weight),
-        pricePerKg: b.pricePerKg,
-        totalVnd: b.totalVnd,
-        createdAt: b.createdAt,
-    }));
+    const buybacks = rawBuybacks.map((b) => {
+        const lineWithCust =
+            b.invoiceLines?.find(
+                (l) => l.invoice?.customer || l.invoice?.fishingSession?.customer,
+            ) || b.invoiceLines?.[0];
+        const invoice = lineWithCust?.invoice;
+        const customer = invoice?.customer || invoice?.fishingSession?.customer;
+
+        return {
+            id: b.id,
+            fishTypeId: b.fishTypeId,
+            fishTypeName: b.fishType.name,
+            isFishTypeDeleted: b.fishType.deletedAt !== null,
+            weight: Number(b.weight),
+            pricePerKg: b.pricePerKg,
+            totalVnd: b.totalVnd,
+            createdAt: b.createdAt,
+            customerName: customer?.name || null,
+            customerPhone: customer?.phoneNormalized || null,
+        };
+    });
 
     return (
         <main className="mx-auto min-h-screen max-w-7xl bg-[#F8F6F0] px-4 pb-24 pt-6 sm:px-6 lg:px-8">
