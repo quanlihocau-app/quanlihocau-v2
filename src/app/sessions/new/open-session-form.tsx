@@ -1528,7 +1528,7 @@ export function OpenSessionForm({
 
                         <div className="text-xs text-slate-700 space-y-1">
                             <p className="font-medium">
-                                Chòi: <strong className="text-slate-900 font-extrabold">{hutList.filter((h) => selectedHutIds.includes(h.id)).map((h) => h.name).join(", ")}</strong>
+                                Ô câu: <strong className="text-slate-900 font-extrabold">{hutList.filter((h) => selectedHutIds.includes(h.id)).map((h) => h.name).join(", ")}</strong>
                             </p>
                             <p className="text-slate-600">
                                 Gói áp dụng: <strong className="text-[#16A34A] font-extrabold">{packageList.find((p) => p.id === selectedPackageId)?.name || packageList[0]?.name || "Chưa có gói"}</strong>
@@ -2672,7 +2672,7 @@ function AddQuickHutSheet({ isOpen, onClose, onCreated }: AddQuickHutSheetProps)
                     </label>
                     <Input
                         autoFocus
-                        placeholder="Ví dụ: Ô 08, Chòi 3, Ô VIP 2..."
+                        placeholder="Ví dụ: Ô 08, Ô số 2, Ô VIP 2..."
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         disabled={isSubmitting}

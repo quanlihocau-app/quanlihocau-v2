@@ -423,7 +423,7 @@ export function SessionsClient({
                             </p>
                             <p className="flex items-start gap-2">
                                 <span className="font-bold text-[#16A34A] shrink-0">2.</span>
-                                <span>Chọn <strong>ô chòi câu</strong> (ô màu xanh lá) và <strong>gói giờ câu</strong> của khách.</span>
+                                <span>Chọn <strong>ô câu</strong> (ô màu xanh lá) và <strong>gói giờ câu</strong> của khách.</span>
                             </p>
                             <p className="flex items-start gap-2">
                                 <span className="font-bold text-[#16A34A] shrink-0">3.</span>
@@ -476,7 +476,7 @@ export function SessionsClient({
                                     <span>Khách mới vào</span>
                                 </div>
                                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                                    - Bấm nút <strong>&quot;+ Tạo vé&quot;</strong> ở góc trên để chọn chòi và gói giờ.
+                                    - Bấm nút <strong>&quot;+ Tạo vé&quot;</strong> ở góc trên để chọn ô câu và gói giờ.
                                 </p>
                             </div>
 
