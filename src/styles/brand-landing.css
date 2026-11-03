@@ -149,5 +149,14 @@
  .brand-landing .brand-notebook { padding:20px 16px 22px 29px; }
  .brand-landing .brand-notebook::before { left:17px; }
 }
+/* Step demo videos */
+.brand-landing .brand-step-video { margin-top:20px; border-radius:8px; overflow:hidden; border:1px solid var(--brand-border); background:#132f24; }
+.brand-landing .brand-step-video video { width:100%; display:block; background:#132f24; }
+.brand-landing .brand-step-video.is-portrait { max-width:200px; margin:20px auto 0; border-radius:14px; border-width:2px; }
+.brand-landing .brand-step-video.is-portrait video { border-radius:12px; }
+@media (max-width:700px) {
+ .brand-landing .brand-step-video { margin-top:14px; }
+ .brand-landing .brand-step-video.is-portrait { max-width:150px; }
+}
 @media (prefers-contrast:more) { .brand-landing { --brand-muted:#203d32; --brand-border:#53665a; --brand-rule:#53665a; } }
-@media (prefers-reduced-motion:reduce) { .brand-landing * { scroll-behavior:auto; } }
+@media (prefers-reduced-motion:reduce) { .brand-landing * { scroll-behavior:auto; } .brand-landing .brand-step-video video { display:none; } }
