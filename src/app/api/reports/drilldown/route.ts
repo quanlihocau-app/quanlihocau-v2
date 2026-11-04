@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const tenantContext = await requireTenantContext([Role.OWNER, Role.MANAGER, Role.STAFF]);
+        const tenantContext = await requireTenantContext([Role.OWNER, Role.MANAGER]);
 
         const lakeId = tenantContext.lakeId;
         const { searchParams } = new URL(request.url);

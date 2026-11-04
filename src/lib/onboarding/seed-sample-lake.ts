@@ -52,11 +52,11 @@ export async function seedSampleLakeData(
         },
     });
 
-    // 3. Tạo 10 ô câu mẫu: "Ô số 1" đến "Ô số 10"
+    // 3. Tạo 10 chòi mẫu: "Chòi 1" đến "Chòi 10"
     const hutData = Array.from({ length: 10 }, (_, i) => ({
         lakeId,
         areaId: sampleArea.id,
-        name: `Ô số ${i + 1}`,
+        name: `Chòi ${i + 1}`,
         currentSessionId: null,
     }));
 

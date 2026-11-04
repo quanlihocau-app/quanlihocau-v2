@@ -61,7 +61,6 @@ export async function POST(request: Request) {
         const tenantContext = await requireTenantContext([
             Role.OWNER,
             Role.MANAGER,
-            Role.STAFF,
         ]);
 
         let body: unknown;

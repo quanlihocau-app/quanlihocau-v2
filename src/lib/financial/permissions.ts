@@ -1,7 +1,7 @@
 import { Role, SystemRole } from "@/generated/prisma/client";
 import { ForbiddenError, TenantContext } from "@/lib/tenant";
 
-export const FINANCE_ROLES: Role[] = [Role.OWNER, Role.MANAGER, Role.STAFF];
+export const FINANCE_ROLES: Role[] = [Role.OWNER, Role.MANAGER];
 
 export type FinancialPermission =
     | "FINANCIAL_VIEW_TRANSACTIONS"   // Xem danh sách phiếu thu/chi
@@ -19,27 +19,37 @@ export type FinancialPermission =
     | "FINANCIAL_RECONCILE"           // Kiểm kê, đối soát chênh lệch quỹ
     | "FINANCIAL_MANAGE_DEBT";        // Quản lý và thu/trả công nợ
 
-const ALL_PERMISSIONS: readonly FinancialPermission[] = [
-    "FINANCIAL_VIEW_TRANSACTIONS",
-    "FINANCIAL_CREATE_TRANSACTIONS",
-    "FINANCIAL_EDIT_DRAFT",
-    "FINANCIAL_APPROVE_TRANSACTIONS",
-    "FINANCIAL_CANCEL_TRANSACTIONS",
-    "FINANCIAL_VIEW_REPORTS",
-    "FINANCIAL_EXPORT_REPORTS",
-    "FINANCIAL_VIEW_FUNDS",
-    "FINANCIAL_MANAGE_FUNDS",
-    "FINANCIAL_TRANSFER_FUNDS",
-    "FINANCIAL_MANAGE_CATEGORIES",
-    "FINANCIAL_LOCK_PERIOD",
-    "FINANCIAL_RECONCILE",
-    "FINANCIAL_MANAGE_DEBT",
-];
-
 const ROLE_PERMISSIONS: Record<Role, readonly FinancialPermission[]> = {
-    [Role.OWNER]: ALL_PERMISSIONS,
-    [Role.MANAGER]: ALL_PERMISSIONS,
-    [Role.STAFF]: ALL_PERMISSIONS,
+    [Role.OWNER]: [
+        "FINANCIAL_VIEW_TRANSACTIONS",
+        "FINANCIAL_CREATE_TRANSACTIONS",
+        "FINANCIAL_EDIT_DRAFT",
+        "FINANCIAL_APPROVE_TRANSACTIONS",
+        "FINANCIAL_CANCEL_TRANSACTIONS",
+        "FINANCIAL_VIEW_REPORTS",
+        "FINANCIAL_EXPORT_REPORTS",
+        "FINANCIAL_VIEW_FUNDS",
+        "FINANCIAL_MANAGE_FUNDS",
+        "FINANCIAL_TRANSFER_FUNDS",
+        "FINANCIAL_MANAGE_CATEGORIES",
+        "FINANCIAL_LOCK_PERIOD",
+        "FINANCIAL_RECONCILE",
+        "FINANCIAL_MANAGE_DEBT",
+    ],
+    [Role.MANAGER]: [
+        "FINANCIAL_VIEW_TRANSACTIONS",
+        "FINANCIAL_CREATE_TRANSACTIONS",
+        "FINANCIAL_EDIT_DRAFT",
+        "FINANCIAL_APPROVE_TRANSACTIONS",
+        "FINANCIAL_VIEW_REPORTS",
+        "FINANCIAL_EXPORT_REPORTS",
+        "FINANCIAL_VIEW_FUNDS",
+        "FINANCIAL_TRANSFER_FUNDS",
+        "FINANCIAL_MANAGE_CATEGORIES",
+        "FINANCIAL_RECONCILE",
+        "FINANCIAL_MANAGE_DEBT",
+    ],
+    [Role.STAFF]: [],
 };
 
 const PERMISSION_DESCRIPTIONS: Record<FinancialPermission, string> = {

@@ -67,7 +67,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
     try {
         // Only OWNER is authorized to change lake settings
-        const tenantContext = await requireTenantContext([Role.OWNER, Role.MANAGER, Role.STAFF]);
+        const tenantContext = await requireTenantContext([Role.OWNER]);
 
         let body: unknown;
         try {

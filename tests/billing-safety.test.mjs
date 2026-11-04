@@ -115,13 +115,13 @@ test("client ids from another lake are not treated as belonging here", () => {
     });
 });
 
-test("staff, manager and owner have full finance and operational permissions", () => {
-    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_VIEW_TRANSACTIONS"), true);
-    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_EXPORT_REPORTS"), true);
-    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_MANAGE_DEBT"), true);
+test("staff has no finance permissions; owner and manager do", () => {
+    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_VIEW_TRANSACTIONS"), false);
+    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_EXPORT_REPORTS"), false);
+    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_MANAGE_DEBT"), false);
     assert.equal(permissions.hasFinancialPermission("OWNER", "FINANCIAL_VIEW_TRANSACTIONS"), true);
     assert.equal(permissions.hasFinancialPermission("MANAGER", "FINANCIAL_EXPORT_REPORTS"), true);
-    same(permissions.FINANCE_ROLES, ["OWNER", "MANAGER", "STAFF"]);
+    same(permissions.FINANCE_ROLES, ["OWNER", "MANAGER"]);
 });
 
 test("print job migration is additive and does not drop shift columns", () => {

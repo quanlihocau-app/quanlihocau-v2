@@ -114,7 +114,7 @@ async function resolveAuditLake(request: Request): Promise<{ lakeId: string; lak
         return { lakeId: lake.id, lakeName: lake.name };
     }
 
-    const tenant = await requireTenantContext([Role.OWNER, Role.MANAGER, Role.STAFF]);
+    const tenant = await requireTenantContext([Role.OWNER, Role.MANAGER]);
     return { lakeId: tenant.lakeId, lakeName: tenant.lakeName };
 }
 

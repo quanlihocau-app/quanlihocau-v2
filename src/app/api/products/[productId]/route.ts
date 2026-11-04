@@ -56,7 +56,7 @@ interface RouteParams {
 
 export async function PATCH(request: Request, { params }: RouteParams) {
     try {
-        const tenantContext = await requireTenantContext([Role.OWNER, Role.MANAGER, Role.STAFF]);
+        const tenantContext = await requireTenantContext([Role.OWNER]);
 
         const { productId } = await params;
         const idParse = uuidSchema.safeParse(productId);
@@ -213,7 +213,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
 export async function DELETE(_request: Request, { params }: RouteParams) {
     try {
-        const tenantContext = await requireTenantContext([Role.OWNER, Role.MANAGER, Role.STAFF]);
+        const tenantContext = await requireTenantContext([Role.OWNER]);
 
         const { productId } = await params;
         const idParse = uuidSchema.safeParse(productId);
