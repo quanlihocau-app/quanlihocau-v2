@@ -35,20 +35,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Navigation source audit
-        run: npm run check:navigation
-
-      - name: Safety and permission tests
-        run: npm run test:safety
 
       - name: Prisma validate and generate
         run: |
@@ -57,6 +51,12 @@ jobs:
 
       - name: Apply CI migrations
         run: npx prisma migrate deploy
+
+      - name: Navigation source audit
+        run: npm run check:navigation
+
+      - name: Safety and permission tests
+        run: npm run test:safety
 
       - name: ESLint check
         run: npm run lint
