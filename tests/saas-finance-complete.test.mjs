@@ -61,22 +61,22 @@ test("1. Phân quyền tài chính: Kiểm tra ma trận quyền theo Role SaaS"
     assert.equal(permissions.hasFinancialPermission("OWNER", "FINANCIAL_CANCEL_TRANSACTIONS"), true);
     assert.equal(permissions.hasFinancialPermission("OWNER", "FINANCIAL_MANAGE_FUNDS"), true);
 
-    // MANAGER có quyền quản lý vận hành nhưng KHÔNG có quyền khóa kỳ tài chính
+    // MANAGER có quyền quản lý vận hành
     assert.equal(permissions.hasFinancialPermission("MANAGER", "FINANCIAL_VIEW_TRANSACTIONS"), true);
     assert.equal(permissions.hasFinancialPermission("MANAGER", "FINANCIAL_CREATE_TRANSACTIONS"), true);
     assert.equal(permissions.hasFinancialPermission("MANAGER", "FINANCIAL_TRANSFER_FUNDS"), true);
-    assert.equal(permissions.hasFinancialPermission("MANAGER", "FINANCIAL_LOCK_PERIOD"), false);
+    assert.equal(permissions.hasFinancialPermission("MANAGER", "FINANCIAL_LOCK_PERIOD"), true);
 
-    // STAFF không vào phân hệ tài chính (kể cả xem và tạo phiếu).
-    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_VIEW_TRANSACTIONS"), false);
-    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_CREATE_TRANSACTIONS"), false);
-    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_TRANSFER_FUNDS"), false);
-    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_LOCK_PERIOD"), false);
-    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_MANAGE_CATEGORIES"), false);
+    // STAFF có toàn quyền thao tác thu chi, ra đơn, in vé, sổ quỹ theo yêu cầu mở toàn quyền
+    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_VIEW_TRANSACTIONS"), true);
+    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_CREATE_TRANSACTIONS"), true);
+    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_TRANSFER_FUNDS"), true);
+    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_LOCK_PERIOD"), true);
+    assert.equal(permissions.hasFinancialPermission("STAFF", "FINANCIAL_MANAGE_CATEGORIES"), true);
 
-    // Thử nghiệm assertFinancialPermission ném lỗi khi không đủ quyền
+    // Thử nghiệm assertFinancialPermission ném lỗi khi role không hợp lệ
     assert.throws(
-        () => permissions.assertFinancialPermission({ role: "STAFF" }, "FINANCIAL_LOCK_PERIOD"),
+        () => permissions.assertFinancialPermission({ role: "GUEST" }, "FINANCIAL_LOCK_PERIOD"),
         /Bạn không có quyền thực hiện hành động/
     );
 });

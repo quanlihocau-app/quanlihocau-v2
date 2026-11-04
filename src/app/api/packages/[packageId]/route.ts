@@ -46,6 +46,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         const tenantContext = await requireTenantContext([
             Role.OWNER,
             Role.MANAGER,
+            Role.STAFF,
         ]);
 
         let body: unknown;
@@ -105,6 +106,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
         const tenantContext = await requireTenantContext([
             Role.OWNER,
             Role.MANAGER,
+            Role.STAFF,
         ]);
 
         const existingPackage = await prisma.package.findFirst({

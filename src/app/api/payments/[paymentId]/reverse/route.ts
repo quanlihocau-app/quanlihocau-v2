@@ -22,7 +22,7 @@ interface RouteParams {
     }>;
 }
 
-const ALLOWED_ROLES = [Role.OWNER, Role.MANAGER];
+const ALLOWED_ROLES = [Role.OWNER, Role.MANAGER, Role.STAFF];
 const MAX_RETRIES = 3;
 
 export async function POST(request: Request, { params }: RouteParams) {

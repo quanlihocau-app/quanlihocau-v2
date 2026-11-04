@@ -77,7 +77,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const tenantContext = await requireTenantContext([Role.OWNER]);
+        const tenantContext = await requireTenantContext([Role.OWNER, Role.MANAGER, Role.STAFF]);
 
         let body: unknown;
         try {

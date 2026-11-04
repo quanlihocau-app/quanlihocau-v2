@@ -38,7 +38,7 @@ export async function POST(request: Request, { params }: RouteParams) {
             return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Thiếu lý do." }, { status: 400 });
         }
 
-        const tenantContext = await requireTenantContext([Role.OWNER]);
+        const tenantContext = await requireTenantContext([Role.OWNER, Role.MANAGER, Role.STAFF]);
         const requestMeta = await readRequestMeta();
 
         const result = await prisma.$transaction(async (tx) => {

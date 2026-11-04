@@ -37,7 +37,7 @@ interface RouteParams {
 }
 
 const ROLE_COMPLETE = [Role.OWNER, Role.MANAGER, Role.STAFF];
-const ROLE_CANCEL = [Role.OWNER, Role.MANAGER];
+const ROLE_CANCEL = [Role.OWNER, Role.MANAGER, Role.STAFF];
 
 const MAX_RETRIES = 3;
 
