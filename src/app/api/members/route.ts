@@ -9,7 +9,7 @@ import {
     ForbiddenError,
     requireTenantContext,
 } from "@/lib/tenant";
-import { assertStaffLimit } from "@/lib/subscription-guard";
+import { withLakeQuota } from "@/lib/subscription-guard";
 
 const createMemberSchema = z
     .object({
@@ -107,135 +107,35 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: firstError }, { status: 400 });
         }
 
-        // Kiểm tra giới hạn số lượng nhân viên của gói cước (SILVER max 1)
-        await assertStaffLimit(tenantContext.lakeId);
-
         const data = parsed.data;
         const rawInput = data.email.toLowerCase().trim();
         const normalizedEmail = rawInput.includes("@") ? rawInput : `${rawInput}@hocau.vn`;
-
         const passwordHash = await bcrypt.hash(data.password, 12);
-
-        // Check if email already exists
-        const existingUser = await prisma.user.findUnique({
-            where: { email: normalizedEmail },
-            include: {
-                memberships: {
-                    where: { lakeId: tenantContext.lakeId },
-                },
-            },
-        });
-
-        if (existingUser) {
-            const activeMembership = existingUser.memberships.find((m) => m.deletedAt === null);
-            if (activeMembership) {
-                return NextResponse.json(
-                    { error: `Tài khoản (${normalizedEmail}) đã có trong danh sách nhân sự của hồ. Bạn có thể bấm Đổi mật khẩu.` },
-                    { status: 409 },
-                );
+        const result = await withLakeQuota(tenantContext.lakeId, "staff", async (tx) => {
+            await tx.$queryRaw`SELECT "id" FROM "User" WHERE "email" = ${normalizedEmail} FOR UPDATE`;
+            const existing = await tx.user.findUnique({
+                where: { email: normalizedEmail }, include: { memberships: true },
+            });
+            if (existing && (existing.systemRole !== "USER" || existing.isLocked ||
+                existing.memberships.some((m) => m.lakeId !== tenantContext.lakeId || m.role === Role.OWNER) ||
+                !existing.memberships.length || existing.memberships.some((m) => m.deletedAt === null))) {
+                throw new Error("EMAIL_EXISTS");
             }
-
-            const existingMembership = existingUser.memberships[0];
-            const updated = await prisma.$transaction(async (tx) => {
-                await tx.user.update({
-                    where: { id: existingUser.id },
-                    data: {
-                        name: data.name,
-                        passwordHash,
-                        isLocked: false,
-                    },
-                });
-
-                let membership;
-                if (existingMembership) {
-                    membership = await tx.membership.update({
-                        where: { id: existingMembership.id },
-                        data: {
-                            deletedAt: null,
-                            role: data.role,
-                        },
-                    });
-                } else {
-                    membership = await tx.membership.create({
-                        data: {
-                            userId: existingUser.id,
-                            lakeId: tenantContext.lakeId,
-                            role: data.role,
-                        },
-                    });
-                }
-
-                await tx.auditEvent.create({
-                    data: {
-                        lakeId: tenantContext.lakeId,
-                        entityType: "Membership",
-                        entityId: membership.id,
-                        action: "MEMBER_CREATED",
-                        payload: JSON.stringify({
-                            userId: existingUser.id,
-                            name: data.name,
-                            email: normalizedEmail,
-                            role: membership.role,
-                            reactivated: true,
-                        }),
-                        createdBy: tenantContext.userId,
-                    },
-                });
-
-                return {
-                    id: membership.id,
-                    userId: existingUser.id,
-                    name: data.name,
-                    email: normalizedEmail,
-                    role: membership.role,
-                };
-            });
-
-            return NextResponse.json({ member: updated }, { status: 201 });
-        }
-
-        const result = await prisma.$transaction(async (tx) => {
-            const newUser = await tx.user.create({
-                data: {
-                    name: data.name,
-                    email: normalizedEmail,
-                    passwordHash,
-                },
-            });
-
-            const newMembership = await tx.membership.create({
-                data: {
-                    userId: newUser.id,
-                    lakeId: tenantContext.lakeId,
-                    role: data.role,
-                },
-            });
-
-            // Create AuditEvent (never logging password)
-            await tx.auditEvent.create({
-                data: {
-                    lakeId: tenantContext.lakeId,
-                    entityType: "Membership",
-                    entityId: newMembership.id,
-                    action: "MEMBER_CREATED",
-                    payload: JSON.stringify({
-                        userId: newUser.id,
-                        name: newUser.name,
-                        email: newUser.email,
-                        role: newMembership.role,
-                    }),
-                    createdBy: tenantContext.userId,
-                },
-            });
-
-            return {
-                id: newMembership.id,
-                userId: newUser.id,
-                name: newUser.name,
-                email: newUser.email,
-                role: newMembership.role,
-                createdAt: newMembership.createdAt,
-            };
+            const user = existing
+                ? await tx.user.update({ where: { id: existing.id }, data: {
+                    name: data.name, passwordHash, sessionVersion: { increment: 1 },
+                } })
+                : await tx.user.create({ data: { name: data.name, email: normalizedEmail, passwordHash } });
+            const membership = existing
+                ? await tx.membership.update({ where: { userId_lakeId: { userId: user.id, lakeId: tenantContext.lakeId } },
+                    data: { role: data.role, deletedAt: null } })
+                : await tx.membership.create({ data: { userId: user.id, lakeId: tenantContext.lakeId, role: data.role } });
+            await tx.auditEvent.create({ data: {
+                lakeId: tenantContext.lakeId, entityType: "Membership", entityId: membership.id,
+                action: "MEMBER_CREATED", createdBy: tenantContext.userId,
+                payload: JSON.stringify({ userId: user.id, name: user.name, email: user.email, role: membership.role, reactivated: Boolean(existing) }),
+            } });
+            return { id: membership.id, userId: user.id, name: user.name, email: user.email, role: membership.role, createdAt: membership.createdAt };
         });
 
         return NextResponse.json(

@@ -182,12 +182,12 @@ export default async function SettingsPage() {
             )}
 
             {/* ── Menu list ─────────────────────────────────────────── */}
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3">
                 {/* Quản trị hệ thống SaaS (Chỉ dành cho SUPER_ADMIN) */}
                 {currentUser?.systemRole === "SUPER_ADMIN" && (
                     <Link
                         href="/admin/lakes"
-                        className="menu-row bg-slate-900 text-white border-slate-700 hover:bg-slate-800 transition-colors shadow-sm"
+                        className="menu-row bg-slate-900 text-white border-slate-700 hover:bg-slate-800 transition-colors shadow-sm md:col-span-2 lg:col-span-3"
                     >
                         <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-bold text-base shadow-xs shrink-0">

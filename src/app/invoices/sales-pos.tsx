@@ -335,276 +335,285 @@ export function SalesPos({ activeSessions }: SalesPosProps) {
                 </div>
             )}
 
-            {/* Order Mode Selector */}
-            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 shadow-xs">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
-                    Hình thức bán hàng
-                </label>
-                <div className="mt-2.5 grid grid-cols-2 gap-2">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setMode("SESSION");
-                            setErrorMsg("");
-                        }}
-                        className={`flex h-11 items-center justify-center rounded-full border text-xs font-bold transition-all cursor-pointer ${
-                            mode === "SESSION"
-                                ? "border-[#4F9D5A] bg-[#4F9D5A] text-white shadow-xs"
-                                : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
-                        }`}
-                    >
-                        Vé đang câu
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setMode("RETAIL");
-                            setErrorMsg("");
-                        }}
-                        className={`flex h-11 items-center justify-center rounded-full border text-xs font-bold transition-all cursor-pointer ${
-                            mode === "RETAIL"
-                                ? "border-[#4F9D5A] bg-[#4F9D5A] text-white shadow-xs"
-                                : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
-                        }`}
-                    >
-                        Phiếu tạm / Bán lẻ
-                    </button>
-                </div>
-
-                {/* Dropdown active sessions */}
-                {mode === "SESSION" && (
-                    <div className="mt-3.5 space-y-1.5">
-                        <label className="text-xs font-semibold text-[#66716A]">
-                            Chọn vé câu:
+            {/* Desktop Two-Column POS Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
+                {/* Left Column: Mode Selector & Product Catalog */}
+                <div className="lg:col-span-7 xl:col-span-8 space-y-4">
+                    {/* Order Mode Selector */}
+                    <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 shadow-xs">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
+                            Hình thức bán hàng
                         </label>
-                        {activeSessions.length === 0 ? (
-                            <div className="rounded-2xl bg-[#FCEEED] border border-[#D9534F]/20 p-3 text-center text-xs text-[#D9534F]">
-                                Hiện không có phiên câu nào đang hoạt động. Vui lòng chuyển sang &quot;Phiếu tạm&quot; để bán lẻ.
+                        <div className="mt-2.5 grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setMode("SESSION");
+                                    setErrorMsg("");
+                                }}
+                                className={`flex h-11 items-center justify-center rounded-full border text-xs font-bold transition-all cursor-pointer ${
+                                    mode === "SESSION"
+                                        ? "border-[#4F9D5A] bg-[#4F9D5A] text-white shadow-xs"
+                                        : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
+                                }`}
+                            >
+                                Vé đang câu
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setMode("RETAIL");
+                                    setErrorMsg("");
+                                }}
+                                className={`flex h-11 items-center justify-center rounded-full border text-xs font-bold transition-all cursor-pointer ${
+                                    mode === "RETAIL"
+                                        ? "border-[#4F9D5A] bg-[#4F9D5A] text-white shadow-xs"
+                                        : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
+                                }`}
+                            >
+                                Phiếu tạm / Bán lẻ
+                            </button>
+                        </div>
+
+                        {/* Dropdown active sessions */}
+                        {mode === "SESSION" && (
+                            <div className="mt-3.5 space-y-1.5">
+                                <label className="text-xs font-semibold text-[#66716A]">
+                                    Chọn vé câu:
+                                </label>
+                                {activeSessions.length === 0 ? (
+                                    <div className="rounded-2xl bg-[#FCEEED] border border-[#D9534F]/20 p-3 text-center text-xs text-[#D9534F]">
+                                        Hiện không có phiên câu nào đang hoạt động. Vui lòng chuyển sang &quot;Phiếu tạm&quot; để bán lẻ.
+                                    </div>
+                                ) : (
+                                    <select
+                                        value={selectedSessionId}
+                                        onChange={(e) => setSelectedSessionId(e.target.value)}
+                                        className="h-11 w-full rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] px-3 text-xs font-medium text-[#17201A] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
+                                    >
+                                        {activeSessions.map((session) => (
+                                            <SessionDropdownItem key={session.id} session={session} />
+                                        ))}
+                                    </select>
+                                )}
                             </div>
-                        ) : (
-                            <select
-                                value={selectedSessionId}
-                                onChange={(e) => setSelectedSessionId(e.target.value)}
-                                className="h-11 w-full rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] px-3 text-xs font-medium text-[#17201A] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
-                            >
-                                {activeSessions.map((session) => (
-                                    <SessionDropdownItem key={session.id} session={session} />
-                                ))}
-                            </select>
                         )}
-                    </div>
-                )}
 
-                {/* Payment method selection for Retail */}
-                {mode === "RETAIL" && (
-                    <div className="mt-3.5 space-y-1.5">
-                        <label className="text-xs font-semibold text-[#66716A]">
-                            Phương thức thanh toán:
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setPaymentMethod("CASH")}
-                                className={`flex h-10 items-center justify-center rounded-full border text-xs font-semibold transition-all cursor-pointer ${
-                                    paymentMethod === "CASH"
-                                        ? "border-[#4F9D5A] bg-[#E8F3E5] text-[#246B38] font-bold"
-                                        : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
-                                }`}
-                            >
-                                Tiền mặt
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setPaymentMethod("BANK_TRANSFER")}
-                                className={`flex h-10 items-center justify-center rounded-full border text-xs font-semibold transition-all cursor-pointer ${
-                                    paymentMethod === "BANK_TRANSFER"
-                                        ? "border-[#4F9D5A] bg-[#E8F3E5] text-[#246B38] font-bold"
-                                        : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
-                                }`}
-                            >
-                                Chuyển khoản
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Catalog Grid */}
-            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
-                        Danh mục sản phẩm
-                    </label>
-                </div>
-
-                {/* Search */}
-                <div className="relative">
-                    <svg
-                        className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#66716A]"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                    </svg>
-                    <input
-                        type="search"
-                        placeholder="Tìm sản phẩm (Tên, SKU)..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="h-11 w-full rounded-full border border-[#E3E8E3] bg-[#F7F9F5] pl-10 pr-4 text-[13px] text-[#17201A] placeholder:text-[#8A938D] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
-                    />
-                </div>
-
-                {/* Product catalog scroll area */}
-                <div className="max-h-75 overflow-y-auto pr-1">
-                    {isLoadingProducts ? (
-                        <div className="flex items-center justify-center py-8">
-                            <svg className="h-6 w-6 animate-spin text-[#4F9D5A]" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                            </svg>
-                        </div>
-                    ) : loadError ? (
-                        <CatalogLoadError onRetry={() => { void productQuery.refetch(); }} isRetrying={productQuery.isFetching} />
-                    ) : filteredProducts.length === 0 ? (
-                        <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-4 text-center text-xs text-[#66716A]">
-                            {search ? "Không tìm thấy sản phẩm." : "Hệ thống chưa có sản phẩm nào."}
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-2.5">
-                            {filteredProducts.map((p) => {
-                                const inCart = cart.find((item) => item.product.id === p.id);
-                                return (
+                        {/* Payment method selection for Retail */}
+                        {mode === "RETAIL" && (
+                            <div className="mt-3.5 space-y-1.5">
+                                <label className="text-xs font-semibold text-[#66716A]">
+                                    Phương thức thanh toán:
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
                                     <button
-                                        key={p.id}
                                         type="button"
-                                        onClick={() => addToCart(p)}
-                                        className={`flex flex-col gap-1 rounded-2xl border p-3 text-left transition-all cursor-pointer ${
-                                            inCart
-                                                ? "border-[#4F9D5A] bg-[#E8F3E5] ring-2 ring-[#4F9D5A]/20"
-                                                : "border-[#E3E8E3] bg-[#F7F9F5] hover:bg-white hover:border-[#4F9D5A]"
+                                        onClick={() => setPaymentMethod("CASH")}
+                                        className={`flex h-10 items-center justify-center rounded-full border text-xs font-semibold transition-all cursor-pointer ${
+                                            paymentMethod === "CASH"
+                                                ? "border-[#4F9D5A] bg-[#E8F3E5] text-[#246B38] font-bold"
+                                                : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
                                         }`}
                                     >
-                                        <span className="text-[12px] font-bold text-[#17201A] line-clamp-2 leading-tight">
-                                            {p.name}
-                                        </span>
-                                        <span className="text-[12px] font-bold text-[#246B38]">
-                                            {formatVnd(p.priceVnd)}
-                                        </span>
-                                        {p.sku && (
-                                            <span className="text-[10px] font-mono text-[#66716A]">
-                                                SKU: {p.sku}
-                                            </span>
-                                        )}
-                                        {inCart && (
-                                            <span className="mt-1 self-start rounded-full bg-[#4F9D5A] px-2 py-0.5 text-[10px] font-bold text-white">
-                                                Đã chọn ({inCart.quantity})
-                                            </span>
-                                        )}
+                                        Tiền mặt
                                     </button>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Pending Order Cart */}
-            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-2">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
-                        Đơn chờ ({cart.length})
-                    </label>
-                    {cart.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={clearCart}
-                            className="text-xs font-bold text-[#D9534F] hover:underline cursor-pointer"
-                        >
-                            Xóa đơn chờ
-                        </button>
-                    )}
-                </div>
-
-                {cart.length === 0 ? (
-                    <div className="py-6 text-center text-xs text-[#66716A]">
-                        Chưa chọn sản phẩm nào. Bấm vào sản phẩm bên trên để thêm vào đơn.
-                    </div>
-                ) : (
-                    <div className="divide-y divide-[#E3E8E3] max-h-55 overflow-y-auto pr-1">
-                        {cart.map((item) => (
-                            <div key={item.product.id} className="py-2.5 flex items-center justify-between gap-3">
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate text-xs font-bold text-[#17201A]">
-                                        {item.product.name}
-                                    </p>
-                                    <p className="text-[11px] text-[#66716A]">
-                                        {formatVnd(item.product.priceVnd)}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2.5 shrink-0">
-                                    {/* Stepper */}
-                                    <div className="flex items-center gap-1.5">
-                                        <button
-                                            type="button"
-                                            onClick={() => updateQuantity(item.product.id, -1)}
-                                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E3E8E3] bg-white text-xs font-bold text-[#17201A] hover:bg-[#F7F9F5] cursor-pointer"
-                                        >
-                                            −
-                                        </button>
-                                        <span className="w-6 text-center text-xs font-bold tabular-nums text-[#17201A]">
-                                            {item.quantity}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => updateQuantity(item.product.id, 1)}
-                                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E3E8E3] bg-white text-xs font-bold text-[#17201A] hover:bg-[#F7F9F5] cursor-pointer"
-                                        >
-                                            +
-                                        </button>
-                                    </div>
-                                    <span className="w-16 text-right text-xs font-bold tabular-nums text-[#17201A]">
-                                        {formatVnd(item.product.priceVnd * item.quantity)}
-                                    </span>
                                     <button
                                         type="button"
-                                        onClick={() => removeFromCart(item.product.id)}
-                                        className="text-[#66716A] hover:text-[#D9534F] p-1 cursor-pointer"
-                                        aria-label="Xóa mặt hàng"
+                                        onClick={() => setPaymentMethod("BANK_TRANSFER")}
+                                        className={`flex h-10 items-center justify-center rounded-full border text-xs font-semibold transition-all cursor-pointer ${
+                                            paymentMethod === "BANK_TRANSFER"
+                                                ? "border-[#4F9D5A] bg-[#E8F3E5] text-[#246B38] font-bold"
+                                                : "border-[#E3E8E3] bg-white text-[#17201A] hover:bg-[#F7F9F5]"
+                                        }`}
                                     >
-                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                        </svg>
+                                        Chuyển khoản
                                     </button>
                                 </div>
                             </div>
-                        ))}
+                        )}
                     </div>
-                )}
-            </div>
 
-            {/* Bottom Actions Bar */}
-            <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-[#66716A]">Tạm tính:</span>
-                    <span className="text-[18px] font-bold text-[#246B38] tabular-nums">
-                        {formatVnd(totalAmount)}
-                    </span>
+                    {/* Catalog Grid */}
+                    <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
+                                Danh mục sản phẩm
+                            </label>
+                        </div>
+
+                        {/* Search */}
+                        <div className="relative">
+                            <svg
+                                className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#66716A]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                            </svg>
+                            <input
+                                type="search"
+                                placeholder="Tìm sản phẩm (Tên, SKU)..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="h-11 w-full rounded-full border border-[#E3E8E3] bg-[#F7F9F5] pl-10 pr-4 text-[13px] text-[#17201A] placeholder:text-[#8A938D] focus:border-[#4F9D5A] focus:bg-white focus:outline-none"
+                            />
+                        </div>
+
+                        {/* Product catalog scroll area */}
+                        <div className="max-h-100 overflow-y-auto pr-1">
+                            {isLoadingProducts ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <svg className="h-6 w-6 animate-spin text-[#4F9D5A]" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                </div>
+                            ) : loadError ? (
+                                <CatalogLoadError onRetry={() => { void productQuery.refetch(); }} isRetrying={productQuery.isFetching} />
+                            ) : filteredProducts.length === 0 ? (
+                                <div className="rounded-2xl border border-[#E3E8E3] bg-[#F7F9F5] p-4 text-center text-xs text-[#66716A]">
+                                    {search ? "Không tìm thấy sản phẩm." : "Hệ thống chưa có sản phẩm nào."}
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5">
+                                    {filteredProducts.map((p) => {
+                                        const inCart = cart.find((item) => item.product.id === p.id);
+                                        return (
+                                            <button
+                                                key={p.id}
+                                                type="button"
+                                                onClick={() => addToCart(p)}
+                                                className={`flex flex-col gap-1 rounded-2xl border p-3 text-left transition-all cursor-pointer ${
+                                                    inCart
+                                                        ? "border-[#4F9D5A] bg-[#E8F3E5] ring-2 ring-[#4F9D5A]/20"
+                                                        : "border-[#E3E8E3] bg-[#F7F9F5] hover:bg-white hover:border-[#4F9D5A]"
+                                                }`}
+                                            >
+                                                <span className="text-[12px] font-bold text-[#17201A] line-clamp-2 leading-tight">
+                                                    {p.name}
+                                                </span>
+                                                <span className="text-[12px] font-bold text-[#246B38]">
+                                                    {formatVnd(p.priceVnd)}
+                                                </span>
+                                                {p.sku && (
+                                                    <span className="text-[10px] font-mono text-[#66716A]">
+                                                        SKU: {p.sku}
+                                                    </span>
+                                                )}
+                                                {inCart && (
+                                                    <span className="mt-1 self-start rounded-full bg-[#4F9D5A] px-2 py-0.5 text-[10px] font-bold text-white">
+                                                        Đã chọn ({inCart.quantity})
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
-                <Button
-                    type="button"
-                    size="lg"
-                    variant="primary"
-                    isLoading={isSubmitting}
-                    disabled={cart.length === 0 || isSubmitting || (mode === "SESSION" && activeSessions.length === 0)}
-                    onClick={handleSubmit}
-                    className="w-full text-sm font-semibold rounded-full min-h-12"
-                >
-                    {mode === "SESSION" ? "Thêm vào vé câu" : "Thanh toán phiếu tạm"}
-                </Button>
+                {/* Right Column: Pending Order Cart & Checkout (Sticky on PC) */}
+                <div className="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-24">
+                    {/* Pending Order Cart */}
+                    <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between border-b border-[#E3E8E3] pb-2">
+                            <label className="text-[11px] font-bold uppercase tracking-wider text-[#246B38]">
+                                Đơn chờ ({cart.length})
+                            </label>
+                            {cart.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={clearCart}
+                                    className="text-xs font-bold text-[#D9534F] hover:underline cursor-pointer"
+                                >
+                                    Xóa đơn chờ
+                                </button>
+                            )}
+                        </div>
+
+                        {cart.length === 0 ? (
+                            <div className="py-6 text-center text-xs text-[#66716A]">
+                                Chưa chọn sản phẩm nào. Bấm vào sản phẩm bên trên để thêm vào đơn.
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-[#E3E8E3] max-h-70 overflow-y-auto pr-1">
+                                {cart.map((item) => (
+                                    <div key={item.product.id} className="py-2.5 flex items-center justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-xs font-bold text-[#17201A]">
+                                                {item.product.name}
+                                            </p>
+                                            <p className="text-[11px] text-[#66716A]">
+                                                {formatVnd(item.product.priceVnd)}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2.5 shrink-0">
+                                            {/* Stepper */}
+                                            <div className="flex items-center gap-1.5">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updateQuantity(item.product.id, -1)}
+                                                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E3E8E3] bg-white text-xs font-bold text-[#17201A] hover:bg-[#F7F9F5] cursor-pointer"
+                                                >
+                                                    −
+                                                </button>
+                                                <span className="w-6 text-center text-xs font-bold tabular-nums text-[#17201A]">
+                                                    {item.quantity}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updateQuantity(item.product.id, 1)}
+                                                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E3E8E3] bg-white text-xs font-bold text-[#17201A] hover:bg-[#F7F9F5] cursor-pointer"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                            <span className="w-16 text-right text-xs font-bold tabular-nums text-[#17201A]">
+                                                {formatVnd(item.product.priceVnd * item.quantity)}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFromCart(item.product.id)}
+                                                className="text-[#66716A] hover:text-[#D9534F] p-1 cursor-pointer"
+                                                aria-label="Xóa mặt hàng"
+                                            >
+                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Bottom Actions Bar */}
+                    <div className="rounded-2xl border border-[#E3E8E3] bg-white p-4 space-y-3 shadow-xs">
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="font-semibold text-[#66716A]">Tạm tính:</span>
+                            <span className="text-[18px] font-bold text-[#246B38] tabular-nums">
+                                {formatVnd(totalAmount)}
+                            </span>
+                        </div>
+
+                        <Button
+                            type="button"
+                            size="lg"
+                            variant="primary"
+                            isLoading={isSubmitting}
+                            disabled={cart.length === 0 || isSubmitting || (mode === "SESSION" && activeSessions.length === 0)}
+                            onClick={handleSubmit}
+                            className="w-full text-sm font-semibold rounded-full min-h-12"
+                        >
+                            {mode === "SESSION" ? "Thêm vào vé câu" : "Thanh toán phiếu tạm"}
+                        </Button>
+                    </div>
+                </div>
             </div>
 
             {/* Success Modal */}

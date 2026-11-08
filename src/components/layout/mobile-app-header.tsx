@@ -2,13 +2,88 @@
 
 import { clearCatalogCache } from "@/lib/query-client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 import { OnboardingModal, openGuideModal } from "@/components/guide/onboarding-modal";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
 import { useOutdoorMode } from "@/hooks/use-outdoor-mode";
 import { HeaderClock } from "./header-clock";
 import { AccountSettingsModal } from "./account-settings-modal";
+
+interface DesktopNavItem {
+    label: string;
+    href: string;
+    icon: string;
+    isActive: (pathname: string) => boolean;
+    isPrimary?: boolean;
+}
+
+const DESKTOP_NAV_ITEMS: DesktopNavItem[] = [
+    {
+        label: "Trang chủ",
+        href: "/home",
+        icon: "🏠",
+        isActive: (p: string) => p === "/home",
+    },
+    {
+        label: "Phiên câu",
+        href: "/sessions",
+        icon: "🎣",
+        isActive: (p: string) => p === "/sessions" || (p.startsWith("/sessions/") && p !== "/sessions/new"),
+    },
+    {
+        label: "Tạo vé mới",
+        href: "/sessions/new",
+        icon: "＋",
+        isPrimary: true,
+        isActive: (p: string) => p === "/sessions/new",
+    },
+    {
+        label: "Bán hàng",
+        href: "/invoices",
+        icon: "🛒",
+        isActive: (p: string) => p === "/invoices" || p.startsWith("/invoices/"),
+    },
+    {
+        label: "Báo cáo",
+        href: "/reports",
+        icon: "📊",
+        isActive: (p: string) => p.startsWith("/reports"),
+    },
+    {
+        label: "Sổ quỹ",
+        href: "/cashbook",
+        icon: "💰",
+        isActive: (p: string) => p === "/cashbook" || p.startsWith("/cashbook/"),
+    },
+    {
+        label: "Khách hàng",
+        href: "/customers",
+        icon: "👥",
+        isActive: (p: string) => p.startsWith("/customers"),
+    },
+    {
+        label: "Kho & Bảng giá",
+        href: "/products",
+        icon: "📦",
+        isActive: (p: string) => p.startsWith("/products") || p.startsWith("/pricing") || p.startsWith("/facilities") || p.startsWith("/fish-types"),
+    },
+    {
+        label: "Cài đặt",
+        href: "/settings",
+        icon: "⚙️",
+        isActive: (p: string) => p.startsWith("/settings"),
+    },
+];
+
+const ADMIN_DESKTOP_ITEM: DesktopNavItem = {
+    label: "Quản trị SaaS",
+    href: "/admin/lakes",
+    icon: "👑",
+    isActive: (p: string) => p.startsWith("/admin"),
+};
 
 interface MobileAppHeaderProps {
     lakeName: string;
@@ -30,9 +105,14 @@ export function MobileAppHeader({
     phone: propPhone,
 }: MobileAppHeaderProps) {
     const router = useRouter();
+    const pathname = usePathname();
+    const { data: session } = useSession();
     const { isOnline: autoOnline, isReconnecting } = useNetworkStatus();
     const { isOutdoorMode, toggleOutdoorMode } = useOutdoorMode();
     const effectiveOnline = isOnlineProp !== undefined ? isOnlineProp : autoOnline;
+
+    const isSuperAdmin = session?.user?.systemRole === "SUPER_ADMIN";
+    const desktopItems = isSuperAdmin ? [...DESKTOP_NAV_ITEMS, ADMIN_DESKTOP_ITEM] : DESKTOP_NAV_ITEMS;
 
     const [overrideLakeName, setOverrideLakeName] = useState<string | null>(null);
     const [overridePhone, setOverridePhone] = useState<string | null>(null);
@@ -235,6 +315,36 @@ export function MobileAppHeader({
                             </button>
                         </div>
                     </div>
+
+                    {/* ── Desktop Horizontal Navigation Bar (Hiển thị tiện lợi trên màn hình PC) ── */}
+                    <nav
+                        aria-label="Điều hướng chính máy tính"
+                        className="hidden md:flex items-center gap-1.5 pt-2 border-t border-emerald-800/35 overflow-x-auto scrollbar-none"
+                    >
+                        {desktopItems.map((item) => {
+                            const active = item.isActive(pathname);
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    prefetch={true}
+                                    aria-current={active ? "page" : undefined}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none font-serif ${
+                                        item.isPrimary
+                                            ? active
+                                                ? "bg-amber-400 text-slate-950 font-black shadow-xs ring-2 ring-amber-300"
+                                                : "bg-[#16A34A] hover:bg-[#15803D] text-white shadow-xs"
+                                            : active
+                                              ? "bg-emerald-800/95 text-amber-200 border border-emerald-400/70 shadow-xs"
+                                              : "text-emerald-200/90 hover:text-white hover:bg-emerald-900/60 border border-transparent"
+                                    }`}
+                                >
+                                    <span className="text-[13px]">{item.icon}</span>
+                                    <span>{item.label}</span>
+                                </Link>
+                            );
+                        })}
+                    </nav>
                 </div>
             </header>
 

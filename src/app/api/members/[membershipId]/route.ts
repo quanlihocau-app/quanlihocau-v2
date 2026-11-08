@@ -100,11 +100,15 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
             const newPasswordHash = await bcrypt.hash(parsed.data.newPassword, 12);
             await prisma.$transaction(async (tx) => {
+                await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${membership.userId} FOR UPDATE`;
+                const user = await tx.user.findUniqueOrThrow({ where: { id: membership.userId }, include: { memberships: true } });
+                if (user.isLocked || user.systemRole !== "USER" || user.memberships.some((m) => m.lakeId !== tenantContext.lakeId || m.role === Role.OWNER)) {
+                    throw new ForbiddenError("Không thể đổi mật khẩu tài khoản dùng chung hoặc tài khoản bị khóa. Liên hệ quản trị viên.");
+                }
                 await tx.user.update({
                     where: { id: membership.userId },
                     data: {
                         passwordHash: newPasswordHash,
-                        isLocked: false,
                         sessionVersion: { increment: 1 },
                     },
                 });

@@ -222,10 +222,8 @@ model Membership {
 
   // Ensure a user cannot have duplicate membership in same lake
   @@unique([userId, lakeId])
-  // Ensure only one OWNER per lake
-  @@unique([lakeId, role])
-
-  // Owner is now tracked via LakeOwner model; other roles can repeat
+  // Active OWNER uniqueness uses a partial PostgreSQL index.
+  @@index([lakeId, role, deletedAt])
 }
 
 // -----------------------------------------------------------------------------

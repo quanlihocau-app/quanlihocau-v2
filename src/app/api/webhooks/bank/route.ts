@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { shouldMarkOrderPaid, verifyWebhookSecret } from "@/lib/bank-webhook";
+import { verifyWebhookSecret } from "@/lib/bank-webhook";
+import { confirmBankSubscriptionOrder } from "@/lib/services/manual-subscription-confirm.service";
 import { prisma } from "@/lib/prisma";
 
 function verifyWebhookSecurity(request: Request, rawBody: string): "ok" | "missing" | "invalid" {
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
         body.transactionId ||
         body.reference ||
         body.id ||
-        `REF_${Date.now()}`,
+        "",
     );
 
     // Extract orderCode: supports HC123456, HOCAU HC123456, HOCAUHC123456, etc.
@@ -93,117 +94,17 @@ export async function POST(request: Request) {
     }
 
     try {
-        // 2. Core Transaction with Idempotency
-        const result = await prisma.$transaction(async (tx) => {
-            const order = await tx.subscriptionOrder.findUnique({
-                where: { orderCode: orderCode! },
-                include: {
-                    lake: true,
-                    organization: true,
-                },
-            });
-
-            if (!order) {
-                throw new Error("ORDER_NOT_FOUND");
-            }
-
-            // IDEMPOTENCY CHECK: If already paid, return immediately without re-adding time!
-            if (order.status === "PAID") {
-                return {
-                    idempotent: true,
-                    orderId: order.id,
-                    orderCode: order.orderCode,
-                    message: "Đơn hàng đã được ghi nhận thanh toán trước đó (Idempotent).",
-                };
-            }
-
-            if (!shouldMarkOrderPaid(transferAmount, order.amountVnd)) {
-                await tx.subscriptionOrder.update({
-                    where: { id: order.id },
-                    data: {
-                        rawWebhookPayload: JSON.stringify({
-                            warning: "INSUFFICIENT_AMOUNT",
-                            receivedAmount: transferAmount,
-                            expectedAmount: order.amountVnd,
-                            transactionRef,
-                            content,
-                            receivedAt: new Date().toISOString(),
-                        }),
-                    },
-                });
-                throw new Error("INSUFFICIENT_AMOUNT");
-            }
-
-            const now = new Date();
-            const currentExpiresAt = order.lake.subscriptionExpiresAt;
-            const durationDays = order.durationDays || 30;
-            const durationMs = durationDays * 24 * 60 * 60 * 1000;
-
-            // Cộng dồn thời gian: Nếu hạn cũ còn dài hơn hiện tại thì cộng thêm vào hạn cũ, nếu không thì lấy now + 30 ngày
-            const baseDate =
-                currentExpiresAt && currentExpiresAt.getTime() > now.getTime()
-                    ? currentExpiresAt
-                    : now;
-            const newExpiresAt = new Date(baseDate.getTime() + durationMs);
-
-            // 1. Update Order to PAID
-            const updatedOrder = await tx.subscriptionOrder.update({
-                where: { id: order.id },
-                data: {
-                    status: "PAID",
-                    paidAt: now,
-                    bankRef: transactionRef,
-                    rawWebhookPayload: rawBody,
-                },
-            });
-
-            // 2. Update Organization
-            await tx.organization.update({
-                where: { id: order.organizationId },
-                data: {
-                    validUntil: newExpiresAt,
-                    subscriptionPlan: order.planCode,
-                },
-            });
-
-            // 3. Update Lake
-            await tx.lake.update({
-                where: { id: order.lakeId },
-                data: {
-                    subscriptionStatus: "ACTIVE",
-                    subscriptionPlan: order.planCode,
-                    subscriptionExpiresAt: newExpiresAt,
-                },
-            });
-
-            // 4. Create AuditEvent
-            await tx.auditEvent.create({
-                data: {
-                    lakeId: order.lakeId,
-                    entityType: "SUBSCRIPTION",
-                    entityId: order.id,
-                    action: "PLAN_ACTIVATED",
-                    payload: JSON.stringify({
-                        orderCode: order.orderCode,
-                        planCode: order.planCode,
-                        amountVnd: order.amountVnd,
-                        previousExpiresAt: currentExpiresAt,
-                        newExpiresAt,
-                        bankRef: transactionRef,
-                    }),
-                    createdBy: "WEBHOOK_BANK",
-                },
-            });
-
-            return {
-                idempotent: false,
-                orderId: updatedOrder.id,
-                orderCode: updatedOrder.orderCode,
-                planCode: updatedOrder.planCode,
-                previousExpiresAt: currentExpiresAt,
-                newExpiresAt,
-            };
+        const order = await prisma.subscriptionOrder.findUnique({
+            where: { orderCode }, select: { id: true },
         });
+        if (!order) throw new Error("ORDER_NOT_FOUND");
+        const activation = await confirmBankSubscriptionOrder({
+            orderId: order.id, amountVnd: transferAmount, bankRef: transactionRef || null, rawBody,
+        });
+        const result = {
+            idempotent: activation.alreadyPaid, orderId: order.id, orderCode,
+            ...(!activation.alreadyPaid ? { newExpiresAt: activation.newExpiresAt, previousExpiresAt: activation.previousExpiresAt, planCode: activation.order.planCode } : {}),
+        };
 
         return NextResponse.json(
             {
@@ -222,6 +123,9 @@ export async function POST(request: Request) {
                 { error: `Không tìm thấy đơn hàng ${orderCode}.` },
                 { status: 404 },
             );
+        }
+        if (["ORDER_CANCELLED", "ORDER_EXPIRED", "INVALID_ORDER_STATUS"].includes(errorMessage)) {
+            return NextResponse.json({ error: "Đơn hàng không còn chờ thanh toán." }, { status: 409 });
         }
         if (errorMessage === "INSUFFICIENT_AMOUNT") {
             return NextResponse.json(

@@ -1,5 +1,7 @@
 # Kế hoạch hoàn thiện và đưa Quản Lý Hồ Câu ra bán
 
+> Cập nhật 04/11/2026: đã dựng staging PostgreSQL cục bộ riêng, sửa nhân sự/quota/kích hoạt thuê bao, chạy 33/33 integration và diễn tập dump/restore 39 bảng. Chưa kiểm chứng staging Neon, Google OAuth, ngân hàng hoặc máy in thật; các tiêu chí pilot/production bên dưới chưa tự động được coi là hoàn tất. Xem [báo cáo và quy trình mới](SAAS_HARDENING_2026-11-04.md).
+
 ## Mục tiêu
 
 Đưa sản phẩm hiện có tới một nhóm hồ câu trả phí sớm, giảm rủi ro sai lệch dữ liệu/tiền và không làm gián đoạn tài khoản, hồ, khách hàng, nhân viên hay lịch sử hiện hữu.

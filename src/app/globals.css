@@ -329,6 +329,13 @@ input, select, textarea {
   transform: scale(0.99);
 }
 
+@media (min-width: 768px) {
+  .menu-row,
+  .mobile-ledger-row {
+    margin-bottom: 0;
+  }
+}
+
 /* Modern pill badge */
 .badge-pill {
   display: inline-flex;
@@ -364,7 +371,7 @@ input, select, textarea {
 
 .mobile-pos-frame {
   width: 100%;
-  max-width: 32rem; /* 512px: Chuẩn màn hình di động rộng sắc nét hơn */
+  max-width: 32rem; /* Mobile default: 512px */
   min-height: 100dvh;
   background-color: #FFFFFF;
   display: flex;
@@ -374,6 +381,7 @@ input, select, textarea {
   border-right: 1px solid #E2E8F0;
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
   overflow-x: hidden;
+  transition: max-width 0.2s ease-in-out;
 }
 
 @media (max-width: 540px) {
@@ -385,6 +393,31 @@ input, select, textarea {
     border-left-width: 0;
     border-right-width: 0;
     box-shadow: none;
+  }
+}
+
+/* PC Tablet Screen (>= 768px): Expand comfortably to 768px */
+@media (min-width: 768px) {
+  .mobile-pos-frame {
+    max-width: 48rem; /* 768px */
+    box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.08);
+  }
+  .has-bottom-nav {
+    padding-bottom: 2rem !important;
+  }
+}
+
+/* PC Desktop Screen (>= 1024px): Standard workstation width */
+@media (min-width: 1024px) {
+  .mobile-pos-frame {
+    max-width: 72rem; /* 1152px */
+  }
+}
+
+/* PC Widescreen / Full HD (>= 1280px): Spacious 1280px */
+@media (min-width: 1280px) {
+  .mobile-pos-frame {
+    max-width: 80rem; /* 1280px */
   }
 }
 
@@ -827,4 +860,3 @@ nav button:active, nav a:active {
   .home-welcome-content { flex-direction: column; align-items: stretch; gap: 12px; }
   .home-welcome-content > a { min-height: 44px; margin-left: 0; }
 }
-

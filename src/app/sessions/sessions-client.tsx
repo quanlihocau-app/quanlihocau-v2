@@ -525,8 +525,8 @@ export function SessionsClient({
                 )}
             </div>
 
-            {/* Lưới thẻ phiên (2 cột trên mobile, 3-5 cột trên tablet/desktop nhỏ gọn ~ 1/3) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2.5">
+            {/* Lưới thẻ phiên (2 cột trên mobile, 4-6 cột trên tablet/desktop PC thoáng đãng) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
                 {sessions.map((s) => (
                     <SessionGridCard
                         key={s.id}
@@ -556,7 +556,7 @@ export function SessionsClient({
                     aria-label="Tùy chỉnh phiên câu"
                     onClick={onActionModalBackdropClick}
                 >
-                    <div className="relative my-auto w-full max-w-lg rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] modal-content-animate">
+                    <div className="relative my-auto w-full max-w-lg md:max-w-2xl lg:max-w-3xl rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] modal-content-animate">
                         {/* Header Modal Tùy chỉnh */}
                         <div className="flex items-center justify-between border-b border-slate-100 bg-[#F0FDF4] px-4 py-3 shrink-0">
                             <div>
@@ -672,7 +672,7 @@ export function SessionsClient({
                     aria-label="Chi tiết phiên câu"
                     onClick={onDetailBackdropClick}
                 >
-                    <div className="relative my-auto w-full max-w-lg rounded-[28px] bg-white border border-slate-100 shadow-2xl overflow-hidden flex flex-col max-h-[90dvh] modal-content-animate">
+                    <div className="relative my-auto w-full max-w-lg md:max-w-2xl rounded-[28px] bg-white border border-slate-100 shadow-2xl overflow-hidden flex flex-col max-h-[90dvh] modal-content-animate">
                         {/* Header Modal */}
                         <div className="flex items-center justify-between border-b border-slate-100 bg-white px-5 py-3 shrink-0 font-serif">
                             <div>

@@ -1,16 +1,18 @@
 import Link from "next/link";
+import Image from "next/image";
 import { TRIAL_DAYS } from "@/lib/vietqr";
 
 export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
     const entry = isLoggedIn ? "/sessions" : "/register";
     const entryLabel = isLoggedIn ? "Vào hồ của tôi" : `Mở hồ dùng thử ${TRIAL_DAYS} ngày`;
-    const configuredVideo = process.env.NEXT_PUBLIC_PROMO_VIDEO_URL || "";
-    const videoUrl = /^https:\/\//i.test(configuredVideo) || /^\/(?!\/)/.test(configuredVideo) ? configuredVideo : "";
     return (
         <div className="brand-landing">
             <a href="#noi-dung" className="brand-skip">Đến nội dung chính</a>
             <header className="brand-header"><div className="brand-wrap brand-header-inner">
-                <Link href="/" className="brand-logo" aria-label="Quản Lí Hồ Câu — Trang chủ"><span className="brand-mark" aria-hidden="true">h<span>c</span></span><span><strong className="brand-name">Quản Lí Hồ Câu</strong><span className="brand-domain">quanlihocau.com</span></span></Link>
+                <Link href="/" className="brand-logo" aria-label="Quản Lí Hồ Câu — Trang chủ">
+                    <Image src="/brand/logo.svg" alt="Logo Quản Lý Hồ Câu" width={48} height={48} priority className="brand-logo-img" />
+                    <span><strong className="brand-name">Quản Lí Hồ Câu</strong><span className="brand-domain">quanlihocau.com</span></span>
+                </Link>
                 <nav className="brand-nav" aria-label="Điều hướng trang giới thiệu"><a href="#cach-dung" className="brand-desktop-link">Cách dùng</a><a href="#tinh-nang" className="brand-desktop-link">Tính năng</a><Link href="/bang-gia" className="brand-desktop-link">Bảng giá</Link><Link href={isLoggedIn ? "/sessions" : "/login"} className="brand-login">{isLoggedIn ? "Vào app" : "Đăng nhập"} ↗</Link></nav>
             </div></header>
             <main id="noi-dung">
@@ -21,21 +23,30 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
                         <div className="brand-book-row"><span>Ô số 03</span><strong>Anh Hậu</strong></div><div className="brand-book-row"><span>Giờ vào → Giờ ra</span><strong>07:00 → 11:00</strong></div>
                         <div className="brand-timer"><span>Còn 10 phút<br /><small>Chuẩn bị hỏi khách gia hạn</small></span><strong>00:10:00</strong></div>
                         <div className="brand-book-row"><span>Tiền câu · 4 giờ</span><strong>150.000đ</strong></div><div className="brand-book-row"><span>1 chai nước</span><strong>10.000đ</strong></div><div className="brand-book-row"><span>Đã thu trước</span><strong>160.000đ</strong></div><div className="brand-book-row brand-total"><span>Còn phải thu</span><strong>0đ</strong></div>
-                        <div className="brand-sample-actions" aria-hidden="true"><span>+ Thêm hàng</span><span>Kết thúc & in vé</span></div>
+                        <div className="brand-sample-actions" aria-hidden="true"><span>+ Thêm hàng</span><span>Kết thúc &amp; in vé</span></div>
                     </div><figcaption>Vé minh họa · Luôn kiểm tra tiền trước khi xác nhận.</figcaption></figure>
-                </div><div className="brand-hero-bottom brand-wrap"><span>Thiết kế cho chủ hồ Việt</span><span>Chữ rõ ngoài trời</span><span>Tiền mặt & chuyển khoản</span><span>In vé 58mm</span></div></section>
+                </div><div className="brand-hero-bottom brand-wrap"><span>Thiết kế cho chủ hồ Việt</span><span>Chữ rõ ngoài trời</span><span>Tiền mặt &amp; chuyển khoản</span><span>In vé 58mm</span></div></section>
                 <section id="cach-dung" className="brand-wrap brand-section"><div className="brand-section-heading"><p className="brand-eyebrow">Một ngày ở hồ</p><h2>Vẫn những việc ấy.<br /><span>Chỉ nhẹ tay hơn.</span></h2><p>Không phải học một đống chức năng. Bắt đầu bằng đúng việc bạn đang làm.</p></div><ol className="brand-steps">
-                    <li><span className="brand-step-number">01 <small>KHÁCH ĐẾN</small></span><h3>Chọn ô. Chọn gói. Ghi vé.</h3><p>Ô trống hiện rõ. Giờ vào, giờ dự kiến ra và tiền câu nằm cùng một chỗ.</p><Link href={entry} className="brand-text-link">Bắt đầu từ một vé ↗</Link></li>
-                    <li><span className="brand-step-number">02 <small>TRONG CA</small></span><h3>Nhìn giờ. Ghi thêm hàng.</h3><p>Khách gọi nước, thêm ngay vào vé. Gần hết giờ, hỏi khách gia hạn hay kết thúc.</p><span className="brand-step-note">Mỗi ô có vé và đồng hồ riêng.</span></li>
-                    <li><span className="brand-step-number">03 <small>KHÁCH VỀ</small></span><h3>Kiểm tra tiền. Chốt vé.</h3><p>Thấy rõ tiền câu, hàng thêm, thu mua cá và khoản đã trả. Xác nhận rồi in khi cần.</p><span className="brand-step-note">Đối chiếu từng khoản trước khi thu.</span></li>
+                    <li><span className="brand-step-number">01 <small>KHÁCH ĐẾN</small></span><h3>Chọn ô. Chọn gói. Ghi vé.</h3><p>Ô trống hiện rõ. Giờ vào, giờ dự kiến ra và tiền câu nằm cùng một chỗ.</p><Link href={entry} className="brand-text-link">Bắt đầu từ một vé ↗</Link>
+                        <div className="brand-step-video" aria-label="Demo mở vé khách đến">
+                            <video autoPlay loop muted playsInline preload="none" aria-label="Demo chọn ô và ghi vé khách đến" src="/videos/demo-mo-ve.mp4" />
+                        </div>
+                    </li>
+                    <li><span className="brand-step-number">02 <small>TRONG CA</small></span><h3>Nhìn giờ. Ghi thêm hàng.</h3><p>Khách gọi nước, thêm ngay vào vé. Gần hết giờ, hỏi khách gia hạn hay kết thúc.</p><span className="brand-step-note">Mỗi ô có vé và đồng hồ riêng.</span>
+                        <div className="brand-step-video is-portrait" aria-label="Demo dùng app trên điện thoại trong ca">
+                            <video autoPlay loop muted playsInline preload="none" aria-label="Demo sử dụng app trên điện thoại" src="/videos/demo-mobile.mp4" />
+                        </div>
+                    </li>
+                    <li><span className="brand-step-number">03 <small>KHÁCH VỀ</small></span><h3>Kiểm tra tiền. Chốt vé.</h3><p>Thấy rõ tiền câu, hàng thêm, thu mua cá và khoản đã trả. Xác nhận rồi in khi cần.</p><span className="brand-step-note">Đối chiếu từng khoản trước khi thu.</span>
+                        <div className="brand-step-video" aria-label="Demo báo cáo cuối ca">
+                            <video autoPlay loop muted playsInline preload="none" aria-label="Demo xem báo cáo và chốt vé cuối ca" src="/videos/demo-bao-cao.mp4" />
+                        </div>
+                    </li>
                 </ol></section>
                 <section id="tinh-nang" className="brand-features"><div className="brand-wrap"><div className="brand-section-heading"><p className="brand-eyebrow">Hiểu việc ở hồ</p><h2>Một vé rõ ràng.<br /><span>Cả ca yên tâm.</span></h2></div><div className="brand-feature-layout">
                     <article className="brand-feature-main"><span className="brand-feature-index">GIỜ CÂU</span><h3>Hết giờ.<br />Bạn là người quyết định.</h3><p>App cảnh báo để chọn gia hạn hoặc kết thúc. Không tự ý cộng thêm phí chỉ vì khách vừa hết giờ.</p><div className="brand-decision"><span>Đã hết giờ</span><strong>Gia hạn <b>hoặc</b> Kết thúc</strong></div></article>
-                    <div className="brand-feature-list"><article><span>01</span><div><h3>Thu mua cá, ghi cùng vé</h3><p>Ghi cân nặng và tiền thu mua cá để đối chiếu khi khách về. Không phải nhớ riêng một khoản.</p></div></article><article><span>02</span><div><h3>Đứng ở bờ hồ vẫn dễ nhìn</h3><p>Bật “Ngoài trời” để chữ đậm và viền rõ hơn. Nút lớn, số tiền ngay hàng, có thể phóng to.</p></div></article><article><span>03</span><div><h3>Cuối ca biết tiền nằm ở đâu</h3><p>Tách tiền mặt và chuyển khoản; xem hóa đơn, thu chi và khoản còn nợ để đối chiếu.</p></div></article><article><span>04</span><div><h3>Công cụ đầy đủ, màn hình gọn</h3><p>Có danh bạ khách, nhân viên, ô số, gói câu, kho hàng, nhật ký và báo cáo. Mở đúng mục khi cần.</p></div></article></div>
+                    <div className="brand-feature-list"><article><span>01</span><div><h3>Thu mua cá, ghi cùng vé</h3><p>Ghi cân nặng và tiền thu mua cá để đối chiếu khi khách về. Không phải nhớ riêng một khoản.</p></div></article><article><span>02</span><div><h3>Đứng ở bờ hồ vẫn dễ nhìn</h3><p>Bật &ldquo;Ngoài trời&rdquo; để chữ đậm và viền rõ hơn. Nút lớn, số tiền ngay hàng, có thể phóng to.</p></div></article><article><span>03</span><div><h3>Cuối ca biết tiền nằm ở đâu</h3><p>Tách tiền mặt và chuyển khoản; xem hóa đơn, thu chi và khoản còn nợ để đối chiếu.</p></div></article><article><span>04</span><div><h3>Công cụ đầy đủ, màn hình gọn</h3><p>Có danh bạ khách, nhân viên, ô số, gói câu, kho hàng, nhật ký và báo cáo. Mở đúng mục khi cần.</p></div></article></div>
                 </div></div></section>
-                <section id="video" className="brand-wrap brand-section brand-video-section"><div><p className="brand-eyebrow">Nhìn một lượt là hình dung</p><h2>Một ca ở hồ.<br /><span>Trong một khung hình.</span></h2><p>Từ lúc đón khách đến khi chốt tiền: cách chọn ô, ghi vé, thêm nước và xem báo cáo.</p><a href="#cach-dung" className="brand-text-link">Xem 3 bước sử dụng ↑</a></div><div className="brand-video-frame">
-                    {videoUrl ? <video controls playsInline preload="none" aria-label="Video giới thiệu cách dùng Quản Lí Hồ Câu" src={videoUrl} /> : <div className="brand-video-empty"><span className="brand-video-tag">VIDEO GIỚI THIỆU</span><div className="brand-video-illustration" aria-hidden="true"><span>01</span><i /><span>02</span><i /><span>03</span></div><strong>Chỗ dành cho câu chuyện hồ của bạn.</strong><p>Khung video quảng cáo đã sẵn sàng.<br />Video sẽ xuất hiện tại đây khi được bổ sung.</p></div>}
-                </div></section>
                 <section className="brand-wrap brand-section brand-faq"><div><p className="brand-eyebrow">Bắt đầu thật đơn giản</p><h2>Chưa quen dùng app?<br /><span>Cứ thử một vé trước.</span></h2></div><div>
                     <details><summary>Tôi đang ghi sổ giấy, có khó chuyển sang không?</summary><p>Đăng ký, kiểm tra tên hồ, ô số và gói câu. Sau đó làm theo 3 bước ghi vé. Bạn không cần nhập lại sổ cũ để bắt đầu.</p></details>
                     <details><summary>{TRIAL_DAYS} ngày dùng thử gồm những gì?</summary><p>Tài khoản mới có thời gian dùng thử {TRIAL_DAYS} ngày để làm quen với các công cụ quản lý hồ. Xem điều kiện và giới hạn gói tại trang bảng giá.</p><Link href="/bang-gia" className="brand-text-link">Xem bảng giá và quyền lợi ↗</Link></details>

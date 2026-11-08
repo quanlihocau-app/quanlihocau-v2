@@ -9,7 +9,7 @@ import {
     ForbiddenError,
     requireTenantContext,
 } from "@/lib/tenant";
-import { assertStaffLimit } from "@/lib/subscription-guard";
+import { withLakeQuota } from "@/lib/subscription-guard";
 
 const createMemberSchema = z
     .object({
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
         }
 
         // Kiểm tra giới hạn số lượng nhân viên của gói cước (SILVER max 1)
-        await assertStaffLimit(tenantContext.lakeId);
+
 
         const data = parsed.data;
         const normalizedEmail = data.email.toLowerCase();
@@ -128,7 +128,7 @@ export async function POST(request: Request) {
 
         const passwordHash = await bcrypt.hash(data.password, 12);
 
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await withLakeQuota(tenantContext.lakeId, "staff", async (tx) => {
             const duplicate = await tx.user.findUnique({
                 where: { email: normalizedEmail },
                 select: { id: true },

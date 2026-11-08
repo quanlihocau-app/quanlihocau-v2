@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AuthenticationError, ForbiddenError, requireTenantContext } from "@/lib/tenant";
-import { assertSpotLimit } from "@/lib/subscription-guard";
+import { withLakeQuota } from "@/lib/subscription-guard";
 
 export interface QuickActionResult<T = unknown> {
     ok: boolean;
@@ -62,72 +62,75 @@ export async function addQuickHutAction(input: {
         }
 
         // Kiểm tra giới hạn số ô câu của gói cước SaaS
-        await assertSpotLimit(tenantContext.lakeId);
+        const newHut = await withLakeQuota(tenantContext.lakeId, "spot", async (tx) => {
 
-        // Lấy hoặc tự tạo khu vực mặc định nếu chưa có
-        let targetAreaId = input.areaId;
+            // Lấy hoặc tự tạo khu vực mặc định nếu chưa có
+            let targetAreaId = input.areaId;
 
-        if (targetAreaId) {
-            const existingArea = await prisma.area.findFirst({
-                where: {
-                    id: targetAreaId,
-                    lakeId: tenantContext.lakeId,
-                    deletedAt: null,
-                },
-                select: { id: true },
-            });
-            if (!existingArea) {
-                targetAreaId = undefined;
-            }
-        }
-
-        if (!targetAreaId) {
-            let defaultArea = await prisma.area.findFirst({
-                where: {
-                    lakeId: tenantContext.lakeId,
-                    deletedAt: null,
-                },
-                orderBy: { createdAt: "asc" },
-                select: { id: true },
-            });
-
-            if (!defaultArea) {
-                defaultArea = await prisma.area.create({
-                    data: {
+            if (targetAreaId) {
+                const existingArea = await tx.area.findFirst({
+                    where: {
+                        id: targetAreaId,
                         lakeId: tenantContext.lakeId,
-                        name: "Khu chính",
+                        deletedAt: null,
                     },
                     select: { id: true },
                 });
+                if (!existingArea) {
+                    targetAreaId = undefined;
+                }
             }
 
-            targetAreaId = defaultArea.id;
-        }
+            if (!targetAreaId) {
+                let defaultArea = await tx.area.findFirst({
+                    where: {
+                        lakeId: tenantContext.lakeId,
+                        deletedAt: null,
+                    },
+                    orderBy: { createdAt: "asc" },
+                    select: { id: true },
+                });
 
-        // Tạo ô câu mới
-        const newHut = await prisma.hut.create({
-            data: {
-                lakeId: tenantContext.lakeId,
-                areaId: targetAreaId,
-                name: trimmedName,
-            },
-            include: {
-                area: {
-                    select: { id: true, name: true },
+                if (!defaultArea) {
+                    defaultArea = await tx.area.create({
+                        data: {
+                            lakeId: tenantContext.lakeId,
+                            name: "Khu chính",
+                        },
+                        select: { id: true },
+                    });
+                }
+
+                targetAreaId = defaultArea.id;
+            }
+
+            // Tạo ô câu mới
+            const newHut = await tx.hut.create({
+                data: {
+                    lakeId: tenantContext.lakeId,
+                    areaId: targetAreaId,
+                    name: trimmedName,
                 },
-            },
-        });
+                include: {
+                    area: {
+                        select: { id: true, name: true },
+                    },
+                },
+            });
 
-        // Ghi Audit log
-        await prisma.auditEvent.create({
-            data: {
-                lakeId: tenantContext.lakeId,
-                entityType: "Hut",
-                entityId: newHut.id,
-                action: "HUT_QUICK_CREATED",
-                payload: JSON.stringify({ name: newHut.name, areaId: targetAreaId }),
-                createdBy: tenantContext.userId,
-            },
+            // Ghi Audit log
+            await tx.auditEvent.create({
+                data: {
+                    lakeId: tenantContext.lakeId,
+                    entityType: "Hut",
+                    entityId: newHut.id,
+                    action: "HUT_QUICK_CREATED",
+                    payload: JSON.stringify({ name: newHut.name, areaId: targetAreaId }),
+                    createdBy: tenantContext.userId,
+                },
+            });
+
+            return newHut;
         });
 
         revalidatePath("/sessions/new");

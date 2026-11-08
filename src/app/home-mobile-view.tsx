@@ -216,7 +216,7 @@ export function HomeMobileView({
                     )}
 
                     {/* ── Sổ Tay Vận Hành Card (Đồng bộ Xanh Lá Hiện Đại) ───── */}
-                    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs space-y-2.5">
+                    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-2xs space-y-2.5">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                             <span className="inline-flex items-center rounded-full bg-[#DCFCE7] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#16A34A] border border-[#BBF7D0]">
                                 SỔ TAY VẬN HÀNH
@@ -226,18 +226,18 @@ export function HomeMobileView({
                                 Sẵn sàng phục vụ
                             </span>
                         </div>
-                        <div className="home-welcome-content flex items-center justify-between pt-1 gap-2">
+                        <div className="home-welcome-content flex flex-col sm:flex-row sm:items-center justify-between pt-1 gap-3">
                             <div className="min-w-0 flex-1">
-                                <h2 className="text-base font-bold text-[#0F172A] leading-snug font-serif break-words">
+                                <h2 className="text-base sm:text-lg font-bold text-[#0F172A] leading-snug font-serif break-words">
                                     {lakeName}
                                 </h2>
-                                <p className="text-xs text-slate-500 font-serif mt-0.5 leading-relaxed">
-                                    Mở vé nhanh, đếm giờ tự động và đối chiếu tiền ca minh bạch.
+                                <p className="text-xs sm:text-sm text-slate-500 font-serif mt-0.5 leading-relaxed">
+                                    Mở vé nhanh, đếm giờ tự động và đối chiếu tiền ca minh bạch trên cả điện thoại &amp; máy tính.
                                 </p>
                             </div>
                             <Link
                                 href="/sessions/new"
-                                className="inline-flex items-center justify-center rounded-2xl bg-[#16A34A] hover:bg-[#15803D] px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all shrink-0 ml-1 font-serif"
+                                className="inline-flex items-center justify-center rounded-2xl bg-[#16A34A] hover:bg-[#15803D] px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all shrink-0 font-serif"
                             >
                                 + Mở vé ngay
                             </Link>
@@ -257,50 +257,50 @@ export function HomeMobileView({
                             </span>
                         </div>
 
-                        <div className="home-shift-stats grid grid-cols-[1fr_1fr_1.5fr] divide-x divide-slate-100 py-3">
+                        <div className="home-shift-stats grid grid-cols-[1fr_1fr_1.5fr] md:grid-cols-3 divide-x divide-slate-100 py-3 sm:py-4">
                             <Link
                                 href="/sessions"
                                 title="Bấm để xem danh sách phiên đang câu"
-                                className="px-2 cursor-pointer hover:bg-emerald-50/50 transition-all active:scale-95 group"
+                                className="px-3 sm:px-4 cursor-pointer hover:bg-emerald-50/50 transition-all active:scale-95 group"
                             >
-                                <p className="text-2xl font-bold text-[#16A34A] tabular-nums font-serif group-hover:scale-105 transition-transform">
+                                <p className="text-2xl sm:text-3xl font-bold text-[#16A34A] tabular-nums font-serif group-hover:scale-105 transition-transform">
                                     {activeSessionsCount}
                                 </p>
-                                <p className="text-[11px] font-semibold text-slate-500 mt-0.5 group-hover:text-[#16A34A]">
+                                <p className="text-[11px] sm:text-xs font-semibold text-slate-500 mt-0.5 group-hover:text-[#16A34A]">
                                     Đang câu ↗
                                 </p>
                             </Link>
                             <Link
                                 href="/sessions"
                                 title="Bấm để xem sơ đồ ô câu"
-                                className="px-2 cursor-pointer hover:bg-slate-50 transition-all active:scale-95 group"
+                                className="px-3 sm:px-4 cursor-pointer hover:bg-slate-50 transition-all active:scale-95 group"
                             >
-                                <p className="text-2xl font-bold text-[#0F172A] tabular-nums font-serif group-hover:scale-105 transition-transform">
+                                <p className="text-2xl sm:text-3xl font-bold text-[#0F172A] tabular-nums font-serif group-hover:scale-105 transition-transform">
                                     {totalHutsCount}
                                 </p>
-                                <p className="text-[11px] font-semibold text-slate-500 mt-0.5 group-hover:text-[#0F172A]">
+                                <p className="text-[11px] sm:text-xs font-semibold text-slate-500 mt-0.5 group-hover:text-[#0F172A]">
                                     Tổng số ô ↗
                                 </p>
                             </Link>
                             <Link
                                 href="/reports/daily"
                                 title="Bấm để xem Báo cáo ca hôm nay"
-                                className="px-2 cursor-pointer hover:bg-emerald-50/50 transition-all active:scale-95 group"
+                                className="px-3 sm:px-4 cursor-pointer hover:bg-emerald-50/50 transition-all active:scale-95 group"
                             >
-                                <p className="text-base sm:text-lg font-bold text-[#16A34A] tabular-nums font-serif">
+                                <p className="text-base sm:text-2xl font-bold text-[#16A34A] tabular-nums font-serif">
                                     {todayRevenue.toLocaleString("vi-VN")}đ
                                 </p>
-                                <p className="text-[11px] font-semibold text-slate-500 mt-0.5 group-hover:text-[#16A34A]">
+                                <p className="text-[11px] sm:text-xs font-semibold text-slate-500 mt-0.5 group-hover:text-[#16A34A]">
                                     Đã thu ca ↗
                                 </p>
                             </Link>
                         </div>
 
-                        <div className="grid grid-cols-3 items-stretch divide-x divide-slate-100 border-t border-slate-100 bg-slate-50/50 text-xs font-bold [&>a]:flex [&>a]:items-center [&>a]:justify-center [&>a]:px-1">
+                        <div className="grid grid-cols-3 items-stretch divide-x divide-slate-100 border-t border-slate-100 bg-slate-50/50 text-xs sm:text-sm font-bold [&>a]:flex [&>a]:items-center [&>a]:justify-center [&>a]:px-2">
                             <Link
                                 href="/sessions/new"
                                 prefetch={true}
-                                className="flex-1 py-2.5 text-center text-[#16A34A] hover:bg-emerald-50/50 active:bg-emerald-100/50 transition-colors"
+                                className="flex-1 py-2.5 sm:py-3 text-center text-[#16A34A] hover:bg-emerald-50/50 active:bg-emerald-100/50 transition-colors"
                             >
                                 + Mở vé mới
                             </Link>
@@ -308,7 +308,7 @@ export function HomeMobileView({
                                 href="/reports/daily"
                                 prefetch={true}
                                 title="Mở sổ báo cáo và chốt ca trực"
-                                className="flex-1 py-2.5 text-center text-slate-700 hover:bg-slate-100/60 active:bg-slate-200/50 transition-colors"
+                                className="flex-1 py-2.5 sm:py-3 text-center text-slate-700 hover:bg-slate-100/60 active:bg-slate-200/50 transition-colors"
                             >
                                 Báo cáo ca →
                             </Link>
@@ -316,14 +316,14 @@ export function HomeMobileView({
                                 href="/reports"
                                 prefetch={true}
                                 title="Mở bảng tổng quan báo cáo và đối soát"
-                                className="flex-1 py-2.5 text-center text-emerald-700 hover:bg-emerald-50/50 active:bg-emerald-100/50 transition-colors"
+                                className="flex-1 py-2.5 sm:py-3 text-center text-emerald-700 hover:bg-emerald-50/50 active:bg-emerald-100/50 transition-colors"
                             >
                                 Báo cáo tổng →
                             </Link>
                         </div>
                     </div>
 
-                    {/* ── Quick Actions Grid (Lối tắt nghiệp vụ 4x2 Bo tròn hiện đại) ── */}
+                    {/* ── Quick Actions Grid (Lối tắt nghiệp vụ 4x2 trên mobile, 8x1 trên PC) ── */}
                     <div className="space-y-2.5">
                         <div className="flex items-center justify-between px-1 pb-1">
                             <div className="flex items-center gap-2">
@@ -335,18 +335,18 @@ export function HomeMobileView({
                             <span className="rounded-full bg-[#DCFCE7] px-2 py-0.5 text-[10px] font-bold text-[#16A34A]">1 chạm</span>
                         </div>
 
-                        <div className="grid grid-cols-3 min-[400px]:grid-cols-4 gap-2.5">
+                        <div className="grid grid-cols-3 min-[400px]:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5 sm:gap-3">
                             {filteredActions.map((item) => (
                                 <Link
                                     key={item.title}
                                     href={item.href}
                                     prefetch={true}
-                                    className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-2.5 text-center shadow-2xs hover:border-[#16A34A] hover:shadow-xs active:scale-95 transition-all cursor-pointer"
+                                    className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-2.5 text-center shadow-2xs hover:border-[#16A34A] hover:shadow-xs active:scale-95 transition-all cursor-pointer group"
                                 >
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#DCFCE7] text-[#16A34A] mb-1.5 shadow-2xs">
+                                    <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-[#DCFCE7] text-[#16A34A] mb-1.5 shadow-2xs group-hover:scale-105 transition-transform">
                                         {item.icon}
                                     </div>
-                                    <span className="flex min-h-8 items-center justify-center text-[11px] font-bold text-[#0F172A] leading-4">
+                                    <span className="flex min-h-8 items-center justify-center text-[11px] sm:text-xs font-bold text-[#0F172A] leading-4">
                                         {item.title}
                                     </span>
                                     <span className="min-h-7 text-[10px] text-slate-500 leading-[14px] mt-0.5">
@@ -357,111 +357,114 @@ export function HomeMobileView({
                         </div>
                     </div>
 
-                    {/* ── Recent Sessions (Phiên câu gần nhất) ─────────────── */}
-                    <div className="space-y-2.5">
-                        <div className="flex items-center justify-between px-1 pb-1">
-                            <div className="flex items-center gap-2">
-                                <div className="h-4 w-1 rounded-full bg-[#16A34A]" />
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
-                                    PHIÊN CÂU GẦN NHẤT
-                                </h3>
-                            </div>
-                            <Link
-                                href="/sessions"
-                                className="text-xs font-bold text-[#16A34A] hover:underline"
-                            >
-                                Xem tất cả &gt;
-                            </Link>
-                        </div>
-
-                        {recentSessions.length === 0 ? (
-                            <div className="rounded-2xl border-2 border-dashed border-emerald-200 bg-[#F0FDF4] p-5 text-center space-y-1.5">
-                                <p className="text-xs font-medium text-slate-600">
-                                    Hiện chưa có phiên câu nào đang hoạt động.
-                                </p>
-                                <Link
-                                    href="/sessions/new"
-                                    className="inline-flex items-center text-xs font-bold text-[#16A34A] hover:underline"
-                                >
-                                    + Mở vé đầu tiên ngay
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden shadow-2xs">
-                                {recentSessions.map((s) => (
-                                    <Link
-                                        key={s.id}
-                                        href={`/sessions?sessionId=${encodeURIComponent(s.id)}`}
-                                        className="flex items-center justify-between p-3 transition-colors hover:bg-slate-50 active:bg-slate-100"
-                                    >
-                                        <div className="space-y-0.5 min-w-0 flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold text-[#0F172A] truncate">
-                                                    {s.huts.length > 0 ? s.huts.join(", ") : "Chưa chọn ô"}
-                                                </span>
-                                                <SessionStatusBadge status={s.status} />
-                                            </div>
-                                            <p className="text-[11px] text-slate-500 truncate">
-                                                {s.customerName} · {s.packageName}
-                                            </p>
-                                        </div>
-                                        <div className="text-right shrink-0 pl-2 text-xs font-bold text-[#16A34A]">
-                                            Xem &gt;
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* ── Recent Invoices (Hóa đơn ca vừa thu) ──────────────── */}
-                    {recentInvoices.length > 0 && (
+                    {/* ── Desktop Two-Column Layout for Recent Sessions & Invoices ── */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
+                        {/* ── Recent Sessions (Phiên câu gần nhất) ─────────────── */}
                         <div className="space-y-2.5">
                             <div className="flex items-center justify-between px-1 pb-1">
                                 <div className="flex items-center gap-2">
                                     <div className="h-4 w-1 rounded-full bg-[#16A34A]" />
                                     <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
-                                        HÓA ĐƠN CA VỪA THU
+                                        PHIÊN CÂU GẦN NHẤT
                                     </h3>
                                 </div>
                                 <Link
-                                    href="/invoices/history"
+                                    href="/sessions"
                                     className="text-xs font-bold text-[#16A34A] hover:underline"
                                 >
-                                    Xem nhật ký &gt;
+                                    Xem tất cả &gt;
                                 </Link>
                             </div>
 
-                            <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden shadow-2xs">
-                                {recentInvoices.map((inv) => (
+                            {recentSessions.length === 0 ? (
+                                <div className="rounded-2xl border-2 border-dashed border-emerald-200 bg-[#F0FDF4] p-5 text-center space-y-1.5">
+                                    <p className="text-xs font-medium text-slate-600">
+                                        Hiện chưa có phiên câu nào đang hoạt động.
+                                    </p>
                                     <Link
-                                        key={inv.id}
-                                        href={`/invoices/${encodeURIComponent(inv.id)}?returnTo=%2Fhome`}
-                                        title="Bấm để xem chi tiết hóa đơn"
-                                        className="flex items-center justify-between p-3 hover:bg-slate-50 cursor-pointer transition-colors active:bg-slate-100"
+                                        href="/sessions/new"
+                                        className="inline-flex items-center text-xs font-bold text-[#16A34A] hover:underline"
                                     >
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold text-[#0F172A] hover:text-[#16A34A]">
-                                                    {inv.invoiceNumber}
-                                                </span>
-                                                <Badge variant="success">Đã thanh toán</Badge>
-                                            </div>
-                                            <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                                                {inv.customerName}
-                                            </p>
-                                        </div>
-                                        <div className="text-right shrink-0 pl-2">
-                                            <span className="text-xs font-bold text-[#16A34A] tabular-nums font-serif block">
-                                                {inv.totalAmountVnd.toLocaleString("vi-VN")}đ
-                                            </span>
-                                            <span className="text-[10px] text-slate-400">Xem bill →</span>
-                                        </div>
+                                        + Mở vé đầu tiên ngay
                                     </Link>
-                                ))}
-                            </div>
+                                </div>
+                            ) : (
+                                <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden shadow-2xs">
+                                    {recentSessions.map((s) => (
+                                        <Link
+                                            key={s.id}
+                                            href={`/sessions?sessionId=${encodeURIComponent(s.id)}`}
+                                            className="flex items-center justify-between p-3 sm:p-3.5 transition-colors hover:bg-slate-50 active:bg-slate-100"
+                                        >
+                                            <div className="space-y-0.5 min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs sm:text-sm font-bold text-[#0F172A] truncate">
+                                                        {s.huts.length > 0 ? s.huts.join(", ") : "Chưa chọn ô"}
+                                                    </span>
+                                                    <SessionStatusBadge status={s.status} />
+                                                </div>
+                                                <p className="text-[11px] sm:text-xs text-slate-500 truncate">
+                                                    {s.customerName} · {s.packageName}
+                                                </p>
+                                            </div>
+                                            <div className="text-right shrink-0 pl-2 text-xs font-bold text-[#16A34A]">
+                                                Xem &gt;
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        {/* ── Recent Invoices (Hóa đơn ca vừa thu) ──────────────── */}
+                        {recentInvoices.length > 0 && (
+                            <div className="space-y-2.5">
+                                <div className="flex items-center justify-between px-1 pb-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-4 w-1 rounded-full bg-[#16A34A]" />
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A]">
+                                            HÓA ĐƠN CA VỪA THU
+                                        </h3>
+                                    </div>
+                                    <Link
+                                        href="/invoices/history"
+                                        className="text-xs font-bold text-[#16A34A] hover:underline"
+                                    >
+                                        Xem nhật ký &gt;
+                                    </Link>
+                                </div>
+
+                                <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden shadow-2xs">
+                                    {recentInvoices.map((inv) => (
+                                        <Link
+                                            key={inv.id}
+                                            href={`/invoices/${encodeURIComponent(inv.id)}?returnTo=%2Fhome`}
+                                            title="Bấm để xem chi tiết hóa đơn"
+                                            className="flex items-center justify-between p-3 sm:p-3.5 hover:bg-slate-50 cursor-pointer transition-colors active:bg-slate-100"
+                                        >
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs sm:text-sm font-bold text-[#0F172A] hover:text-[#16A34A]">
+                                                        {inv.invoiceNumber}
+                                                    </span>
+                                                    <Badge variant="success">Đã thanh toán</Badge>
+                                                </div>
+                                                <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">
+                                                    {inv.customerName}
+                                                </p>
+                                            </div>
+                                            <div className="text-right shrink-0 pl-2">
+                                                <span className="text-xs sm:text-sm font-bold text-[#16A34A] tabular-nums font-serif block">
+                                                    {inv.totalAmountVnd.toLocaleString("vi-VN")}đ
+                                                </span>
+                                                <span className="text-[10px] text-slate-400">Xem bill →</span>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </main>
 
                 {/* ── Navigation Bar ─────────────────────────────────────── */}

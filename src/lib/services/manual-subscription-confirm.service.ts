@@ -1,3 +1,4 @@
+import { shouldMarkOrderPaid } from "@/lib/bank-webhook";
 import { prisma } from "@/lib/prisma";
 
 export const DUMMY_BANK_REF_REGEX =
@@ -37,6 +38,7 @@ export interface ConfirmManualSubscriptionOrderSuccessResult {
     };
     newExpiresAt: Date;
     auditEventId: string;
+    previousExpiresAt: Date | null;
 }
 
 export interface ConfirmManualSubscriptionOrderAlreadyPaidResult {
@@ -60,8 +62,8 @@ export type ConfirmManualSubscriptionOrderResult =
  * - Không tạo mã giao dịch ngân hàng giả mạo (nếu không có mã phải lưu null và bắt buộc có lý do đối soát chi tiết).
  * - Ghi nhận AuditEvent đầy đủ và nguyên tử trong cùng transaction.
  */
-export async function confirmManualSubscriptionOrder(
-    input: ConfirmManualSubscriptionOrderInput,
+async function activateSubscriptionOrder(
+    input: ConfirmManualSubscriptionOrderInput & { bankPayment?: { amountVnd: number; rawBody: string } },
 ): Promise<ConfirmManualSubscriptionOrderResult> {
     const {
         orderId,
@@ -75,19 +77,19 @@ export async function confirmManualSubscriptionOrder(
     } = input;
 
     const trimmedReason = reason?.trim() || "";
-    if (trimmedReason.length < 5) {
+    if (!input.bankPayment && trimmedReason.length < 5) {
         throw new Error("REASON_TOO_SHORT");
     }
 
     const trimmedBankRef = bankRef?.trim() || null;
-    if (trimmedBankRef) {
+    if (!input.bankPayment && trimmedBankRef) {
         if (DUMMY_BANK_REF_REGEX.test(trimmedBankRef)) {
             throw new Error("INVALID_BANK_REF_DUMMY");
         }
         if (trimmedBankRef.length < 3) {
             throw new Error("INVALID_BANK_REF_TOO_SHORT");
         }
-    } else {
+    } else if (!input.bankPayment) {
         // When bankRef is empty, detailed reason is required
         if (trimmedReason.length < 10) {
             throw new Error("DETAILED_REASON_REQUIRED_WITHOUT_BANK_REF");
@@ -155,12 +157,15 @@ export async function confirmManualSubscriptionOrder(
         // Số tiền trên đơn là giá đã phát hành. Đơn cũ (99.000đ / 179.000đ) vẫn xác nhận được
         // sau khi bảng giá tăng; đơn mới phải đạt giá catalog hiện tại.
         const legacyIssuedAmounts = [99000, 179000];
+        if (input.bankPayment && !shouldMarkOrderPaid(input.bankPayment.amountVnd, order.amountVnd)) {
+            throw new Error("INSUFFICIENT_AMOUNT");
+        }
         if (order.amountVnd <= 0) {
             throw new Error("INVALID_AMOUNT");
         }
 
         if (
-            order.amountVnd < order.plan.priceVnd &&
+            !input.bankPayment && order.amountVnd < order.plan.priceVnd &&
             !legacyIssuedAmounts.includes(order.amountVnd)
         ) {
             throw new Error("INVALID_AMOUNT");
@@ -207,7 +212,7 @@ export async function confirmManualSubscriptionOrder(
                 status: "PAID",
                 paidAt: now,
                 bankRef: effectiveBankRef,
-                rawWebhookPayload: JSON.stringify({
+                rawWebhookPayload: input.bankPayment?.rawBody ?? JSON.stringify({
                     source: "MANUAL_SUPERADMIN_RECONCILIATION",
                     reconciliationMethod,
                     confirmedBy: admin.email,
@@ -247,6 +252,7 @@ export async function confirmManualSubscriptionOrder(
         });
 
         // 5. Update Organization subscription
+        await tx.$queryRaw`SELECT "id" FROM "Organization" WHERE "id" = ${order.organizationId} FOR UPDATE`;
         const currentOrg = await tx.organization.findUnique({
             where: { id: order.organizationId },
         });
@@ -267,9 +273,9 @@ export async function confirmManualSubscriptionOrder(
         const auditEvent = await tx.auditEvent.create({
             data: {
                 lakeId: order.lakeId,
-                entityType: "SUBSCRIPTION_ORDER",
+                entityType: input.bankPayment ? "SUBSCRIPTION" : "SUBSCRIPTION_ORDER",
                 entityId: order.id,
-                action: "MANUAL_PAYMENT_CONFIRM",
+                action: input.bankPayment ? "PLAN_ACTIVATED" : "MANUAL_PAYMENT_CONFIRM",
                 payload: JSON.stringify({
                     orderCode: order.orderCode,
                     planCode: order.planCode,
@@ -284,9 +290,9 @@ export async function confirmManualSubscriptionOrder(
                     reason: trimmedReason,
                     bankRef: effectiveBankRef,
                     hasBankRef: Boolean(effectiveBankRef),
-                    isManualReconciled: true,
-                    isAutomatedBankProof: false,
-                    note: "Đối soát thủ công có căn cứ xác thực, không tạo mã giao dịch giả.",
+                    isManualReconciled: !input.bankPayment,
+                    isAutomatedBankProof: Boolean(input.bankPayment),
+                    note: input.bankPayment ? "Webhook ngân hàng đã xác thực." : "Đối soát thủ công có căn cứ xác thực, không tạo mã giao dịch giả.",
                     timestamp: now.toISOString(),
                 }),
                 createdBy: admin.email,
@@ -299,6 +305,24 @@ export async function confirmManualSubscriptionOrder(
             lake: updatedLake,
             newExpiresAt,
             auditEventId: auditEvent.id,
+            previousExpiresAt: currentExpiresAt,
         };
+    });
+}
+
+export async function confirmManualSubscriptionOrder(input: ConfirmManualSubscriptionOrderInput) {
+    return activateSubscriptionOrder(input);
+}
+
+/** Both payment channels use identical order/lake locks and conditional transitions. */
+export async function confirmBankSubscriptionOrder(input: {
+    orderId: string; amountVnd: number; bankRef: string | null; rawBody: string;
+}) {
+    return activateSubscriptionOrder({
+        orderId: input.orderId,
+        admin: { id: "WEBHOOK_BANK", email: "WEBHOOK_BANK", name: "Bank webhook" },
+        reconciliationMethod: "BANK_STATEMENT", reason: "Authenticated bank webhook",
+        bankRef: input.bankRef,
+        bankPayment: { amountVnd: input.amountVnd, rawBody: input.rawBody },
     });
 }

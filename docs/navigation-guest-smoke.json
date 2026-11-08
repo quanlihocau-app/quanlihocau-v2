@@ -489,6 +489,11 @@
       "location": null
     },
     {
+      "target": "/api/health",
+      "status": 401,
+      "location": null
+    },
+    {
       "target": "/api/huts",
       "status": 401,
       "location": null

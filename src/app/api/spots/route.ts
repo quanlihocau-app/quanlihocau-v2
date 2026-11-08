@@ -8,7 +8,7 @@ import {
     ForbiddenError,
     requireTenantContext,
 } from "@/lib/tenant";
-import { assertSpotLimit } from "@/lib/subscription-guard";
+import { withLakeQuota } from "@/lib/subscription-guard";
 
 const createSpotSchema = z.object({
     name: z.string().trim().min(2, "Tên ô câu tối thiểu 2 ký tự").max(100, "Tên ô câu tối đa 100 ký tự"),
@@ -73,7 +73,6 @@ export async function POST(request: Request) {
         }
 
         // Kiểm tra giới hạn số ô câu của gói cước (SILVER max 30)
-        await assertSpotLimit(tenantContext.lakeId);
 
         const area = await prisma.area.findFirst({
             where: {
@@ -93,7 +92,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const spot = await prisma.hut.create({
+        const spot = await withLakeQuota(tenantContext.lakeId, "spot", (tx) => tx.hut.create({
             data: {
                 lakeId: tenantContext.lakeId,
                 areaId: parsed.data.areaId,
@@ -107,7 +106,7 @@ export async function POST(request: Request) {
                     },
                 },
             },
-        });
+        }));
 
         return NextResponse.json(spot, { status: 201 });
     } catch (error) {

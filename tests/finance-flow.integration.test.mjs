@@ -83,7 +83,7 @@ test("Real database: staff receipt → cashbook → report → export → detail
         const csvResponse = await request(`/api/reports/export?preset=custom&${range}&format=excel`);
         assert.ok(csvResponse.headers.get("content-disposition").endsWith('.csv"'));
         const csv = await csvResponse.text();
-        assert.ok(csv.includes('"TỔNG DOANH THU","1700000"')); assert.ok(csv.includes('"LỢI NHUẬN TẠM TÍNH","1600000"'));
+        assert.ok(csv.includes('"TỔNG DOANH THU","1700000"')); assert.ok(csv.includes('"DOANH THU TRỪ CHI VÀ THU CÁ","1600000"'));
         const detail = await (await request(`/api/reports/drilldown?preset=custom&${range}&metric=totalExpense`)).json();
         assert.equal(detail.items[0].href, `/expenses/${expense.expense.id}`);
         const target = `/cashbook?${range}&scope=all`;

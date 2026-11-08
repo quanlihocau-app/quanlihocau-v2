@@ -1,5 +1,7 @@
 # Auth staging verification — 27 October 2026
 
+Update 4 November 2026: an independently created local PostgreSQL staging cluster now verifies real phone/email/staff login, onboarding seed rollback, session revocation and cross-tenant account protections. The combined staging integration suite passes 33/33. Live Google OAuth, browser continuity and Neon staging remain unverified. See [current evidence and remaining release gates](SAAS_HARDENING_2026-11-04.md); the historical blocker below describes the 27 October environment, not the newly created local cluster.
+
 Status: blocked on an available, independently confirmed staging database and staging Google OAuth configuration. No production connection, deployment, migration, seed command, or data cleanup was performed.
 
 ## Evidence from this checkout

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withLakeQuota } from "@/lib/subscription-guard";
 import { Role } from "@/generated/prisma/client";
 import { AuthenticationError, ForbiddenError, requireSuperAdmin } from "@/lib/tenant";
 
@@ -28,7 +29,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ lak
     await requireSuperAdmin();
     const { lakeId } = await params;
     const { email, role } = await request.json();
-    if (!email || !role) {
+    if (!email || ![Role.OWNER, Role.MANAGER, Role.STAFF].includes(role)) {
       return NextResponse.json({ error: "email and role are required" }, { status: 400 });
     }
     // Find user by email (must exist)
@@ -36,19 +37,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ lak
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    // Enforce single OWNER rule
-    if (role === Role.OWNER) {
-      const existingOwner = await prisma.membership.findFirst({
-        where: { lakeId, role: Role.OWNER },
-      });
-      if (existingOwner) {
-        return NextResponse.json({ error: "Lake already has an OWNER" }, { status: 400 });
+    const membership = await withLakeQuota(lakeId, role === Role.OWNER ? "owner" : "staff", async (tx) => {
+      if (role === Role.OWNER && await tx.membership.findFirst({ where: { lakeId, role: Role.OWNER, deletedAt: null } })) {
+        throw new ForbiddenError("Lake already has an OWNER");
       }
-    }
-    // Create membership (unique constraint prevents duplicate user‑lake pair)
-    const membership = await prisma.membership.create({
-      data: { userId: user.id, lakeId, role },
-      include: { user: true },
+      return tx.membership.create({ data: { userId: user.id, lakeId, role },
+        include: { user: { select: { id: true, name: true, email: true } } } });
     });
     return NextResponse.json({ membership }, { status: 201 });
   } catch (error) {
@@ -72,7 +66,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ l
     if (!membership || membership.lakeId !== lakeId) {
       return NextResponse.json({ error: "Membership not found for this lake" }, { status: 404 });
     }
-    await prisma.membership.delete({ where: { id: membershipId } });
+    await prisma.$transaction(async (tx) => {
+      await tx.membership.update({ where: { id: membershipId }, data: { deletedAt: new Date() } });
+      await tx.user.update({ where: { id: membership.userId }, data: { sessionVersion: { increment: 1 } } });
+    });
     return NextResponse.json({ message: "Removed" });
   } catch (error) {
     if (error instanceof AuthenticationError) return NextResponse.json({ error: error.message }, { status: 401 });

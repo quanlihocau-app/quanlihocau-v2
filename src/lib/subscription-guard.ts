@@ -1,4 +1,4 @@
-import { Role } from "@/generated/prisma/client";
+import { Role, type Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ForbiddenError } from "@/lib/tenant";
 import { PLAN_PRICING } from "@/lib/vietqr";
@@ -15,8 +15,8 @@ export class SubscriptionQuotaExceededError extends ForbiddenError {
 /**
  * Kiểm tra giới hạn ô câu (spots / huts) theo gói cước của hồ
  */
-export async function assertSpotLimit(lakeId: string): Promise<void> {
-    const lake = await prisma.lake.findUnique({
+export async function assertSpotLimit(lakeId: string, client: Prisma.TransactionClient = prisma): Promise<void> {
+    const lake = await client.lake.findUnique({
         where: { id: lakeId },
         select: {
             id: true,
@@ -31,7 +31,7 @@ export async function assertSpotLimit(lakeId: string): Promise<void> {
 
     const maxSpots = PLAN_PRICING.SILVER.maxSpots;
     if (lake.subscriptionPlan === "SILVER" && maxSpots !== null) {
-        const activeSpotsCount = await prisma.hut.count({
+        const activeSpotsCount = await client.hut.count({
             where: {
                 lakeId,
                 deletedAt: null,
@@ -49,8 +49,8 @@ export async function assertSpotLimit(lakeId: string): Promise<void> {
 /**
  * Kiểm tra giới hạn nhân sự (staff / manager) theo gói cước của hồ
  */
-export async function assertStaffLimit(lakeId: string): Promise<void> {
-    const lake = await prisma.lake.findUnique({
+export async function assertStaffLimit(lakeId: string, client: Prisma.TransactionClient = prisma): Promise<void> {
+    const lake = await client.lake.findUnique({
         where: { id: lakeId },
         select: {
             id: true,
@@ -65,7 +65,7 @@ export async function assertStaffLimit(lakeId: string): Promise<void> {
 
     const maxStaff = PLAN_PRICING.SILVER.maxStaff;
     if (lake.subscriptionPlan === "SILVER" && maxStaff !== null) {
-        const staffCount = await prisma.membership.count({
+        const staffCount = await client.membership.count({
             where: {
                 lakeId,
                 deletedAt: null,
@@ -81,4 +81,18 @@ export async function assertStaffLimit(lakeId: string): Promise<void> {
             );
         }
     }
+}
+
+/** Lock, read quota and create must share this transaction on every write path. */
+export async function withLakeQuota<T>(
+    lakeId: string, kind: "spot" | "staff" | "owner",
+    create: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+    return prisma.$transaction(async (tx) => {
+        const rows = await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "Lake" WHERE "id" = ${lakeId} AND "deletedAt" IS NULL FOR UPDATE`;
+        if (!rows.length) throw new ForbiddenError("Không tìm thấy hồ câu.");
+        if (kind === "spot") await assertSpotLimit(lakeId, tx);
+        if (kind === "staff") await assertStaffLimit(lakeId, tx);
+        return create(tx);
+    }, { timeout: 15000 });
 }

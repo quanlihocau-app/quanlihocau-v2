@@ -15,7 +15,11 @@
     "check:navigation": "node scripts/check-navigation.mjs",
     "build:isolated": "node scripts/build-isolated.mjs",
     "test:guest-navigation": "node scripts/smoke-navigation-isolated.mjs",
-    "check:release": "npm run check:navigation && npm run test:safety && npm run lint && tsc --noEmit --incremental false && npm run build:isolated && npm run test:guest-navigation"
+    "check:release": "npm run check:navigation && npm run test:safety && npm run lint && tsc --noEmit --incremental false && npm run build:isolated && npm run test:guest-navigation",
+    "staging:local": "node scripts/staging-local.mjs",
+    "test:staging": "node scripts/test-staging.mjs",
+    "check:staging": "node scripts/check-staging.mjs",
+    "test:recovery": "node scripts/verify-staging-recovery.mjs"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.0",
