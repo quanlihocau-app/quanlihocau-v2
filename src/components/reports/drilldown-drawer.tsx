@@ -124,12 +124,12 @@ export function DrilldownDrawer({
                     ) : (
                         filteredItems.map((item) => (
                             <div key={item.id} className="py-2.5 text-xs">
-                                {item.href && <Link href={`${item.href}${item.href.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(returnTo)}`} className="mb-1 block font-semibold text-emerald-700 underline">Xem chi tiết chứng từ #{item.code} →</Link>}
+                                {item.href && <Link href={`${item.href}${item.href.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(returnTo)}`} className="mb-1 block font-semibold text-emerald-700 underline">Xem chi tiết chứng từ (Mã: {item.code}) →</Link>}
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-1.5">
                                             <span className="font-bold text-slate-800 tracking-wide font-mono">
-                                                #{item.code}
+                                                Mã: {item.code}
                                             </span>
                                             <span className="text-[11px] text-slate-400">
                                                 • {item.dateTime}

@@ -324,7 +324,7 @@ function formatPayloadKey(key: string): string {
         reason: "Lý do",
         priceVnd: "Phí phát sinh",
         newTotalAmountVnd: "Tổng tiền sau sửa",
-        name: "Tên mặt hàng",
+        name: "Tên",
         quantity: "Số lượng",
         productName: "Tên sản phẩm",
         productSku: "Mã sản phẩm",
@@ -336,6 +336,11 @@ function formatPayloadKey(key: string): string {
         itemsCount: "Số lượng món",
         settlement: "Quyết toán ca",
         balanceDueVnd: "Còn lại phải thu",
+        role: "Vai trò",
+        actorRole: "Vai trò",
+        actorName: "Người thực hiện",
+        isCustomStart: "Bắt đầu tùy chỉnh",
+        createdAt: "Thời gian tạo",
     };
     return map[key] || key;
 }
@@ -345,31 +350,31 @@ function formatPayloadValue(key: string, value: unknown, maps?: LookupMaps): str
 
     // 1. Tra cứu các ID sang tên người/sản phẩm/gói câu thực tế
     if (key === "packageId" && typeof value === "string") {
-        return maps?.packagesMap?.[value] || "Gói câu hồ";
+        return maps?.packagesMap?.[value] || (value.includes("-") || value.startsWith("#") ? "Gói câu tiêu chuẩn" : value);
     }
     if (key === "customerId" && typeof value === "string") {
-        return maps?.customersMap?.[value] || "Khách vãng lai";
+        return maps?.customersMap?.[value] || (value.includes("-") || value.startsWith("#") ? "Khách vãng lai" : value);
     }
     if (key === "hutIds" || key === "hutId") {
         if (Array.isArray(value)) {
             const list = value
-                .map((id) => (typeof id === "string" && maps?.hutsMap?.[id] ? maps.hutsMap[id] : String(id)))
+                .map((id) => (typeof id === "string" && maps?.hutsMap?.[id] ? maps.hutsMap[id] : (typeof id === "string" && (id.includes("-") || id.startsWith("#")) ? "Chòi câu" : String(id))))
                 .filter(Boolean);
             return list.length > 0 ? list.join(", ") : "Chưa chọn ô";
         }
         if (typeof value === "string") {
-            return maps?.hutsMap?.[value] || value;
+            return maps?.hutsMap?.[value] || (value.includes("-") || value.startsWith("#") ? "Chòi câu hồ" : value);
         }
     }
     if (key === "productId" && typeof value === "string") {
-        return maps?.productsMap?.[value] || "Sản phẩm";
+        return maps?.productsMap?.[value] || (value.includes("-") || value.startsWith("#") ? "Mặt hàng hồ câu" : value);
     }
     if ((key === "sessionId" || key === "fishingSessionId") && typeof value === "string") {
         const sess = maps?.sessionsMap?.[value];
         if (sess) {
             return `${sess.huts ? `Chòi ${sess.huts}` : "Phiên câu"}${sess.customerName ? ` (${sess.customerName})` : ""}`;
         }
-        return "Phiên câu liên kết";
+        return "Phiên câu hồ";
     }
 
     // 2. Dịch các giá trị cấu hình sang tiếng Việt
@@ -434,6 +439,12 @@ function formatPayloadValue(key: string, value: unknown, maps?: LookupMaps): str
     }
 
     if (typeof value === "string") {
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) || /^#[0-9a-f]{6,12}$/i.test(value)) {
+            return "Hệ thống liên kết";
+        }
+        if (value === "OWNER") return "Chủ hồ";
+        if (value === "MANAGER") return "Quản lý";
+        if (value === "STAFF") return "Nhân viên";
         if (value === "DRAFT") return "Bản nháp (Đang câu)";
         if (value === "PAID") return "Đã thanh toán đủ";
         if (value === "VOID") return "Đã hủy";

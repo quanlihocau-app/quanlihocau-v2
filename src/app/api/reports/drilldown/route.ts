@@ -194,7 +194,7 @@ export async function GET(request: NextRequest) {
                     href: `/invoices/${line.invoiceId}`,
                     code: line.id.substring(0, 8).toUpperCase(),
                     dateTime: formatVnDateTimeDisplay(line.createdAt),
-                    customerName: line.invoice.customer?.name || "Khách câu",
+                    customerName: line.invoice.customer?.name || "Khách vãng lai",
                     staffName: "Hệ thống tính giờ",
                     content: line.name,
                     amountVnd: line.totalVnd,
@@ -450,7 +450,9 @@ export async function GET(request: NextRequest) {
                     href: s.invoices[0] ? `/invoices/${s.invoices[0].id}` : "/sessions",
                     code: s.id.substring(0, 8).toUpperCase(),
                     dateTime: formatVnDateTimeDisplay(s.startAt),
-                    customerName: s.customer?.name || "Khách câu",
+                    customerName: s.customer?.name
+                        ? (spots ? `${s.customer.name} (Chòi ${spots})` : s.customer.name)
+                        : (spots ? `Cần thủ (Chòi ${spots})` : "Khách vãng lai"),
                     staffName: "Nhân viên trực hồ",
                     content: `Gói [${s.packageNameSnapshot}] - Ô: ${spots}`,
                     amountVnd: s.packagePriceVndSnapshot,
