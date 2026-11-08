@@ -43,29 +43,43 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Dữ liệu JSON không hợp lệ." }, { status: 400 });
     }
 
-    // Support single transaction object or SePay/Casso webhook format
+    // Support single transaction object or Casso format ({ error: 0, data: [...] })
+    const txObj = (Array.isArray(body.data) && body.data.length > 0
+        ? (body.data[0] as Record<string, unknown>)
+        : body) as Record<string, unknown>;
+
     // Common fields: content/description/memo, transferAmount/amount, referenceCode/transactionId/id
     const content = String(
+        txObj.content ||
+        txObj.description ||
+        txObj.transferContent ||
+        txObj.memo ||
+        txObj.orderCode ||
         body.content ||
         body.description ||
-        body.transferContent ||
-        body.memo ||
-        body.orderCode ||
         "",
     );
 
     const amountRaw =
-        body.transferAmount !== undefined
-            ? body.transferAmount
-            : body.amount !== undefined
-              ? body.amount
-              : body.amountIn;
+        txObj.transferAmount !== undefined
+            ? txObj.transferAmount
+            : txObj.amount !== undefined
+              ? txObj.amount
+              : txObj.amountIn !== undefined
+                ? txObj.amountIn
+                : body.transferAmount !== undefined
+                  ? body.transferAmount
+                  : body.amount !== undefined
+                    ? body.amount
+                    : body.amountIn;
 
     const transferAmount = Number(amountRaw);
     const transactionRef = String(
+        txObj.referenceCode ||
+        txObj.transactionId ||
+        txObj.reference ||
+        txObj.id ||
         body.referenceCode ||
-        body.transactionId ||
-        body.reference ||
         body.id ||
         "",
     );

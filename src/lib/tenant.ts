@@ -22,6 +22,7 @@ export interface TenantContext {
     role: Role;
     isSupportMode?: boolean;
     subscriptionStatus: string;
+    subscriptionPlan: string;
     subscriptionExpiresAt: Date | null;
     subscriptionAccess: SubscriptionAccess;
 }
@@ -55,15 +56,17 @@ const WRITABLE_WHEN_LOCKED = ["/api/subscription", "/api/auth", "/api/cron", "/a
 
 function withSubscription<T extends object>(
     base: T,
-    lake: { subscriptionStatus?: string | null; subscriptionExpiresAt?: Date | null } | null | undefined,
+    lake: { subscriptionStatus?: string | null; subscriptionExpiresAt?: Date | null; subscriptionPlan?: string | null } | null | undefined,
     bypass: boolean,
-): T & Pick<TenantContext, "subscriptionStatus" | "subscriptionExpiresAt" | "subscriptionAccess"> {
+): T & Pick<TenantContext, "subscriptionStatus" | "subscriptionExpiresAt" | "subscriptionAccess" | "subscriptionPlan"> {
     const subscriptionStatus = lake?.subscriptionStatus || "ACTIVE";
     const subscriptionExpiresAt = lake?.subscriptionExpiresAt ?? null;
+    const subscriptionPlan = lake?.subscriptionPlan || "TRIAL";
     return {
         ...base,
         subscriptionStatus,
         subscriptionExpiresAt,
+        subscriptionPlan,
         subscriptionAccess: bypass
             ? "active"
             : resolveSubscriptionAccess({ status: subscriptionStatus, expiresAt: subscriptionExpiresAt }),

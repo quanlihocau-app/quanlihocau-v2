@@ -86,6 +86,10 @@ export default async function AppHomePage() {
             roleBadge={tenantContext.role}
             isSupportMode={tenantContext.isSupportMode}
             isSuperAdmin={session.user.systemRole === "SUPER_ADMIN"}
+            subscriptionPlan={tenantContext.subscriptionPlan}
+            subscriptionStatus={tenantContext.subscriptionStatus}
+            subscriptionExpiresAt={tenantContext.subscriptionExpiresAt ? tenantContext.subscriptionExpiresAt.toISOString() : null}
+            subscriptionAccess={tenantContext.subscriptionAccess}
             activeSessionsCount={activeSessionsCount}
             totalHutsCount={totalHutsCount}
             todayRevenue={todayRevenue}

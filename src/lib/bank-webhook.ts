@@ -28,13 +28,20 @@ export function verifyWebhookSecret(request: Request, rawBody: string, secret: s
     if (!secret) return false;
 
     const authHeader = request.headers.get("authorization");
-    const bearer = authHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
-    if (bearer && timingSafeEqualString(bearer, secret)) {
+    // Support Bearer or Apikey / ApiKey (SePay sends "Apikey <token>")
+    const token = authHeader?.replace(/^(Bearer|Apikey|ApiKey)\s+/i, "").trim() ?? "";
+    if (token && timingSafeEqualString(token, secret)) {
         return true;
     }
 
     const apiKey = request.headers.get("x-api-key")?.trim() ?? "";
     if (apiKey && timingSafeEqualString(apiKey, secret)) {
+        return true;
+    }
+
+    // Support Casso token headers: secure-token or x-casso-token
+    const cassoToken = (request.headers.get("secure-token") || request.headers.get("x-casso-token"))?.trim() ?? "";
+    if (cassoToken && timingSafeEqualString(cassoToken, secret)) {
         return true;
     }
 

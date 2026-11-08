@@ -7,12 +7,18 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { SearchBar } from "@/components/ui/search-bar";
 import { Badge, SessionStatusBadge } from "@/components/ui/badge";
 import { PendingApprovalsSection } from "@/components/approvals/pending-approvals-section";
+import { SubscriptionAlertBanner } from "@/components/subscription/subscription-alert-banner";
+import type { SubscriptionAccess } from "@/lib/subscription-access";
 
 export interface HomeMobileViewProps {
     lakeName: string;
     roleBadge?: string;
     isSupportMode?: boolean;
     isSuperAdmin?: boolean;
+    subscriptionPlan?: string;
+    subscriptionStatus?: string;
+    subscriptionExpiresAt?: string | null;
+    subscriptionAccess?: SubscriptionAccess;
     activeSessionsCount: number;
     totalHutsCount: number;
     todayRevenue: number;
@@ -158,6 +164,10 @@ export function HomeMobileView({
     roleBadge,
     isSupportMode,
     isSuperAdmin,
+    subscriptionPlan = "TRIAL",
+    subscriptionStatus = "TRIAL",
+    subscriptionExpiresAt = null,
+    subscriptionAccess = "active",
     activeSessionsCount,
     totalHutsCount,
     todayRevenue,
@@ -190,6 +200,17 @@ export function HomeMobileView({
                         onChange={setSearchQuery}
                         placeholder="Tìm tính năng, mở vé, báo cáo..."
                     />
+
+                    {/* ── Subscription Status Alert (Cảnh báo & Nút Gia hạn/Nâng cấp 1 chạm) ── */}
+                    {subscriptionExpiresAt && (
+                        <SubscriptionAlertBanner
+                            subscriptionPlan={subscriptionPlan}
+                            subscriptionStatus={subscriptionStatus}
+                            subscriptionExpiresAt={subscriptionExpiresAt}
+                            subscriptionAccess={subscriptionAccess}
+                            canManage={roleBadge === "OWNER" || roleBadge === "MANAGER"}
+                        />
+                    )}
 
                     {/* ── Super Admin Portal Shortcut ─────────────────────── */}
                     {isSuperAdmin && (
