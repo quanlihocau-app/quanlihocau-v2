@@ -240,17 +240,17 @@ export async function GET(request: NextRequest) {
             });
 
             items = buybacks.map(fb => {
-                const line = fb.invoiceLines[0];
+                const line = fb.invoiceLines.find(l => l.invoice?.customer?.name || l.invoice?.fishingSession?.customer?.name) || fb.invoiceLines[0];
                 const invoice = line?.invoice;
                 const session = invoice?.fishingSession;
                 const customer = invoice?.customer || session?.customer;
                 const huts = session?.hutLinks?.map(hl => hl.hut.name).filter(Boolean).join(", ");
 
-                let customerName = "Cần thủ vãng lai";
+                let customerName = "Khách vãng lai";
                 if (customer?.name) {
                     customerName = huts ? `${customer.name} (Chòi ${huts})` : customer.name;
                 } else if (huts) {
-                    customerName = `Cần thủ (Chòi ${huts})`;
+                    customerName = `Chòi ${huts}`;
                 }
 
                 return {
@@ -262,7 +262,7 @@ export async function GET(request: NextRequest) {
                     staffName: "Tổ cân cá",
                     content: `Mua cá: ${fb.fishType.name} (${Number(fb.weight)} kg × ${new Intl.NumberFormat("vi-VN").format(fb.pricePerKg)}đ)`,
                     amountVnd: fb.totalVnd,
-                    paymentMethod: invoice ? "Khấu trừ vé" : "Tiền mặt",
+                    paymentMethod: invoice ? "Khấu trừ vé câu" : "Tiền mặt trực tiếp",
                     status: "Đã cân & thanh toán",
                 };
             });

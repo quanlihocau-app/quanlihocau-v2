@@ -65,11 +65,24 @@ export interface HistoryAuditEvent {
     createdAt: string | Date;
 }
 
+export interface LookupMaps {
+    usersMap?: Record<string, string>;
+    sessionsMap?: Record<string, { customerName: string; huts: string; packageName?: string }>;
+    packagesMap?: Record<string, string>;
+    hutsMap?: Record<string, string>;
+    customersMap?: Record<string, string>;
+    productsMap?: Record<string, string>;
+}
+
 interface HistoryViewProps {
     invoices: HistoryInvoice[];
     auditEvents: HistoryAuditEvent[];
     usersMap?: Record<string, string>;
-    sessionsMap?: Record<string, { customerName: string; huts: string }>;
+    sessionsMap?: Record<string, { customerName: string; huts: string; packageName?: string }>;
+    packagesMap?: Record<string, string>;
+    hutsMap?: Record<string, string>;
+    customersMap?: Record<string, string>;
+    productsMap?: Record<string, string>;
     canManageInvoices?: boolean;
     canReversePayments?: boolean;
     lakeName: string;
@@ -109,7 +122,12 @@ function formatActor(
         return "Hệ thống tự động";
     }
 
-    // 1. Ưu tiên tên nhân viên/quản lý được lưu trong payload audit
+    // 1. Tra cứu theo danh bạ người dùng hồ câu
+    if (usersMap && usersMap[createdBy]) {
+        return usersMap[createdBy];
+    }
+
+    // 2. Tên nhân viên/quản lý được lưu trong payload audit
     const actor = payload?.actor as Record<string, unknown> | undefined;
     if (typeof actor?.name === "string" && actor.name.trim()) {
         const role = typeof actor.role === "string" ? actor.role : "";
@@ -124,44 +142,63 @@ function formatActor(
         return roleLabel ? `${actor.name.trim()} (${roleLabel})` : actor.name.trim();
     }
 
-    // 2. Tra cứu theo danh bạ người dùng hồ
-    if (usersMap && usersMap[createdBy]) {
-        return usersMap[createdBy];
-    }
-
-    // 3. Fallbacks thân thiện không hiển thị chuỗi hex
+    // 3. Fallbacks thân thiện không hiển thị chuỗi hex UUID
     if (createdBy.includes("@")) {
         return createdBy.split("@")[0];
     }
-    if (createdBy.length === 36 && createdBy.includes("-")) {
-        return "Nhân viên trực ca";
-    }
-    return createdBy;
+    return "Nhân viên trực ca";
 }
 
 function formatEntityTitle(
     ev: HistoryAuditEvent,
     payload: Record<string, unknown> | null,
-    sessionsMap?: Record<string, { customerName: string; huts: string }>,
+    maps: LookupMaps,
 ): string {
     if (ev.entityType === "FishingSession") {
-        const sess = sessionsMap?.[ev.entityId];
+        const sess = maps.sessionsMap?.[ev.entityId];
+        let hutPart = "";
         if (sess?.huts) {
-            const custPart = sess.customerName && sess.customerName !== "Khách vãng lai" ? ` - ${sess.customerName}` : "";
-            return `Phiên câu: Chòi ${sess.huts}${custPart}`;
+            hutPart = sess.huts.startsWith("Chòi") || sess.huts.startsWith("Ô") ? sess.huts : `Chòi ${sess.huts}`;
+        } else if (payload?.hutIds && Array.isArray(payload.hutIds)) {
+            const hutNames = (payload.hutIds as string[])
+                .map((hid) => maps.hutsMap?.[hid] || hid.slice(0, 4))
+                .join(", ");
+            hutPart = hutNames.startsWith("Chòi") || hutNames.startsWith("Ô") ? hutNames : `Chòi ${hutNames}`;
         }
-        return "Phiên câu cá";
+
+        let custPart = "";
+        if (sess?.customerName && sess.customerName !== "Khách vãng lai") {
+            custPart = ` - ${sess.customerName}`;
+        } else if (typeof payload?.customerId === "string" && maps.customersMap?.[payload.customerId]) {
+            custPart = ` - ${maps.customersMap[payload.customerId]}`;
+        }
+
+        const pkgPart = sess?.packageName
+            ? ` (${sess.packageName})`
+            : typeof payload?.packageId === "string" && maps.packagesMap?.[payload.packageId]
+            ? ` (${maps.packagesMap[payload.packageId]})`
+            : "";
+
+        if (hutPart || custPart) {
+            return `Phiên câu: ${hutPart || "Ô câu"}${custPart}${pkgPart}`;
+        }
+        return `Phiên câu cá${pkgPart}`;
     }
 
     if (ev.entityType === "InventoryMovement") {
-        if (typeof payload?.productName === "string" && payload.productName) {
-            const typeStr = payload.type === "OUT" ? "Xuất kho" : payload.type === "IN" ? "Nhập kho" : "Kho hàng";
-            return `${typeStr}: ${payload.productName}`;
-        }
-        return "Biến động kho hàng";
+        const prodName =
+            (typeof payload?.productId === "string" && maps.productsMap?.[payload.productId]) ||
+            (typeof payload?.productName === "string" && payload.productName) ||
+            "";
+        const typeStr = payload?.type === "OUT" ? "Xuất kho" : payload?.type === "IN" ? "Nhập kho" : "Kho hàng";
+        return prodName ? `${typeStr}: ${prodName}` : "Biến động kho hàng";
     }
 
     if (ev.entityType === "Invoice") {
+        const sess = typeof payload?.fishingSessionId === "string" ? maps.sessionsMap?.[payload.fishingSessionId] : null;
+        if (sess?.customerName && sess.customerName !== "Khách vãng lai") {
+            return `Hóa đơn: ${sess.customerName}${sess.huts ? ` (${sess.huts})` : ""}`;
+        }
         return "Hóa đơn thanh toán";
     }
 
@@ -256,43 +293,119 @@ function getActionBadgeInfo(action: string): { label: string; colorClass: string
 
 function formatPayloadKey(key: string): string {
     const map: Record<string, string> = {
-        fishingSessionId: "Phiên câu liên kết",
-        sessionId: "Mã phiên",
+        fishingSessionId: "Phiên câu",
+        sessionId: "Phiên câu",
         invoiceId: "Mã hóa đơn",
         status: "Trạng thái",
         totalAmountVnd: "Tổng tiền",
         paidAmountVnd: "Đã thanh toán",
         amountVnd: "Số tiền thu",
-        refundVnd: "Số tiền thối lại",
-        paymentMethod: "Phương thức",
+        refundVnd: "Tiền thối lại",
+        refundedVnd: "Tiền thối lại",
+        paymentMethod: "Phương thức thanh toán",
+        paymentTiming: "Hình thức thanh toán",
         customerId: "Khách hàng",
+        customerName: "Khách hàng",
         packageId: "Gói câu",
-        hutIds: "Chòi / Ô câu",
+        packageName: "Gói câu",
+        hutIds: "Chòi / Vị trí câu",
+        hutId: "Chòi / Vị trí câu",
         startAt: "Bắt đầu",
         plannedEndAt: "Dự kiến kết thúc",
+        endedAt: "Kết thúc lúc",
+        previousPlannedEndAt: "Giờ kết thúc cũ",
+        newPlannedEndAt: "Giờ kết thúc mới",
+        addedMinutes: "Thời gian gia hạn",
+        extraMinutes: "Phút gia hạn",
         pricePerKg: "Đơn giá thu cá",
         weight: "Trọng lượng (kg)",
         fishTypeName: "Loại cá",
         note: "Ghi chú",
         reason: "Lý do",
-        extraMinutes: "Phút gia hạn",
         priceVnd: "Phí phát sinh",
+        newTotalAmountVnd: "Tổng tiền sau sửa",
         name: "Tên mặt hàng",
         quantity: "Số lượng",
         productName: "Tên sản phẩm",
         productSku: "Mã sản phẩm",
         type: "Loại biến động",
-        newStock: "Tồn kho sau biến động",
+        newStock: "Tồn kho sau đó",
         signedQuantity: "Số lượng chênh lệch",
         costPriceVnd: "Giá vốn",
         supplier: "Nhà cung cấp",
         itemsCount: "Số lượng món",
+        settlement: "Quyết toán ca",
+        balanceDueVnd: "Còn lại phải thu",
     };
     return map[key] || key;
 }
 
-function formatPayloadValue(key: string, value: unknown): string {
+function formatPayloadValue(key: string, value: unknown, maps?: LookupMaps): string {
     if (value === null || value === undefined) return "—";
+
+    // 1. Tra cứu các ID sang tên người/sản phẩm/gói câu thực tế
+    if (key === "packageId" && typeof value === "string") {
+        return maps?.packagesMap?.[value] || "Gói câu hồ";
+    }
+    if (key === "customerId" && typeof value === "string") {
+        return maps?.customersMap?.[value] || "Khách vãng lai";
+    }
+    if (key === "hutIds" || key === "hutId") {
+        if (Array.isArray(value)) {
+            const list = value
+                .map((id) => (typeof id === "string" && maps?.hutsMap?.[id] ? maps.hutsMap[id] : String(id)))
+                .filter(Boolean);
+            return list.length > 0 ? list.join(", ") : "Chưa chọn ô";
+        }
+        if (typeof value === "string") {
+            return maps?.hutsMap?.[value] || value;
+        }
+    }
+    if (key === "productId" && typeof value === "string") {
+        return maps?.productsMap?.[value] || "Sản phẩm";
+    }
+    if ((key === "sessionId" || key === "fishingSessionId") && typeof value === "string") {
+        const sess = maps?.sessionsMap?.[value];
+        if (sess) {
+            return `${sess.huts ? `Chòi ${sess.huts}` : "Phiên câu"}${sess.customerName ? ` (${sess.customerName})` : ""}`;
+        }
+        return "Phiên câu liên kết";
+    }
+
+    // 2. Dịch các giá trị cấu hình sang tiếng Việt
+    if (key === "paymentTiming") {
+        if (value === "POSTPAID") return "Trả sau (khi kết thúc câu)";
+        if (value === "PREPAID") return "Trả trước (khi nhận ô câu)";
+    }
+
+    if ((key === "addedMinutes" || key === "extraMinutes") && typeof value === "number") {
+        return `${value} phút`;
+    }
+
+    if (key === "status") {
+        if (value === "ACTIVE") return "Đang diễn ra";
+        if (value === "COMPLETED") return "Đã hoàn thành";
+        if (value === "CANCELLED") return "Đã hủy";
+        if (value === "DRAFT") return "Bản nháp (Đang câu)";
+        if (value === "PAID") return "Đã thanh toán đủ";
+        if (value === "VOID") return "Đã hủy";
+    }
+
+    if (key === "paymentMethod") {
+        if (value === "CASH") return "Tiền mặt";
+        if (value === "BANK_TRANSFER") return "Chuyển khoản";
+    }
+
+    if (key === "type") {
+        if (value === "OUT") return "Xuất kho";
+        if (value === "IN") return "Nhập kho";
+        if (value === "ADJUST") return "Kiểm kê / Cân đối";
+    }
+
+    if (typeof value === "boolean") {
+        return value ? "Có" : "Không";
+    }
+
     if (typeof value === "number") {
         if (
             key.toLowerCase().includes("vnd") ||
@@ -304,6 +417,22 @@ function formatPayloadValue(key: string, value: unknown): string {
         }
         return new Intl.NumberFormat("vi-VN").format(value);
     }
+
+    if (key === "settlement" && typeof value === "object" && value !== null) {
+        const s = value as Record<string, unknown>;
+        const parts: string[] = [];
+        if (s.paymentMethod) {
+            parts.push(`Hình thức: ${s.paymentMethod === "CASH" ? "Tiền mặt" : "Chuyển khoản"}`);
+        }
+        if (typeof s.refundVnd === "number" && s.refundVnd > 0) {
+            parts.push(`Thối tiền cho khách: ${formatVnd(s.refundVnd)}`);
+        }
+        if (typeof s.amountVnd === "number" && s.amountVnd > 0) {
+            parts.push(`Thu thêm: ${formatVnd(s.amountVnd)}`);
+        }
+        return parts.join(" · ") || "Đã quyết toán";
+    }
+
     if (typeof value === "string") {
         if (value === "DRAFT") return "Bản nháp (Đang câu)";
         if (value === "PAID") return "Đã thanh toán đủ";
@@ -313,51 +442,75 @@ function formatPayloadValue(key: string, value: unknown): string {
         if (value === "OUT") return "Xuất kho";
         if (value === "IN") return "Nhập kho";
         if (value === "ADJUST") return "Kiểm kê / Cân đối";
-        if (value.includes("T") && value.endsWith("Z") && !isNaN(Date.parse(value))) {
+        if (value.includes("T") && !isNaN(Date.parse(value))) {
             return formatDateTime(value);
-        }
-        if (value.length === 36 && value.includes("-")) {
-            return value.slice(0, 8);
         }
         return value;
     }
+
     if (Array.isArray(value)) {
         return value
-            .map((v) => (typeof v === "string" && v.length === 36 ? v.slice(0, 8) : String(v)))
+            .map((v) => (typeof v === "string" && v.length === 36 ? "Mục liên kết" : String(v)))
             .join(", ");
     }
+
     if (typeof value === "object") {
         return Object.entries(value as Record<string, unknown>)
-            .filter(([subK]) => !["id", "lakeId", "productId", "fishingSessionId", "sessionId", "invoiceId", "paymentId", "hutIds"].includes(subK))
-            .map(([subK, subV]) => `${formatPayloadKey(subK)}: ${formatPayloadValue(subK, subV)}`)
+            .filter(([subK]) => !["id", "lakeId", "productId", "fishingSessionId", "sessionId", "invoiceId", "paymentId", "hutIds", "actor", "ip", "ua"].includes(subK))
+            .map(([subK, subV]) => `${formatPayloadKey(subK)}: ${formatPayloadValue(subK, subV, maps)}`)
             .join(" · ");
     }
+
     return String(value);
 }
 
 function getAuditHumanSummary(
     ev: HistoryAuditEvent,
     payload: Record<string, unknown> | null,
-    sessionsMap?: Record<string, { customerName: string; huts: string }>,
+    maps: LookupMaps,
 ): string {
     if (!payload) return ev.payload ? ev.payload.slice(0, 90) : "Thao tác thành công";
 
     if (ev.action === "INVOICE_CREATED") {
         const total = typeof payload.totalAmountVnd === "number" ? formatVnd(payload.totalAmountVnd) : "";
-        const sess = payload.fishingSessionId ? `#${String(payload.fishingSessionId).slice(0, 8)}` : "";
-        return `Tạo hóa đơn nháp${sess ? ` cho phiên ${sess}` : ""}${total ? ` · Tạm tính: ${total}` : ""}`;
+        const sess = payload.fishingSessionId ? maps.sessionsMap?.[String(payload.fishingSessionId)] : null;
+        const hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
+        const custStr = sess?.customerName && sess.customerName !== "Khách vãng lai" ? ` (${sess.customerName})` : "";
+        return `Tạo hóa đơn tạm tính${hutStr}${custStr}${total ? ` · Số tiền: ${total}` : ""}`;
     }
 
     if (ev.action === "FISHING_SESSION_OPENED" || ev.action === "SESSION_OPENED" || ev.action === "SESSION_CREATED") {
-        const sess = sessionsMap?.[ev.entityId];
-        const hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
-        const custStr = sess?.customerName && sess.customerName !== "Khách vãng lai" ? ` - Khách: ${sess.customerName}` : "";
+        const sess = maps.sessionsMap?.[ev.entityId];
+        let hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
+        if (!hutStr && payload.hutIds && Array.isArray(payload.hutIds)) {
+            const hNames = (payload.hutIds as string[]).map((h) => maps.hutsMap?.[h]).filter(Boolean).join(", ");
+            if (hNames) hutStr = ` ${hNames}`;
+        }
+        const custName =
+            (sess?.customerName && sess.customerName !== "Khách vãng lai" && sess.customerName) ||
+            (typeof payload.customerId === "string" && maps.customersMap?.[payload.customerId]) ||
+            "";
+        const custStr = custName ? ` - Khách: ${custName}` : "";
+        const pkgName =
+            sess?.packageName ||
+            (typeof payload.packageId === "string" && maps.packagesMap?.[payload.packageId]) ||
+            "";
+        const pkgStr = pkgName ? ` · Gói: ${pkgName}` : "";
         const start = payload.startAt ? formatTime(String(payload.startAt)) : "";
-        return `Mở phiên câu${hutStr}${custStr}${start ? ` lúc ${start}` : ""}`;
+        return `Mở phiên câu${hutStr}${custStr}${pkgStr}${start ? ` lúc ${start}` : ""}`;
+    }
+
+    if (ev.action === "FISHING_SESSION_EXTENDED") {
+        const sess = maps.sessionsMap?.[ev.entityId];
+        const hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
+        const custStr = sess?.customerName && sess.customerName !== "Khách vãng lai" ? ` (${sess.customerName})` : "";
+        const mins = payload.addedMinutes || payload.extraMinutes ? `${payload.addedMinutes || payload.extraMinutes} phút` : "";
+        const price = typeof payload.priceVnd === "number" ? formatVnd(payload.priceVnd) : "";
+        return `Gia hạn phiên câu${hutStr}${custStr}${mins ? ` thêm ${mins}` : ""}${price ? ` · Tiền giờ: ${price}` : ""}`;
     }
 
     if (ev.action === "FISHING_SESSION_COMPLETED" || ev.action === "SESSION_COMPLETED") {
-        const sess = sessionsMap?.[ev.entityId];
+        const sess = maps.sessionsMap?.[ev.entityId];
         const hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
         const custStr = sess?.customerName && sess.customerName !== "Khách vãng lai" ? ` (${sess.customerName})` : "";
         const settlement = payload.settlement as Record<string, unknown> | undefined;
@@ -373,13 +526,14 @@ function getAuditHumanSummary(
     }
 
     if (ev.action === "INVENTORY_MOVEMENT_CREATED" || ev.action === "INVENTORY_ADJUSTED" || ev.entityType === "InventoryMovement") {
-        const pName = typeof payload.productName === "string" ? payload.productName : "mặt hàng";
-        const pSku = typeof payload.productSku === "string" ? ` (Mã: ${payload.productSku})` : "";
+        const pName =
+            (typeof payload.productId === "string" && maps.productsMap?.[payload.productId]) ||
+            (typeof payload.productName === "string" ? payload.productName : "mặt hàng");
         const typeStr = payload.type === "OUT" ? "Xuất kho" : payload.type === "IN" ? "Nhập kho" : "Điều chỉnh kho";
         const qty = payload.quantity ? ` ${payload.quantity}` : "";
         const reason = payload.reason || payload.note ? ` · Lý do: ${payload.reason || payload.note}` : "";
         const newStock = typeof payload.newStock === "number" ? ` · Tồn mới: ${payload.newStock}` : "";
-        return `${typeStr}${qty} ${pName}${pSku}${reason}${newStock}`;
+        return `${typeStr}${qty} ${pName}${reason}${newStock}`;
     }
 
     if (ev.action === "RETAIL_SALE_COMPLETED") {
@@ -409,22 +563,43 @@ function getAuditHumanSummary(
     // Default friendly summary without raw database IDs
     const entries = Object.entries(payload).filter(
         ([k]) =>
-            !["id", "lakeId", "productId", "fishingSessionId", "sessionId", "invoiceId", "paymentId", "actor", "ip", "ua", "before", "after", "hutIds"].includes(
+            !["id", "lakeId", "productId", "fishingSessionId", "sessionId", "invoiceId", "paymentId", "actor", "ip", "ua", "before", "after", "hutIds", "isCustomStart", "createdAt"].includes(
                 k,
             ),
     );
     if (entries.length === 0) return "Thao tác hoàn tất";
     return entries
         .slice(0, 3)
-        .map(([k, v]) => `${formatPayloadKey(k)}: ${formatPayloadValue(k, v)}`)
+        .map(([k, v]) => `${formatPayloadKey(k)}: ${formatPayloadValue(k, v, maps)}`)
         .join(" · ");
 }
+
+const HIDDEN_EXPANDED_KEYS = new Set([
+    "before",
+    "after",
+    "actor",
+    "ip",
+    "ua",
+    "isCustomStart",
+    "createdAt",
+    "lakeId",
+    "id",
+    "invoiceLineId",
+    "invoiceId",
+    "fishingSessionId",
+    "sessionId",
+    "paymentId",
+]);
 
 export function HistoryView({
     invoices,
     auditEvents,
     usersMap,
     sessionsMap,
+    packagesMap,
+    hutsMap,
+    customersMap,
+    productsMap,
     lakeName,
     initialTab = "orders",
 }: HistoryViewProps & { initialTab?: "orders" | "audit" }) {
@@ -443,6 +618,18 @@ export function HistoryView({
     const [auditActionFilter, setAuditActionFilter] = useState<string>("ALL");
     const [expandedAuditIds, setExpandedAuditIds] = useState<Record<string, boolean>>({});
 
+    const lookupMaps: LookupMaps = useMemo(
+        () => ({
+            usersMap,
+            sessionsMap,
+            packagesMap,
+            hutsMap,
+            customersMap,
+            productsMap,
+        }),
+        [usersMap, sessionsMap, packagesMap, hutsMap, customersMap, productsMap],
+    );
+
     // Filtered Invoices
     const filteredInvoices = useMemo(() => {
         return invoices.filter((inv) => {
@@ -450,51 +637,30 @@ export function HistoryView({
             if (orderTypeFilter === "TICKET" && !isTicket) return false;
             if (orderTypeFilter === "RETAIL" && isTicket) return false;
 
-            const netPaid = inv.payments.reduce(
-                (sum, p) =>
-                    p.direction === PaymentDirection.IN
-                        ? sum + p.amountVnd
-                        : sum - p.amountVnd,
-                0,
-            );
-            const paidAmount = Math.max(0, netPaid);
-            const remaining = Math.max(0, inv.totalAmountVnd - paidAmount);
-
-            if (orderStatusFilter === "PAID" && (inv.status !== InvoiceStatus.PAID && remaining > 0)) {
-                return false;
-            }
-            if (orderStatusFilter === "UNPAID" && (inv.status === InvoiceStatus.PAID || remaining <= 0)) {
-                return false;
-            }
+            if (orderStatusFilter === "PAID" && inv.status !== InvoiceStatus.PAID) return false;
+            if (orderStatusFilter === "UNPAID" && inv.status === InvoiceStatus.PAID) return false;
 
             if (orderSearch.trim()) {
                 const q = orderSearch.toLowerCase().trim();
                 const matchId = inv.id.toLowerCase().includes(q);
-                const matchCustomer = inv.customer?.name.toLowerCase().includes(q) || false;
-                const matchPhone = inv.customer?.phoneNormalized?.includes(q) || false;
-                const matchHut =
-                    inv.fishingSession?.hutLinks?.some((hl) =>
-                        hl.hut.name.toLowerCase().includes(q),
-                    ) || false;
-                if (!matchId && !matchCustomer && !matchPhone && !matchHut) {
-                    return false;
-                }
+                const matchCust = inv.customer?.name.toLowerCase().includes(q);
+                const matchPhone = inv.customer?.phoneNormalized?.includes(q);
+                const matchHut = inv.fishingSession?.hutLinks?.some((hl) =>
+                    hl.hut.name.toLowerCase().includes(q),
+                );
+                return matchId || matchCust || matchPhone || matchHut;
             }
 
             return true;
         });
-    }, [invoices, orderSearch, orderTypeFilter, orderStatusFilter]);
+    }, [invoices, orderTypeFilter, orderStatusFilter, orderSearch]);
 
     // Filtered Audit Events
     const filteredAuditEvents = useMemo(() => {
         return auditEvents.filter((ev) => {
             if (auditActionFilter !== "ALL") {
-                const selectedOpt = AUDIT_FILTER_OPTIONS.find((opt) => opt.key === auditActionFilter);
-                if (selectedOpt && selectedOpt.actions.length > 0) {
-                    if (!selectedOpt.actions.includes(ev.action)) {
-                        return false;
-                    }
-                } else if (ev.action !== auditActionFilter) {
+                const opt = AUDIT_FILTER_OPTIONS.find((o) => o.key === auditActionFilter);
+                if (opt && opt.actions.length > 0 && !opt.actions.includes(ev.action)) {
                     return false;
                 }
             }
@@ -502,90 +668,18 @@ export function HistoryView({
             if (auditSearch.trim()) {
                 const q = auditSearch.toLowerCase().trim();
                 const matchAction = ev.action.toLowerCase().includes(q);
-                const matchEntity = ev.entityType.toLowerCase().includes(q);
-                const matchEntityId = ev.entityId.toLowerCase().includes(q);
-                const matchUser = ev.createdBy.toLowerCase().includes(q);
+                const matchType = ev.entityType.toLowerCase().includes(q);
+                const matchUser = usersMap?.[ev.createdBy]?.toLowerCase().includes(q);
                 const matchPayload = ev.payload.toLowerCase().includes(q);
-                if (
-                    !matchAction &&
-                    !matchEntity &&
-                    !matchEntityId &&
-                    !matchUser &&
-                    !matchPayload
-                ) {
-                    return false;
-                }
+                const matchTitle = formatEntityTitle(ev, null, lookupMaps).toLowerCase().includes(q);
+                return matchAction || matchType || matchUser || matchPayload || matchTitle;
             }
 
             return true;
         });
-    }, [auditEvents, auditSearch, auditActionFilter]);
+    }, [auditEvents, auditActionFilter, auditSearch, usersMap, lookupMaps]);
 
-    // Reprint handler for invoices
-    async function handleReprint(invoice: HistoryInvoice) {
-        setReprintingId(invoice.id);
-
-        const netPaid = invoice.payments.reduce(
-            (sum, p) =>
-                p.direction === PaymentDirection.IN
-                    ? sum + p.amountVnd
-                    : sum - p.amountVnd,
-            0,
-        );
-        const paidAmount = Math.max(0, netPaid);
-        const remaining = Math.max(0, invoice.totalAmountVnd - paidAmount);
-
-        const hutNames =
-            invoice.fishingSession?.hutLinks
-                ?.map((hl) => hl.hut.name)
-                .join(", ") || (invoice.fishingSessionId ? "Chòi câu" : "Bán lẻ");
-
-        const paymentMethods = Array.from(
-            new Set(invoice.payments.map((p) => (p.method === "CASH" ? "Tiền mặt" : "Chuyển khoản"))),
-        ).join(", ") || "Chưa xác định";
-
-        const receiptData: PaymentReceiptData = {
-            invoiceId: invoice.id,
-            sessionId: invoice.fishingSessionId || undefined,
-            lakeName: lakeName,
-            customerName: invoice.customer?.name || "Khách lẻ",
-            customerPhone: invoice.customer?.phoneNormalized || null,
-            hutNames,
-            packageName:
-                invoice.fishingSession?.packageNameSnapshot ||
-                (invoice.fishingSessionId ? "Vé câu" : "Đơn hàng bán lẻ"),
-            lines: invoice.lines.map((l) => ({
-                name: l.name,
-                quantity: Number(l.quantity),
-                unitPrice: l.unitPrice,
-                totalVnd: l.totalVnd,
-            })),
-            totalAmountVnd: invoice.totalAmountVnd,
-            paidAmountVnd: paidAmount,
-            paymentAmountVnd: paidAmount,
-            remainingVnd: remaining,
-            refundAmountVnd: 0,
-            paymentMethod: paymentMethods,
-            paymentTime: invoice.createdAt,
-            isReprint: true,
-        };
-
-        try {
-            if (isConnected) {
-                await printPaymentReceipt(receiptData, {
-                    jobId: `reprint-${invoice.id}`,
-                    manual: true,
-                });
-            } else {
-                window.print();
-            }
-        } catch {
-            window.print();
-        } finally {
-            setReprintingId(null);
-        }
-    }
-
+    // Toggle audit item expand
     function toggleAuditExpand(id: string) {
         setExpandedAuditIds((prev) => ({
             ...prev,
@@ -593,145 +687,121 @@ export function HistoryView({
         }));
     }
 
+    // Handle reprint invoice
+    async function handleReprint(invoice: HistoryInvoice) {
+        if (!isConnected) {
+            alert("Vui lòng kết nối máy in trước khi in hóa đơn.");
+            return;
+        }
+
+        setReprintingId(invoice.id);
+        try {
+            const paid = invoice.payments.reduce((s, p) => s + (p.direction === "IN" ? p.amountVnd : -p.amountVnd), 0);
+            const remaining = Math.max(0, invoice.totalAmountVnd - paid);
+            const receiptData: PaymentReceiptData = {
+                lakeName,
+                invoiceId: invoice.id,
+                sessionId: invoice.fishingSessionId || undefined,
+                hutNames: invoice.fishingSession?.hutLinks?.map((hl) => hl.hut.name).join(", ") || "Bán lẻ",
+                customerName: invoice.customer?.name,
+                customerPhone: invoice.customer?.phoneNormalized,
+                packageName: invoice.fishingSession?.packageNameSnapshot,
+                cashierName: "Thu ngân",
+                paymentTime: invoice.createdAt,
+                lines: invoice.lines.map((l) => ({
+                    name: l.name,
+                    quantity: Number(l.quantity),
+                    unitPrice: l.unitPrice,
+                    totalVnd: l.totalVnd,
+                })),
+                totalAmountVnd: invoice.totalAmountVnd,
+                paidAmountVnd: paid,
+                remainingVnd: remaining,
+                paymentMethod: invoice.payments[0]?.method === "CASH" ? "Tiền mặt" : invoice.payments[0]?.method || "Tiền mặt",
+                isReprint: true,
+            };
+
+            await printPaymentReceipt(receiptData);
+        } catch (err) {
+            console.error("Lỗi khi in lại bill:", err);
+            alert("Có lỗi xảy ra khi in lại hóa đơn.");
+        } finally {
+            setReprintingId(null);
+        }
+    }
+
     return (
         <div className="space-y-4">
-            {/* Top Navigation Bar: Dual Tabs */}
-            <div className="flex border-b border-[#CCCCCC] bg-white font-serif">
+            {/* Main Tabs Segment */}
+            <div className="flex border-b border-[#CCCCCC] bg-white">
                 <button
                     type="button"
                     onClick={() => setActiveTab("orders")}
-                    className={`flex-1 py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border-b-2 ${
+                    className={`flex-1 py-3 text-center text-xs font-bold transition-colors cursor-pointer border-b-2 ${
                         activeTab === "orders"
-                            ? "border-[#2C4C3B] text-[#2C4C3B] bg-[#FAFAF7]"
-                            : "border-transparent text-[#666666] hover:text-[#1A1A1A]"
+                            ? "border-[#2C4C3B] text-[#2C4C3B]"
+                            : "border-transparent text-[#777777] hover:text-[#1A1A1A]"
                     }`}
                 >
-                    <svg
-                        className={`h-4 w-4 ${activeTab === "orders" ? "text-[#2C4C3B]" : "text-[#777777]"}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
-                        />
-                    </svg>
-                    SỔ HÓA ĐƠN ({invoices.length})
+                    Hóa đơn & Đơn hàng ({invoices.length})
                 </button>
-
                 <button
                     type="button"
                     onClick={() => setActiveTab("audit")}
-                    className={`flex-1 py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border-b-2 ${
+                    className={`flex-1 py-3 text-center text-xs font-bold transition-colors cursor-pointer border-b-2 ${
                         activeTab === "audit"
-                            ? "border-[#2C4C3B] text-[#2C4C3B] bg-[#FAFAF7]"
-                            : "border-transparent text-[#666666] hover:text-[#1A1A1A]"
+                            ? "border-[#2C4C3B] text-[#2C4C3B]"
+                            : "border-transparent text-[#777777] hover:text-[#1A1A1A]"
                     }`}
                 >
-                    <svg
-                        className={`h-4 w-4 ${activeTab === "audit" ? "text-[#2C4C3B]" : "text-[#777777]"}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                        stroke="currentColor"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                        />
-                    </svg>
-                    NHẬT KÝ ({auditEvents.length})
+                    Nhật ký hoạt động ({auditEvents.length})
                 </button>
             </div>
 
-            {/* TAB 1: LỊCH SỬ ĐƠN HÀNG */}
+            {/* TAB 1: DANH SÁCH HÓA ĐƠN */}
             {activeTab === "orders" && (
                 <div className="space-y-4">
-                    {/* Filter Toolbar */}
+                    {/* Filters */}
                     <Card className="p-3 space-y-2.5 border-[#CCCCCC] bg-white rounded-xs">
                         <Input
-                            placeholder="Tìm kiếm mã HĐ, khách hàng, số điện thoại, ô chòi..."
+                            placeholder="Tìm theo tên khách, số chòi, mã đơn..."
                             value={orderSearch}
                             onChange={(e) => setOrderSearch(e.target.value)}
                         />
 
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                            {/* Type filter buttons */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
                             <div className="flex gap-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setOrderTypeFilter("ALL")}
-                                    className={`px-2.5 py-1 rounded-xs text-xs font-bold transition-colors cursor-pointer border ${
-                                        orderTypeFilter === "ALL"
-                                            ? "bg-[#2C4C3B] text-white border-[#2C4C3B]"
-                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
-                                    }`}
-                                >
-                                    Tất cả
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setOrderTypeFilter("TICKET")}
-                                    className={`px-2.5 py-1 rounded-xs text-xs font-bold transition-colors cursor-pointer border ${
-                                        orderTypeFilter === "TICKET"
-                                            ? "bg-[#2C4C3B] text-white border-[#2C4C3B]"
-                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
-                                    }`}
-                                >
-                                    Vé câu
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setOrderTypeFilter("RETAIL")}
-                                    className={`px-2.5 py-1 rounded-xs text-xs font-bold transition-colors cursor-pointer border ${
-                                        orderTypeFilter === "RETAIL"
-                                            ? "bg-[#2C4C3B] text-white border-[#2C4C3B]"
-                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
-                                    }`}
-                                >
-                                    Bán lẻ
-                                </button>
+                                {(["ALL", "TICKET", "RETAIL"] as const).map((t) => (
+                                    <button
+                                        key={t}
+                                        type="button"
+                                        onClick={() => setOrderTypeFilter(t)}
+                                        className={`px-2.5 py-1 rounded-xs font-semibold cursor-pointer border ${
+                                            orderTypeFilter === t
+                                                ? "bg-[#2C4C3B] text-white border-[#2C4C3B]"
+                                                : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
+                                        }`}
+                                    >
+                                        {t === "ALL" ? "Tất cả" : t === "TICKET" ? "Vé câu" : "Bán lẻ"}
+                                    </button>
+                                ))}
                             </div>
 
-                            {/* Status filter buttons */}
                             <div className="flex gap-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setOrderStatusFilter("ALL")}
-                                    className={`px-2 py-1 rounded-xs text-xs font-medium transition-colors cursor-pointer border ${
-                                        orderStatusFilter === "ALL"
-                                            ? "bg-[#1A1A1A] text-white border-[#1A1A1A]"
-                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
-                                    }`}
-                                >
-                                    Tất cả TT
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setOrderStatusFilter("PAID")}
-                                    className={`px-2 py-1 rounded-xs text-xs font-medium transition-colors cursor-pointer border ${
-                                        orderStatusFilter === "PAID"
-                                            ? "bg-[#2C4C3B] text-white border-[#2C4C3B]"
-                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
-                                    }`}
-                                >
-                                    Đã xong
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setOrderStatusFilter("UNPAID")}
-                                    className={`px-2 py-1 rounded-xs text-xs font-medium transition-colors cursor-pointer border ${
-                                        orderStatusFilter === "UNPAID"
-                                            ? "bg-[#D48806] text-white border-[#D48806]"
-                                            : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
-                                    }`}
-                                >
-                                    Còn thiếu
-                                </button>
+                                {(["ALL", "PAID", "UNPAID"] as const).map((s) => (
+                                    <button
+                                        key={s}
+                                        type="button"
+                                        onClick={() => setOrderStatusFilter(s)}
+                                        className={`px-2.5 py-1 rounded-xs font-semibold cursor-pointer border ${
+                                            orderStatusFilter === s
+                                                ? "bg-[#2C4C3B] text-white border-[#2C4C3B]"
+                                                : "bg-white text-[#555555] border-[#CCCCCC] hover:border-[#999999]"
+                                        }`}
+                                    >
+                                        {s === "ALL" ? "Tất cả TT" : s === "PAID" ? "Đã thu" : "Chưa thu"}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </Card>
@@ -739,114 +809,79 @@ export function HistoryView({
                     {/* Orders List */}
                     {filteredInvoices.length === 0 ? (
                         <div className="p-8 text-center text-xs text-[#666666] border border-[#CCCCCC] bg-white rounded-xs">
-                            Không tìm thấy hóa đơn hoặc đơn bán lẻ nào phù hợp.
+                            Không tìm thấy hóa đơn nào phù hợp.
                         </div>
                     ) : (
-                        <div className="border border-[#CCCCCC] bg-white rounded-xs divide-y divide-[#E0E0E0]">
+                        <div className="space-y-2">
                             {filteredInvoices.map((invoice) => {
                                 const isTicket = invoice.fishingSessionId !== null;
-                                const netPaid = invoice.payments.reduce(
+                                const huts =
+                                    invoice.fishingSession?.hutLinks
+                                        ?.map((hl) => hl.hut.name)
+                                        .join(", ") || "";
+                                const paidSum = invoice.payments.reduce(
                                     (sum, p) =>
-                                        p.direction === PaymentDirection.IN
-                                            ? sum + p.amountVnd
-                                            : sum - p.amountVnd,
+                                        sum + (p.direction === "IN" ? p.amountVnd : -p.amountVnd),
                                     0,
-                                );
-                                const paidAmount = Math.max(0, netPaid);
-                                const remaining = Math.max(
-                                    0,
-                                    invoice.totalAmountVnd - paidAmount,
                                 );
 
                                 return (
                                     <div
                                         key={invoice.id}
-                                        className="p-3.5 space-y-2.5 hover:bg-[#FAFAF7] transition-colors"
+                                        className="p-3.5 border border-[#CCCCCC] bg-white rounded-xs space-y-2 hover:border-[#999999] transition-colors"
                                     >
-                                        {/* Card Header */}
-                                        <div className="flex items-start justify-between">
+                                        <div className="flex items-start justify-between gap-2">
                                             <div>
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="rounded-xs px-1.5 py-0.5 text-[10px] font-bold border border-[#CCCCCC] bg-[#F2F2F0] text-[#1A1A1A]">
-                                                        {isTicket ? "VÉ CÂU" : "BÁN LẺ"}
+                                                    <span className="font-bold text-xs text-[#1A1A1A]">
+                                                        {isTicket
+                                                            ? `Chòi ${huts || "—"}`
+                                                            : "Bán lẻ độc lập"}
                                                     </span>
-                                                    <Link
-                                                        href={`/invoices/${encodeURIComponent(invoice.id)}?returnTo=%2Finvoices%2Fhistory`}
-                                                        className="text-xs font-bold text-[#2C4C3B] hover:underline"
-                                                    >
-                                                        HĐ #{invoice.id.slice(0, 8)}
-                                                    </Link>
+                                                    <InvoiceStatusBadge status={invoice.status} />
                                                 </div>
-
-                                                <p className="text-sm font-bold text-[#1A1A1A] mt-1">
-                                                    {invoice.customer?.name ?? (isTicket ? "Khách vãng lai" : "Khách lẻ")}
+                                                <p className="text-xs text-[#555555] mt-0.5">
+                                                    Khách:{" "}
+                                                    <strong className="text-[#1A1A1A]">
+                                                        {invoice.customer?.name || "Khách vãng lai"}
+                                                    </strong>
                                                 </p>
-                                                {invoice.customer?.phoneNormalized && (
-                                                    <p className="text-[11px] text-[#666666] font-mono">
-                                                        {invoice.customer.phoneNormalized}
-                                                    </p>
-                                                )}
                                             </div>
 
-                                            <div className="text-right space-y-1">
-                                                <InvoiceStatusBadge status={invoice.status} />
-                                                <p className="text-[10px] text-[#666666]">
-                                                    {formatTime(invoice.createdAt)} · {formatDateTime(invoice.createdAt).split(" ")[1]}
-                                                </p>
+                                            <div className="text-right">
+                                                <span className="text-sm font-bold text-[#9E2A2B] block">
+                                                    {formatVnd(invoice.totalAmountVnd)}
+                                                </span>
+                                                <span className="text-[11px] text-[#666666]">
+                                                    {formatDateTime(invoice.createdAt)}
+                                                </span>
                                             </div>
                                         </div>
 
-                                        {/* Content details */}
-                                        <div className="border border-[#E0E0E0] bg-[#FAFAF7] p-2.5 rounded-xs text-xs space-y-1.5 font-serif">
-                                            {isTicket ? (
-                                                <div className="flex justify-between text-[#666666]">
-                                                    <span>Gói / Ô chòi:</span>
-                                                    <span className="font-bold text-[#1A1A1A]">
-                                                        {invoice.fishingSession?.packageNameSnapshot} (
-                                                        {invoice.fishingSession?.hutLinks
-                                                            ?.map((hl) => hl.hut.name)
-                                                            .join(", ") || "—"}
-                                                        )
+                                        {/* Lines summary */}
+                                        <div className="text-xs text-[#555555] bg-[#FAFAF7] p-2 rounded-xs border border-[#E0E0E0]">
+                                            {invoice.lines.slice(0, 2).map((l) => (
+                                                <div key={l.id} className="flex justify-between py-0.5">
+                                                    <span>{l.name}</span>
+                                                    <span className="font-semibold text-[#1A1A1A]">
+                                                        x{Number(l.quantity)}
                                                     </span>
                                                 </div>
-                                            ) : (
-                                                <div className="flex justify-between text-[#666666]">
-                                                    <span>Mặt hàng:</span>
-                                                    <span className="font-medium text-[#1A1A1A] max-w-50 truncate text-right">
-                                                        {invoice.lines.map((l) => `${l.name} x${Number(l.quantity)}`).join(", ") || "—"}
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            <div className="flex justify-between">
-                                                <span className="text-[#666666]">Tổng tiền:</span>
-                                                <span className="font-bold text-[#1A1A1A] tabular-nums">
-                                                    {formatVnd(invoice.totalAmountVnd)}
+                                            ))}
+                                            {invoice.lines.length > 2 && (
+                                                <span className="text-[10px] text-[#777777] italic block mt-0.5">
+                                                    + {invoice.lines.length - 2} món khác...
                                                 </span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-[#666666]">Đã thu:</span>
-                                                <span className="font-bold text-[#2C4C3B] tabular-nums">
-                                                    {formatVnd(paidAmount)}
-                                                </span>
-                                            </div>
-                                            {remaining > 0 && (
-                                                <div className="flex justify-between border-t border-[#E0E0E0] pt-1 font-bold">
-                                                    <span className="text-[#D48806]">Còn thiếu:</span>
-                                                    <span className="text-[#D48806] tabular-nums">
-                                                        {formatVnd(remaining)}
-                                                    </span>
-                                                </div>
                                             )}
                                         </div>
 
                                         {/* Action buttons */}
-                                        <div className="flex items-center justify-between pt-1">
-                                            <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center justify-between pt-1 border-t border-[#EAEAE6]">
+                                            <div className="flex items-center gap-2">
                                                 <Button
                                                     type="button"
-                                                    size="sm"
                                                     variant="outline"
+                                                    size="sm"
                                                     isLoading={reprintingId === invoice.id}
                                                     onClick={() => handleReprint(invoice)}
                                                     className="h-7 px-2.5 rounded-xs text-xs font-bold text-[#2C4C3B] border-[#2C4C3B] hover:bg-[#EAEFEA]"
@@ -893,7 +928,7 @@ export function HistoryView({
                     {/* Filter toolbar */}
                     <Card className="p-3 space-y-2.5 border-[#CCCCCC] bg-white rounded-xs">
                         <Input
-                            placeholder="Tìm hành động, người dùng, mã tham chiếu..."
+                            placeholder="Tìm hành động, người dùng, vị trí ô, khách..."
                             value={auditSearch}
                             onChange={(e) => setAuditSearch(e.target.value)}
                         />
@@ -951,7 +986,7 @@ export function HistoryView({
                                                         {badgeInfo.label}
                                                     </span>
                                                     <span className="text-xs font-bold text-[#2C4C3B]">
-                                                        {formatEntityTitle(ev, parsedPayload, sessionsMap)}
+                                                        {formatEntityTitle(ev, parsedPayload, lookupMaps)}
                                                     </span>
                                                 </div>
                                                 <p className="text-xs text-[#1A1A1A] wrap-break-word">
@@ -963,7 +998,7 @@ export function HistoryView({
                                             </div>
 
                                             <div className="text-right shrink-0">
-                                                <span className="text-[11px] text-[#666666] font-mono">
+                                                <span className="text-[11px] text-[#666666]">
                                                     {formatDateTime(ev.createdAt)}
                                                 </span>
                                             </div>
@@ -988,36 +1023,65 @@ export function HistoryView({
                                                 <div className="mt-2 space-y-2">
                                                     {ev.action.includes("REPAIRED") && (
                                                         <div className="p-2 rounded-xs bg-[#FFFBE6] border border-[#FFE58F] text-[#D48806] text-[11px]">
-                                                            💡 <b>Hệ thống tự động:</b> Đã tạo bù hóa đơn nháp thành công cho phiên câu ô 01 lúc trước để đảm bảo số liệu thu chi chính xác.
+                                                            💡 <b>Hệ thống tự động:</b> Đã tạo bù hóa đơn nháp thành công cho phiên câu ô câu lúc trước để đảm bảo số liệu thu chi chính xác.
                                                         </div>
                                                     )}
 
                                                     {/* Structured Key-Value Grid */}
                                                     {parsedPayload && Object.keys(parsedPayload).length > 0 ? (
-                                                        <div className="rounded-xs bg-white border border-[#CCCCCC] p-2 space-y-1 text-[11px]">
-                                                            {Object.entries(parsedPayload).map(([k, v]) => (
-                                                                <div
-                                                                    key={k}
-                                                                    className="flex items-start justify-between gap-2 py-1 border-b border-[#E0E0E0] last:border-none"
-                                                                >
-                                                                    <span className="text-[#666666] font-medium shrink-0">
-                                                                        {formatPayloadKey(k)}:
-                                                                    </span>
-                                                                    <span className="font-mono font-semibold text-[#1A1A1A] text-right wrap-break-word">
-                                                                        {formatPayloadValue(k, v)}
-                                                                    </span>
-                                                                </div>
-                                                            ))}
+                                                        <div className="rounded-xs bg-white border border-[#CCCCCC] p-2.5 space-y-1.5 text-[11px]">
+                                                            {/* Dòng Người thực hiện */}
+                                                            <div className="flex items-start justify-between gap-2 py-1 border-b border-[#E0E0E0]">
+                                                                <span className="text-[#666666] font-medium shrink-0">
+                                                                    Người thực hiện:
+                                                                </span>
+                                                                <span className="font-semibold text-[#2C4C3B] text-right">
+                                                                    {formatActor(ev.createdBy, parsedPayload, usersMap)}
+                                                                </span>
+                                                            </div>
+
+                                                            {/* Dòng Thời gian ghi nhận */}
+                                                            <div className="flex items-start justify-between gap-2 py-1 border-b border-[#E0E0E0]">
+                                                                <span className="text-[#666666] font-medium shrink-0">
+                                                                    Thời gian ghi nhận:
+                                                                </span>
+                                                                <span className="font-semibold text-[#1A1A1A] text-right">
+                                                                    {formatDateTime(ev.createdAt)}
+                                                                </span>
+                                                            </div>
+
+                                                            {/* Render các trường nghiệp vụ minh bạch đã lọc sạch kỹ thuật */}
+                                                            {Object.entries(parsedPayload)
+                                                                .filter(
+                                                                    ([k, v]) =>
+                                                                        !HIDDEN_EXPANDED_KEYS.has(k) &&
+                                                                        v !== null &&
+                                                                        v !== undefined &&
+                                                                        v !== "",
+                                                                )
+                                                                .map(([k, v]) => (
+                                                                    <div
+                                                                        key={k}
+                                                                        className="flex items-start justify-between gap-2 py-1 border-b border-[#E0E0E0] last:border-none"
+                                                                    >
+                                                                        <span className="text-[#666666] font-medium shrink-0">
+                                                                            {formatPayloadKey(k)}:
+                                                                        </span>
+                                                                        <span className="font-semibold text-[#1A1A1A] text-right wrap-break-word">
+                                                                            {formatPayloadValue(k, v, lookupMaps)}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
                                                         </div>
                                                     ) : (
-                                                        <pre className="p-2 rounded-xs bg-white border border-[#CCCCCC] text-[11px] font-mono text-[#1A1A1A] overflow-x-auto whitespace-pre-wrap">
-                                                            {ev.payload}
-                                                        </pre>
+                                                        <div className="p-2 rounded-xs bg-white border border-[#CCCCCC] text-[11px] text-[#666666]">
+                                                            {getAuditHumanSummary(ev, parsedPayload, lookupMaps)}
+                                                        </div>
                                                     )}
                                                 </div>
                                             ) : (
                                                 <p className="text-[11px] text-[#1A1A1A] truncate mt-1">
-                                                    {getAuditHumanSummary(ev, parsedPayload, sessionsMap)}
+                                                    {getAuditHumanSummary(ev, parsedPayload, lookupMaps)}
                                                 </p>
                                             )}
                                         </div>

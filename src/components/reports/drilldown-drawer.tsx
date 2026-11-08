@@ -124,7 +124,7 @@ export function DrilldownDrawer({
                     ) : (
                         filteredItems.map((item) => (
                             <div key={item.id} className="py-2.5 text-xs">
-                                {item.href && <Link href={`${item.href}${item.href.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(returnTo)}`} className="mb-1 block font-semibold text-emerald-700 underline">Mở chứng từ #{item.code} →</Link>}
+                                {item.href && <Link href={`${item.href}${item.href.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(returnTo)}`} className="mb-1 block font-semibold text-emerald-700 underline">Xem chi tiết chứng từ #{item.code} →</Link>}
                                 <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-1.5">
@@ -138,9 +138,9 @@ export function DrilldownDrawer({
                                         <div className="mt-0.5 font-semibold text-slate-700">
                                             {item.content}
                                         </div>
-                                        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-slate-500">
-                                            <span>Khách: <strong className="text-slate-700">{item.customerName}</strong></span>
-                                            <span>PT: <span className="rounded bg-slate-100 px-1 py-0.5 text-slate-600 font-medium">{item.paymentMethod}</span></span>
+                                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                                            <span>Khách hàng: <strong className="text-slate-700">{item.customerName}</strong></span>
+                                            <span>Thanh toán: <span className="rounded bg-slate-100 px-1 py-0.5 text-slate-600 font-medium">{item.paymentMethod}</span></span>
                                         </div>
                                     </div>
 

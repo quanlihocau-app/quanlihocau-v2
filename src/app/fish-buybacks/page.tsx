@@ -103,16 +103,16 @@ export default async function FishBuybacksPage() {
     });
 
     const buybacks = rawBuybacks.map((b) => {
-        const line = b.invoiceLines[0];
+        const line = b.invoiceLines.find(l => l.invoice?.customer?.name || l.invoice?.fishingSession?.customer?.name) || b.invoiceLines[0];
         const invoice = line?.invoice;
         const session = invoice?.fishingSession;
         const customer = invoice?.customer || session?.customer;
         const huts = session?.hutLinks?.map((hl) => hl.hut.name).filter(Boolean).join(", ");
-        let customerName = "Cần thủ vãng lai";
+        let customerName = "Khách vãng lai";
         if (customer?.name) {
             customerName = huts ? `${customer.name} (Chòi ${huts})` : customer.name;
         } else if (huts) {
-            customerName = `Cần thủ (Chòi ${huts})`;
+            customerName = `Chòi ${huts}`;
         }
 
         return {

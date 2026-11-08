@@ -132,46 +132,135 @@ export default async function InvoiceHistoryPage({
         }),
     ]);
 
-    // Resolve user names and session details for friendly audit trail display
-    const auditUserIds = Array.from(new Set(auditEvents.map((a) => a.createdBy).filter(Boolean)));
-    const auditSessionIds = Array.from(
-        new Set(
-            auditEvents
-                .filter((a) => a.entityType === "FishingSession")
-                .map((a) => a.entityId)
-                .filter(Boolean),
-        ),
+    // Parse audit payloads to resolve IDs to human-readable names
+    const packageIdsSet = new Set<string>();
+    const customerIdsSet = new Set<string>();
+    const hutIdsSet = new Set<string>();
+    const productIdsSet = new Set<string>();
+    const userIdsSet = new Set<string>(auditEvents.map((a) => a.createdBy).filter(Boolean));
+    const sessionIdsSet = new Set<string>(
+        auditEvents
+            .filter((a) => a.entityType === "FishingSession")
+            .map((a) => a.entityId)
+            .filter(Boolean),
     );
 
-    const [auditUsers, auditSessions] = await Promise.all([
-        auditUserIds.length > 0
+    for (const a of auditEvents) {
+        if (!a.payload) continue;
+        try {
+            const p = JSON.parse(a.payload);
+            if (p.packageId && typeof p.packageId === "string") packageIdsSet.add(p.packageId);
+            if (p.customerId && typeof p.customerId === "string") customerIdsSet.add(p.customerId);
+            if (p.productId && typeof p.productId === "string") productIdsSet.add(p.productId);
+            if (p.sessionId && typeof p.sessionId === "string") sessionIdsSet.add(p.sessionId);
+            if (p.fishingSessionId && typeof p.fishingSessionId === "string") sessionIdsSet.add(p.fishingSessionId);
+            if (p.actor?.id && typeof p.actor.id === "string") userIdsSet.add(p.actor.id);
+            if (Array.isArray(p.hutIds)) {
+                for (const hid of p.hutIds) {
+                    if (typeof hid === "string") hutIdsSet.add(hid);
+                }
+            } else if (p.hutId && typeof p.hutId === "string") {
+                hutIdsSet.add(p.hutId);
+            }
+        } catch {
+            // ignore JSON parse error
+        }
+    }
+
+    const [auditUsers, auditSessions, packages, customers, huts, products] = await Promise.all([
+        userIdsSet.size > 0
             ? prisma.user.findMany({
-                  where: { id: { in: auditUserIds } },
-                  select: { id: true, name: true, email: true, phone: true },
+                  where: { id: { in: Array.from(userIdsSet) } },
+                  select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      phone: true,
+                      memberships: {
+                          where: { lakeId: tenantContext.lakeId },
+                          select: { role: true },
+                      },
+                  },
               })
             : [],
-        auditSessionIds.length > 0
+        sessionIdsSet.size > 0
             ? prisma.fishingSession.findMany({
-                  where: { id: { in: auditSessionIds } },
+                  where: { id: { in: Array.from(sessionIdsSet) } },
                   include: {
                       customer: { select: { name: true } },
+                      package: { select: { name: true } },
                       hutLinks: { include: { hut: { select: { name: true } } } },
                   },
+              })
+            : [],
+        packageIdsSet.size > 0
+            ? prisma.package.findMany({
+                  where: { id: { in: Array.from(packageIdsSet) } },
+                  select: { id: true, name: true },
+              })
+            : [],
+        customerIdsSet.size > 0
+            ? prisma.customer.findMany({
+                  where: { id: { in: Array.from(customerIdsSet) } },
+                  select: { id: true, name: true },
+              })
+            : [],
+        hutIdsSet.size > 0
+            ? prisma.hut.findMany({
+                  where: { id: { in: Array.from(hutIdsSet) } },
+                  select: { id: true, name: true },
+              })
+            : [],
+        productIdsSet.size > 0
+            ? prisma.product.findMany({
+                  where: { id: { in: Array.from(productIdsSet) } },
+                  select: { id: true, name: true, sku: true },
               })
             : [],
     ]);
 
     const usersMap: Record<string, string> = {};
     for (const u of auditUsers) {
-        usersMap[u.id] = u.name || u.phone || (u.email ? u.email.split("@")[0] : "Nhân viên");
+        const rawName = u.name || (u.email ? u.email.split("@")[0] : "Nhân viên");
+        const role = u.memberships[0]?.role;
+        const roleLabel =
+            role === Role.OWNER
+                ? "Chủ hồ"
+                : role === Role.MANAGER
+                ? "Quản lý"
+                : role === Role.STAFF
+                ? "Nhân viên"
+                : "";
+        usersMap[u.id] = roleLabel ? `${rawName} (${roleLabel})` : rawName;
     }
 
-    const sessionsMap: Record<string, { customerName: string; huts: string }> = {};
+    const sessionsMap: Record<string, { customerName: string; huts: string; packageName?: string }> = {};
     for (const s of auditSessions) {
         sessionsMap[s.id] = {
             customerName: s.customer?.name || "Khách vãng lai",
             huts: s.hutLinks.map((hl) => hl.hut.name).filter(Boolean).join(", "),
+            packageName: s.package?.name || s.packageNameSnapshot,
         };
+    }
+
+    const packagesMap: Record<string, string> = {};
+    for (const p of packages) {
+        packagesMap[p.id] = p.name;
+    }
+
+    const customersMap: Record<string, string> = {};
+    for (const c of customers) {
+        customersMap[c.id] = c.name;
+    }
+
+    const hutsMap: Record<string, string> = {};
+    for (const h of huts) {
+        hutsMap[h.id] = h.name.startsWith("Chòi") || h.name.startsWith("Ô") ? h.name : `Chòi ${h.name}`;
+    }
+
+    const productsMap: Record<string, string> = {};
+    for (const p of products) {
+        productsMap[p.id] = p.sku ? `${p.name} (Mã: ${p.sku})` : p.name;
     }
 
     // Format dates and decimals for client serialization
@@ -222,6 +311,10 @@ export default async function InvoiceHistoryPage({
                         auditEvents={formattedAuditEvents}
                         usersMap={usersMap}
                         sessionsMap={sessionsMap}
+                        packagesMap={packagesMap}
+                        hutsMap={hutsMap}
+                        customersMap={customersMap}
+                        productsMap={productsMap}
                         canManageInvoices={canManageInvoices}
                         canReversePayments={canReversePayments}
                         lakeName={tenantContext.lakeName}
