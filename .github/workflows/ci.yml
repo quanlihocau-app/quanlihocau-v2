@@ -31,17 +31,14 @@ jobs:
       NEXTAUTH_URL: "http://localhost:3000"
       SESSION_SECRET: "ci-only-session-secret-not-used-in-production"
       BANK_WEBHOOK_SECRET: "ci-bank-webhook-secret"
-      CRON_SECRET: "ci-cron-secret"
-      SAAS_TEST_ISOLATED: "1"
-      TEST_BASE_URL: "http://127.0.0.1:3102"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 24
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
@@ -55,34 +52,5 @@ jobs:
       - name: Apply CI migrations
         run: npx prisma migrate deploy
 
-      - name: Navigation source audit
-        run: npm run check:navigation
-
-      - name: Safety and permission tests
-        run: npm run test:safety
-
-      - name: ESLint check
-        run: npm run lint
-
-      - name: TypeScript typecheck
-        run: npx tsc --noEmit
-
-      - name: Production build
-        run: npm run build
-
-      - name: Verify migrated database matches schema
-        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
-
-      - name: Real API integration, concurrent quotas and recovery drill
-        run: node scripts/check-staging.mjs
-
-      - name: Save sanitized recovery evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: staging-recovery-evidence
-          path: .staging/recovery/result.json
-          if-no-files-found: ignore
-
-      - name: Guest navigation smoke test
-        run: npm run test:guest-navigation
+      - name: Run release check suite
+        run: npm run check:release

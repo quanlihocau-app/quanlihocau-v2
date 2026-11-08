@@ -68,6 +68,8 @@ export interface HistoryAuditEvent {
 interface HistoryViewProps {
     invoices: HistoryInvoice[];
     auditEvents: HistoryAuditEvent[];
+    usersMap?: Record<string, string>;
+    sessionsMap?: Record<string, { customerName: string; huts: string }>;
     canManageInvoices?: boolean;
     canReversePayments?: boolean;
     lakeName: string;
@@ -98,17 +100,99 @@ function formatTime(date: Date | string | null): string {
     }).format(new Date(date));
 }
 
-function formatActor(createdBy: string): string {
+function formatActor(
+    createdBy: string,
+    payload?: Record<string, unknown> | null,
+    usersMap?: Record<string, string>,
+): string {
     if (!createdBy || createdBy === "system" || createdBy === "automated_repair") {
         return "Hệ thống tự động";
     }
+
+    // 1. Ưu tiên tên nhân viên/quản lý được lưu trong payload audit
+    const actor = payload?.actor as Record<string, unknown> | undefined;
+    if (typeof actor?.name === "string" && actor.name.trim()) {
+        const role = typeof actor.role === "string" ? actor.role : "";
+        const roleLabel =
+            role === "OWNER"
+                ? "Chủ hồ"
+                : role === "MANAGER"
+                ? "Quản lý"
+                : role === "STAFF"
+                ? "Nhân viên"
+                : "";
+        return roleLabel ? `${actor.name.trim()} (${roleLabel})` : actor.name.trim();
+    }
+
+    // 2. Tra cứu theo danh bạ người dùng hồ
+    if (usersMap && usersMap[createdBy]) {
+        return usersMap[createdBy];
+    }
+
+    // 3. Fallbacks thân thiện không hiển thị chuỗi hex
     if (createdBy.includes("@")) {
         return createdBy.split("@")[0];
     }
     if (createdBy.length === 36 && createdBy.includes("-")) {
-        return `Nhân viên #${createdBy.slice(0, 8)}`;
+        return "Nhân viên trực ca";
     }
     return createdBy;
+}
+
+function formatEntityTitle(
+    ev: HistoryAuditEvent,
+    payload: Record<string, unknown> | null,
+    sessionsMap?: Record<string, { customerName: string; huts: string }>,
+): string {
+    if (ev.entityType === "FishingSession") {
+        const sess = sessionsMap?.[ev.entityId];
+        if (sess?.huts) {
+            const custPart = sess.customerName && sess.customerName !== "Khách vãng lai" ? ` - ${sess.customerName}` : "";
+            return `Phiên câu: Chòi ${sess.huts}${custPart}`;
+        }
+        return "Phiên câu cá";
+    }
+
+    if (ev.entityType === "InventoryMovement") {
+        if (typeof payload?.productName === "string" && payload.productName) {
+            const typeStr = payload.type === "OUT" ? "Xuất kho" : payload.type === "IN" ? "Nhập kho" : "Kho hàng";
+            return `${typeStr}: ${payload.productName}`;
+        }
+        return "Biến động kho hàng";
+    }
+
+    if (ev.entityType === "Invoice") {
+        return "Hóa đơn thanh toán";
+    }
+
+    if (ev.entityType === "FishBuyback") {
+        const fish = typeof payload?.fishTypeName === "string" ? payload.fishTypeName : "";
+        return `Thu mua cá${fish ? `: ${fish}` : ""}`;
+    }
+
+    if (ev.entityType === "Product") {
+        const name = typeof payload?.name === "string" ? payload.name : "";
+        return `Sản phẩm${name ? `: ${name}` : ""}`;
+    }
+
+    if (ev.entityType === "Customer") {
+        const name = typeof payload?.name === "string" ? payload.name : "";
+        return `Khách hàng${name ? `: ${name}` : ""}`;
+    }
+
+    if (ev.entityType === "Expense") {
+        return "Phiếu chi tiền";
+    }
+
+    if (ev.entityType === "Payment") {
+        return "Giao dịch thanh toán";
+    }
+
+    if (ev.entityType === "User") {
+        return "Tài khoản nhân sự";
+    }
+
+    return ev.entityType;
 }
 
 const AUDIT_FILTER_OPTIONS: Array<{
@@ -153,8 +237,15 @@ function getActionBadgeInfo(action: string): { label: string; colorClass: string
             return { label: "Thêm món", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
         case "PRODUCT_CREATED":
             return { label: "Tạo SP", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
+        case "PRODUCT_UPDATED":
+            return { label: "Sửa SP", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
+        case "INVENTORY_MOVEMENT_CREATED":
         case "INVENTORY_ADJUSTED":
-            return { label: "Kho hàng", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
+            return { label: "Kho hàng", colorClass: "bg-[#EAEFEA] text-[#2C4C3B] border-[#2C4C3B]" };
+        case "LOGIN_SUCCEEDED":
+            return { label: "Đăng nhập", colorClass: "bg-[#EAEFEA] text-[#2C4C3B] border-[#2C4C3B]" };
+        case "LOGIN_FAILED":
+            return { label: "Đăng nhập lỗi", colorClass: "bg-[#FFF1F0] text-[#A8071A] border-[#FFA39E]" };
         case "INVOICE_REPAIRED_FROM_SESSION":
         case "INVOICE_AUTO_REPAIRED_ON_COMPLETE":
             return { label: "Bù HĐ", colorClass: "bg-[#FFFBE6] text-[#D48806] border-[#FFE58F]" };
@@ -188,6 +279,14 @@ function formatPayloadKey(key: string): string {
         priceVnd: "Phí phát sinh",
         name: "Tên mặt hàng",
         quantity: "Số lượng",
+        productName: "Tên sản phẩm",
+        productSku: "Mã sản phẩm",
+        type: "Loại biến động",
+        newStock: "Tồn kho sau biến động",
+        signedQuantity: "Số lượng chênh lệch",
+        costPriceVnd: "Giá vốn",
+        supplier: "Nhà cung cấp",
+        itemsCount: "Số lượng món",
     };
     return map[key] || key;
 }
@@ -211,28 +310,36 @@ function formatPayloadValue(key: string, value: unknown): string {
         if (value === "VOID") return "Đã hủy";
         if (value === "CASH") return "Tiền mặt";
         if (value === "BANK_TRANSFER") return "Chuyển khoản";
+        if (value === "OUT") return "Xuất kho";
+        if (value === "IN") return "Nhập kho";
+        if (value === "ADJUST") return "Kiểm kê / Cân đối";
         if (value.includes("T") && value.endsWith("Z") && !isNaN(Date.parse(value))) {
             return formatDateTime(value);
         }
         if (value.length === 36 && value.includes("-")) {
-            return `#${value.slice(0, 8)}`;
+            return value.slice(0, 8);
         }
         return value;
     }
     if (Array.isArray(value)) {
         return value
-            .map((v) => (typeof v === "string" && v.length === 36 ? `#${v.slice(0, 8)}` : String(v)))
+            .map((v) => (typeof v === "string" && v.length === 36 ? v.slice(0, 8) : String(v)))
             .join(", ");
     }
     if (typeof value === "object") {
         return Object.entries(value as Record<string, unknown>)
+            .filter(([subK]) => !["id", "lakeId", "productId", "fishingSessionId", "sessionId", "invoiceId", "paymentId", "hutIds"].includes(subK))
             .map(([subK, subV]) => `${formatPayloadKey(subK)}: ${formatPayloadValue(subK, subV)}`)
             .join(" · ");
     }
     return String(value);
 }
 
-function getAuditHumanSummary(ev: HistoryAuditEvent, payload: Record<string, unknown> | null): string {
+function getAuditHumanSummary(
+    ev: HistoryAuditEvent,
+    payload: Record<string, unknown> | null,
+    sessionsMap?: Record<string, { customerName: string; huts: string }>,
+): string {
     if (!payload) return ev.payload ? ev.payload.slice(0, 90) : "Thao tác thành công";
 
     if (ev.action === "INVOICE_CREATED") {
@@ -242,27 +349,51 @@ function getAuditHumanSummary(ev: HistoryAuditEvent, payload: Record<string, unk
     }
 
     if (ev.action === "FISHING_SESSION_OPENED" || ev.action === "SESSION_OPENED" || ev.action === "SESSION_CREATED") {
+        const sess = sessionsMap?.[ev.entityId];
+        const hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
+        const custStr = sess?.customerName && sess.customerName !== "Khách vãng lai" ? ` - Khách: ${sess.customerName}` : "";
         const start = payload.startAt ? formatTime(String(payload.startAt)) : "";
-        return `Mở phiên câu mới${start ? ` lúc ${start}` : ""}`;
+        return `Mở phiên câu${hutStr}${custStr}${start ? ` lúc ${start}` : ""}`;
     }
 
     if (ev.action === "FISHING_SESSION_COMPLETED" || ev.action === "SESSION_COMPLETED") {
+        const sess = sessionsMap?.[ev.entityId];
+        const hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
+        const custStr = sess?.customerName && sess.customerName !== "Khách vãng lai" ? ` (${sess.customerName})` : "";
         const settlement = payload.settlement as Record<string, unknown> | undefined;
         if (settlement) {
             if (typeof settlement.refundVnd === "number" && settlement.refundVnd > 0) {
-                return `Kết thúc phiên câu · Thối tiền cho khách: ${formatVnd(settlement.refundVnd)}`;
+                return `Kết thúc phiên câu${hutStr}${custStr} · Thối tiền cho khách: ${formatVnd(settlement.refundVnd)}`;
             }
             if (typeof settlement.amountVnd === "number" && settlement.amountVnd > 0) {
-                return `Kết thúc phiên câu · Thu thêm của khách: ${formatVnd(settlement.amountVnd)}`;
+                return `Kết thúc phiên câu${hutStr}${custStr} · Thu thêm của khách: ${formatVnd(settlement.amountVnd)}`;
             }
         }
-        return "Kết thúc phiên câu thành công & giải phóng ô";
+        return `Kết thúc phiên câu${hutStr}${custStr} thành công & giải phóng ô câu`;
+    }
+
+    if (ev.action === "INVENTORY_MOVEMENT_CREATED" || ev.action === "INVENTORY_ADJUSTED" || ev.entityType === "InventoryMovement") {
+        const pName = typeof payload.productName === "string" ? payload.productName : "mặt hàng";
+        const pSku = typeof payload.productSku === "string" ? ` (Mã: ${payload.productSku})` : "";
+        const typeStr = payload.type === "OUT" ? "Xuất kho" : payload.type === "IN" ? "Nhập kho" : "Điều chỉnh kho";
+        const qty = payload.quantity ? ` ${payload.quantity}` : "";
+        const reason = payload.reason || payload.note ? ` · Lý do: ${payload.reason || payload.note}` : "";
+        const newStock = typeof payload.newStock === "number" ? ` · Tồn mới: ${payload.newStock}` : "";
+        return `${typeStr}${qty} ${pName}${pSku}${reason}${newStock}`;
+    }
+
+    if (ev.action === "RETAIL_SALE_COMPLETED") {
+        const total = typeof payload.totalAmountVnd === "number" ? formatVnd(payload.totalAmountVnd) : "";
+        const method = payload.paymentMethod === "CASH" ? "Tiền mặt" : payload.paymentMethod === "BANK_TRANSFER" ? "Chuyển khoản" : "";
+        const count = payload.itemsCount ? ` (${payload.itemsCount} món)` : "";
+        return `Bán lẻ thành công${count}${total ? ` · Thu: ${total}` : ""}${method ? ` [${method}]` : ""}`;
     }
 
     if (ev.action === "FISH_BUYBACK_RECORDED" || ev.action === "FISH_BUYBACK_CREATED") {
         const kg = payload.weight ? `${payload.weight} kg` : "";
         const total = typeof payload.totalVnd === "number" ? formatVnd(payload.totalVnd) : "";
-        return `Thu mua cá từ cần thủ${kg ? ` (${kg})` : ""}${total ? ` · -${total}` : ""}`;
+        const fish = typeof payload.fishTypeName === "string" ? ` (${payload.fishTypeName})` : "";
+        return `Thu mua cá${fish}${kg ? ` ${kg}` : ""}${total ? ` · -${total}` : ""}`;
     }
 
     if (ev.action === "PAYMENT_RECORDED" || ev.action === "PAYMENT_COLLECTED") {
@@ -275,8 +406,14 @@ function getAuditHumanSummary(ev: HistoryAuditEvent, payload: Record<string, unk
         return "Hệ thống tự động đồng bộ & tạo bù hóa đơn phiên câu";
     }
 
-    // Default friendly summary
-    const entries = Object.entries(payload).filter(([k]) => k !== "id" && k !== "lakeId");
+    // Default friendly summary without raw database IDs
+    const entries = Object.entries(payload).filter(
+        ([k]) =>
+            !["id", "lakeId", "productId", "fishingSessionId", "sessionId", "invoiceId", "paymentId", "actor", "ip", "ua", "before", "after", "hutIds"].includes(
+                k,
+            ),
+    );
+    if (entries.length === 0) return "Thao tác hoàn tất";
     return entries
         .slice(0, 3)
         .map(([k, v]) => `${formatPayloadKey(k)}: ${formatPayloadValue(k, v)}`)
@@ -286,6 +423,8 @@ function getAuditHumanSummary(ev: HistoryAuditEvent, payload: Record<string, unk
 export function HistoryView({
     invoices,
     auditEvents,
+    usersMap,
+    sessionsMap,
     lakeName,
     initialTab = "orders",
 }: HistoryViewProps & { initialTab?: "orders" | "audit" }) {
@@ -811,14 +950,14 @@ export function HistoryView({
                                                     >
                                                         {badgeInfo.label}
                                                     </span>
-                                                    <span className="text-xs font-mono font-bold text-[#2C4C3B]">
-                                                        {ev.entityType} #{ev.entityId.slice(0, 8)}
+                                                    <span className="text-xs font-bold text-[#2C4C3B]">
+                                                        {formatEntityTitle(ev, parsedPayload, sessionsMap)}
                                                     </span>
                                                 </div>
                                                 <p className="text-xs text-[#1A1A1A] wrap-break-word">
                                                     Thực hiện bởi:{" "}
                                                     <span className="font-semibold text-[#2C4C3B]">
-                                                        {formatActor(ev.createdBy)}
+                                                        {formatActor(ev.createdBy, parsedPayload, usersMap)}
                                                     </span>
                                                 </p>
                                             </div>
@@ -878,7 +1017,7 @@ export function HistoryView({
                                                 </div>
                                             ) : (
                                                 <p className="text-[11px] text-[#1A1A1A] truncate mt-1">
-                                                    {getAuditHumanSummary(ev, parsedPayload)}
+                                                    {getAuditHumanSummary(ev, parsedPayload, sessionsMap)}
                                                 </p>
                                             )}
                                         </div>

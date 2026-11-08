@@ -76,6 +76,25 @@ export default async function FishBuybacksPage() {
                     deletedAt: true,
                 },
             },
+            invoiceLines: {
+                include: {
+                    invoice: {
+                        include: {
+                            customer: { select: { name: true } },
+                            fishingSession: {
+                                include: {
+                                    customer: { select: { name: true } },
+                                    hutLinks: {
+                                        include: {
+                                            hut: { select: { name: true } },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         },
         orderBy: {
             createdAt: "desc",
@@ -83,16 +102,31 @@ export default async function FishBuybacksPage() {
         take: 100,
     });
 
-    const buybacks = rawBuybacks.map((b) => ({
-        id: b.id,
-        fishTypeId: b.fishTypeId,
-        fishTypeName: b.fishType.name,
-        isFishTypeDeleted: b.fishType.deletedAt !== null,
-        weight: Number(b.weight),
-        pricePerKg: b.pricePerKg,
-        totalVnd: b.totalVnd,
-        createdAt: b.createdAt,
-    }));
+    const buybacks = rawBuybacks.map((b) => {
+        const line = b.invoiceLines[0];
+        const invoice = line?.invoice;
+        const session = invoice?.fishingSession;
+        const customer = invoice?.customer || session?.customer;
+        const huts = session?.hutLinks?.map((hl) => hl.hut.name).filter(Boolean).join(", ");
+        let customerName = "Cần thủ vãng lai";
+        if (customer?.name) {
+            customerName = huts ? `${customer.name} (Chòi ${huts})` : customer.name;
+        } else if (huts) {
+            customerName = `Cần thủ (Chòi ${huts})`;
+        }
+
+        return {
+            id: b.id,
+            fishTypeId: b.fishTypeId,
+            fishTypeName: b.fishType.name,
+            isFishTypeDeleted: b.fishType.deletedAt !== null,
+            weight: Number(b.weight),
+            pricePerKg: b.pricePerKg,
+            totalVnd: b.totalVnd,
+            createdAt: b.createdAt,
+            customerName,
+        };
+    });
 
     return (
         <main className="mx-auto min-h-screen max-w-7xl bg-[#F8F6F0] px-4 pb-24 pt-6 sm:px-6 lg:px-8">

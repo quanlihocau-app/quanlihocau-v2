@@ -212,24 +212,60 @@ export async function GET(request: NextRequest) {
             totalCount = await prisma.fishBuyback.count({ where });
             const buybacks = await prisma.fishBuyback.findMany({
                 where,
-                include: { fishType: true },
+                include: {
+                    fishType: true,
+                    invoiceLines: {
+                        include: {
+                            invoice: {
+                                include: {
+                                    customer: true,
+                                    fishingSession: {
+                                        include: {
+                                            customer: true,
+                                            hutLinks: {
+                                                include: {
+                                                    hut: true,
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
                 orderBy: { createdAt: "desc" },
                 skip,
                 take: limit,
             });
 
-            items = buybacks.map(fb => ({
-                id: fb.id,
-                href: "/fish-buybacks",
-                code: fb.id.substring(0, 8).toUpperCase(),
-                dateTime: formatVnDateTimeDisplay(fb.createdAt),
-                customerName: "Cần thủ",
-                staffName: "Tổ cân cá",
-                content: `Mua cá: ${fb.fishType.name} (${Number(fb.weight)} kg × ${new Intl.NumberFormat("vi-VN").format(fb.pricePerKg)}đ)`,
-                amountVnd: fb.totalVnd,
-                paymentMethod: "Khấu trừ vé / Tiền mặt",
-                status: "Đã cân & thanh toán",
-            }));
+            items = buybacks.map(fb => {
+                const line = fb.invoiceLines[0];
+                const invoice = line?.invoice;
+                const session = invoice?.fishingSession;
+                const customer = invoice?.customer || session?.customer;
+                const huts = session?.hutLinks?.map(hl => hl.hut.name).filter(Boolean).join(", ");
+
+                let customerName = "Cần thủ vãng lai";
+                if (customer?.name) {
+                    customerName = huts ? `${customer.name} (Chòi ${huts})` : customer.name;
+                } else if (huts) {
+                    customerName = `Cần thủ (Chòi ${huts})`;
+                }
+
+                return {
+                    id: fb.id,
+                    href: invoice?.id ? `/invoices/${invoice.id}` : "/fish-buybacks",
+                    code: fb.id.substring(0, 8).toUpperCase(),
+                    dateTime: formatVnDateTimeDisplay(fb.createdAt),
+                    customerName,
+                    staffName: "Tổ cân cá",
+                    content: `Mua cá: ${fb.fishType.name} (${Number(fb.weight)} kg × ${new Intl.NumberFormat("vi-VN").format(fb.pricePerKg)}đ)`,
+                    amountVnd: fb.totalVnd,
+                    paymentMethod: invoice ? "Khấu trừ vé" : "Tiền mặt",
+                    status: "Đã cân & thanh toán",
+                };
+            });
         } else if (metric === "totalExpense") {
             title = "Chi tiết Các Phiếu chi & Chi phí";
             const where: Prisma.ExpenseWhereInput = {

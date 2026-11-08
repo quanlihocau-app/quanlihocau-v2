@@ -132,6 +132,48 @@ export default async function InvoiceHistoryPage({
         }),
     ]);
 
+    // Resolve user names and session details for friendly audit trail display
+    const auditUserIds = Array.from(new Set(auditEvents.map((a) => a.createdBy).filter(Boolean)));
+    const auditSessionIds = Array.from(
+        new Set(
+            auditEvents
+                .filter((a) => a.entityType === "FishingSession")
+                .map((a) => a.entityId)
+                .filter(Boolean),
+        ),
+    );
+
+    const [auditUsers, auditSessions] = await Promise.all([
+        auditUserIds.length > 0
+            ? prisma.user.findMany({
+                  where: { id: { in: auditUserIds } },
+                  select: { id: true, name: true, email: true, phone: true },
+              })
+            : [],
+        auditSessionIds.length > 0
+            ? prisma.fishingSession.findMany({
+                  where: { id: { in: auditSessionIds } },
+                  include: {
+                      customer: { select: { name: true } },
+                      hutLinks: { include: { hut: { select: { name: true } } } },
+                  },
+              })
+            : [],
+    ]);
+
+    const usersMap: Record<string, string> = {};
+    for (const u of auditUsers) {
+        usersMap[u.id] = u.name || u.phone || (u.email ? u.email.split("@")[0] : "Nhân viên");
+    }
+
+    const sessionsMap: Record<string, { customerName: string; huts: string }> = {};
+    for (const s of auditSessions) {
+        sessionsMap[s.id] = {
+            customerName: s.customer?.name || "Khách vãng lai",
+            huts: s.hutLinks.map((hl) => hl.hut.name).filter(Boolean).join(", "),
+        };
+    }
+
     // Format dates and decimals for client serialization
     const formattedInvoices = invoices.map((inv) => ({
         ...inv,
@@ -178,6 +220,8 @@ export default async function InvoiceHistoryPage({
                     <HistoryView
                         invoices={formattedInvoices}
                         auditEvents={formattedAuditEvents}
+                        usersMap={usersMap}
+                        sessionsMap={sessionsMap}
                         canManageInvoices={canManageInvoices}
                         canReversePayments={canReversePayments}
                         lakeName={tenantContext.lakeName}

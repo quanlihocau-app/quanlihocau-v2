@@ -12,6 +12,7 @@ export interface FishBuybackItem {
     pricePerKg: number;
     totalVnd: number;
     createdAt: Date | string;
+    customerName?: string;
 }
 
 interface FishBuybackListProps {
@@ -91,7 +92,7 @@ export function FishBuybackList({ buybacks }: FishBuybackListProps) {
                                 </span>
                             </div>
                             <div className="flex items-center justify-between text-[11px] text-slate-500">
-                                <span>{b.weight} kg • {formatVnd(b.pricePerKg)}/kg</span>
+                                <span>{b.customerName ? `${b.customerName} • ` : ""}{b.weight} kg • {formatVnd(b.pricePerKg)}/kg</span>
                                 <span>{formatDateTime(b.createdAt)}</span>
                             </div>
                         </div>
@@ -105,6 +106,7 @@ export function FishBuybackList({ buybacks }: FishBuybackListProps) {
                     <thead className="border-b border-[#E2DDD2] bg-[#F8F6F0] text-[11px] font-bold uppercase tracking-wider text-slate-500">
                         <tr>
                             <th className="px-4 py-3.5">Thời gian</th>
+                            <th className="px-4 py-3.5">Cần thủ</th>
                             <th className="px-4 py-3.5">Loại cá</th>
                             <th className="px-4 py-3.5 text-right">Khối lượng</th>
                             <th className="px-4 py-3.5 text-right">Đơn giá thu mua</th>
@@ -115,7 +117,7 @@ export function FishBuybackList({ buybacks }: FishBuybackListProps) {
                         {filteredBuybacks.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={5}
+                                    colSpan={6}
                                     className="px-4 py-8 text-center text-xs text-slate-400"
                                 >
                                     {search
@@ -131,6 +133,9 @@ export function FishBuybackList({ buybacks }: FishBuybackListProps) {
                                 >
                                     <td className="px-4 py-3.5 text-xs text-slate-500">
                                         {formatDateTime(b.createdAt)}
+                                    </td>
+                                    <td className="px-4 py-3.5 text-xs font-semibold text-slate-800">
+                                        {b.customerName || "—"}
                                     </td>
                                     <td className="px-4 py-3.5">
                                         <div className="flex flex-wrap items-center gap-1.5 font-bold text-slate-900">
