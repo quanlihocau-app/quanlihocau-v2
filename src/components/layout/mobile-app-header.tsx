@@ -137,7 +137,7 @@ export function MobileAppHeader({
                     }
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
         return () => {
             isMounted = false;
         };
@@ -146,12 +146,12 @@ export function MobileAppHeader({
     // Extract short name for avatar
     const avatarInitials = currentLakeName
         ? currentLakeName
-              .trim()
-              .split(/\s+/)
-              .slice(0, 2)
-              .map((w) => w[0])
-              .join("")
-              .toUpperCase()
+            .trim()
+            .split(/\s+/)
+            .slice(0, 2)
+            .map((w) => w[0])
+            .join("")
+            .toUpperCase()
         : "HC";
 
     return (
@@ -163,11 +163,10 @@ export function MobileAppHeader({
                         ? "#000000"
                         : "linear-gradient(180deg, #031A0F 0%, #082E1C 50%, #041D12 100%)",
                 }}
-                className={`sticky top-0 z-30 shrink-0 font-serif transition-colors overflow-hidden ${
-                    isOutdoorMode
-                        ? "border-b-2 border-amber-400 text-white shadow-md"
-                        : "text-white border-b border-emerald-700/40 shadow-[0_4px_24px_rgba(2,26,15,0.45)]"
-                }`}
+                className={`sticky top-0 z-30 shrink-0 font-serif transition-colors overflow-hidden ${isOutdoorMode
+                    ? "border-b-2 border-amber-400 text-white shadow-md"
+                    : "text-white border-b border-emerald-700/40 shadow-[0_4px_24px_rgba(2,26,15,0.45)]"
+                    }`}
             >
                 {/* ── Luxury Specular Sheen (Vệt sáng sang trọng trên nền xanh đậm) ── */}
                 {!isOutdoorMode && (
@@ -282,11 +281,10 @@ export function MobileAppHeader({
                             <button
                                 type="button"
                                 onClick={toggleOutdoorMode}
-                                className={`inline-flex h-8 items-center gap-1 px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 ${
-                                    isOutdoorMode
-                                        ? "bg-amber-400 text-black border-black ring-2 ring-amber-300 font-black shadow-md"
-                                        : "border-emerald-700/50 bg-emerald-950/60 text-emerald-200 hover:bg-emerald-900/80 hover:text-white hover:border-emerald-500/60"
-                                }`}
+                                className={`inline-flex h-8 items-center gap-1 px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 ${isOutdoorMode
+                                    ? "bg-amber-400 text-black border-black ring-2 ring-amber-300 font-black shadow-md"
+                                    : "border-emerald-700/50 bg-emerald-950/60 text-emerald-200 hover:bg-emerald-900/80 hover:text-white hover:border-emerald-500/60"
+                                    }`}
                                 aria-label={
                                     isOutdoorMode
                                         ? "Tắt chế độ ngoài trời tương phản cao"
@@ -329,15 +327,14 @@ export function MobileAppHeader({
                                     href={item.href}
                                     prefetch={true}
                                     aria-current={active ? "page" : undefined}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none font-serif ${
-                                        item.isPrimary
-                                            ? active
-                                                ? "bg-amber-400 text-slate-950 font-black shadow-xs ring-2 ring-amber-300"
-                                                : "bg-[#16A34A] hover:bg-[#15803D] text-white shadow-xs"
-                                            : active
-                                              ? "bg-emerald-800/95 text-amber-200 border border-emerald-400/70 shadow-xs"
-                                              : "text-emerald-200/90 hover:text-white hover:bg-emerald-900/60 border border-transparent"
-                                    }`}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer select-none font-serif ${item.isPrimary
+                                        ? active
+                                            ? "bg-amber-400 text-slate-950 font-black shadow-xs ring-2 ring-amber-300"
+                                            : "bg-[#16A34A] hover:bg-[#15803D] text-white shadow-xs"
+                                        : active
+                                            ? "bg-emerald-800/95 text-amber-200 border border-emerald-400/70 shadow-xs"
+                                            : "text-emerald-200/90 hover:text-white hover:bg-emerald-900/60 border border-transparent"
+                                        }`}
                                 >
                                     <span className="text-[13px]">{item.icon}</span>
                                     <span>{item.label}</span>
