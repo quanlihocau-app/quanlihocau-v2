@@ -228,7 +228,7 @@ export function HomeMobileView({
                         </div>
                         <div className="home-welcome-content flex flex-col sm:flex-row sm:items-center justify-between pt-1 gap-3">
                             <div className="min-w-0 flex-1">
-                                <h2 className="text-base sm:text-lg font-bold text-[#0F172A] leading-snug font-serif break-words">
+                                <h2 className="text-base sm:text-lg font-bold text-[#0F172A] leading-snug font-serif wrap-break-word">
                                     {lakeName}
                                 </h2>
                                 <p className="text-xs sm:text-sm text-slate-500 font-serif mt-0.5 leading-relaxed">
@@ -349,7 +349,7 @@ export function HomeMobileView({
                                     <span className="flex min-h-8 items-center justify-center text-[11px] sm:text-xs font-bold text-[#0F172A] leading-4">
                                         {item.title}
                                     </span>
-                                    <span className="min-h-7 text-[10px] text-slate-500 leading-[14px] mt-0.5">
+                                    <span className="min-h-7 text-[10px] text-slate-500 leading-3.5 mt-0.5">
                                         {item.subtitle}
                                     </span>
                                 </Link>
