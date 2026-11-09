@@ -173,7 +173,6 @@ export async function POST(request: Request) {
                                 data: {
                                     lakeId,
                                     startTime: shiftStartInstant(new Date(), lastClosed?.endTime ?? null, startOfVnDay()),
-                                    openingCashVnd: previousHandover,
                                 },
                                 include: {
                                     closes: true,
@@ -199,9 +198,7 @@ export async function POST(request: Request) {
                         const otherExpenseVnd = measured.approvedExpenseVnd;
                         const totalExpenseVnd = measured.totalExpenseVnd;
 
-                        const openingCashVnd = currentShift.openingCashVnd > 0
-                            ? currentShift.openingCashVnd
-                            : previousHandover;
+                        const openingCashVnd = previousHandover;
                         const expectedCashVnd = expectedDrawerCash(openingCashVnd, measured.drawer.cashIn, measured.drawer.cashOut);
                         const cashDifferenceVnd = actualCashVnd !== undefined
                             ? drawerDifference(actualCashVnd, expectedCashVnd)
@@ -236,10 +233,6 @@ export async function POST(request: Request) {
                                 totalExpenseVnd,
                                 fishBuybackVnd,
                                 otherExpenseVnd,
-                                actualCashVnd: actualCashVnd ?? null,
-                                cashDifferenceVnd,
-                                differenceReason: differenceReason?.trim() || null,
-                                receivedBy: receivedBy?.trim() || null,
                                 closedBy: tenantContext.userName,
                                 note: compositeNote,
                             },
@@ -250,7 +243,6 @@ export async function POST(request: Request) {
                             data: {
                                 lakeId,
                                 startTime: endTime,
-                                openingCashVnd: actualCashVnd ?? expectedCashVnd,
                             },
                         });
 

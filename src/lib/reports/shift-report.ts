@@ -214,12 +214,8 @@ export async function loadShiftReport(lakeId: string, requestedShiftId?: string 
                 select: {
                     id: true,
                     closedBy: true,
-                    receivedBy: true,
                     totalRevenueVnd: true,
                     totalCashVnd: true,
-                    actualCashVnd: true,
-                    cashDifferenceVnd: true,
-                    differenceReason: true,
                     createdAt: true,
                     note: true,
                 },
@@ -260,7 +256,6 @@ export async function loadShiftReport(lakeId: string, requestedShiftId?: string 
         id: "",
         startTime: syntheticStart,
         endTime: null as Date | null,
-        openingCashVnd: previousHandoverCash,
         closes: [] as Array<{
             id: string;
             closedBy: string | null;
@@ -272,21 +267,13 @@ export async function loadShiftReport(lakeId: string, requestedShiftId?: string 
             totalExpenseVnd: number;
             fishBuybackVnd: number;
             otherExpenseVnd: number;
-            actualCashVnd: number | null;
-            cashDifferenceVnd: number;
-            differenceReason: string | null;
-            receivedBy: string | null;
         }>,
     };
 
     const isClosed = shift.endTime !== null && shift.closes.length > 0;
     const rawClose = shift.closes[0] ?? null;
     const parsedClose = rawClose ? parseShiftCloseNote(rawClose.note) : null;
-    const openingCashVnd = shift.openingCashVnd > 0
-        ? shift.openingCashVnd
-        : shift.endTime === null
-            ? previousHandoverCash
-            : 0;
+    const openingCashVnd = shift.endTime === null ? previousHandoverCash : 0;
 
     const measured = await measureShiftWindow(prisma, lakeId, shift.startTime, shift.endTime ?? now, now);
     const expectedDrawerVnd = expectedDrawerCash(openingCashVnd, measured.drawer.cashIn, measured.drawer.cashOut);
@@ -490,16 +477,17 @@ export async function loadShiftReport(lakeId: string, requestedShiftId?: string 
             ? {
                 id: rawClose.id,
                 closedBy: rawClose.closedBy,
-                receivedBy: parsedClose?.receivedBy ?? ("receivedBy" in rawClose ? rawClose.receivedBy : null),
+                receivedBy: parsedClose?.receivedBy ?? null,
                 closedAt: rawClose.createdAt.toISOString(),
                 note: parsedClose?.cleanNote ?? rawClose.note,
-                actualCashVnd: parsedClose?.actualCashVnd ?? ("actualCashVnd" in rawClose ? rawClose.actualCashVnd : null) ?? rawClose.totalCashVnd,
-                cashDifferenceVnd: parsedClose?.cashDifferenceVnd ?? ("cashDifferenceVnd" in rawClose ? rawClose.cashDifferenceVnd : 0) ?? 0,
-                differenceReason: parsedClose?.differenceReason ?? ("differenceReason" in rawClose ? rawClose.differenceReason : null),
+                actualCashVnd: parsedClose?.actualCashVnd ?? rawClose.totalCashVnd,
+                cashDifferenceVnd: parsedClose?.cashDifferenceVnd ?? 0,
+                differenceReason: parsedClose?.differenceReason ?? null,
             }
             : null,
         recentShifts: rawRecentShifts.map((item) => {
             const close = item.closes[0];
+            const parsed = close ? parseShiftCloseNote(close.note) : null;
             return {
                 id: item.id,
                 startTime: item.startTime.toISOString(),
@@ -508,10 +496,10 @@ export async function loadShiftReport(lakeId: string, requestedShiftId?: string 
                 revenueVnd: close?.totalRevenueVnd ?? 0,
                 cashVnd: close?.totalCashVnd ?? 0,
                 closedBy: close?.closedBy ?? null,
-                receivedBy: close?.receivedBy ?? null,
-                actualCashVnd: close?.actualCashVnd ?? null,
-                cashDifferenceVnd: close?.cashDifferenceVnd ?? 0,
-                differenceReason: close?.differenceReason ?? null,
+                receivedBy: parsed?.receivedBy ?? null,
+                actualCashVnd: parsed?.actualCashVnd ?? null,
+                cashDifferenceVnd: parsed?.cashDifferenceVnd ?? 0,
+                differenceReason: parsed?.differenceReason ?? null,
             };
         }),
     };

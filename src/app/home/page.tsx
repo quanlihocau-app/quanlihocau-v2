@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getPageSession } from "@/lib/server-session";
 import { getTenantContext } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
-import { InvoiceStatus, SessionStatus } from "@/generated/prisma/client";
+import { InvoiceStatus, SessionStatus, PaymentDirection } from "@/generated/prisma/client";
 import { loadShiftReport } from "@/lib/reports/shift-report";
 import { HomeMobileView } from "@/app/home-mobile-view";
 
@@ -28,7 +28,7 @@ export default async function AppHomePage() {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [activeSessionsCount, totalHutsCount, todayInvoices, recentSessions, shiftReport] = await Promise.all([
+    const [activeSessionsCount, totalHutsCount, todayInvoices, recentSessions] = await Promise.all([
         prisma.fishingSession.count({
             where: {
                 lakeId: tenantContext.lakeId,
@@ -74,13 +74,34 @@ export default async function AppHomePage() {
             orderBy: { startAt: "desc" },
             take: 3,
         }),
-        loadShiftReport(tenantContext.lakeId),
     ]);
 
-    // Doanh thu ca lấy chuẩn xác từ shiftReport (đối soát khớp hoàn toàn với Báo cáo ca /reports/daily)
-    const todayRevenue = shiftReport.summary.revenueVnd;
-    const todayCash = shiftReport.summary.cashVnd;
-    const todayTransfer = shiftReport.summary.transferVnd;
+    // Doanh thu ca lấy từ shiftReport (đối soát khớp hoàn toàn với Báo cáo ca /reports/daily), có fallback dự phòng nếu lỗi
+    let todayRevenue = 0;
+    let todayCash = 0;
+    let todayTransfer = 0;
+
+    try {
+        const shiftReport = await loadShiftReport(tenantContext.lakeId);
+        todayRevenue = shiftReport.summary.revenueVnd;
+        todayCash = shiftReport.summary.cashVnd;
+        todayTransfer = shiftReport.summary.transferVnd;
+    } catch (err) {
+        console.error("[Home] Error loading shift report for home stats:", err);
+        const payments = await prisma.payment.findMany({
+            where: {
+                lakeId: tenantContext.lakeId,
+                createdAt: { gte: todayStart },
+                direction: PaymentDirection.IN,
+            },
+            select: { amountVnd: true, method: true },
+        });
+        for (const p of payments) {
+            todayRevenue += p.amountVnd;
+            if (p.method === "CASH") todayCash += p.amountVnd;
+            else todayTransfer += p.amountVnd;
+        }
+    }
 
     return (
         <HomeMobileView
