@@ -9,7 +9,7 @@ export async function requireFinancePage(): Promise<TenantContext> {
         redirect("/login");
     }
     if (tenant.role === Role.STAFF) {
-        redirect("/403");
+        redirect("/sessions");
     }
     return tenant;
 }

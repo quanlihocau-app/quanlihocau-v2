@@ -20,11 +20,16 @@ export function openAppTour(stepId?: string) {
 /** Blacklisted routes where the tour should never auto-pop */
 const SENSITIVE_ROUTES = ["/sessions/new", "/invoices", "/settings/printer", "/login", "/register"];
 
-export function AppTour({ userRole = "OWNER" }: { userRole?: "OWNER" | "MANAGER" | "STAFF" }) {
+function isCashierRoute(pathname?: string | null) {
+  if (!pathname) return false;
+  return pathname === "/sessions" || pathname.startsWith("/sessions/") || pathname === "/home" || pathname.startsWith("/home/") || pathname === "/invoices" || pathname.startsWith("/invoices/");
+}
+
+export function AppTour({ userRole }: { userRole?: "OWNER" | "MANAGER" | "STAFF" }) {
   const pathname = usePathname();
 
   const filteredSteps: TourStep[] = TOUR_STEPS.filter(
-    (s) => !s.roles || s.roles.includes(userRole),
+    (s) => !s.roles || (userRole ? s.roles.includes(userRole) : s.roles.includes("STAFF")),
   );
 
   const [isOpen, setIsOpen] = useState(false);
@@ -39,12 +44,18 @@ export function AppTour({ userRole = "OWNER" }: { userRole?: "OWNER" | "MANAGER"
     if (typeof window === "undefined") return;
     const completed = localStorage.getItem(STORAGE_COMPLETED);
     const dismissed = localStorage.getItem(STORAGE_DISMISSED);
+    const onboardingStillOpen = !localStorage.getItem("quanlihocau_onboarding_dismissed_v1")
+      && !localStorage.getItem("quanlihocau_onboarding_completed_v1");
     const isSensitive = SENSITIVE_ROUTES.some((r) => pathname?.startsWith(r));
+    // Staff land on the counter. A second full-screen guide on top of onboarding
+    // swallows every tap, including the button that closes the first guide.
+    if (userRole === "STAFF" && isCashierRoute(pathname)) return;
+    if (onboardingStillOpen) return;
     if (!completed && !dismissed && !isSensitive) {
       const t = setTimeout(() => setIsOpen(true), 900);
       return () => clearTimeout(t);
     }
-  }, [pathname]);
+  }, [pathname, userRole]);
 
   /* ---------- listen for manual open trigger ---------- */
   useEffect(() => {

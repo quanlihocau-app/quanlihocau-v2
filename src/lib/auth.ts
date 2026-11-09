@@ -17,8 +17,8 @@ import {
 import { recordLoginAudit, type LoginMembership } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { seedSampleLakeData } from "@/lib/onboarding/seed-sample-lake";
+import { findLoginUser } from "@/lib/login-identifier";
 import { sessionSecret, verifySignedSession } from "@/lib/session-signature";
-import { normalizeVietnamesePhone } from "@/lib/phone";
 import { TRIAL_DAYS } from "@/lib/vietqr";
 
 declare module "next-auth" {
@@ -32,6 +32,7 @@ declare module "next-auth" {
             phoneVerified?: boolean;
             phone?: string | null;
             sessionVersion?: number;
+            role?: Role;
         };
     }
     interface User {
@@ -42,6 +43,7 @@ declare module "next-auth" {
         phoneVerified?: boolean;
         phone?: string | null;
         sessionVersion?: number;
+        role?: Role;
     }
 }
 
@@ -52,57 +54,12 @@ declare module "next-auth/jwt" {
         phoneVerified?: boolean;
         phone?: string | null;
         sessionVersion?: number;
+        role?: Role;
     }
 }
 
-const credentialMembershipInclude = {
-    memberships: {
-        where: { deletedAt: null },
-        select: { lakeId: true, role: true },
-        orderBy: { createdAt: "asc" as const },
-        take: 3,
-    },
-};
-
-async function findCredentialUser(identifier: string) {
-    let user = await prisma.user.findUnique({
-        where: { email: identifier },
-        include: credentialMembershipInclude,
-    });
-    if (!user && !identifier.includes("@")) {
-        let phone: string | null = null;
-        try { phone = normalizeVietnamesePhone(identifier); } catch { phone = null; }
-        if (phone) {
-            user = await prisma.user.findUnique({
-                where: { phone },
-                include: credentialMembershipInclude,
-            });
-        }
-    }
-    if (!user && !identifier.includes("@")) {
-        user = await prisma.user.findUnique({
-            where: { email: `${identifier}@hocau.com` },
-            include: credentialMembershipInclude,
-        });
-        if (!user) {
-            user = await prisma.user.findUnique({
-                where: { email: `${identifier}@hocau.vn` },
-                include: credentialMembershipInclude,
-            });
-        }
-        if (!user) {
-            user = await prisma.user.findFirst({
-                where: {
-                    email: {
-                        startsWith: `${identifier}@`,
-                        mode: "insensitive",
-                    },
-                },
-                include: credentialMembershipInclude,
-            });
-        }
-    }
-    return user;
+async function findCredentialUser(identifier: string, password?: string) {
+    return findLoginUser(identifier, password);
 }
 
 function membershipsOf(user: { memberships?: LoginMembership[] } | null): LoginMembership[] {
@@ -286,6 +243,7 @@ export const authOptions: NextAuthOptions = {
                 token.phoneVerified = user.phoneVerified;
                 token.phone = user.phone;
                 token.sessionVersion = user.sessionVersion;
+                token.role = user.role;
             }
             if (token.email) {
                 const dbUser = await prisma.user.findUnique({
@@ -297,6 +255,12 @@ export const authOptions: NextAuthOptions = {
                         phone: true,
                         isLocked: true,
                         sessionVersion: true,
+                        memberships: {
+                            where: { deletedAt: null },
+                            select: { role: true },
+                            orderBy: { createdAt: "asc" },
+                            take: 1,
+                        },
                     },
                 });
 
@@ -315,6 +279,7 @@ export const authOptions: NextAuthOptions = {
                 token.phoneVerified = dbUser.phoneVerified;
                 token.phone = dbUser.phone;
                 token.sessionVersion = dbUser.sessionVersion;
+                token.role = dbUser.memberships[0]?.role;
             }
             return token;
         },
@@ -325,6 +290,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.phoneVerified = Boolean(token.phoneVerified);
                 session.user.phone = (token.phone as string) || null;
                 session.user.sessionVersion = token.sessionVersion as number;
+                session.user.role = token.role;
             } else if (!token.id) {
                 return null as unknown as typeof session;
             }
@@ -374,7 +340,7 @@ export const authOptions: NextAuthOptions = {
 
                 let user;
                 try {
-                    user = await findCredentialUser(identifier);
+                    user = await findCredentialUser(identifier, parsed.data.password);
                 } catch (dbErr: unknown) {
                     console.error("[auth] Database query error during authorize:", dbErr);
                     const msg = dbErr instanceof Error ? dbErr.message : String(dbErr);
@@ -467,6 +433,7 @@ export const authOptions: NextAuthOptions = {
                     phoneVerified: user.phoneVerified,
                     phone: user.phone,
                     sessionVersion: user.sessionVersion,
+                    role: user.memberships?.[0]?.role,
                 };
             },
         }),

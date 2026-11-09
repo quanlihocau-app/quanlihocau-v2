@@ -29,8 +29,9 @@ function SessionCacheGuard() {
 function AppTourWrapper() {
     const { data: session, status } = useSession();
     if (status !== "authenticated") return null;
-    const role = (session?.user as { role?: string })?.role as "OWNER" | "MANAGER" | "STAFF" | undefined;
-    return <AppTour userRole={role ?? "OWNER"} />;
+    const role = (session?.user as { role?: string })?.role;
+    const guideRole = role === "OWNER" || role === "MANAGER" || role === "STAFF" ? role : undefined;
+    return <AppTour userRole={guideRole} />;
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {

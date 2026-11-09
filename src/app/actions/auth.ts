@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { setSessionCookie, clearSessionCookie } from '@/lib/auth'
+import { findLoginUser } from '@/lib/login-identifier'
 import { redirect } from 'next/navigation'
 import { normalizeVietnamesePhone, syntheticPhoneEmail } from '@/lib/phone'
 import { z } from 'zod'
@@ -16,15 +17,6 @@ import {
 } from '@/lib/auth-rate-limit'
 import { TRIAL_DAYS } from '@/lib/vietqr'
 import { recordLoginAudit } from '@/lib/audit-log'
-
-const loginMembershipInclude = {
-  memberships: {
-    where: { deletedAt: null },
-    select: { lakeId: true, role: true },
-    orderBy: { createdAt: 'asc' as const },
-    take: 3,
-  },
-}
 
 export interface RegisterInput {
   email?: string | null
@@ -254,45 +246,7 @@ export async function loginUser(input: { email: string; password: string }) {
       return reject('Vui lòng nhập tên đăng nhập/email và mật khẩu.')
     }
 
-    let user = await prisma.user.findUnique({
-      where: { email: identifier },
-      include: loginMembershipInclude,
-    })
-
-    if (!user && !identifier.includes('@')) {
-      let phone: string | null = null
-      try { phone = normalizeVietnamesePhone(identifier) } catch { phone = null }
-      if (phone) {
-        user = await prisma.user.findUnique({
-          where: { phone },
-          include: loginMembershipInclude,
-        })
-      }
-    }
-
-    if (!user && !identifier.includes('@')) {
-      user = await prisma.user.findUnique({
-        where: { email: `${identifier}@hocau.com` },
-        include: loginMembershipInclude,
-      })
-      if (!user) {
-        user = await prisma.user.findUnique({
-          where: { email: `${identifier}@hocau.vn` },
-          include: loginMembershipInclude,
-        })
-      }
-      if (!user) {
-        user = await prisma.user.findFirst({
-          where: {
-            email: {
-              startsWith: `${identifier}@`,
-              mode: 'insensitive',
-            },
-          },
-          include: loginMembershipInclude,
-        })
-      }
-    }
+    const user = await findLoginUser(identifier, password)
 
     if (!user || !user.passwordHash) {
       if (user) {

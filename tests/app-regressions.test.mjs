@@ -203,6 +203,7 @@ function authModule(
         zod: { z: { string: () => ({ trim() { return this; }, min() { return this; }, email() { return this; } }), object: () => ({}) } },
         "@/generated/prisma/client": { SystemRole: {}, Role: { OWNER: "OWNER" }, Prisma: {} }, "@/lib/phone": {},
         "@/lib/prisma": { prisma: prismaMock },
+        "@/lib/login-identifier": { findLoginUser: async () => null },
         "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: seedSampleLakeDataOverride || (async () => ({})) },
         "@/lib/auth-rate-limit": authRateLimit,
         "@/lib/session-signature": signature,
@@ -463,6 +464,7 @@ test("Registration validates input and normalizes phone numbers before writing",
         } },
         bcryptjs: { hash: async () => "hash" },
         "@/lib/auth": { setSessionCookie: async () => { registrationCreatedSession = true; } },
+        "@/lib/login-identifier": { findLoginUser: async () => null },
         "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
         "next/navigation": {}, "@/lib/phone": phone, zod: { z },
         "@/lib/auth-rate-limit": authRateLimit,
@@ -486,43 +488,60 @@ test("Registration validates input and normalizes phone numbers before writing",
 });
 
 test("Existing staff can log in by email or phone number", async () => {
-    const lookups = [];
+    const seen = [];
     let session;
-    const user = { id: "staff-1", email: "staff@example.com", name: "Staff", phone: "+84901234567", passwordHash: "hash", systemRole: "USER", isLocked: false };
+    const user = { id: "staff-1", email: "staff@example.com", name: "Staff", phone: "+84901234567", passwordHash: "hash", systemRole: "USER", isLocked: false, memberships: [] };
     const phone = loadModule("../src/lib/phone.ts", {});
     const actions = loadModule("../src/app/actions/auth.ts", {
-        "@/lib/prisma": { prisma: { user: {
-            findUnique: async (args) => {
-                lookups.push(args);
-                if (args.where.email === user.email || args.where.phone === user.phone) return user;
-                return null;
-            },
-            update: async () => user,
-        } } },
+        "@/lib/prisma": { prisma: { user: { update: async () => user } } },
         bcryptjs: { compare: async () => true },
         "@/lib/auth": { setSessionCookie: async (value) => { session = value; } },
+        "@/lib/login-identifier": { findLoginUser: async (identifier) => { seen.push(identifier); return user; } },
         "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
         "next/navigation": {}, "@/lib/phone": phone, zod: { z },
         "@/lib/auth-rate-limit": authRateLimit,
         "@/lib/vietqr": { TRIAL_DAYS: 30 },
         "@/lib/audit-log": { recordLoginAudit: async () => {} },
     }, { console });
-    const membershipInclude = {
-        memberships: {
-            where: { deletedAt: null },
-            select: { lakeId: true, role: true },
-            orderBy: { createdAt: "asc" },
-            take: 3,
-        },
-    };
     const result = await actions.loginUser({ email: " Staff@Example.com ", password: "valid-password" });
     assert.equal(result.success, true);
-    assert.deepEqual(JSON.parse(JSON.stringify(lookups[0])), { where: { email: "staff@example.com" }, include: membershipInclude });
+    assert.equal(seen[0], "staff@example.com");
     assert.equal(session.userId, "staff-1");
     const phoneLogin = await actions.loginUser({ email: "0901234567", password: "valid-password" });
     assert.equal(phoneLogin.success, true);
-    assert.deepEqual(JSON.parse(JSON.stringify(lookups[1])), { where: { email: "0901234567" }, include: membershipInclude });
-    assert.deepEqual(JSON.parse(JSON.stringify(lookups[2])), { where: { phone: "+84901234567" }, include: membershipInclude });
+    assert.equal(seen[1], "0901234567");
+});
+
+test("A short staff username is not blocked by another account with the same prefix", async () => {
+    const phone = loadModule("../src/lib/phone.ts", {});
+    const staff = { id: "staff", email: "nv@company.com", passwordHash: "staff-hash", name: "NV", phone: null, systemRole: "USER", isLocked: false, memberships: [{ lakeId: "lake", role: "STAFF" }] };
+    const owner = { id: "owner", email: "nv@gmail.com", passwordHash: "owner-hash", name: "Owner", phone: null, systemRole: "USER", isLocked: false, memberships: [{ lakeId: "other", role: "OWNER" }] };
+    const accounts = [owner, staff];
+    const finder = loadModule("../src/lib/login-identifier.ts", {
+        bcryptjs: { compare: async (password, hash) => (password === "staff-pass" && hash === "staff-hash") || (password === "owner-pass" && hash === "owner-hash") },
+        "@/lib/prisma": { prisma: { user: {
+            findFirst: async ({ where }) => accounts.find((account) => account.email === where.email.equals) ?? null,
+            findUnique: async () => null,
+            findMany: async ({ where }) => accounts.filter((account) => account.email.startsWith(where.email.startsWith)),
+        } } },
+        "@/lib/phone": phone,
+    });
+    assert.equal((await finder.findLoginUser("NV@Company.com", "staff-pass")).id, "staff");
+    assert.equal((await finder.findLoginUser("nv", "staff-pass")).id, "staff");
+    assert.equal((await finder.findLoginUser("nv", "owner-pass")).id, "owner");
+    assert.equal(await finder.findLoginUser("nv", "wrong-pass"), null);
+});
+
+test("A missing rate-limit table does not block staff sign-in", async () => {
+    const rate = loadModule("../src/lib/rate-limit.ts", {
+        "node:crypto": crypto,
+        "@/generated/prisma/client": { Prisma: { sql: () => ({}) } },
+        "./prisma": { prisma: { $queryRaw: async () => { throw new Error("Raw query failed. Code: `42P01`. relation \"RateLimitBucket\" does not exist"); } } },
+    }, { console });
+    const peek = await rate.peekRateLimit({ namespace: "auth-login", identifier: "cashier" });
+    assert.equal(peek.currentCount, 0);
+    const consumed = await rate.consumeRateLimit({ namespace: "auth-login", identifier: "cashier", maxRequests: 5, windowSeconds: 60 });
+    assert.equal(consumed.allowed, true);
 });
 
 test("Tenant data follows qa_session when an older NextAuth account cookie remains", async () => {

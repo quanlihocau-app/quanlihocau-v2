@@ -112,6 +112,8 @@ export function MobileAppHeader({
     const effectiveOnline = isOnlineProp !== undefined ? isOnlineProp : autoOnline;
 
     const isSuperAdmin = session?.user?.systemRole === "SUPER_ADMIN";
+    const sessionRole = (session?.user as { role?: string } | undefined)?.role;
+    const guideRole = sessionRole === "OWNER" || sessionRole === "MANAGER" || sessionRole === "STAFF" ? sessionRole : undefined;
     const desktopItems = isSuperAdmin ? [...DESKTOP_NAV_ITEMS, ADMIN_DESKTOP_ITEM] : DESKTOP_NAV_ITEMS;
 
     const [overrideLakeName, setOverrideLakeName] = useState<string | null>(null);
@@ -383,7 +385,7 @@ export function MobileAppHeader({
             )}
 
             {/* Onboarding Guide Modal */}
-            <OnboardingModal />
+            <OnboardingModal userRole={guideRole} />
 
             {/* Account Settings Dropdown Modal */}
             <AccountSettingsModal

@@ -13,16 +13,26 @@ interface OnboardingModalProps {
     initialStepId?: number;
 }
 
+function isCashierRoute(pathname?: string | null) {
+    if (!pathname) return false;
+    return pathname === "/sessions"
+        || pathname.startsWith("/sessions/")
+        || pathname === "/home"
+        || pathname.startsWith("/home/")
+        || pathname === "/invoices"
+        || pathname.startsWith("/invoices/");
+}
+
 export function OnboardingModal({
     isOpen: controlledIsOpen,
     onClose: controlledOnClose,
-    userRole = "OWNER",
+    userRole,
     initialStepId = 1,
 }: OnboardingModalProps) {
     const router = useRouter();
     const pathname = usePathname();
     const filteredSteps: GuideStep[] = ONBOARDING_STEPS.filter((step) =>
-        step.roles.includes(userRole),
+        userRole ? step.roles.includes(userRole) : false,
     );
 
     const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -41,12 +51,14 @@ export function OnboardingModal({
     useEffect(() => {
         if (typeof window === "undefined") return;
 
+        if (!userRole) return;
         const hasCompleted = localStorage.getItem("quanlihocau_onboarding_completed_v1");
         const hasDismissed = localStorage.getItem("quanlihocau_onboarding_dismissed_v1");
         const isSensitivePosRoute =
             pathname?.includes("/sessions/new") ||
             pathname?.startsWith("/invoices") ||
-            pathname?.includes("/printer");
+            pathname?.includes("/printer") ||
+            (userRole === "STAFF" && isCashierRoute(pathname));
 
         if (!hasCompleted && !hasDismissed && controlledIsOpen === undefined && !isSensitivePosRoute) {
             const timer = setTimeout(() => {
@@ -54,7 +66,7 @@ export function OnboardingModal({
             }, 800);
             return () => clearTimeout(timer);
         }
-    }, [controlledIsOpen, pathname]);
+    }, [controlledIsOpen, pathname, userRole]);
 
     // Listen for custom trigger event (e.g. from header '?' button or /settings/guide)
     useEffect(() => {
@@ -124,7 +136,7 @@ export function OnboardingModal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs modal-backdrop-animate"
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/65 p-4 backdrop-blur-xs modal-backdrop-animate"
             role="dialog"
             aria-modal="true"
             aria-labelledby="guide-modal-title"
@@ -181,7 +193,7 @@ export function OnboardingModal({
                                 {activeStep.badge}
                             </span>
                             <span className="text-[11px] font-mono text-[#66716A]">
-                                Bài {activeStep.id}/11
+                                Bài {currentStepIndex + 1}/{totalSteps}
                             </span>
                         </div>
                         <h2 id="guide-modal-title" className="text-base font-bold text-[#17201A]">

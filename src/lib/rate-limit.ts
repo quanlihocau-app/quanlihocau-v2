@@ -34,6 +34,19 @@ function bucketKey(namespace: string, identifier: string): string {
     return `rl:${namespace}:${hashIdentifier(namespace, identifier)}`;
 }
 
+let warnedMissingRateLimitStore = false;
+
+/** A database that never received the rate-limit migration must not lock every cashier out. */
+function isMissingRateLimitStore(err: unknown): boolean {
+    const message = err instanceof Error ? err.message : String(err ?? "");
+    const missing = message.includes("42P01") || /RateLimitBucket/i.test(message) && /does not exist/i.test(message);
+    if (missing && !warnedMissingRateLimitStore) {
+        warnedMissingRateLimitStore = true;
+        console.warn("RateLimitBucket is missing. Sign-in stays available until the rate-limit migration is applied.");
+    }
+    return missing;
+}
+
 /**
  * Đọc bộ đếm hiện tại, không tăng. Dùng để chặn trước khi ghi nhận thêm một lần thất bại.
  */
@@ -66,6 +79,9 @@ export async function peekRateLimit({
             retryAfterSeconds: Math.max(1, Math.ceil((expiresAt.getTime() - now.getTime()) / 1000)),
         };
     } catch (err: unknown) {
+        if (isMissingRateLimitStore(err)) {
+            return { currentCount: 0, retryAfterSeconds: 0 };
+        }
         console.error("Rate limit peek failed:", err instanceof Error ? err.message : "DB error");
         throw new RateLimitUnavailableError();
     }
@@ -148,6 +164,9 @@ export async function consumeRateLimit({
             currentCount,
         };
     } catch (err: unknown) {
+        if (isMissingRateLimitStore(err)) {
+            return { allowed: true, retryAfterSeconds: 0, currentCount: 0 };
+        }
         // Fail-closed: Log concise non-sensitive diagnostic message and throw typed error
         console.error("Rate limit store query failed:", err instanceof Error ? err.message : "DB error");
         throw new RateLimitUnavailableError();
