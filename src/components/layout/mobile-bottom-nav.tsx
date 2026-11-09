@@ -167,7 +167,7 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
             style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
             className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg z-50 border-t border-slate-100 bg-[#FFFFFF] print:hidden shadow-[0_-4px_24px_rgba(0,0,0,0.08)] font-serif md:hidden"
         >
-            <div className="flex min-h-[60px] items-stretch justify-around px-0 relative">
+            <div className="flex min-h-15 items-stretch justify-around px-0 relative">
                 {navItems.map((item) => {
                     const active = item.isActive(pathname);
                     const isPending = pendingHref === item.href && !active;
