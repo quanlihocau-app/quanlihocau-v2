@@ -20,7 +20,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const ACTOR_PATTERN = /^[A-Za-z0-9@._:+|-]{1,80}$/;
 const MAX_PAYLOAD_CHARS = 3500;
 
-export const AUDIT_VIEW_ROLES = ["OWNER"] as const;
+export const AUDIT_VIEW_ROLES = ["OWNER", "MANAGER"] as const;
 
 export type JsonObject = Record<string, unknown>;
 
@@ -72,7 +72,7 @@ export function loginAuditTargets(
 }
 
 export function canViewStaffAudit(role: string | null | undefined): boolean {
-    return role === "OWNER";
+    return role === "OWNER" || role === "MANAGER";
 }
 
 function stable(value: unknown): string {
@@ -320,6 +320,14 @@ const ACTION_LABELS: Record<string, string> = {
     INVOICE_PREPAID: "Thu trước",
     INVOICE_PRODUCT_LINE_ADDED: "Sửa bill (thêm dòng)",
     INVOICE_PRODUCT_LINE_REMOVED: "Sửa bill (xóa dòng)",
+    RETAIL_SALE_COMPLETED: "Bán lẻ dịch vụ",
+    PAYMENT_RECORDED: "Thu tiền hóa đơn",
+    SHIFT_CLOSED: "Chốt ca bàn giao quỹ",
+    MEMBER_CREATED: "Tạo tài khoản nhân sự",
+    MEMBER_ROLE_UPDATED: "Đổi phân quyền nhân sự",
+    MEMBER_DEACTIVATED: "Vô hiệu hóa nhân sự",
+    MEMBER_PASSWORD_RESET: "Đặt lại mật khẩu nhân sự",
+    LAKE_ROLE_PERMISSIONS_UPDATED: "Cập nhật bảng phân quyền",
     LOGIN_SUCCEEDED: "Đăng nhập thành công",
     LOGIN_FAILED: "Đăng nhập thất bại",
     AUDIT_READ_TOKEN_ROTATED: "Đổi token đọc nhật ký",

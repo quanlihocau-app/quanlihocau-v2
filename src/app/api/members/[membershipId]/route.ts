@@ -9,6 +9,10 @@ import {
     ForbiddenError,
     requireTenantContext,
 } from "@/lib/tenant";
+import {
+    loadLakeRolePermissionsConfig,
+    saveLakeRolePermissionsConfig,
+} from "@/lib/role-permissions-server";
 
 const uuidSchema = z.string().uuid({
     message: "ID nhân sự không đúng định dạng UUID.",
@@ -24,6 +28,13 @@ const patchMemberSchema = z.discriminatedUnion("action", [
             .string({ message: "Vui lòng nhập mật khẩu mới." })
             .min(4, "Mật khẩu mới phải từ 4 ký tự trở lên.")
             .max(128, "Mật khẩu tối đa 128 ký tự."),
+    }),
+    z.object({
+        action: z.literal("UPDATE_ROLE"),
+        role: z.enum([Role.STAFF, Role.MANAGER], {
+            message: "Vai trò chỉ được là NHÂN VIÊN (STAFF) hoặc QUẢN LÝ (MANAGER).",
+        }),
+        customRoleId: z.string().max(100).optional().nullable(),
     }),
 ]);
 
@@ -85,6 +96,88 @@ export async function PATCH(request: Request, { params }: RouteParams) {
             return NextResponse.json(
                 { error: "Không tìm thấy thông tin nhân sự trong hồ câu này." },
                 { status: 404 },
+            );
+        }
+
+        // Handle UPDATE_ROLE action
+        if (parsed.data.action === "UPDATE_ROLE") {
+            if (
+                membership.role === Role.OWNER ||
+                membership.user.systemRole === "SUPER_ADMIN" ||
+                membership.userId === tenantContext.userId
+            ) {
+                return NextResponse.json(
+                    { error: "Không thể thay đổi vai trò của Chủ sở hữu hoặc Quản trị viên." },
+                    { status: 403 },
+                );
+            }
+
+            const { role: requestedRole, customRoleId: requestedCustomRoleId } = parsed.data;
+            const currentConfig = await loadLakeRolePermissionsConfig(tenantContext.lakeId);
+            const matchedCustomRole = requestedCustomRoleId
+                ? currentConfig.customRoles.find((r) => r.id === requestedCustomRoleId)
+                : undefined;
+            const targetRole = matchedCustomRole ? matchedCustomRole.baseRole : requestedRole;
+
+            await prisma.$transaction(async (tx) => {
+                await tx.membership.update({
+                    where: { id: membership.id },
+                    data: { role: targetRole },
+                });
+
+                await tx.user.update({
+                    where: { id: membership.userId },
+                    data: { sessionVersion: { increment: 1 } },
+                });
+
+                await tx.auditEvent.create({
+                    data: {
+                        lakeId: tenantContext.lakeId,
+                        entityType: "Membership",
+                        entityId: membership.id,
+                        action: "MEMBER_ROLE_UPDATED",
+                        payload: JSON.stringify({
+                            userId: membership.userId,
+                            name: membership.user.name,
+                            email: membership.user.email,
+                            previousRole: membership.role,
+                            newRole: targetRole,
+                            customRoleId: matchedCustomRole?.id ?? null,
+                            customRoleName: matchedCustomRole?.name ?? null,
+                        }),
+                        createdBy: tenantContext.userId,
+                    },
+                });
+            });
+
+            const nextMap = { ...currentConfig.memberCustomRoleMap };
+            if (matchedCustomRole) {
+                nextMap[membership.id] = matchedCustomRole.id;
+            } else {
+                delete nextMap[membership.id];
+            }
+
+            await saveLakeRolePermissionsConfig(
+                tenantContext.lakeId,
+                tenantContext.userId,
+                {
+                    ...currentConfig,
+                    memberCustomRoleMap: nextMap,
+                },
+            );
+
+            return NextResponse.json(
+                {
+                    success: true,
+                    message: `Đã cập nhật phân quyền cho "${membership.user.name}" thành công.`,
+                    member: {
+                        id: membership.id,
+                        role: targetRole,
+                        customRoleId: matchedCustomRole?.id ?? null,
+                        customRoleName: matchedCustomRole?.name ?? null,
+                    },
+                },
+                { status: 200 },
             );
         }
 
@@ -266,7 +359,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
             return NextResponse.json({ error: error.message }, { status: 403 });
         }
         return NextResponse.json(
-            { error: "Đã xảy ra lỗi khi vô hiệu hóa nhân sự." },
+            { error: "Đã xảy ra lỗi khi cập nhật nhân sự." },
             { status: 500 },
         );
     }

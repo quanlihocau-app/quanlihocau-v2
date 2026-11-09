@@ -140,3 +140,48 @@ test("print job migration is additive and does not drop shift columns", () => {
         .join("\n");
     assert.equal(earlier.includes("PrintJob"), false);
 });
+
+test("role permissions matrix and custom named role resolution work accurately", () => {
+    const rolePerms = load("src/lib/role-permissions.ts", {
+        "@/generated/prisma/enums": { Role: { OWNER: "OWNER", MANAGER: "MANAGER", STAFF: "STAFF" } },
+    });
+
+    const defaults = rolePerms.getDefaultLakeRolePermissionsConfig();
+    assert.ok(defaults.staffPermissions.includes("SESSION_OPEN_CLOSE"));
+    assert.equal(defaults.staffPermissions.includes("SHIFT_CLOSE"), false);
+    assert.ok(defaults.managerPermissions.includes("SHIFT_CLOSE"));
+
+    const customPayload = JSON.stringify({
+        staffRoleLabel: "Nhân viên ca ngày",
+        managerRoleLabel: "Quản lý điều hành",
+        staffPermissions: ["SESSION_OPEN_CLOSE", "RETAIL_ORDER"],
+        managerPermissions: ["SESSION_OPEN_CLOSE", "RETAIL_ORDER", "SHIFT_CLOSE"],
+        customRoles: [
+            {
+                id: "role-cashier",
+                name: "Thu ngân chuyên trách",
+                baseRole: "STAFF",
+                permissions: ["SESSION_OPEN_CLOSE", "INVOICE_COLLECT_PAYMENT", "SHIFT_CLOSE"],
+            },
+        ],
+        memberCustomRoleMap: {
+            "mem-1": "role-cashier",
+        },
+    });
+
+    const parsed = rolePerms.parseLakeRolePermissionsPayload(customPayload);
+    assert.equal(parsed.staffRoleLabel, "Nhân viên ca ngày");
+    assert.equal(parsed.customRoles.length, 1);
+
+    const resolvedCustom = rolePerms.resolveMemberEffectivePermissions(parsed, "mem-1", "STAFF");
+    assert.equal(resolvedCustom.displayRoleName, "Thu ngân chuyên trách");
+    same(resolvedCustom.permissions, ["SESSION_OPEN_CLOSE", "INVOICE_COLLECT_PAYMENT", "SHIFT_CLOSE"]);
+
+    const resolvedStandard = rolePerms.resolveMemberEffectivePermissions(parsed, "mem-2", "STAFF");
+    assert.equal(resolvedStandard.displayRoleName, "Nhân viên ca ngày");
+    same(resolvedStandard.permissions, ["SESSION_OPEN_CLOSE", "RETAIL_ORDER"]);
+
+    const resolvedOwner = rolePerms.resolveMemberEffectivePermissions(parsed, "mem-owner", "OWNER");
+    assert.equal(resolvedOwner.permissions.length, rolePerms.ALL_PERMISSION_KEYS.length);
+});
+

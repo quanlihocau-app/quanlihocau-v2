@@ -234,8 +234,16 @@ function formatEntityTitle(
         return "Giao dịch thanh toán";
     }
 
-    if (ev.entityType === "User") {
-        return "Tài khoản nhân sự";
+    if (ev.entityType === "User" || ev.entityType === "Membership") {
+        return "Tài khoản & Phân quyền nhân sự";
+    }
+
+    if (ev.entityType === "LakeRolePermissions") {
+        return "Cấu hình bảng phân quyền hồ câu";
+    }
+
+    if (ev.entityType === "Shift") {
+        return "Ca trực & Bàn giao quỹ";
     }
 
     return ev.entityType;
@@ -284,6 +292,22 @@ function getActionBadgeInfo(action: string): { label: string; colorClass: string
         case "INVOICE_LINE_ADDED":
         case "INVOICE_PRODUCT_LINE_ADDED":
             return { label: "Thêm món", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
+        case "INVOICE_LINE_REMOVED":
+        case "INVOICE_PRODUCT_LINE_REMOVED":
+            return { label: "Xóa món", colorClass: "bg-[#FFF1F0] text-[#A8071A] border-[#FFA39E]" };
+        case "INVOICE_VOIDED":
+            return { label: "Hủy HĐ", colorClass: "bg-[#FFF1F0] text-[#A8071A] border-[#FFA39E]" };
+        case "SHIFT_CLOSED":
+            return { label: "Chốt ca", colorClass: "bg-[#EAEFEA] text-[#2C4C3B] border-[#2C4C3B]" };
+        case "MEMBER_CREATED":
+            return { label: "Tạo nhân sự", colorClass: "bg-[#EAEFEA] text-[#2C4C3B] border-[#2C4C3B]" };
+        case "MEMBER_ROLE_UPDATED":
+        case "LAKE_ROLE_PERMISSIONS_UPDATED":
+            return { label: "Phân quyền", colorClass: "bg-[#EAEFEA] text-[#2C4C3B] border-[#2C4C3B]" };
+        case "MEMBER_DEACTIVATED":
+            return { label: "Khóa nhân sự", colorClass: "bg-[#FFF1F0] text-[#A8071A] border-[#FFA39E]" };
+        case "MEMBER_PASSWORD_RESET":
+            return { label: "Đổi mật khẩu", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
         case "PRODUCT_CREATED":
             return { label: "Tạo SP", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
         case "PRODUCT_UPDATED":

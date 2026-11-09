@@ -281,9 +281,9 @@ export default async function SettingsPage() {
                 {(isOwner || isManager) && (
                     <Link href="/settings/members" className="menu-row">
                         <div>
-                            <p className="text-[14px] font-semibold text-[#17201A]">Nhân viên và quyền</p>
+                            <p className="text-[14px] font-semibold text-[#17201A]">Nhân viên và phân quyền</p>
                             <p className="text-[12px] text-[#66716A] mt-0.5">
-                                Chỉ chủ hồ được sửa giờ, hủy vé
+                                Bản quyền sử dụng app, bảng tích chức năng &amp; đặt tên phân quyền
                             </p>
                         </div>
                         <ChevronRight />

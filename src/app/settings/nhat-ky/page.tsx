@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
     ...privateRouteMetadata,
-    title: "Nhat ky thao tac",
+    title: "Nhật ký thao tác",
 };
 
 type Search = {
@@ -50,7 +50,7 @@ export default async function StaffAuditPage({
     if (!tenant) {
         return (
             <main className="mx-auto max-w-lg px-6 py-16 text-center">
-                <h1 className="text-xl font-bold text-[#8B1E1E]">Chua co quyen truy cap</h1>
+                <h1 className="text-xl font-bold text-[#8B1E1E]">Chưa có quyền truy cập</h1>
             </main>
         );
     }
@@ -58,10 +58,10 @@ export default async function StaffAuditPage({
     if (!canViewStaffAudit(tenant.role)) {
         return (
             <main className="mx-auto max-w-lg px-6 py-16 text-center">
-                <h1 className="text-xl font-bold text-[#17201A]">Nhat ky chi danh cho chu ho</h1>
-                <p className="mt-2 text-sm text-[#66716A]">Nhan vien khong xem duoc trang nay.</p>
+                <h1 className="text-xl font-bold text-[#17201A]">Nhật ký chỉ dành cho Chủ hồ và Quản lý</h1>
+                <p className="mt-2 text-sm text-[#66716A]">Nhân viên không xem được trang này.</p>
                 <Link href="/sessions" className="mt-6 inline-flex h-11 items-center rounded-full bg-[#4F9D5A] px-5 text-sm font-semibold text-white">
-                    Ve man hinh Dang cau
+                    Về màn hình Đang câu
                 </Link>
             </main>
         );
@@ -124,18 +124,18 @@ export default async function StaffAuditPage({
                 <MobileAppHeader lakeName={tenant.lakeName} isSupportMode={tenant.isSupportMode} />
                 <main className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
                     <div>
-                        <h1 className="text-lg font-bold text-[#17201A]">Nhat ky thao tac</h1>
+                        <h1 className="text-lg font-bold text-[#17201A]">Nhật ký thao tác</h1>
                         <p className="mt-1 text-xs leading-5 text-[#66716A]">
-                            Ai lam gi, luc nao, doi truong nao. Chi xem, khong sua va khong xoa.
-                            Nen giu khoang {AUDIT_RETENTION_DAYS} ngay; khi can don, lam tay sau gio ban va bao truoc cho ho.
+                            Ai làm gì, lúc nào, đối tượng nào. Chỉ xem, không sửa và không xóa.
+                            Nên giữ khoảng {AUDIT_RETENTION_DAYS} ngày; khi cần dọn, làm tay sau giờ bán và báo trước cho hồ.
                         </p>
                     </div>
 
                     <form method="get" className="grid grid-cols-1 gap-2 rounded-2xl border border-[#E3E8E3] bg-white p-3 sm:grid-cols-2">
                         <label className="text-xs text-[#66716A]">
-                            Nhan vien
+                            Nhân viên
                             <select name="actor" defaultValue={filters.actor} className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] bg-white px-2 text-sm text-[#17201A]">
-                                <option value="">Tat ca</option>
+                                <option value="">Tất cả</option>
                                 {members.map((member) => (
                                     <option key={member.userId} value={member.userId}>
                                         {member.user.name} - {roleLabel(member.role)}
@@ -144,7 +144,7 @@ export default async function StaffAuditPage({
                             </select>
                         </label>
                         <label className="text-xs text-[#66716A]">
-                            Thao tac
+                            Thao tác
                             <select name="action" defaultValue={filters.action} className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] bg-white px-2 text-sm text-[#17201A]">
                                 {AUDIT_ACTION_OPTIONS.map((option) => (
                                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -152,31 +152,31 @@ export default async function StaffAuditPage({
                             </select>
                         </label>
                         <label className="text-xs text-[#66716A]">
-                            Tu ngay
+                            Từ ngày
                             <input type="date" name="from" defaultValue={filters.from} className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] px-2 text-sm" />
                         </label>
                         <label className="text-xs text-[#66716A]">
-                            Den ngay
+                            Đến ngày
                             <input type="date" name="to" defaultValue={filters.to} className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] px-2 text-sm" />
                         </label>
                         <label className="text-xs text-[#66716A] sm:col-span-2">
-                            Ma phien, hoa don hoac doi tuong
+                            Mã phiên, hóa đơn hoặc đối tượng
                             <input name="entity" defaultValue={filters.entity} placeholder="UUID" className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] px-3 text-sm" />
                         </label>
                         <div className="flex gap-2 sm:col-span-2">
-                            <button type="submit" className="h-10 flex-1 rounded-full bg-[#4F9D5A] text-sm font-semibold text-white">Loc</button>
-                            <Link href="/settings/nhat-ky" className="inline-flex h-10 items-center rounded-full border border-[#E3E8E3] px-4 text-sm">Xoa loc</Link>
+                            <button type="submit" className="h-10 flex-1 rounded-full bg-[#4F9D5A] text-sm font-semibold text-white">Lọc</button>
+                            <Link href="/settings/nhat-ky" className="inline-flex h-10 items-center rounded-full border border-[#E3E8E3] px-4 text-sm">Xóa lọc</Link>
                             <a href={csvHref} className="inline-flex h-10 items-center rounded-full border border-[#E3E8E3] px-4 text-sm">CSV</a>
                         </div>
                     </form>
 
                     {query.clamped ? (
-                        <p className="text-xs text-[#8A5A20]">Khoang ngay da duoc gioi han trong {AUDIT_RETENTION_DAYS} ngay.</p>
+                        <p className="text-xs text-[#8A5A20]">Khoảng ngày đã được giới hạn trong {AUDIT_RETENTION_DAYS} ngày.</p>
                     ) : null}
 
                     {entries.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-[#E3E8E3] bg-white px-4 py-8 text-center text-sm text-[#66716A]">
-                            Khong co dong nao trong khoang nay.
+                            Không có dòng nào trong khoảng này.
                         </p>
                     ) : (
                         <ol className="space-y-2">
@@ -204,7 +204,7 @@ export default async function StaffAuditPage({
 
                     <div className="flex items-center justify-between text-sm">
                         {page > 1 ? (
-                            <Link href={buildHref(filters, page - 1, false)} className="text-[#246B38]">Trang truoc</Link>
+                            <Link href={buildHref(filters, page - 1, false)} className="text-[#246B38]">Trang trước</Link>
                         ) : <span />}
                         <span className="text-xs text-[#66716A]">Trang {page}</span>
                         {hasNext ? (
@@ -222,44 +222,44 @@ export default async function StaffAuditPage({
     );
 }
 
-// ---- Nhan hang tieng Viet cho cac truong du lieu ----
+// ---- Nhãn tiếng Việt cho các trường dữ liệu ----
 const FIELD_LABELS: Record<string, string> = {
-    status: "Trang thai",
-    totalAmountVnd: "Tong tien",
-    paidAmountVnd: "Da thanh toan",
-    balanceDueVnd: "Con no",
-    priceVnd: "Gia (VND)",
-    price: "Gia",
-    quantity: "So luong",
-    name: "Ten",
-    amountVnd: "So tien (VND)",
-    method: "Hinh thuc",
-    direction: "Chieu giao dich",
-    note: "Ghi chu",
-    reason: "Ly do",
-    packageId: "Ma goi cau",
-    packageName: "Ten goi cau",
-    addedMinutes: "Them thoi gian (phut)",
-    previousPlannedEndAt: "Gio ket thuc cu",
-    newPlannedEndAt: "Gio ket thuc moi",
-    startAt: "Gio bat dau",
-    plannedEndAt: "Gio du kien ket thuc",
-    endedAt: "Gio ket thuc thuc te",
-    hutIds: "Leu / Cho ngoi",
-    customerId: "Ma khach hang",
-    refundedVnd: "Hoan tien (VND)",
-    settlement: "Thanh toan ket ca",
-    paymentMethod: "Phuong thuc thanh toan",
-    weight: "Can nang (kg)",
-    totalVnd: "Tong tien (VND)",
-    fishTypeId: "Loai ca",
+    status: "Trạng thái",
+    totalAmountVnd: "Tổng tiền",
+    paidAmountVnd: "Đã thanh toán",
+    balanceDueVnd: "Còn nợ",
+    priceVnd: "Giá (VNĐ)",
+    price: "Giá",
+    quantity: "Số lượng",
+    name: "Tên",
+    amountVnd: "Số tiền (VNĐ)",
+    method: "Hình thức",
+    direction: "Chiều giao dịch",
+    note: "Ghi chú",
+    reason: "Lý do",
+    packageId: "Mã gói câu",
+    packageName: "Tên gói câu",
+    addedMinutes: "Thêm thời gian (phút)",
+    previousPlannedEndAt: "Giờ kết thúc cũ",
+    newPlannedEndAt: "Giờ kết thúc mới",
+    startAt: "Giờ bắt đầu",
+    plannedEndAt: "Giờ dự kiến kết thúc",
+    endedAt: "Giờ kết thúc thực tế",
+    hutIds: "Lều / Chỗ ngồi",
+    customerId: "Mã khách hàng",
+    refundedVnd: "Hoàn tiền (VNĐ)",
+    settlement: "Thanh toán kết ca",
+    paymentMethod: "Phương thức thanh toán",
+    weight: "Cân nặng (kg)",
+    totalVnd: "Tổng tiền (VNĐ)",
+    fishTypeId: "Loại cá",
 };
 
 function fieldLabel(key: string): string {
     return FIELD_LABELS[key] ?? key;
 }
 
-// ---- Component hien thi truoc / sau khi thay doi ----
+// ---- Component hiển thị trước / sau khi thay đổi ----
 function DiffView({
     before,
     after,
@@ -291,7 +291,7 @@ function DiffView({
 }
 
 function showValue(value: unknown): string {
-    if (value === undefined || value === null) return "(trong)";
+    if (value === undefined || value === null) return "(trống)";
     if (typeof value === "string") return value;
     return JSON.stringify(value);
 }
@@ -308,9 +308,9 @@ function formatWhen(iso: string): string {
 }
 
 function roleLabel(role: string | null | undefined): string {
-    if (role === "OWNER") return "Chu ho";
-    if (role === "MANAGER") return "Quan ly";
-    if (role === "STAFF") return "Nhan vien";
+    if (role === "OWNER") return "Chủ hồ";
+    if (role === "MANAGER") return "Quản lý";
+    if (role === "STAFF") return "Nhân viên";
     return role || "---";
 }
 

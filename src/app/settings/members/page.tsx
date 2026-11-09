@@ -5,10 +5,18 @@ import { redirect } from "next/navigation";
 import { Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getTenantContext } from "@/lib/tenant";
+import {
+    APP_PERMISSIONS,
+    resolveMemberEffectivePermissions,
+    type LakeRolePermissionsConfig,
+} from "@/lib/role-permissions";
+import { loadLakeRolePermissionsConfig } from "@/lib/role-permissions-server";
 
 import { CreateMemberForm } from "./create-member-form";
 import { DeactivateMemberButton } from "./deactivate-member-button";
 import { ResetPasswordButton } from "./reset-password-button";
+import { ChangeMemberRoleButton } from "./change-member-role-button";
+import { RolePermissionsMatrix } from "./role-permissions-matrix";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,25 +33,41 @@ function formatDateTime(date: Date | null): string {
     }).format(new Date(date));
 }
 
-function getRoleBadge(role: Role) {
+function renderRoleBadge(
+    config: LakeRolePermissionsConfig,
+    membershipId: string,
+    role: Role,
+) {
+    const resolved = resolveMemberEffectivePermissions(config, membershipId, role);
+
     switch (role) {
         case Role.OWNER:
             return (
-                <span className="inline-flex items-center rounded-lg bg-[#102A43]/10 px-2.5 py-1 text-xs font-bold text-[#102A43] border border-[#102A43]/20">
-                    Chủ sở hữu (OWNER)
+                <span className="inline-flex items-center rounded-md bg-[#1B3B2B] px-2.5 py-1 text-xs font-bold text-white">
+                    Chủ sở hữu (OWNER) • Toàn quyền
                 </span>
             );
         case Role.MANAGER:
             return (
-                <span className="inline-flex items-center rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800 border border-teal-200">
-                    Quản lý (MANAGER)
-                </span>
+                <div className="inline-flex flex-col items-end sm:items-start gap-0.5">
+                    <span className="inline-flex items-center rounded-md bg-[#E8F0EC] px-2.5 py-1 text-xs font-bold text-[#1B3B2B] border border-[#1B3B2B]/20">
+                        {resolved.displayRoleName}
+                    </span>
+                    <span className="text-[11px] font-medium text-[#4B5563]">
+                        {resolved.permissions.length}/{APP_PERMISSIONS.length} quyền được cấp
+                    </span>
+                </div>
             );
         case Role.STAFF:
             return (
-                <span className="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-200">
-                    Nhân viên (STAFF)
-                </span>
+                <div className="inline-flex flex-col items-end sm:items-start gap-0.5">
+                    <span className="inline-flex items-center rounded-md bg-[#F8FAF8] px-2.5 py-1 text-xs font-bold text-[#111827] border border-[#E5E7EB]">
+                        {resolved.displayRoleName}
+                    </span>
+                    <span className="text-[11px] font-medium text-[#4B5563]">
+                        {resolved.permissions.length}/{APP_PERMISSIONS.length} quyền được cấp
+                    </span>
+                </div>
             );
         default:
             return <Badge variant="neutral">{role}</Badge>;
@@ -62,7 +86,7 @@ export default async function MembersSettingsPage() {
     if (!tenantContext) {
         return (
             <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12">
-                <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+                <div className="w-full rounded-xl border border-red-200 bg-red-50 p-8 text-center">
                     <h1 className="text-xl font-bold text-red-900">
                         Chưa có quyền truy cập
                     </h1>
@@ -75,70 +99,106 @@ export default async function MembersSettingsPage() {
         );
     }
 
-    // Only OWNER can access member management
+    const [memberships, rolePermissionsConfig] = await Promise.all([
+        prisma.membership.findMany({
+            where: {
+                lakeId: tenantContext.lakeId,
+                deletedAt: null,
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "asc",
+            },
+        }),
+        loadLakeRolePermissionsConfig(tenantContext.lakeId),
+    ]);
+
+    // If MANAGER or STAFF visits, show their App License & Read-only Assigned Permissions
     if (tenantContext.role !== Role.OWNER) {
+        const myMembership = memberships.find((m) => m.user.id === tenantContext.userId);
+        const resolved = resolveMemberEffectivePermissions(
+            rolePermissionsConfig,
+            myMembership?.id ?? "",
+            tenantContext.role,
+        );
+        const grantedSet = new Set(resolved.permissions);
+
         return (
-            <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12">
-                <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
-                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
-                        <svg
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                            />
-                        </svg>
+            <main className="mx-auto min-h-screen max-w-4xl bg-[#F8FAF8] px-4 pb-24 pt-6 sm:px-6 space-y-6">
+                <PageHeader
+                    title="Bản quyền & Phân quyền của bạn"
+                    subtitle={`Hồ câu: ${tenantContext.lakeName} • Tài khoản: ${tenantContext.userName}`}
+                    backHref="/settings"
+                    backLabel="Quay lại Cài đặt"
+                    badge={<Badge variant="default">{resolved.displayRoleName}</Badge>}
+                />
+
+                <Card className="p-5 sm:p-6 space-y-4">
+                    <div className="border-b border-[#E5E7EB] pb-4">
+                        <h2 className="text-lg font-bold font-serif text-[#111827]">
+                            Chứng nhận Bản quyền sử dụng Ứng dụng Nội bộ
+                        </h2>
+                        <p className="text-xs text-[#4B5563] mt-1">
+                            Tài khoản <strong>{tenantContext.userEmail}</strong> được Chủ sở hữu hồ câu <strong>{tenantContext.lakeName}</strong> cấp quyền truy cập với chức danh <strong>{resolved.displayRoleName}</strong> ({resolved.permissions.length}/{APP_PERMISSIONS.length} chức năng).
+                        </p>
                     </div>
-                    <h1 className="text-xl font-bold text-red-900">
-                        Không có quyền truy cập
-                    </h1>
-                    <p className="mt-2 text-xs text-red-700">
-                        Chỉ Chủ hồ (OWNER) mới có quyền quản lý danh sách và phân
-                        quyền nhân sự của hồ câu này.
-                    </p>
-                    <div className="mt-6">
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {APP_PERMISSIONS.map((perm) => {
+                            const allowed = grantedSet.has(perm.key);
+                            return (
+                                <div
+                                    key={perm.key}
+                                    className={`flex items-start gap-2.5 rounded-xl border p-3 ${
+                                        allowed
+                                            ? "border-[#1B3B2B]/25 bg-[#E8F0EC]/50 text-[#111827]"
+                                            : "border-[#E5E7EB] bg-white text-[#4B5563]/60"
+                                    }`}
+                                >
+                                    <span className="mt-0.5 text-xs font-bold">
+                                        {allowed ? "✓" : "✕"}
+                                    </span>
+                                    <div>
+                                        <p className="text-xs font-bold">{perm.label}</p>
+                                        <p className="text-[11px] mt-0.5">{perm.description}</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="rounded-xl border border-[#E5E7EB] bg-[#F8FAF8] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <p className="text-xs text-[#4B5563]">
+                            Chỉ <strong>Chủ hồ (OWNER)</strong> mới có quyền thêm/xóa nhân sự và thay đổi bảng tích phân quyền.
+                        </p>
                         <Link
                             href="/settings"
-                            className="inline-flex h-11 items-center justify-center rounded-xl bg-[#102A43] px-4 text-xs font-bold text-white shadow-sm transition hover:bg-[#1E3A5F]"
+                            className="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#1B3B2B] px-5 text-sm font-semibold text-white transition hover:bg-[#142d20] shrink-0"
                         >
                             Về Cài đặt
                         </Link>
                     </div>
-                </div>
+                </Card>
             </main>
         );
     }
 
-    const memberships = await prisma.membership.findMany({
-        where: {
-            lakeId: tenantContext.lakeId,
-            deletedAt: null,
-        },
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                },
-            },
-        },
-        orderBy: {
-            createdAt: "asc",
-        },
-    });
+    const activeStaffCount = memberships.filter((m) => m.role === Role.STAFF).length;
+    const activeManagerCount = memberships.filter((m) => m.role === Role.MANAGER).length;
 
     return (
-        <main className="mx-auto min-h-screen max-w-6xl bg-[#F8F6F0] px-4 pb-24 pt-6 sm:px-6">
+        <main className="mx-auto min-h-screen max-w-6xl bg-[#F8FAF8] px-4 pb-24 pt-6 sm:px-6">
             {/* Header */}
             <PageHeader
-                title="Quản lý nhân sự hồ câu"
+                title="Quản lý & Phân quyền nhân sự"
                 subtitle={`Hồ câu: ${tenantContext.lakeName} • Tổ chức: ${tenantContext.organizationName}`}
                 backHref="/settings"
                 backLabel="Quay lại Cài đặt"
@@ -149,12 +209,12 @@ export default async function MembersSettingsPage() {
                 {/* Left 2 Cols: Members List */}
                 <div className="lg:col-span-2">
                     <Card className="p-5 sm:p-6 space-y-4">
-                        <div className="border-b border-[#E2DDD2] pb-4">
-                            <h2 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
-                                Danh sách nhân sự ({memberships.length})
+                        <div className="border-b border-[#E5E7EB] pb-4">
+                            <h2 className="text-lg font-bold font-serif text-[#111827]">
+                                Danh sách tài khoản nhân sự ({memberships.length})
                             </h2>
-                            <p className="text-xs text-slate-500 font-medium">
-                                Tất cả tài khoản có quyền truy cập và thao tác tại hồ câu này.
+                            <p className="text-xs text-[#4B5563] font-medium">
+                                Tất cả tài khoản được cấp bản quyền truy cập và thao tác tại hồ câu này. Bấm &ldquo;Đổi quyền&rdquo; để gán phân quyền cho từng nhân sự.
                             </p>
                         </div>
 
@@ -163,29 +223,41 @@ export default async function MembersSettingsPage() {
                             {memberships.map((m) => (
                                 <div
                                     key={m.id}
-                                    className="flex flex-col gap-2 rounded-xl border border-[#E2DDD2] bg-[#F8F6F0]/40 p-3.5"
+                                    className="flex flex-col gap-2 rounded-xl border border-[#E5E7EB] bg-[#F8FAF8] p-3.5"
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-xs font-bold text-slate-900">
-                                                {m.user.name}
-                                            </span>
-                                            {m.user.id === tenantContext.userId && (
-                                                <span className="text-[10px] font-bold text-slate-400">
-                                                    (Bạn)
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-sm font-bold text-[#111827]">
+                                                    {m.user.name}
                                                 </span>
-                                            )}
+                                                {m.user.id === tenantContext.userId && (
+                                                    <span className="text-[11px] font-bold text-[#4B5563]">
+                                                        (Bạn)
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-[#4B5563] font-mono mt-0.5">
+                                                {m.user.email}
+                                            </p>
                                         </div>
-                                        {getRoleBadge(m.role)}
+                                        {renderRoleBadge(rolePermissionsConfig, m.id, m.role)}
                                     </div>
-                                    <p className="text-[11px] text-slate-500 font-mono">
-                                        {m.user.email}
-                                    </p>
-                                    <div className="flex items-center justify-between border-t border-[#E2DDD2] pt-2 text-[10px] text-slate-400">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#E5E7EB] pt-2.5 text-[11px] text-[#4B5563]">
                                         <span>Tham gia: {formatDateTime(m.createdAt)}</span>
                                         {m.role !== Role.OWNER &&
                                         m.user.id !== tenantContext.userId ? (
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                <ChangeMemberRoleButton
+                                                    membershipId={m.id}
+                                                    memberName={m.user.name}
+                                                    memberEmail={m.user.email}
+                                                    currentRole={m.role}
+                                                    currentCustomRoleId={
+                                                        rolePermissionsConfig.memberCustomRoleMap[m.id] ?? null
+                                                    }
+                                                    config={rolePermissionsConfig}
+                                                />
                                                 <ResetPasswordButton
                                                     membershipId={m.id}
                                                     memberName={m.user.name}
@@ -204,44 +276,54 @@ export default async function MembersSettingsPage() {
                         </div>
 
                         {/* Desktop Table */}
-                        <div className="hidden overflow-hidden rounded-xl border border-[#E2DDD2] bg-white md:block">
-                            <table className="w-full text-left text-xs text-slate-600">
-                                <thead className="border-b border-[#E2DDD2] bg-[#F8F6F0] text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <div className="hidden overflow-hidden rounded-xl border border-[#E5E7EB] bg-white md:block">
+                            <table className="w-full text-left text-xs text-[#4B5563]">
+                                <thead className="border-b border-[#E5E7EB] bg-[#F8FAF8] text-[11px] font-bold uppercase tracking-wider text-[#4B5563]">
                                     <tr>
                                         <th className="px-4 py-3.5">Họ và tên</th>
-                                        <th className="px-4 py-3.5">Email</th>
-                                        <th className="px-4 py-3.5">Vai trò</th>
+                                        <th className="px-4 py-3.5">Tài khoản</th>
+                                        <th className="px-4 py-3.5">Phân quyền hiện tại</th>
                                         <th className="px-4 py-3.5">Ngày tham gia</th>
                                         <th className="px-4 py-3.5 text-right">Thao tác</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#E2DDD2]">
+                                <tbody className="divide-y divide-[#E5E7EB]">
                                     {memberships.map((m) => (
                                         <tr
                                             key={m.id}
-                                            className="hover:bg-[#F8F6F0]/60 transition-colors"
+                                            className="hover:bg-[#F8FAF8] transition-colors"
                                         >
-                                            <td className="px-4 py-3.5 font-bold text-slate-900">
+                                            <td className="px-4 py-3.5 font-bold text-[#111827]">
                                                 {m.user.name}
                                                 {m.user.id === tenantContext.userId && (
-                                                    <span className="ml-1.5 text-[11px] text-slate-400 font-normal">
+                                                    <span className="ml-1.5 text-[11px] text-[#4B5563] font-normal">
                                                         (Bạn)
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3.5 font-mono text-slate-600">
+                                            <td className="px-4 py-3.5 font-mono text-[#4B5563]">
                                                 {m.user.email}
                                             </td>
                                             <td className="px-4 py-3.5">
-                                                {getRoleBadge(m.role)}
+                                                {renderRoleBadge(rolePermissionsConfig, m.id, m.role)}
                                             </td>
-                                            <td className="px-4 py-3.5 text-[11px] text-slate-400">
+                                            <td className="px-4 py-3.5 text-[11px] text-[#4B5563]">
                                                 {formatDateTime(m.createdAt)}
                                             </td>
                                             <td className="px-4 py-3.5 text-right">
                                                 {m.role !== Role.OWNER &&
                                                 m.user.id !== tenantContext.userId ? (
                                                     <div className="flex items-center justify-end gap-1.5">
+                                                        <ChangeMemberRoleButton
+                                                            membershipId={m.id}
+                                                            memberName={m.user.name}
+                                                            memberEmail={m.user.email}
+                                                            currentRole={m.role}
+                                                            currentCustomRoleId={
+                                                                rolePermissionsConfig.memberCustomRoleMap[m.id] ?? null
+                                                            }
+                                                            config={rolePermissionsConfig}
+                                                        />
                                                         <ResetPasswordButton
                                                             membershipId={m.id}
                                                             memberName={m.user.name}
@@ -254,7 +336,7 @@ export default async function MembersSettingsPage() {
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xs text-slate-400">
+                                                    <span className="text-xs text-[#4B5563]">
                                                         —
                                                     </span>
                                                 )}
@@ -270,19 +352,28 @@ export default async function MembersSettingsPage() {
                 {/* Right 1 Col: Create Member Form */}
                 <div className="lg:col-span-1">
                     <Card className="p-5 sm:p-6 space-y-4">
-                        <div className="border-b border-[#E2DDD2] pb-4">
-                            <h2 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
+                        <div className="border-b border-[#E5E7EB] pb-4">
+                            <h2 className="text-lg font-bold font-serif text-[#111827]">
                                 Thêm nhân sự mới
                             </h2>
-                            <p className="text-xs text-slate-500 font-medium">
-                                Tạo tài khoản đăng nhập cho nhân viên hoặc quản lý.
+                            <p className="text-xs text-[#4B5563] font-medium">
+                                Tạo tài khoản đăng nhập và gán tên phân quyền cho nhân viên hoặc quản lý.
                             </p>
                         </div>
 
-                        <CreateMemberForm />
+                        <CreateMemberForm rolePermissionsConfig={rolePermissionsConfig} />
                     </Card>
                 </div>
             </div>
+
+            {/* Bản quyền sử dụng App + Đặt tên phân quyền + Bảng tích Ma trận quyền */}
+            <RolePermissionsMatrix
+                lakeName={tenantContext.lakeName}
+                organizationName={tenantContext.organizationName}
+                initialConfig={rolePermissionsConfig}
+                activeStaffCount={activeStaffCount}
+                activeManagerCount={activeManagerCount}
+            />
         </main>
     );
 }

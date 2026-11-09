@@ -7,19 +7,30 @@ import { Role } from "@/generated/prisma/enums";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
+import type { LakeRolePermissionsConfig } from "@/lib/role-permissions";
 
 type MemberRole = typeof Role.STAFF | typeof Role.MANAGER;
 
-export function CreateMemberForm() {
+interface CreateMemberFormProps {
+    rolePermissionsConfig?: LakeRolePermissionsConfig;
+}
+
+export function CreateMemberForm({ rolePermissionsConfig }: CreateMemberFormProps) {
     const router = useRouter();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [role, setRole] = useState<MemberRole>(Role.STAFF);
+    const [selectedRoleOption, setSelectedRoleOption] = useState<string>(
+        `BASE:${Role.STAFF}`,
+    );
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    const staffLabel = rolePermissionsConfig?.staffRoleLabel ?? "NHÂN VIÊN (STAFF)";
+    const managerLabel = rolePermissionsConfig?.managerRoleLabel ?? "QUẢN LÝ (MANAGER)";
+    const customRoles = rolePermissionsConfig?.customRoles ?? [];
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -41,6 +52,22 @@ export function CreateMemberForm() {
             return;
         }
 
+        let role: MemberRole = Role.STAFF;
+        let customRoleId: string | null = null;
+
+        if (selectedRoleOption.startsWith("CUSTOM:")) {
+            const cId = selectedRoleOption.slice("CUSTOM:".length);
+            const found = customRoles.find((r) => r.id === cId);
+            if (found) {
+                role = found.baseRole;
+                customRoleId = found.id;
+            }
+        } else if (selectedRoleOption === `BASE:${Role.MANAGER}`) {
+            role = Role.MANAGER;
+        } else {
+            role = Role.STAFF;
+        }
+
         setLoading(true);
 
         try {
@@ -54,6 +81,7 @@ export function CreateMemberForm() {
                     email: email.trim().toLowerCase(),
                     password,
                     role,
+                    ...(customRoleId ? { customRoleId } : {}),
                 }),
             });
 
@@ -71,7 +99,7 @@ export function CreateMemberForm() {
             setName("");
             setEmail("");
             setPassword("");
-            setRole(Role.STAFF);
+            setSelectedRoleOption(`BASE:${Role.STAFF}`);
 
             router.refresh();
         } catch {
@@ -83,9 +111,7 @@ export function CreateMemberForm() {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-                <InlineAlert type="error" message={error} />
-            )}
+            {error && <InlineAlert type="error" message={error} />}
 
             {successMessage && (
                 <InlineAlert type="success" message={successMessage} />
@@ -129,16 +155,27 @@ export function CreateMemberForm() {
 
             <Select
                 id="member-role"
-                label="Vai trò (Quyền hạn) *"
-                value={role}
-                onChange={(e) => setRole(e.target.value as MemberRole)}
+                label="Phân quyền sử dụng App *"
+                value={selectedRoleOption}
+                onChange={(e) => setSelectedRoleOption(e.target.value)}
             >
-                <option value={Role.STAFF}>
-                    NHÂN VIÊN (STAFF) - Mở/kết thúc phiên, thu tiền
-                </option>
-                <option value={Role.MANAGER}>
-                    QUẢN LÝ (MANAGER) - Toàn quyền vận hành
-                </option>
+                <optgroup label="Phân quyền tiêu chuẩn">
+                    <option value={`BASE:${Role.STAFF}`}>
+                        {staffLabel} — Mở/kết thúc phiên, bán lẻ, thu tiền
+                    </option>
+                    <option value={`BASE:${Role.MANAGER}`}>
+                        {managerLabel} — Điều hành, chốt ca, báo cáo
+                    </option>
+                </optgroup>
+                {customRoles.length > 0 && (
+                    <optgroup label="Tên phân quyền do Chủ hồ đặt">
+                        {customRoles.map((cr) => (
+                            <option key={cr.id} value={`CUSTOM:${cr.id}`}>
+                                {cr.name} ({cr.permissions.length} quyền)
+                            </option>
+                        ))}
+                    </optgroup>
+                )}
             </Select>
 
             <Button
