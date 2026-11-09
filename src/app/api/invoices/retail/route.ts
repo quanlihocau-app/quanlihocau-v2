@@ -240,6 +240,13 @@ export async function POST(request: Request) {
                                     totalAmountVnd: grossTotalVnd,
                                     paymentMethod,
                                     itemsCount: items.length,
+                                    itemsSummary: lineItemsToCreate.map((l) => `${l.name} (x${l.quantity})`).join(", "),
+                                    items: lineItemsToCreate.map((l) => ({
+                                        name: l.name,
+                                        quantity: l.quantity,
+                                        unitPrice: l.unitPrice,
+                                        totalVnd: l.totalVnd,
+                                    })),
                                     customerId,
                                     note,
                                 }),

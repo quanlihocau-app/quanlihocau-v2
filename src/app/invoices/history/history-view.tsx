@@ -65,6 +65,13 @@ export interface HistoryAuditEvent {
     createdAt: string | Date;
 }
 
+export interface InvoiceLineDetail {
+    name: string;
+    quantity: number;
+    unitPrice?: number;
+    totalVnd?: number;
+}
+
 export interface LookupMaps {
     usersMap?: Record<string, string>;
     sessionsMap?: Record<string, { customerName: string; huts: string; packageName?: string }>;
@@ -72,6 +79,7 @@ export interface LookupMaps {
     hutsMap?: Record<string, string>;
     customersMap?: Record<string, string>;
     productsMap?: Record<string, string>;
+    invoicesMap?: Record<string, { customerName?: string; linesSummary: string; lines: InvoiceLineDetail[] }>;
 }
 
 interface HistoryViewProps {
@@ -83,6 +91,7 @@ interface HistoryViewProps {
     hutsMap?: Record<string, string>;
     customersMap?: Record<string, string>;
     productsMap?: Record<string, string>;
+    invoicesMap?: Record<string, { customerName?: string; linesSummary: string; lines: InvoiceLineDetail[] }>;
     canManageInvoices?: boolean;
     canReversePayments?: boolean;
     lakeName: string;
@@ -270,7 +279,10 @@ function getActionBadgeInfo(action: string): { label: string; colorClass: string
             return { label: "Thu cá", colorClass: "bg-[#FFF7E6] text-[#D46B08] border-[#FFD591]" };
         case "INVOICE_CREATED":
             return { label: "Tạo HĐ", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
+        case "INVOICE_PREPAID":
+            return { label: "Trả trước", colorClass: "bg-[#EAEFEA] text-[#2C4C3B] border-[#2C4C3B]" };
         case "INVOICE_LINE_ADDED":
+        case "INVOICE_PRODUCT_LINE_ADDED":
             return { label: "Thêm món", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
         case "PRODUCT_CREATED":
             return { label: "Tạo SP", colorClass: "bg-[#F2F2F0] text-[#1A1A1A] border-[#CCCCCC]" };
@@ -547,11 +559,30 @@ function getAuditHumanSummary(
         return `${typeStr}${qty} ${pName}${reason}${newStock}`;
     }
 
-    if (ev.action === "RETAIL_SALE_COMPLETED") {
+    if (ev.action === "RETAIL_SALE_COMPLETED" || ev.action === "RETAIL_INVOICE_CREATED") {
+        const invId = typeof payload.invoiceId === "string" ? payload.invoiceId : ev.entityId;
+        const inv = maps.invoicesMap?.[invId];
+        const linesSummary = inv?.linesSummary || (typeof payload.itemsSummary === "string" ? payload.itemsSummary : "");
         const total = typeof payload.totalAmountVnd === "number" ? formatVnd(payload.totalAmountVnd) : "";
         const method = payload.paymentMethod === "CASH" ? "Tiền mặt" : payload.paymentMethod === "BANK_TRANSFER" ? "Chuyển khoản" : "";
-        const count = payload.itemsCount ? ` (${payload.itemsCount} món)` : "";
-        return `Bán lẻ thành công${count}${total ? ` · Thu: ${total}` : ""}${method ? ` [${method}]` : ""}`;
+        const productText = linesSummary ? ` (${linesSummary})` : payload.itemsCount ? ` (${payload.itemsCount} món)` : "";
+        return `Bán lẻ thành công${productText}${total ? ` · Thu: ${total}` : ""}${method ? ` [${method}]` : ""}`;
+    }
+
+    if (ev.action === "INVOICE_PRODUCT_LINE_ADDED" || ev.action === "INVOICE_LINE_ADDED") {
+        const pName =
+            (typeof payload.productName === "string" && payload.productName) ||
+            (typeof payload.name === "string" && payload.name) ||
+            "mặt hàng";
+        const qty = payload.quantity ? ` x${payload.quantity}` : "";
+        const price = typeof payload.unitPrice === "number" ? ` (${formatVnd(payload.unitPrice)})` : "";
+        return `Thêm vào hóa đơn: ${pName}${qty}${price}`;
+    }
+
+    if (ev.action === "INVOICE_PREPAID") {
+        const total = typeof payload.totalAmountVnd === "number" ? formatVnd(payload.totalAmountVnd) : "";
+        const paid = typeof payload.paidAmountVnd === "number" ? formatVnd(payload.paidAmountVnd) : "";
+        return `Thanh toán trả trước vé câu${paid ? `: ${paid}` : total ? `: ${total}` : ""}`;
     }
 
     if (ev.action === "FISH_BUYBACK_RECORDED" || ev.action === "FISH_BUYBACK_CREATED") {
@@ -574,9 +605,27 @@ function getAuditHumanSummary(
     // Default friendly summary without raw database IDs
     const entries = Object.entries(payload).filter(
         ([k]) =>
-            !["id", "lakeId", "productId", "fishingSessionId", "sessionId", "invoiceId", "paymentId", "actor", "ip", "ua", "before", "after", "hutIds", "isCustomStart", "createdAt"].includes(
-                k,
-            ),
+            ![
+                "id",
+                "lakeId",
+                "productId",
+                "fishingSessionId",
+                "sessionId",
+                "invoiceId",
+                "invoiceLineId",
+                "lineId",
+                "paymentId",
+                "actor",
+                "ip",
+                "ua",
+                "before",
+                "after",
+                "hutIds",
+                "isCustomStart",
+                "createdAt",
+                "items",
+                "itemsSummary",
+            ].includes(k),
     );
     if (entries.length === 0) return "Thao tác hoàn tất";
     return entries
@@ -596,10 +645,13 @@ const HIDDEN_EXPANDED_KEYS = new Set([
     "lakeId",
     "id",
     "invoiceLineId",
+    "lineId",
     "invoiceId",
     "fishingSessionId",
     "sessionId",
     "paymentId",
+    "items",
+    "itemsSummary",
 ]);
 
 export function HistoryView({
@@ -611,6 +663,7 @@ export function HistoryView({
     hutsMap,
     customersMap,
     productsMap,
+    invoicesMap,
     lakeName,
     initialTab = "orders",
 }: HistoryViewProps & { initialTab?: "orders" | "audit" }) {
@@ -637,8 +690,9 @@ export function HistoryView({
             hutsMap,
             customersMap,
             productsMap,
+            invoicesMap,
         }),
-        [usersMap, sessionsMap, packagesMap, hutsMap, customersMap, productsMap],
+        [usersMap, sessionsMap, packagesMap, hutsMap, customersMap, productsMap, invoicesMap],
     );
 
     // Filtered Invoices
@@ -1055,6 +1109,45 @@ export function HistoryView({
                                                                     {formatDateTime(ev.createdAt)}
                                                                 </span>
                                                             </div>
+
+                                                            {/* Danh sách sản phẩm đã bán trong đơn bán lẻ / hóa đơn */}
+                                                            {(() => {
+                                                                const invId = typeof parsedPayload?.invoiceId === "string" ? parsedPayload.invoiceId : ev.entityId;
+                                                                const invData = lookupMaps.invoicesMap?.[invId];
+                                                                const itemsList =
+                                                                    invData?.lines ||
+                                                                    (Array.isArray(parsedPayload?.items)
+                                                                        ? (parsedPayload.items as Array<{ name: string; quantity: number; unitPrice?: number; totalVnd?: number }>)
+                                                                        : null);
+
+                                                                if (itemsList && itemsList.length > 0) {
+                                                                    return (
+                                                                        <div className="py-2 border-b border-[#E0E0E0]">
+                                                                            <span className="text-[#666666] font-medium block mb-1.5">
+                                                                                Sản phẩm đã bán:
+                                                                            </span>
+                                                                            <div className="rounded-xs bg-[#F8F9FA] border border-[#E9ECEF] p-2 space-y-1.5">
+                                                                                {itemsList.map((item, idx) => (
+                                                                                    <div key={idx} className="flex items-center justify-between text-[11px]">
+                                                                                        <span className="font-semibold text-[#1A1A1A]">
+                                                                                            • {item.name}{" "}
+                                                                                            <span className="text-[#2C4C3B] font-bold">x{item.quantity}</span>
+                                                                                        </span>
+                                                                                        <span className="font-semibold text-[#9E2A2B]">
+                                                                                            {item.totalVnd
+                                                                                                ? formatVnd(item.totalVnd)
+                                                                                                : item.unitPrice
+                                                                                                  ? formatVnd(item.unitPrice * item.quantity)
+                                                                                                  : "—"}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })()}
 
                                                             {/* Render các trường nghiệp vụ minh bạch đã lọc sạch kỹ thuật */}
                                                             {Object.entries(parsedPayload)

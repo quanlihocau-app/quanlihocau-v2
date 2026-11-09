@@ -137,6 +137,7 @@ export default async function InvoiceHistoryPage({
     const customerIdsSet = new Set<string>();
     const hutIdsSet = new Set<string>();
     const productIdsSet = new Set<string>();
+    const invoiceIdsSet = new Set<string>();
     const userIdsSet = new Set<string>(auditEvents.map((a) => a.createdBy).filter(Boolean));
     const sessionIdsSet = new Set<string>(
         auditEvents
@@ -146,6 +147,9 @@ export default async function InvoiceHistoryPage({
     );
 
     for (const a of auditEvents) {
+        if (a.entityType === "Invoice" && a.entityId) {
+            invoiceIdsSet.add(a.entityId);
+        }
         if (!a.payload) continue;
         try {
             const p = JSON.parse(a.payload);
@@ -154,6 +158,7 @@ export default async function InvoiceHistoryPage({
             if (p.productId && typeof p.productId === "string") productIdsSet.add(p.productId);
             if (p.sessionId && typeof p.sessionId === "string") sessionIdsSet.add(p.sessionId);
             if (p.fishingSessionId && typeof p.fishingSessionId === "string") sessionIdsSet.add(p.fishingSessionId);
+            if (p.invoiceId && typeof p.invoiceId === "string") invoiceIdsSet.add(p.invoiceId);
             if (p.actor?.id && typeof p.actor.id === "string") userIdsSet.add(p.actor.id);
             if (Array.isArray(p.hutIds)) {
                 for (const hid of p.hutIds) {
@@ -167,7 +172,7 @@ export default async function InvoiceHistoryPage({
         }
     }
 
-    const [auditUsers, auditSessions, packages, customers, huts, products] = await Promise.all([
+    const [auditUsers, auditSessions, packages, customers, huts, products, auditInvoices] = await Promise.all([
         userIdsSet.size > 0
             ? prisma.user.findMany({
                   where: { id: { in: Array.from(userIdsSet) } },
@@ -217,6 +222,23 @@ export default async function InvoiceHistoryPage({
                   select: { id: true, name: true, sku: true },
               })
             : [],
+        invoiceIdsSet.size > 0
+            ? prisma.invoice.findMany({
+                  where: { id: { in: Array.from(invoiceIdsSet) } },
+                  include: {
+                      lines: {
+                          select: {
+                              id: true,
+                              name: true,
+                              quantity: true,
+                              unitPrice: true,
+                              totalVnd: true,
+                          },
+                      },
+                      customer: { select: { name: true } },
+                  },
+              })
+            : [],
     ]);
 
     const usersMap: Record<string, string> = {};
@@ -261,6 +283,28 @@ export default async function InvoiceHistoryPage({
     const productsMap: Record<string, string> = {};
     for (const p of products) {
         productsMap[p.id] = p.sku ? `${p.name} (Mã: ${p.sku})` : p.name;
+    }
+
+    const invoicesMap: Record<
+        string,
+        {
+            customerName?: string;
+            linesSummary: string;
+            lines: Array<{ name: string; quantity: number; unitPrice: number; totalVnd: number }>;
+        }
+    > = {};
+    for (const inv of auditInvoices) {
+        const linesList = inv.lines.map((l) => ({
+            name: l.name,
+            quantity: Number(l.quantity),
+            unitPrice: l.unitPrice,
+            totalVnd: l.totalVnd,
+        }));
+        invoicesMap[inv.id] = {
+            customerName: inv.customer?.name,
+            linesSummary: linesList.map((l) => `${l.name} x${l.quantity}`).join(", "),
+            lines: linesList,
+        };
     }
 
     // Format dates and decimals for client serialization
@@ -315,6 +359,7 @@ export default async function InvoiceHistoryPage({
                         hutsMap={hutsMap}
                         customersMap={customersMap}
                         productsMap={productsMap}
+                        invoicesMap={invoicesMap}
                         canManageInvoices={canManageInvoices}
                         canReversePayments={canReversePayments}
                         lakeName={tenantContext.lakeName}
