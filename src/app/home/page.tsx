@@ -4,6 +4,7 @@ import { getTenantContext } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { InvoiceStatus, SessionStatus, PaymentDirection } from "@/generated/prisma/client";
 import { loadShiftReport } from "@/lib/reports/shift-report";
+import { startOfVnDay } from "@/lib/reports/date-utils";
 import { HomeMobileView } from "@/app/home-mobile-view";
 
 export const metadata = {
@@ -25,8 +26,8 @@ export default async function AppHomePage() {
         redirect("/login");
     }
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    // Mốc 0h theo giờ Việt Nam (server Vercel chạy UTC nên không dùng setHours)
+    const todayStart = startOfVnDay();
 
     const [activeSessionsCount, totalHutsCount, todayInvoices, recentSessions] = await Promise.all([
         prisma.fishingSession.count({
