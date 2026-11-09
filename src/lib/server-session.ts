@@ -27,7 +27,7 @@ export const getAppSession = cache(async (): Promise<Session | null> => {
  * or undecryptable, a still-valid qa_session is enough to show the app
  * (staff credentials login sets qa_session before the NextAuth sync).
  */
-export async function getPageSession(): Promise<Session | null> {
+export const getPageSession = cache(async (): Promise<Session | null> => {
     const session = await getAppSession();
     if (session?.user?.email) return session;
     try {
@@ -45,4 +45,4 @@ export async function getPageSession(): Promise<Session | null> {
     } catch {
         return null;
     }
-}
+});

@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { SessionActions } from "./session-actions";
+import { SessionActions, getCachedProducts } from "./session-actions";
 import { sessionBalancePresentation } from "@/lib/money";
 import {
     SessionGridCard,
@@ -165,6 +165,15 @@ export function SessionsClient({
         }
         return true;
     });
+
+    // Pre-warm product catalog in background so tapping "+ Thêm món" opens in 0ms
+    useEffect(() => {
+        if (sessions.length === 0) return;
+        const timer = setTimeout(() => {
+            getCachedProducts().catch(() => {});
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [sessions.length]);
 
     // Sync guide class when state changes
     useEffect(() => {
@@ -390,55 +399,57 @@ export function SessionsClient({
     // ── Empty state ───────────────────────────────────────────────────────────
     if (sessions.length === 0) {
         return (
-            <div className="flex min-h-[calc(100vh-240px)] items-center justify-center font-serif">
-                <div className="w-full max-w-md rounded-3xl border-2 border-dashed border-emerald-200 bg-[#F0FDF4]/90 p-6 sm:p-8 text-center shadow-xs">
-                    <div className="mx-auto mb-3.5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#DCFCE7] text-[#16A34A] shadow-xs">
-                        <svg
-                            className="h-7 w-7"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2}
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                            />
-                        </svg>
-                    </div>
-                    <p className="text-base font-bold text-[#0F172A] font-serif">
-                        {initialSessionId ? "Phiên được chọn đã kết thúc hoặc không còn khả dụng" : "Hiện chưa có khách nào đang câu"}
-                    </p>
-                    
-                    {/* Hướng dẫn 3 bước cực dễ hiểu cho người mới */}
-                    <div className="my-3.5 text-left bg-white rounded-2xl p-3.5 border border-emerald-100 shadow-2xs space-y-2 font-serif">
-                        <p className="text-xs font-bold text-[#16A34A] uppercase tracking-wide">
-                            👉 Cách mở ca câu mới (3 bước siêu nhanh):
-                        </p>
-                        <div className="space-y-1.5 text-xs text-slate-700">
-                            <p className="flex items-start gap-2">
-                                <span className="font-bold text-[#16A34A] shrink-0">1.</span>
-                                <span>Bấm nút xanh <strong>&quot;+ Tạo vé mới ngay&quot;</strong> bên dưới.</span>
-                            </p>
-                            <p className="flex items-start gap-2">
-                                <span className="font-bold text-[#16A34A] shrink-0">2.</span>
-                                <span>Chọn <strong>ô chòi câu</strong> (ô màu xanh lá) và <strong>gói giờ câu</strong> của khách.</span>
-                            </p>
-                            <p className="flex items-start gap-2">
-                                <span className="font-bold text-[#16A34A] shrink-0">3.</span>
-                                <span>Bấm <strong>&quot;Tạo vé&quot;</strong> &rarr; Máy sẽ tự in vé câu và bắt đầu tính giờ ngay!</span>
+            <div className="space-y-4 font-serif">
+                <div className="rounded-xl border border-[#CFE0D6] bg-white p-5 sm:p-6 shadow-xs">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E8F0EC] px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#1B3B2B]">
+                                <span className="h-2 w-2 rounded-full bg-[#16A34A]" />
+                                Quầy thu ngân sẵn sàng · Chưa có vé đang câu
+                            </span>
+                            <h2 className="mt-2 text-xl font-bold text-[#111827] sm:text-2xl">
+                                {initialSessionId
+                                    ? "Phiên được chọn đã kết thúc hoặc không còn khả dụng"
+                                    : "Chạm vào chòi trống bất kỳ để mở vé đầu tiên"}
+                            </h2>
+                            <p className="mt-1 text-xs text-[#475569] sm:text-sm">
+                                Hệ thống đã chuẩn bị sẵn các ô câu và bảng giá. Bấm mở vé để trải nghiệm đồng hồ đếm ngược, thêm nước ngọt và cân cá cấn trừ.
                             </p>
                         </div>
+
+                        {canOpenSession && (
+                            <Link
+                                href="/sessions/new"
+                                className="inline-flex min-h-13 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#1B3B2B] px-6 py-3 text-sm font-bold text-white shadow-xs transition hover:bg-[#2C5E43] active:scale-95"
+                            >
+                                <span>+ Mở vé câu mới ngay</span>
+                            </Link>
+                        )}
                     </div>
 
+                    {/* Lưới ô chòi sẵn sàng bấm mở vé 1 chạm */}
                     {canOpenSession && (
-                        <Link
-                            href="/sessions/new"
-                            className="inline-flex items-center justify-center rounded-2xl bg-[#16A34A] hover:bg-[#15803D] px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all font-serif"
-                        >
-                            + Tạo vé mới ngay
-                        </Link>
+                        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+                            {["Chòi 1", "Chòi 2", "Chòi 3", "Chòi 4", "Chòi 5", "Chòi 6"].map((spotName) => (
+                                <Link
+                                    key={spotName}
+                                    href="/sessions/new"
+                                    className="group flex flex-col justify-between rounded-lg border border-[#CBD5E1] bg-[#F8FAF8] p-3.5 text-left transition hover:border-[#1B3B2B] hover:bg-[#E8F0EC]/60"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <strong className="text-sm font-bold text-[#111827] group-hover:text-[#1B3B2B]">
+                                            {spotName}
+                                        </strong>
+                                        <span className="rounded bg-[#E8F0EC] px-1.5 py-0.5 text-[10px] font-bold text-[#1B3B2B]">
+                                            Trống
+                                        </span>
+                                    </div>
+                                    <span className="mt-3 block text-[11px] font-semibold text-[#1B3B2B] underline">
+                                        + Chạm mở vé ↗
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
                     )}
                 </div>
             </div>

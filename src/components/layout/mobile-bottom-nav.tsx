@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 
@@ -143,6 +143,7 @@ interface MobileBottomNavProps {
 }
 
 export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottomNavProps = {}) {
+    const router = useRouter();
     const pathname = usePathname();
     const { data: session } = useSession();
     const [pendingHref, setPendingHref] = useState<string | null>(null);
@@ -179,6 +180,16 @@ export function MobileBottomNav({ isSuperAdmin: isSuperAdminProp }: MobileBottom
                             prefetch={true}
                             data-no-auto-center="true"
                             aria-current={active ? "page" : undefined}
+                            onTouchStart={() => {
+                                if (!active) {
+                                    router.prefetch(item.href);
+                                }
+                            }}
+                            onMouseEnter={() => {
+                                if (!active) {
+                                    router.prefetch(item.href);
+                                }
+                            }}
                             onClick={() => {
                                 if (!active) {
                                     setPendingHref(item.href);

@@ -10,13 +10,14 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 
 export default async function NewSessionPage() {
-    const session = await getPageSession();
+    const [session, tenantContext] = await Promise.all([
+        getPageSession(),
+        getTenantContext(),
+    ]);
 
     if (!session?.user?.email) {
         redirect("/login");
     }
-
-    const tenantContext = await getTenantContext();
 
     if (!tenantContext) {
         return (
@@ -50,6 +51,7 @@ export default async function NewSessionPage() {
             where: { lakeId: tenantContext.lakeId, deletedAt: null },
             select: { id: true, name: true, phoneNormalized: true },
             orderBy: { name: "asc" },
+            take: 250,
         }),
         prisma.package.findMany({
             where: { lakeId: tenantContext.lakeId, deletedAt: null },

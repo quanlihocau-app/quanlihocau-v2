@@ -20,8 +20,10 @@ export interface ActionPackage {
 
 export { getCachedProducts, type Product };
 
+const VN_NUMBER_FORMATTER = new Intl.NumberFormat("vi-VN");
+
 function formatPrice(vnd: number): string {
-    return new Intl.NumberFormat("vi-VN").format(vnd) + "đ";
+    return VN_NUMBER_FORMATTER.format(vnd) + "đ";
 }
 
 // ── Dynamically imported modals with ssr: false for optimal initial bundle ────

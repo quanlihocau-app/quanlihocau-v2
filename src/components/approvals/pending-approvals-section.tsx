@@ -17,22 +17,24 @@ export function PendingApprovalsSection() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const fetchApprovals = async () => {
-    try {
-      const res = await fetch("/api/approvals?status=PENDING");
-      if (res.ok) {
-        const data = await res.json();
-        setApprovals(data.approvals || []);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchApprovals();
+    let active = true;
+    fetch("/api/approvals?status=PENDING")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && data) {
+          setApprovals(data.approvals || []);
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleReview = async (id: string, action: "APPROVE" | "REJECT") => {
@@ -75,7 +77,7 @@ export function PendingApprovalsSection() {
 
       <div className="mt-3 space-y-3">
         {approvals.map((item) => {
-          let details: any = {};
+          let details: { amountVnd?: number; description?: string; quantity?: number; reason?: string } = {};
           try {
             details = JSON.parse(item.payload);
           } catch {}

@@ -4,7 +4,6 @@ import { getPageSession } from "@/lib/server-session";
 import { redirect } from "next/navigation";
 
 import { getTenantContext } from "@/lib/tenant";
-import { prisma } from "@/lib/prisma";
 import { privateRouteMetadata } from "@/lib/metadata";
 
 import { ReportsView } from "./reports-view";
@@ -15,13 +14,14 @@ export const metadata: Metadata = {
 };
 
 export default async function ReportsPage() {
-    const session = await getPageSession();
+    const [session, tenantContext] = await Promise.all([
+        getPageSession(),
+        getTenantContext(),
+    ]);
 
     if (!session?.user?.email) {
         redirect("/login");
     }
-
-    const tenantContext = await getTenantContext();
 
     if (!tenantContext?.lakeId) {
         return (
@@ -39,10 +39,6 @@ export default async function ReportsPage() {
         );
     }
 
-    const lake = await prisma.lake.findUnique({
-        where: { id: tenantContext.lakeId },
-    });
-
     return (
         <Suspense fallback={
             <div className="flex min-h-screen items-center justify-center bg-[#F6F8F5]">
@@ -50,7 +46,7 @@ export default async function ReportsPage() {
             </div>
         }>
             <ReportsView
-                lakeName={lake?.name || "Hồ câu"}
+                lakeName={tenantContext.lakeName || "Hồ câu"}
                 lakeId={tenantContext.lakeId}
                 userEmail={session.user.email}
                 userRole={tenantContext.role}

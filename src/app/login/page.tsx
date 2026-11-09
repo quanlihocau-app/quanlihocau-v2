@@ -89,56 +89,74 @@ function LoginForm() {
   const isLoading = loading || googleLoading
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-[#0f2017] via-[#1a3328] to-[#0c1a11] px-4 py-8">
-      {/* Dot grid background texture */}
-      <div
-        className="pointer-events-none fixed inset-0 opacity-[0.035]"
-        style={{
-          backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-        }}
-      />
-
-      <div className="relative w-full max-w-sm">
-        {/* Brand header */}
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-400 to-emerald-600 shadow-xl shadow-emerald-900/50">
-            <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+    <div className="min-h-screen bg-[#F8FAF8] text-[#111827] antialiased">
+      {/* Header */}
+      <header className="border-b border-[#E2E8F0] bg-white">
+        <div className="mx-auto flex min-h-17 max-w-5xl items-center justify-between px-4 sm:px-6">
+          <button type="button" onClick={() => router.push('/')} className="flex items-center gap-2.5 text-left cursor-pointer">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1B3B2B] text-sm font-extrabold text-white">
+              HC
+            </span>
+            <span>
+              <strong className="block text-sm font-extrabold text-[#1B3B2B]">Quản Lý Hồ Câu</strong>
+              <span className="block text-[11px] text-[#64748B]">Đăng nhập quầy thu ngân &amp; quản trị</span>
+            </span>
+          </button>
+          <div className="flex items-center gap-3 text-xs font-semibold">
+            <a
+              href="/preview"
+              className="hidden rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-[#334155] hover:border-[#1B3B2B] hover:text-[#1B3B2B] sm:inline-block"
+            >
+              Xem quầy mẫu
+            </a>
+            <a
+              href="/register"
+              className="rounded-lg bg-[#1B3B2B] px-3.5 py-2 font-bold text-white hover:bg-[#2C5E43]"
+            >
+              Mở hồ dùng thử 30 ngày ↗
+            </a>
           </div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Quản Lý Hồ Câu</h1>
-          <p className="mt-0.5 text-xs text-emerald-300/70">Đăng nhập quầy thu ngân &amp; quản trị</p>
         </div>
+      </header>
 
-        {/* Main card */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-md">
+      <div className="mx-auto flex max-w-md flex-col justify-center px-4 py-10 sm:py-14">
+        <div className="rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-xs sm:p-8">
+          <div className="mb-5">
+            <span className="inline-block rounded-full bg-[#E8F0EC] px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#1B3B2B]">
+              Hệ thống vận hành hồ câu
+            </span>
+            <h1
+              className="mt-2.5 text-2xl font-bold tracking-tight text-[#111827] sm:text-3xl"
+              style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}
+            >
+              Đăng nhập vào hồ của bạn
+            </h1>
+            <p className="mt-1 text-xs leading-relaxed text-[#64748B]">
+              Sử dụng số điện thoại, tên đăng nhập hoặc tài khoản Google của chủ hồ.
+            </p>
+          </div>
 
           {/* Alerts */}
           {registered && (
-            <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2.5 text-xs text-emerald-300">
+            <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-[#CFE0D6] bg-[#E8F0EC] px-3.5 py-2.5 text-xs font-semibold text-[#1B3B2B]">
               <span className="shrink-0">✓</span>
               <span>Đăng ký thành công! Đăng nhập bằng số điện thoại hoặc email và mật khẩu vừa tạo.</span>
             </div>
           )}
           {(oauthError || errorMsg) && (
-            <div role="alert" className="mb-4 flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-300">
+            <div
+              role="alert"
+              className="mb-4 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-semibold text-red-700"
+            >
               <span className="shrink-0">⚠</span>
               <span>{errorMsg || oauthError}</span>
             </div>
           )}
 
-          {/* ── Section 1: Staff / Manager Credentials Login ─────────── */}
-          <form onSubmit={handleLegacyLogin} aria-busy={isLoading} className="space-y-3.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                Chủ hồ, nhân viên &amp; thu ngân
-              </span>
-              <span className="text-[10px] text-white/40">Đăng nhập ca</span>
-            </div>
-
+          {/* ── Section 1: Staff / Manager / Owner Credentials Login ─────────── */}
+          <form onSubmit={handleLegacyLogin} aria-busy={isLoading} className="space-y-4">
             <div>
-              <label htmlFor="login-account" className="mb-1 block text-[11px] font-medium text-white/60">
+              <label htmlFor="login-account" className="mb-1 block text-xs font-bold text-[#1E293B]">
                 Số điện thoại, tên đăng nhập hoặc email
               </label>
               <input
@@ -153,52 +171,55 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="0901234567, tên đăng nhập hoặc email"
-                className="h-10 w-full rounded-xl border border-white/15 bg-white/10 px-3 text-sm text-white placeholder-white/25 transition focus:border-emerald-400 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                className="h-11 w-full rounded-lg border border-[#CBD5E1] bg-white px-3.5 text-sm text-[#111827] transition focus:border-[#1B3B2B] focus:outline-none focus:ring-2 focus:ring-[#1B3B2B]/20"
               />
             </div>
 
             <div>
-              <label htmlFor="login-password" className="mb-1 block text-[11px] font-medium text-white/60">
+              <label htmlFor="login-password" className="mb-1 block text-xs font-bold text-[#1E293B]">
                 Mật khẩu
               </label>
-              <input
-                id="login-password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Nhập mật khẩu"
-                className="h-10 w-full rounded-xl border border-white/15 bg-white/10 px-3 text-sm text-white placeholder-white/25 transition focus:border-emerald-400 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-emerald-400"
-              />
-              <button type="button" aria-controls="login-password" aria-pressed={showPassword} onClick={() => setShowPassword((value) => !value)} className="min-h-11 text-xs font-semibold text-emerald-300 underline">
-                {showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-              </button>
+              <div className="relative">
+                <input
+                  id="login-password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Nhập mật khẩu"
+                  className="h-11 w-full rounded-lg border border-[#CBD5E1] bg-white pl-3.5 pr-16 text-sm text-[#111827] transition focus:border-[#1B3B2B] focus:outline-none focus:ring-2 focus:ring-[#1B3B2B]/20"
+                />
+                <button
+                  type="button"
+                  aria-controls="login-password"
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs font-bold text-[#1B3B2B] hover:bg-[#E8F0EC]"
+                >
+                  {showPassword ? 'Ẩn' : 'Hiện'}
+                </button>
+              </div>
             </div>
 
             <button
               type="submit"
               id="btn-legacy-login"
               disabled={isLoading}
-              className="flex h-10 w-full items-center justify-center rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-md shadow-emerald-950/40 transition hover:bg-emerald-500 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+              className="flex min-h-12 w-full items-center justify-center rounded-lg bg-[#1B3B2B] px-4 text-sm font-bold text-white shadow-xs transition hover:bg-[#2C5E43] disabled:opacity-50 cursor-pointer"
             >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                  Đang đăng nhập…
-                </span>
-              ) : (
-                'Đăng nhập vào quầy thu ngân'
-              )}
+              {loading ? 'Đang đăng nhập…' : 'Đăng nhập vào quầy thu ngân'}
             </button>
           </form>
 
           {/* ── Divider ──────────────────────────────────────────── */}
           <div className="my-5 flex items-center gap-3">
-            <span className="h-px flex-1 bg-white/10" />
-            <span className="text-[10px] font-semibold tracking-wider text-white/30 uppercase">HOẶC DÀNH CHO CHỦ HỒ</span>
-            <span className="h-px flex-1 bg-white/10" />
+            <span className="h-px flex-1 bg-[#E2E8F0]" />
+            <span className="text-[11px] font-bold tracking-wider text-[#64748B] uppercase">
+              HOẶC DÀNH CHO CHỦ HỒ
+            </span>
+            <span className="h-px flex-1 bg-[#E2E8F0]" />
           </div>
 
           {/* ── Section 2: Google Sign In (Dành cho Chủ hồ) ────────── */}
@@ -207,31 +228,47 @@ function LoginForm() {
             id="btn-google-signin"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="group relative flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/20 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 shadow transition-all duration-150 hover:bg-slate-50 hover:shadow-md active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+            className="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-lg border border-[#CBD5E1] bg-white px-4 py-2.5 text-sm font-bold text-[#111827] shadow-2xs transition hover:border-[#1B3B2B] hover:bg-[#F8FAF8] disabled:opacity-60 cursor-pointer"
           >
-            {googleLoading ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-slate-800" />
-            ) : (
-              <svg aria-hidden="true" viewBox="0 0 48 48" className="h-4 w-4 shrink-0">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z" />
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.72 7.18l7.62 5.91c4.45-4.11 7.14-10.16 7.14-17.56Z" />
-                <path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.53 2.56 10.78l7.97-6.19Z" />
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.89l-7.62-5.91c-2.12 1.42-4.84 2.27-8.28 2.27-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z" />
-              </svg>
-            )}
-            <span>{googleLoading ? 'Đang chuyển đến Google…' : 'Chủ hồ: Đăng nhập bằng Google'}</span>
+            <svg aria-hidden="true" viewBox="0 0 48 48" className="h-4 w-4 shrink-0">
+              <path
+                fill="#EA4335"
+                d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"
+              />
+              <path
+                fill="#4285F4"
+                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.72 7.18l7.62 5.91c4.45-4.11 7.14-10.16 7.14-17.56Z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.53 2.56 10.78l7.97-6.19Z"
+              />
+              <path
+                fill="#34A853"
+                d="M24 48c6.48 0 11.93-2.13 15.9-5.89l-7.62-5.91c-2.12 1.42-4.84 2.27-8.28 2.27-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"
+              />
+            </svg>
+            <span>{googleLoading ? 'Đang chuyển đến Google…' : 'Chủ hồ: Tiếp tục bằng Google'}</span>
           </button>
-          <p className="mt-5 text-center text-sm text-white/70">
-            Chủ hồ mới? <a href="/register" className="inline-flex min-h-11 items-center font-semibold text-emerald-300 underline">Tạo tài khoản hồ câu</a>
-          </p>
+
+          <div className="mt-6 rounded-lg border border-[#E2E8F0] bg-[#F8FAF8] p-3.5 text-center text-xs text-[#475569]">
+            Chưa có tài khoản hồ câu?{' '}
+            <a href="/register" className="font-bold text-[#1B3B2B] underline">
+              Mở hồ dùng thử 30 ngày miễn phí
+            </a>
+          </div>
         </div>
 
         {/* Footer */}
-        <p className="mt-5 text-center text-[11px] text-white/20">
+        <p className="mt-5 text-center text-xs text-[#64748B]">
           Bằng cách đăng nhập, bạn đồng ý với{' '}
-          <a href="/dieu-khoan" className="underline hover:text-white/40 transition">Điều khoản</a>
-          {' '}và{' '}
-          <a href="/chinh-sach-bao-mat" className="underline hover:text-white/40 transition">Chính sách bảo mật</a>
+          <a href="/dieu-khoan" className="font-semibold text-[#1B3B2B] underline">
+            Điều khoản
+          </a>{' '}
+          và{' '}
+          <a href="/chinh-sach-bao-mat" className="font-semibold text-[#1B3B2B] underline">
+            Chính sách bảo mật
+          </a>
         </p>
       </div>
     </div>
@@ -242,8 +279,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#0f2017]">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAF8]">
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#1B3B2B] border-t-transparent" />
         </div>
       }
     >

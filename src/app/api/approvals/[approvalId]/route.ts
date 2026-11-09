@@ -45,7 +45,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     if (action === "APPROVE") {
       if (approval.type === "EXPENSE") {
         // Thực thi tạo phiếu chi vào quỹ
-        const { description, amountVnd, category, paymentMethod } = payloadData;
+        const { description, amountVnd, paymentMethod } = payloadData;
         const createdExpense = await prisma.expense.create({
           data: {
             lakeId: tenantContext.lakeId,
@@ -111,8 +111,9 @@ export async function POST(request: Request, { params }: RouteParams) {
       message: action === "APPROVE" ? "Đã phê duyệt yêu cầu thành công." : "Đã từ chối yêu cầu.",
       approval: updated,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Lỗi xử lý duyệt" }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Lỗi xử lý duyệt";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

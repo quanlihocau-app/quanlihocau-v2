@@ -85,6 +85,14 @@ const ADMIN_DESKTOP_ITEM: DesktopNavItem = {
     isActive: (p: string) => p.startsWith("/admin"),
 };
 
+const ACCOUNT_CACHE_TTL_MS = 5 * 60 * 1000;
+let cachedAccountMeta: {
+    lakeName?: string;
+    phone?: string;
+    fetchedAt: number;
+} | null = null;
+let inFlightAccountFetch: Promise<{ lakeName?: string; phone?: string } | null> | null = null;
+
 interface MobileAppHeaderProps {
     lakeName: string;
     /** Role badge label, e.g. "Chủ hồ", "Nhân viên", "Báo cáo" */
@@ -114,34 +122,61 @@ export function MobileAppHeader({
     const isSuperAdmin = session?.user?.systemRole === "SUPER_ADMIN";
     const desktopItems = isSuperAdmin ? [...DESKTOP_NAV_ITEMS, ADMIN_DESKTOP_ITEM] : DESKTOP_NAV_ITEMS;
 
-    const [overrideLakeName, setOverrideLakeName] = useState<string | null>(null);
-    const [overridePhone, setOverridePhone] = useState<string | null>(null);
+    const [overrideLakeName, setOverrideLakeName] = useState<string | null>(
+        () => cachedAccountMeta?.lakeName ?? null,
+    );
+    const [overridePhone, setOverridePhone] = useState<string | null>(
+        () => cachedAccountMeta?.phone ?? null,
+    );
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const currentLakeName = overrideLakeName ?? lakeName;
     const currentPhone = overridePhone ?? propPhone ?? "0855 550 813";
 
-    // Fetch lake contactPhone and name on mount if available
+    // Fetch lake contactPhone and name once per 5-minute TTL across all page transitions
     useEffect(() => {
+        if (
+            cachedAccountMeta &&
+            Date.now() - cachedAccountMeta.fetchedAt < ACCOUNT_CACHE_TTL_MS
+        ) {
+            return;
+        }
+
         let isMounted = true;
-        fetch("/api/me/account")
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data) => {
-                if (isMounted && data) {
-                    if (data.lake?.name && !overrideLakeName) {
-                        setOverrideLakeName(data.lake.name);
-                    }
-                    const phone = data.lake?.contactPhone || data.user?.phone;
-                    if (phone && !overridePhone) {
-                        setOverridePhone(phone);
-                    }
-                }
-            })
-            .catch(() => { });
+        if (!inFlightAccountFetch) {
+            inFlightAccountFetch = fetch("/api/me/account")
+                .then((res) => (res.ok ? res.json() : null))
+                .then((data) => {
+                    if (!data) return null;
+                    const resolvedLakeName = data.lake?.name as string | undefined;
+                    const resolvedPhone = (data.lake?.contactPhone || data.user?.phone) as string | undefined;
+                    cachedAccountMeta = {
+                        lakeName: resolvedLakeName,
+                        phone: resolvedPhone,
+                        fetchedAt: Date.now(),
+                    };
+                    return { lakeName: resolvedLakeName, phone: resolvedPhone };
+                })
+                .catch(() => null)
+                .finally(() => {
+                    inFlightAccountFetch = null;
+                });
+        }
+
+        inFlightAccountFetch.then((result) => {
+            if (!isMounted || !result) return;
+            if (result.lakeName) {
+                setOverrideLakeName((prev) => prev ?? result.lakeName ?? null);
+            }
+            if (result.phone) {
+                setOverridePhone((prev) => prev ?? result.phone ?? null);
+            }
+        });
+
         return () => {
             isMounted = false;
         };
-    }, [overrideLakeName, overridePhone]);
+    }, []);
 
     // Extract short name for avatar
     const avatarInitials = currentLakeName
@@ -385,14 +420,30 @@ export function MobileAppHeader({
             {/* Onboarding Guide Modal */}
             <OnboardingModal />
 
-            {/* Account Settings Dropdown Modal */}
-            <AccountSettingsModal
-                isOpen={isAccountModalOpen}
-                onClose={() => setIsAccountModalOpen(false)}
-                initialLakeName={currentLakeName}
-                onLakeNameChange={(newName) => setOverrideLakeName(newName)}
-                onPhoneChange={(newPhone) => setOverridePhone(newPhone)}
-            />
+            {/* Account Settings Dropdown Modal — only mounted when opened */}
+            {isAccountModalOpen && (
+                <AccountSettingsModal
+                    isOpen={isAccountModalOpen}
+                    onClose={() => setIsAccountModalOpen(false)}
+                    initialLakeName={currentLakeName}
+                    onLakeNameChange={(newName) => {
+                        setOverrideLakeName(newName);
+                        cachedAccountMeta = {
+                            ...cachedAccountMeta,
+                            lakeName: newName,
+                            fetchedAt: Date.now(),
+                        };
+                    }}
+                    onPhoneChange={(newPhone) => {
+                        setOverridePhone(newPhone);
+                        cachedAccountMeta = {
+                            ...cachedAccountMeta,
+                            phone: newPhone,
+                            fetchedAt: Date.now(),
+                        };
+                    }}
+                />
+            )}
         </>
     );
 }

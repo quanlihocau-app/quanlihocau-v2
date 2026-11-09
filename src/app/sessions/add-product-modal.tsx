@@ -15,8 +15,10 @@ export interface Product {
     sku: string | null;
 }
 
+const VN_NUMBER_FORMATTER = new Intl.NumberFormat("vi-VN");
+
 function formatPrice(vnd: number): string {
-    return new Intl.NumberFormat("vi-VN").format(vnd) + "đ";
+    return VN_NUMBER_FORMATTER.format(vnd) + "đ";
 }
 
 export async function getCachedProducts(): Promise<Product[]> {

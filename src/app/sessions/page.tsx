@@ -22,14 +22,16 @@ export const metadata: Metadata = {
 export default async function SessionsPage({ searchParams }: {
     searchParams?: Promise<{ sessionId?: string }>;
 }) {
-    const initialSessionId = (await searchParams)?.sessionId || undefined;
-    const session = await getPageSession();
+    const [resolvedParams, session, tenantContext] = await Promise.all([
+        searchParams,
+        getPageSession(),
+        getTenantContext(),
+    ]);
+    const initialSessionId = resolvedParams?.sessionId || undefined;
 
     if (!session?.user?.email) {
         redirect("/login");
     }
-
-    const tenantContext = await getTenantContext();
 
     if (!tenantContext) {
         if (session.user.systemRole === "SUPER_ADMIN") {

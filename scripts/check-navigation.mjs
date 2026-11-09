@@ -10,8 +10,6 @@ const slash = (value) => value.replaceAll("\\", "/");
 const escape = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const demoFiles = new Set([
     "src/app/preview/page.tsx", "src/app/prototype/mobile-pos/page.tsx",
-    "src/components/landing/dual-phone-hero-mockup.tsx",
-    "src/components/landing/interactive-app-showcase.tsx",
 ]);
 
 export function auditNavigation(root) {

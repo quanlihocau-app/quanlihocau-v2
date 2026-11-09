@@ -6,8 +6,10 @@ import { SessionCountdown } from "./session-countdown";
 import { sessionBalancePresentation } from "@/lib/money";
 import type { SerializableSession } from "./sessions-client";
 
+const VN_NUMBER_FORMATTER = new Intl.NumberFormat("vi-VN");
+
 export function formatVnd(vnd: number): string {
-    return new Intl.NumberFormat("vi-VN").format(vnd) + "đ";
+    return VN_NUMBER_FORMATTER.format(vnd) + "đ";
 }
 
 export function formatDuration(minutes: number): string {
@@ -257,11 +259,10 @@ function SessionGridCardComponent({
                     onSelect(s.id);
                 }
             }}
-            className={`group relative flex flex-col justify-between rounded-xl p-2 sm:p-2.5 text-left transition-all select-none cursor-pointer border font-serif ${
-                isSelected
-                    ? "border-2 border-[#16A34A] bg-[#F0FDF4] ring-2 ring-[#16A34A]/20 shadow-md"
-                    : "border-slate-200/90 bg-white hover:border-[#16A34A]/60 hover:bg-slate-50/40 shadow-2xs"
-            }`}
+            className={`group relative flex flex-col justify-between rounded-xl p-2 sm:p-2.5 text-left transition-all select-none cursor-pointer border font-serif ${isSelected
+                ? "border-2 border-[#16A34A] bg-[#F0FDF4] ring-2 ring-[#16A34A]/20 shadow-md"
+                : "border-slate-200/90 bg-white hover:border-[#16A34A]/60 hover:bg-slate-50/40 shadow-2xs"
+                }`}
         >
             {/* Top row: Hut label, Payment status, Package duration */}
             <div>
@@ -307,15 +308,14 @@ function SessionGridCardComponent({
             {/* Bottom: Financial summary & mini tags */}
             <div className="mt-1 pt-1 border-t border-slate-100/90">
                 <div
-                    className={`rounded-xs px-1.5 py-0.5 border flex items-center justify-between font-serif text-[11px] ${
-                        balanceView.kind === "refund"
-                            ? "bg-[#FBEBEB] border-[#E9B6B7] text-[#9E2A2B]"
-                            : balanceView.kind === "due"
+                    className={`rounded-xs px-1.5 py-0.5 border flex items-center justify-between font-serif text-[11px] ${balanceView.kind === "refund"
+                        ? "bg-[#FBEBEB] border-[#E9B6B7] text-[#9E2A2B]"
+                        : balanceView.kind === "due"
                             ? "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
                             : balanceView.kind === "unbilled-overtime"
-                            ? "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
-                            : "bg-[#EAEFEA] border-[#B8CEB8] text-[#2C4C3B]"
-                    }`}
+                                ? "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
+                                : "bg-[#EAEFEA] border-[#B8CEB8] text-[#2C4C3B]"
+                        }`}
                 >
                     <span className="text-[10px] font-bold">
                         {balanceView.label}
@@ -382,18 +382,17 @@ function SessionGridCardComponent({
                                 e.stopPropagation();
                                 onSettlement(s.id);
                             }}
-                            className={`flex w-full items-center justify-center gap-1 rounded-xl py-1.5 px-2 text-[11px] font-bold text-white transition-all cursor-pointer font-serif active:scale-[0.98] ${
-                                netBalance < 0
-                                    ? "bg-[#DC2626] hover:bg-[#B91C1C]"
-                                    : "bg-[#16A34A] hover:bg-[#15803D]"
-                            }`}
+                            className={`flex w-full items-center justify-center gap-1 rounded-xl py-1.5 px-2 text-[11px] font-bold text-white transition-all cursor-pointer font-serif active:scale-[0.98] ${netBalance < 0
+                                ? "bg-[#DC2626] hover:bg-[#B91C1C]"
+                                : "bg-[#16A34A] hover:bg-[#15803D]"
+                                }`}
                         >
                             <span>
                                 {netBalance < 0
                                     ? `Thối -${formatVnd(Math.abs(netBalance))}`
                                     : netBalance > 0
-                                    ? `Thu +${formatVnd(netBalance)}`
-                                    : "Kết thúc & In"}
+                                        ? `Thu +${formatVnd(netBalance)}`
+                                        : "Kết thúc & In"}
                             </span>
                         </button>
                     </div>

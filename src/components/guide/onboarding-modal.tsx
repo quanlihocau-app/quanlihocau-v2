@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { GuideStep, ONBOARDING_STEPS } from "@/lib/guides/onboarding-data";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
@@ -20,7 +20,6 @@ export function OnboardingModal({
     initialStepId = 1,
 }: OnboardingModalProps) {
     const router = useRouter();
-    const pathname = usePathname();
     const filteredSteps: GuideStep[] = ONBOARDING_STEPS.filter((step) =>
         step.roles.includes(userRole),
     );
@@ -37,24 +36,8 @@ export function OnboardingModal({
     const totalSteps = filteredSteps.length;
     const progressPercent = Math.round(((currentStepIndex + 1) / totalSteps) * 100);
 
-    // Check auto-show on initial login if not seen/dismissed before
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-
-        const hasCompleted = localStorage.getItem("quanlihocau_onboarding_completed_v1");
-        const hasDismissed = localStorage.getItem("quanlihocau_onboarding_dismissed_v1");
-        const isSensitivePosRoute =
-            pathname?.includes("/sessions/new") ||
-            pathname?.startsWith("/invoices") ||
-            pathname?.includes("/printer");
-
-        if (!hasCompleted && !hasDismissed && controlledIsOpen === undefined && !isSensitivePosRoute) {
-            const timer = setTimeout(() => {
-                setInternalIsOpen(true);
-            }, 800);
-            return () => clearTimeout(timer);
-        }
-    }, [controlledIsOpen, pathname]);
+    // Do not auto-block the screen on initial login so new trial users can immediately open a ticket.
+    // The guide modal remains accessible anytime via the header '?' button or /settings/guide.
 
     // Listen for custom trigger event (e.g. from header '?' button or /settings/guide)
     useEffect(() => {

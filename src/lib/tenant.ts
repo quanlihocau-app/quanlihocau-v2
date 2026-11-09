@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies, headers } from "next/headers";
 
 import { Role } from "@/generated/prisma/client";
@@ -131,7 +132,7 @@ export async function requireSuperAdmin(): Promise<{ id: string; email: string; 
     };
 }
 
-export async function getTenantContext(): Promise<TenantContext | null> {
+export const getTenantContext = cache(async (): Promise<TenantContext | null> => {
     const session = await readAuthSession();
     // qa_session is issued by the app's login action. When both auth systems
     // have cookies, use that signed app identity so a stale NextAuth cookie
@@ -274,7 +275,7 @@ export async function getTenantContext(): Promise<TenantContext | null> {
         organizationName: membership.lake.organization.name,
         role: membership.role,
     }, membership.lake, false);
-}
+});
 
 export async function requireTenantContext(
     allowedRoles?: Role[],

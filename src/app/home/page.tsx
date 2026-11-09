@@ -12,13 +12,15 @@ export const metadata = {
 };
 
 export default async function AppHomePage() {
-    const session = await getPageSession();
+    const [session, tenantContext] = await Promise.all([
+        getPageSession(),
+        getTenantContext(),
+    ]);
 
     if (!session?.user) {
         redirect("/login");
     }
 
-    const tenantContext = await getTenantContext();
     if (!tenantContext) {
         if (session.user.systemRole === "SUPER_ADMIN") {
             redirect("/admin/lakes");
@@ -29,7 +31,7 @@ export default async function AppHomePage() {
     // Mốc 0h theo giờ Việt Nam (server Vercel chạy UTC nên không dùng setHours)
     const todayStart = startOfVnDay();
 
-    const [activeSessionsCount, totalHutsCount, todayInvoices, recentSessions] = await Promise.all([
+    const [activeSessionsCount, totalHutsCount, todayInvoices, recentSessions, shiftReportResult] = await Promise.all([
         prisma.fishingSession.count({
             where: {
                 lakeId: tenantContext.lakeId,
@@ -75,6 +77,10 @@ export default async function AppHomePage() {
             orderBy: { startAt: "desc" },
             take: 3,
         }),
+        loadShiftReport(tenantContext.lakeId).catch((err) => {
+            console.error("[Home] Error loading shift report for home stats:", err);
+            return null;
+        }),
     ]);
 
     // Doanh thu ca lấy từ shiftReport (đối soát khớp hoàn toàn với Báo cáo ca /reports/daily), có fallback dự phòng nếu lỗi
@@ -82,13 +88,11 @@ export default async function AppHomePage() {
     let todayCash = 0;
     let todayTransfer = 0;
 
-    try {
-        const shiftReport = await loadShiftReport(tenantContext.lakeId);
-        todayRevenue = shiftReport.summary.revenueVnd;
-        todayCash = shiftReport.summary.cashVnd;
-        todayTransfer = shiftReport.summary.transferVnd;
-    } catch (err) {
-        console.error("[Home] Error loading shift report for home stats:", err);
+    if (shiftReportResult) {
+        todayRevenue = shiftReportResult.summary.revenueVnd;
+        todayCash = shiftReportResult.summary.cashVnd;
+        todayTransfer = shiftReportResult.summary.transferVnd;
+    } else {
         const payments = await prisma.payment.findMany({
             where: {
                 lakeId: tenantContext.lakeId,
