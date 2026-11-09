@@ -3,6 +3,7 @@ import { getPageSession } from "@/lib/server-session";
 import { getTenantContext } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { InvoiceStatus, SessionStatus } from "@/generated/prisma/client";
+import { loadShiftReport } from "@/lib/reports/shift-report";
 import { HomeMobileView } from "@/app/home-mobile-view";
 
 export const metadata = {
@@ -27,7 +28,7 @@ export default async function AppHomePage() {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [activeSessionsCount, totalHutsCount, todayInvoices, recentSessions] = await Promise.all([
+    const [activeSessionsCount, totalHutsCount, todayInvoices, recentSessions, shiftReport] = await Promise.all([
         prisma.fishingSession.count({
             where: {
                 lakeId: tenantContext.lakeId,
@@ -73,12 +74,13 @@ export default async function AppHomePage() {
             orderBy: { startAt: "desc" },
             take: 3,
         }),
+        loadShiftReport(tenantContext.lakeId),
     ]);
 
-    const todayRevenue = todayInvoices.reduce(
-        (sum, inv) => sum + Number(inv.totalAmountVnd || 0),
-        0,
-    );
+    // Doanh thu ca lấy chuẩn xác từ shiftReport (đối soát khớp hoàn toàn với Báo cáo ca /reports/daily)
+    const todayRevenue = shiftReport.summary.revenueVnd;
+    const todayCash = shiftReport.summary.cashVnd;
+    const todayTransfer = shiftReport.summary.transferVnd;
 
     return (
         <HomeMobileView
@@ -93,6 +95,8 @@ export default async function AppHomePage() {
             activeSessionsCount={activeSessionsCount}
             totalHutsCount={totalHutsCount}
             todayRevenue={todayRevenue}
+            todayCash={todayCash}
+            todayTransfer={todayTransfer}
             recentSessions={recentSessions.map((s) => ({
                 id: s.id,
                 customerName: s.customer?.name || "Khách lẻ",

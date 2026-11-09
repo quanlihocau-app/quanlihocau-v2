@@ -104,6 +104,22 @@ export interface RecentShiftItem {
     revenueVnd: number;
     cashVnd: number;
     closedBy?: string | null;
+    receivedBy?: string | null;
+    actualCashVnd?: number | null;
+    cashDifferenceVnd?: number;
+    differenceReason?: string | null;
+}
+
+export interface StaffAttributionItem {
+    userId: string;
+    userName: string;
+    role: string;
+    roleLabel: string;
+    cashCollectedVnd: number;
+    transferCollectedVnd: number;
+    totalCollectedVnd: number;
+    expenseVnd: number;
+    actionsCount: number;
 }
 
 export interface ReconciliationInfo {
@@ -145,6 +161,9 @@ interface DailyReportViewProps {
     canCloseShift: boolean;
     lakeName: string;
     recentShifts?: RecentShiftItem[];
+    staffAttribution?: StaffAttributionItem[];
+    currentUserName?: string;
+    currentUserRole?: string;
 }
 
 // ─────────────────────────────────────────────
@@ -353,6 +372,9 @@ export function DailyReportView({
     canCloseShift,
     lakeName,
     recentShifts = [],
+    staffAttribution = [],
+    currentUserName,
+    currentUserRole,
 }: DailyReportViewProps) {
     const router = useRouter();
 
@@ -364,6 +386,7 @@ export function DailyReportView({
     const [reconciliation, setReconciliation] = useState<ReconciliationInfo | null>(initialReconciliation);
     const [confirmOpenSessions, setConfirmOpenSessions] = useState(false);
     const [shiftsHistory, setShiftsHistory] = useState<RecentShiftItem[]>(recentShifts);
+    const [staffList, setStaffList] = useState<StaffAttributionItem[]>(staffAttribution);
 
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -401,6 +424,7 @@ export function DailyReportView({
                 if (data.reconciliation) setReconciliation(data.reconciliation);
                 setShiftClose(data.shiftClose || null);
                 if (data.recentShifts) setShiftsHistory(data.recentShifts);
+                if (data.staffAttribution) setStaffList(data.staffAttribution);
                 setLastUpdated(new Date());
             }
         } catch (err) {
@@ -623,14 +647,21 @@ export function DailyReportView({
                                             key={s.id}
                                             type="button"
                                             onClick={() => handleSelectShift(s.id)}
-                                            className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
+                                            className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                                                 isCurrent
                                                     ? "bg-[#2C4C3B] text-white shadow-xs"
                                                     : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                                             }`}
                                         >
-                                            {!s.isClosed ? "🟢 Ca hiện tại" : `Ca ${formatTime(s.startTime)}`}
-                                            {idx === 0 && !s.isClosed ? "" : ` (${formatDateTime(s.startTime).split(" ")[1]})`}
+                                            <span>{!s.isClosed ? "🟢 Ca hiện tại" : `Ca ${formatTime(s.startTime)}`}</span>
+                                            {idx === 0 && !s.isClosed ? null : <span className="text-[10px] opacity-75">({formatDateTime(s.startTime).split(" ")[1]})</span>}
+                                            {s.isClosed && s.cashDifferenceVnd !== undefined && s.cashDifferenceVnd !== 0 && (
+                                                <span className={`px-1 py-0.2 rounded text-[9px] font-black ${
+                                                    s.cashDifferenceVnd < 0 ? "bg-red-500 text-white" : "bg-amber-400 text-slate-950"
+                                                }`}>
+                                                    {s.cashDifferenceVnd < 0 ? "Thiếu" : "Thừa"}
+                                                </span>
+                                            )}
                                         </button>
                                     );
                                 })}
@@ -914,6 +945,98 @@ export function DailyReportView({
                         </div>
                     )}
 
+                    {/* ── KHỐI: THEO DÕI THU TIỀN THEO NHÂN VIÊN (CHỐNG GIAN LẬN) ── */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-base">👥</span>
+                                <div>
+                                    <h2 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                                        Thu Tiền &amp; Trách Nhiệm Nhân Viên
+                                    </h2>
+                                    <p className="text-[10px] text-slate-500">
+                                        Giám sát chặt chẽ số tiền từng nhân viên, quản lý đã thu trong ca
+                                    </p>
+                                </div>
+                            </div>
+                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200 shrink-0">
+                                {staffList.length} nhân sự
+                            </span>
+                        </div>
+
+                        {staffList.length === 0 ? (
+                            <p className="text-xs text-slate-400 text-center py-3 italic">
+                                Chưa có phát sinh giao dịch của nhân viên nào trong ca này.
+                            </p>
+                        ) : (
+                            <div className="space-y-2">
+                                {staffList.map((st) => (
+                                    <div
+                                        key={st.userId}
+                                        className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 space-y-2"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white uppercase">
+                                                    {st.userName.slice(0, 1)}
+                                                </span>
+                                                <div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-xs font-bold text-slate-900">
+                                                            {st.userName}
+                                                        </span>
+                                                        <span
+                                                            className={`rounded-md px-1.5 py-0.2 text-[9px] font-bold ${
+                                                                st.role === "OWNER"
+                                                                    ? "bg-purple-100 text-purple-800 border border-purple-200"
+                                                                    : st.role === "MANAGER"
+                                                                    ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                                                    : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                                            }`}
+                                                        >
+                                                            {st.roleLabel}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-500">
+                                                        {st.actionsCount} lượt thao tác
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="text-right">
+                                                <span className="text-xs font-black text-emerald-700 tabular-nums">
+                                                    {formatVnd(st.totalCollectedVnd)}
+                                                </span>
+                                                <p className="text-[10px] text-slate-400 font-medium">Tổng đã thu</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
+                                            <div className="rounded-lg bg-white p-2 border border-slate-200/60">
+                                                <span className="text-slate-500 text-[10px] block">Tiền mặt nộp két:</span>
+                                                <span className="font-bold text-slate-900 tabular-nums">
+                                                    {formatVnd(st.cashCollectedVnd)}
+                                                </span>
+                                            </div>
+                                            <div className="rounded-lg bg-white p-2 border border-slate-200/60">
+                                                <span className="text-slate-500 text-[10px] block">Chuyển khoản:</span>
+                                                <span className="font-bold text-slate-900 tabular-nums">
+                                                    {formatVnd(st.transferCollectedVnd)}
+                                                </span>
+                                            </div>
+                                            <div className="rounded-lg bg-white p-2 border border-slate-200/60">
+                                                <span className="text-slate-500 text-[10px] block">Chi quỹ / mua cá:</span>
+                                                <span className={`font-bold tabular-nums ${st.expenseVnd > 0 ? "text-red-600" : "text-slate-900"}`}>
+                                                    {formatVnd(st.expenseVnd)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     {/* ── KHỐI 4: CHI TIẾT VÉ CÂU & HÀNG HÓA ───────────────── */}
                     {breakdown && (
                         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
@@ -981,13 +1104,41 @@ export function DailyReportView({
                                     <span className="font-bold text-slate-900">{formatDateTime(shiftClose.closedAt)}</span>
                                 </div>
                                 <div className="flex justify-between py-1.5">
-                                    <span className="text-slate-500">Nhân viên bàn giao:</span>
+                                    <span className="text-slate-500">Người bàn giao:</span>
                                     <span className="font-bold text-slate-900">{shiftClose.closedBy || "Quản trị viên"}</span>
                                 </div>
                                 {shiftClose.receivedBy && (
                                     <div className="flex justify-between py-1.5">
-                                        <span className="text-slate-500">Nhân viên nhận ca:</span>
+                                        <span className="text-slate-500">Người nhận bàn giao:</span>
                                         <span className="font-bold text-slate-900">{shiftClose.receivedBy}</span>
+                                    </div>
+                                )}
+                                {shiftClose.actualCashVnd !== null && shiftClose.actualCashVnd !== undefined && (
+                                    <div className="flex justify-between py-1.5">
+                                        <span className="text-slate-500">Tiền mặt thực tế đếm:</span>
+                                        <span className="font-bold text-slate-900 tabular-nums">{formatVnd(shiftClose.actualCashVnd)}</span>
+                                    </div>
+                                )}
+                                {shiftClose.cashDifferenceVnd !== undefined && (
+                                    <div className="flex justify-between py-1.5">
+                                        <span className="text-slate-500">Đối soát két:</span>
+                                        <span className={`font-bold tabular-nums ${
+                                            shiftClose.cashDifferenceVnd === 0
+                                                ? "text-emerald-700"
+                                                : shiftClose.cashDifferenceVnd < 0
+                                                ? "text-red-600"
+                                                : "text-amber-600"
+                                        }`}>
+                                            {shiftClose.cashDifferenceVnd === 0
+                                                ? "Khớp 100% (0đ chênh lệch)"
+                                                : `${shiftClose.cashDifferenceVnd > 0 ? "+" : ""}${formatVnd(shiftClose.cashDifferenceVnd)} (${shiftClose.cashDifferenceVnd < 0 ? "Thiếu tiền két" : "Thừa tiền két"})`}
+                                        </span>
+                                    </div>
+                                )}
+                                {shiftClose.differenceReason && (
+                                    <div className="py-2 text-slate-700 bg-red-50/50 p-2 rounded-lg border border-red-200/60 mt-1">
+                                        <p className="font-bold text-red-800">Lý do giải trình chênh lệch:</p>
+                                        <p className="mt-0.5 whitespace-pre-wrap text-slate-800">{shiftClose.differenceReason}</p>
                                     </div>
                                 )}
                                 {shiftClose.note && (
@@ -1088,6 +1239,38 @@ export function DailyReportView({
 
                             <div className="p-4 space-y-4">
                                 {error && <InlineAlert type="error" message={error} />}
+
+                                {/* Thông tin người thực hiện chốt ca */}
+                                <div className="flex items-center justify-between rounded-xl bg-slate-100/90 px-3 py-2 text-xs border border-slate-200">
+                                    <span className="text-slate-600">Người thực hiện chốt ca:</span>
+                                    <span className="font-bold text-slate-900">
+                                        {currentUserName || "Quản trị viên"} ({currentUserRole === "OWNER" ? "Chủ hồ" : currentUserRole === "MANAGER" ? "Quản lý" : "Nhân viên"})
+                                    </span>
+                                </div>
+
+                                {/* Bảng phân bổ thu tiền mặt từng nhân sự phải giao nộp */}
+                                {staffList.length > 0 && (
+                                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 space-y-1.5 text-xs">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-bold text-emerald-950 uppercase tracking-wide text-[10px]">
+                                                Tiền mặt từng nhân sự phải giao nộp:
+                                            </span>
+                                            <span className="text-[10px] text-emerald-700">Thu đủ trước khi đếm két</span>
+                                        </div>
+                                        <div className="space-y-1">
+                                            {staffList.map((st) => (
+                                                <div key={st.userId} className="flex justify-between items-center py-0.5 text-[11px]">
+                                                    <span className="text-slate-700">
+                                                        • <strong>{st.userName}</strong> ({st.roleLabel}):
+                                                    </span>
+                                                    <span className="font-bold text-slate-900 tabular-nums">
+                                                        {formatVnd(st.cashCollectedVnd)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Bảng tóm tắt đối soát */}
                                 <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 space-y-2 text-xs">

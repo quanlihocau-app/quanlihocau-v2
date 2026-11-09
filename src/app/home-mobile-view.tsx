@@ -22,6 +22,8 @@ export interface HomeMobileViewProps {
     activeSessionsCount: number;
     totalHutsCount: number;
     todayRevenue: number;
+    todayCash?: number;
+    todayTransfer?: number;
     recentSessions: Array<{
         id: string;
         customerName: string;
@@ -171,6 +173,8 @@ export function HomeMobileView({
     activeSessionsCount,
     totalHutsCount,
     todayRevenue,
+    todayCash,
+    todayTransfer,
     recentSessions,
     recentInvoices,
 }: HomeMobileViewProps) {
@@ -292,8 +296,8 @@ export function HomeMobileView({
                                 </p>
                             </Link>
                             <Link
-                                href="/sessions"
-                                title="Bấm để xem sơ đồ ô câu"
+                                href="/facilities"
+                                title="Bấm để xem danh sách khu vực & ô câu"
                                 className="px-3 sm:px-4 cursor-pointer hover:bg-slate-50 transition-all active:scale-95 group"
                             >
                                 <p className="text-2xl sm:text-3xl font-bold text-[#0F172A] tabular-nums font-serif group-hover:scale-105 transition-transform">
@@ -314,6 +318,11 @@ export function HomeMobileView({
                                 <p className="text-[11px] sm:text-xs font-semibold text-slate-500 mt-0.5 group-hover:text-[#16A34A]">
                                     Đã thu ca ↗
                                 </p>
+                                {todayCash !== undefined && todayTransfer !== undefined && (
+                                    <p className="text-[10px] text-slate-400 font-medium tabular-nums mt-0.5 leading-tight">
+                                        TM: {todayCash.toLocaleString("vi-VN")}đ · CK: {todayTransfer.toLocaleString("vi-VN")}đ
+                                    </p>
+                                )}
                             </Link>
                         </div>
 

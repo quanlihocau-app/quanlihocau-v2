@@ -194,12 +194,35 @@ export async function measureShiftWindow(db: ReportDb, lakeId: string, start: Da
     };
 }
 
+export interface StaffAttributionItem {
+    userId: string;
+    userName: string;
+    role: string;
+    roleLabel: string;
+    cashCollectedVnd: number;
+    transferCollectedVnd: number;
+    totalCollectedVnd: number;
+    expenseVnd: number;
+    actionsCount: number;
+}
+
 export async function loadShiftReport(lakeId: string, requestedShiftId?: string | null) {
     const rawRecentShifts = await prisma.shift.findMany({
         where: { lakeId },
         include: {
             closes: {
-                select: { id: true, closedBy: true, totalRevenueVnd: true, totalCashVnd: true, createdAt: true, note: true },
+                select: {
+                    id: true,
+                    closedBy: true,
+                    receivedBy: true,
+                    totalRevenueVnd: true,
+                    totalCashVnd: true,
+                    actualCashVnd: true,
+                    cashDifferenceVnd: true,
+                    differenceReason: true,
+                    createdAt: true,
+                    note: true,
+                },
                 orderBy: { createdAt: "desc" },
                 take: 1,
             },
@@ -273,6 +296,133 @@ export async function loadShiftReport(lakeId: string, requestedShiftId?: string 
     const fishBuybackVnd = useFrozen ? rawClose.fishBuybackVnd : measured.fishBuybackVnd;
     const otherExpenseVnd = useFrozen ? rawClose.otherExpenseVnd : measured.approvedExpenseVnd;
 
+    // ── Giám sát trách nhiệm thu/chi theo từng nhân viên (Chống gian lận) ────
+    const shiftStartTime = shift.startTime;
+    const shiftEndTime = shift.endTime ?? now;
+
+    const [shiftAuditEvents, lakeUsers] = await Promise.all([
+        prisma.auditEvent.findMany({
+            where: {
+                lakeId,
+                createdAt: { gte: shiftStartTime, lte: shiftEndTime },
+            },
+            select: {
+                id: true,
+                action: true,
+                payload: true,
+                createdBy: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: "asc" },
+        }),
+        prisma.user.findMany({
+            where: {
+                memberships: { some: { lakeId } },
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                memberships: {
+                    where: { lakeId },
+                    select: { role: true },
+                },
+            },
+        }),
+    ]);
+
+    const staffStatsMap = new Map<string, StaffAttributionItem>();
+
+    for (const u of lakeUsers) {
+        const role = u.memberships[0]?.role || "STAFF";
+        const roleLabel = role === "OWNER" ? "Chủ hồ" : role === "MANAGER" ? "Quản lý" : "Nhân viên";
+        staffStatsMap.set(u.id, {
+            userId: u.id,
+            userName: u.name || u.email,
+            role,
+            roleLabel,
+            cashCollectedVnd: 0,
+            transferCollectedVnd: 0,
+            totalCollectedVnd: 0,
+            expenseVnd: 0,
+            actionsCount: 0,
+        });
+    }
+
+    for (const ev of shiftAuditEvents) {
+        if (!ev.createdBy || ev.createdBy === "system" || ev.createdBy === "anonymous") continue;
+
+        let staff = staffStatsMap.get(ev.createdBy);
+        if (!staff) {
+            staff = {
+                userId: ev.createdBy,
+                userName: "Nhân viên",
+                role: "STAFF",
+                roleLabel: "Nhân viên",
+                cashCollectedVnd: 0,
+                transferCollectedVnd: 0,
+                totalCollectedVnd: 0,
+                expenseVnd: 0,
+                actionsCount: 0,
+            };
+            staffStatsMap.set(ev.createdBy, staff);
+        }
+
+        staff.actionsCount += 1;
+
+        try {
+            const data = JSON.parse(ev.payload);
+            if (data.actorName && (staff.userName === "Nhân viên" || !staff.userName)) {
+                staff.userName = data.actorName;
+            }
+            if (data.actorRole) {
+                staff.role = data.actorRole;
+                staff.roleLabel = data.actorRole === "OWNER" ? "Chủ hồ" : data.actorRole === "MANAGER" ? "Quản lý" : "Nhân viên";
+            }
+
+            if (ev.action === "PAYMENT_RECORDED") {
+                const amount = Math.abs(Number(data.amountVnd || 0));
+                if (data.method === "CASH") {
+                    staff.cashCollectedVnd += amount;
+                } else {
+                    staff.transferCollectedVnd += amount;
+                }
+            } else if (ev.action === "RETAIL_SALE_COMPLETED") {
+                const amount = Math.abs(Number(data.totalAmountVnd || 0));
+                if (data.paymentMethod === "CASH") {
+                    staff.cashCollectedVnd += amount;
+                } else {
+                    staff.transferCollectedVnd += amount;
+                }
+            } else if (ev.action === "INVOICE_PREPAID") {
+                if (Array.isArray(data.extra?.payments)) {
+                    for (const p of data.extra.payments) {
+                        const amt = Math.abs(Number(p.amountVnd || 0));
+                        if (p.method === "CASH") {
+                            staff.cashCollectedVnd += amt;
+                        } else {
+                            staff.transferCollectedVnd += amt;
+                        }
+                    }
+                } else if (data.after?.paidAmountVnd) {
+                    staff.cashCollectedVnd += Math.abs(Number(data.after.paidAmountVnd || 0));
+                }
+            } else if (ev.action === "FISH_BUYBACK_CREATED") {
+                staff.expenseVnd += Math.abs(Number(data.totalVnd || 0));
+            } else if (ev.action === "EXPENSE_CREATED") {
+                staff.expenseVnd += Math.abs(Number(data.amountVnd || 0));
+            }
+        } catch {
+            // ignore JSON parse
+        }
+
+        staff.totalCollectedVnd = staff.cashCollectedVnd + staff.transferCollectedVnd;
+    }
+
+    const staffAttribution = Array.from(staffStatsMap.values())
+        .filter((s) => s.actionsCount > 0 || s.totalCollectedVnd > 0 || s.expenseVnd > 0)
+        .sort((a, b) => b.totalCollectedVnd - a.totalCollectedVnd);
+
     const reconciliation = {
         ...measured.reconciliationCore,
         ticketVnd: measured.revenue.ticketRevenue,
@@ -335,6 +485,7 @@ export async function loadShiftReport(lakeId: string, requestedShiftId?: string 
             inventory: measured.inventory,
         },
         reconciliation,
+        staffAttribution,
         shiftClose: rawClose
             ? {
                 id: rawClose.id,
@@ -347,14 +498,21 @@ export async function loadShiftReport(lakeId: string, requestedShiftId?: string 
                 differenceReason: parsedClose?.differenceReason ?? ("differenceReason" in rawClose ? rawClose.differenceReason : null),
             }
             : null,
-        recentShifts: rawRecentShifts.map((item) => ({
-            id: item.id,
-            startTime: item.startTime.toISOString(),
-            endTime: item.endTime?.toISOString() ?? null,
-            isClosed: item.endTime !== null && item.closes.length > 0,
-            revenueVnd: item.closes[0]?.totalRevenueVnd ?? 0,
-            cashVnd: item.closes[0]?.totalCashVnd ?? 0,
-            closedBy: item.closes[0]?.closedBy ?? null,
-        })),
+        recentShifts: rawRecentShifts.map((item) => {
+            const close = item.closes[0];
+            return {
+                id: item.id,
+                startTime: item.startTime.toISOString(),
+                endTime: item.endTime?.toISOString() ?? null,
+                isClosed: item.endTime !== null && item.closes.length > 0,
+                revenueVnd: close?.totalRevenueVnd ?? 0,
+                cashVnd: close?.totalCashVnd ?? 0,
+                closedBy: close?.closedBy ?? null,
+                receivedBy: close?.receivedBy ?? null,
+                actualCashVnd: close?.actualCashVnd ?? null,
+                cashDifferenceVnd: close?.cashDifferenceVnd ?? 0,
+                differenceReason: close?.differenceReason ?? null,
+            };
+        }),
     };
 }

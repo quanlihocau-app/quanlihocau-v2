@@ -52,6 +52,9 @@ export default async function DailyReportPage({ searchParams }: PageProps) {
             canCloseShift={canCloseShift}
             lakeName={tenantContext.lakeName}
             recentShifts={report.recentShifts}
+            staffAttribution={report.staffAttribution}
+            currentUserName={tenantContext.userName}
+            currentUserRole={tenantContext.role}
         />
     );
 }
