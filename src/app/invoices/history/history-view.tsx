@@ -830,11 +830,6 @@ export function HistoryView({
                                     invoice.fishingSession?.hutLinks
                                         ?.map((hl) => hl.hut.name)
                                         .join(", ") || "";
-                                const paidSum = invoice.payments.reduce(
-                                    (sum, p) =>
-                                        sum + (p.direction === "IN" ? p.amountVnd : -p.amountVnd),
-                                    0,
-                                );
 
                                 return (
                                     <div
