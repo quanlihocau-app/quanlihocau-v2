@@ -8,9 +8,15 @@ on:
     branches:
       - main
 
+# Huỷ lượt chạy cũ của cùng nhánh khi có commit mới để tiết kiệm phút CI.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16-alpine
@@ -33,12 +39,13 @@ jobs:
       BANK_WEBHOOK_SECRET: "ci-bank-webhook-secret"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
+      # Node 24 khớp với runtime của Vercel (24.x) và hỗ trợ test import trực tiếp file .ts.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
