@@ -39,7 +39,7 @@ jobs:
       BANK_WEBHOOK_SECRET: "ci-bank-webhook-secret"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       # Node 24 khớp với runtime của Vercel (24.x) và hỗ trợ test import trực tiếp file .ts.
       - name: Setup Node.js
