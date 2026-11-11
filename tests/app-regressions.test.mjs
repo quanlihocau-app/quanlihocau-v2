@@ -17,10 +17,12 @@ function loadModule(path, modules, globals = {}) {
         compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true, jsx: ts.JsxEmit.React },
     }).outputText;
     const exports = {};
-    vm.runInNewContext(code, { exports, require: (name) => {
-        if (!(name in modules)) throw new Error(`Unexpected dependency: ${name}`);
-        return modules[name];
-    }, Buffer, process: { env: { NEXTAUTH_SECRET: "isolated-test-secret" } }, ...globals });
+    vm.runInNewContext(code, {
+        exports, require: (name) => {
+            if (!(name in modules)) throw new Error(`Unexpected dependency: ${name}`);
+            return modules[name];
+        }, Buffer, process: { env: { NEXTAUTH_SECRET: "isolated-test-secret" } }, ...globals
+    });
     return exports;
 }
 
@@ -29,7 +31,7 @@ const authRateLimit = {
     authLockMessage: () => "locked",
     isRateLimitUnavailable: () => false,
     rateLimitUnavailableMessage: () => "busy",
-    recordAuthFailure: async () => {},
+    recordAuthFailure: async () => { },
 };
 
 test("Catalog requests abort stalled JSON bodies and release timeout resources", async () => {
@@ -39,9 +41,11 @@ test("Catalog requests abort stalled JSON bodies and release timeout resources",
         AbortController,
         setTimeout: (callback) => { timeout = callback; return callback; },
         clearTimeout: () => { cleared = true; },
-        fetch: async (_url, { signal }) => ({ ok: true, json: () => new Promise((_resolve, reject) => {
-            signal.addEventListener("abort", () => reject(new Error("Aborted")));
-        }) }),
+        fetch: async (_url, { signal }) => ({
+            ok: true, json: () => new Promise((_resolve, reject) => {
+                signal.addEventListener("abort", () => reject(new Error("Aborted")));
+            })
+        }),
     });
     const request = network.fetchJson("/api/products");
     await new Promise((resolve) => setImmediate(resolve));
@@ -102,12 +106,12 @@ test("Login releases busy state after Google failure and prevents concurrent cre
             useRef: (current) => ({ current }),
         },
         "next/navigation": {
-            useRouter: () => ({ push: () => { navigations++; }, refresh() {} }),
+            useRouter: () => ({ push: () => { navigations++; }, refresh() { } }),
             useSearchParams: () => new URLSearchParams("error=OAuthCallback"),
         },
         "next-auth/react": { signIn: async () => { throw new Error("Google unavailable"); } },
         "@/app/actions/auth": { loginUser: () => { calls++; return new Promise((resolve) => { resolveLogin = resolve; }); } },
-        "@/lib/query-client": { clearCatalogCache() {} },
+        "@/lib/query-client": { clearCatalogCache() { } },
         "@/lib/navigation": { safeRedirectPath: (path) => path },
     }, { React });
     const wrapper = login.default();
@@ -125,8 +129,8 @@ test("Login releases busy state after Google failure and prevents concurrent cre
     assert.equal(states[3], false);
     assert.match(states[4], /Chưa kết nối được với Google/);
     const form = find(tree, (element) => element.type === "form");
-    const first = form.props.onSubmit({ preventDefault() {} });
-    await form.props.onSubmit({ preventDefault() {} });
+    const first = form.props.onSubmit({ preventDefault() { } });
+    await form.props.onSubmit({ preventDefault() { } });
     await google.props.onClick();
     assert.equal(calls, 1);
     resolveLogin({ success: false, message: "Thông tin đăng nhập không đúng" });
@@ -134,7 +138,7 @@ test("Login releases busy state after Google failure and prevents concurrent cre
     assert.equal(states[2], false);
     assert.equal(states[4], "Thông tin đăng nhập không đúng");
     assert.equal(navigations, 0);
-    const second = form.props.onSubmit({ preventDefault() {} });
+    const second = form.props.onSubmit({ preventDefault() { } });
     resolveLogin({ success: true });
     await second;
     assert.equal(calls, 2);
@@ -156,10 +160,12 @@ test("Registration recovers from interrupted requests and blocks duplicate submi
         },
         "next/navigation": { useRouter: () => ({ push: () => assert.fail("Failed registration must not navigate") }) },
         "next-auth/react": { signIn: async () => { throw new Error("provider unavailable"); } },
-        "@/app/actions/auth": { registerUser: () => {
-            calls++;
-            return new Promise((_resolve, reject) => { rejectRequest = reject; });
-        } },
+        "@/app/actions/auth": {
+            registerUser: () => {
+                calls++;
+                return new Promise((_resolve, reject) => { rejectRequest = reject; });
+            }
+        },
     }, { React });
     const tree = page.default();
     function find(element, predicate) {
@@ -171,8 +177,8 @@ test("Registration recovers from interrupted requests and blocks duplicate submi
         }
     }
     const form = find(tree, (element) => element.type === "form");
-    const first = form.props.onSubmit({ preventDefault() {} });
-    await form.props.onSubmit({ preventDefault() {} });
+    const first = form.props.onSubmit({ preventDefault() { } });
+    await form.props.onSubmit({ preventDefault() { } });
     assert.equal(calls, 1);
     rejectRequest(new Error("connection interrupted"));
     await first;
@@ -182,7 +188,7 @@ test("Registration recovers from interrupted requests and blocks duplicate submi
     await google.props.onClick();
     assert.equal(states[0], false);
     assert.match(states[5], /Google/);
-    const second = form.props.onSubmit({ preventDefault() {} });
+    const second = form.props.onSubmit({ preventDefault() { } });
     assert.equal(calls, 2, "The user can retry after an error");
     rejectRequest(new Error("still interrupted"));
     await second;
@@ -207,7 +213,7 @@ function authModule(
         "@/lib/auth-rate-limit": authRateLimit,
         "@/lib/session-signature": signature,
         "@/lib/vietqr": { TRIAL_DAYS: 30 },
-        "@/lib/audit-log": { recordLoginAudit: async () => {} },
+        "@/lib/audit-log": { recordLoginAudit: async () => { } },
     });
     return { auth, user, setCookie: (token) => { cookie = token; } };
 }
@@ -313,8 +319,10 @@ test("Existing Google owner bypasses onboarding without changing verification or
     };
     const before = JSON.stringify(user);
     const { auth } = authModule(user, {
-        prisma: { user: { findUnique: async () => user },
-            $transaction: async () => { assert.fail("Existing users must not create onboarding data"); } },
+        prisma: {
+            user: { findUnique: async () => user },
+            $transaction: async () => { assert.fail("Existing users must not create onboarding data"); }
+        },
         seedSampleLakeData: async () => { assert.fail("Existing lakes must not be seeded"); },
     });
     assert.equal(await auth.authOptions.callbacks.signIn({
@@ -357,7 +365,7 @@ test("Concurrent connectivity checks share the real pending result and clear tim
     let resolveResponse;
     const timers = new Set();
     const network = loadModule("../src/lib/network/use-network-status.ts", {
-        react: {}, "@/lib/ticker/session-ticker": { sessionTicker: { setServerOffsetMs() {} } },
+        react: {}, "@/lib/ticker/session-ticker": { sessionTicker: { setServerOffsetMs() { } } },
     }, {
         window: {}, navigator: { onLine: true }, AbortController,
         setTimeout: (fn) => { timers.add(fn); return fn; }, clearTimeout: (fn) => timers.delete(fn),
@@ -380,13 +388,15 @@ test("Concurrent connectivity checks share the real pending result and clear tim
 test("Network timeout also covers a stalled JSON response body", async () => {
     let abort;
     const network = loadModule("../src/lib/network/use-network-status.ts", {
-        react: {}, "@/lib/ticker/session-ticker": { sessionTicker: { setServerOffsetMs() {} } },
+        react: {}, "@/lib/ticker/session-ticker": { sessionTicker: { setServerOffsetMs() { } } },
     }, {
         window: {}, navigator: { onLine: true }, AbortController,
-        setTimeout: (fn) => { abort = fn; return fn; }, clearTimeout() {},
-        fetch: async (_url, { signal }) => ({ ok: true, json: () => new Promise((_resolve, reject) => {
-            signal.addEventListener("abort", () => reject(new Error("Aborted")));
-        }) }),
+        setTimeout: (fn) => { abort = fn; return fn; }, clearTimeout() { },
+        fetch: async (_url, { signal }) => ({
+            ok: true, json: () => new Promise((_resolve, reject) => {
+                signal.addEventListener("abort", () => reject(new Error("Aborted")));
+            })
+        }),
     });
     const check = network.checkConnectivity();
     await new Promise((resolve) => setImmediate(resolve));
@@ -397,10 +407,16 @@ test("Network timeout also covers a stalled JSON response body", async () => {
 test("Stock aggregation remains tenant scoped and preserves negative and decimal stock", async () => {
     let query;
     const stock = loadModule("../src/lib/product-stock.ts", {
-        "@/lib/prisma": { prisma: { inventoryMovement: { groupBy: async (args) => {
-            query = args;
-            return [{ productId: "a", _sum: { quantity: "-2.5" } }, { productId: "b", _sum: { quantity: null } }];
-        } } } },
+        "@/lib/prisma": {
+            prisma: {
+                inventoryMovement: {
+                    groupBy: async (args) => {
+                        query = args;
+                        return [{ productId: "a", _sum: { quantity: "-2.5" } }, { productId: "b", _sum: { quantity: null } }];
+                    }
+                }
+            }
+        },
     });
     const result = await stock.getProductStockMap("lake-a");
     assert.equal(query.where.lakeId, "lake-a");
@@ -416,8 +432,8 @@ test("Many mounted network consumers share one monitor and release all resources
     const events = new Set();
     const target = { addEventListener: (_event, fn) => events.add(fn), removeEventListener: (_event, fn) => events.delete(fn) };
     const network = loadModule("../src/lib/network/use-network-status.ts", {
-        react: { useEffect: (fn) => effects.push(fn), useState: (value) => [value, () => {}] },
-        "@/lib/ticker/session-ticker": { sessionTicker: { setServerOffsetMs() {} } },
+        react: { useEffect: (fn) => effects.push(fn), useState: (value) => [value, () => { }] },
+        "@/lib/ticker/session-ticker": { sessionTicker: { setServerOffsetMs() { } } },
     }, {
         window: target, document: target,
         setTimeout: (fn) => { timers.add(fn); return fn; }, clearTimeout: (fn) => timers.delete(fn),
@@ -452,22 +468,24 @@ test("Registration validates input and normalizes phone numbers before writing",
     let registrationCreatedSession = false;
     const phone = loadModule("../src/lib/phone.ts", {});
     const actions = loadModule("../src/app/actions/auth.ts", {
-        "@/lib/prisma": { prisma: {
-            user: { findUnique: async () => null },
-            $transaction: async (fn) => fn({
-                organization: { create: async () => ({ id: "org-1" }) },
-                lake: { create: async ({ data }) => { writtenLake = data; return { id: "lake-1" }; } },
-                user: { create: async ({ data }) => { writtenPhone = data.phone; writtenUser = data; return { ...data, id: "user-1" }; } },
-                membership: { create: async () => ({}) },
-            }),
-        } },
+        "@/lib/prisma": {
+            prisma: {
+                user: { findUnique: async () => null },
+                $transaction: async (fn) => fn({
+                    organization: { create: async () => ({ id: "org-1" }) },
+                    lake: { create: async ({ data }) => { writtenLake = data; return { id: "lake-1" }; } },
+                    user: { create: async ({ data }) => { writtenPhone = data.phone; writtenUser = data; return { ...data, id: "user-1" }; } },
+                    membership: { create: async () => ({}) },
+                }),
+            }
+        },
         bcryptjs: { hash: async () => "hash" },
         "@/lib/auth": { setSessionCookie: async () => { registrationCreatedSession = true; } },
         "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
         "next/navigation": {}, "@/lib/phone": phone, zod: { z },
         "@/lib/auth-rate-limit": authRateLimit,
         "@/lib/vietqr": { TRIAL_DAYS: 30 },
-        "@/lib/audit-log": { recordLoginAudit: async () => {} },
+        "@/lib/audit-log": { recordLoginAudit: async () => { } },
     }, { console });
     assert.equal((await actions.registerUser({ email: 12 })).success, false);
     assert.equal((await actions.registerUser({ email: "owner@example.com", password: "Password123!", name: "Owner", phone: "bad" })).success, false);
@@ -491,21 +509,25 @@ test("Existing staff can log in by email or phone number", async () => {
     const user = { id: "staff-1", email: "staff@example.com", name: "Staff", phone: "+84901234567", passwordHash: "hash", systemRole: "USER", isLocked: false };
     const phone = loadModule("../src/lib/phone.ts", {});
     const actions = loadModule("../src/app/actions/auth.ts", {
-        "@/lib/prisma": { prisma: { user: {
-            findUnique: async (args) => {
-                lookups.push(args);
-                if (args.where.email === user.email || args.where.phone === user.phone) return user;
-                return null;
-            },
-            update: async () => user,
-        } } },
+        "@/lib/prisma": {
+            prisma: {
+                user: {
+                    findUnique: async (args) => {
+                        lookups.push(args);
+                        if (args.where.email === user.email || args.where.phone === user.phone) return user;
+                        return null;
+                    },
+                    update: async () => user,
+                }
+            }
+        },
         bcryptjs: { compare: async () => true },
         "@/lib/auth": { setSessionCookie: async (value) => { session = value; } },
         "@/lib/onboarding/seed-sample-lake": { seedSampleLakeData: async () => ({}) },
         "next/navigation": {}, "@/lib/phone": phone, zod: { z },
         "@/lib/auth-rate-limit": authRateLimit,
         "@/lib/vietqr": { TRIAL_DAYS: 30 },
-        "@/lib/audit-log": { recordLoginAudit: async () => {} },
+        "@/lib/audit-log": { recordLoginAudit: async () => { } },
     }, { console });
     const membershipInclude = {
         memberships: {
@@ -595,7 +617,7 @@ const sessionStatuses = { ACTIVE: "ACTIVE", COMPLETED: "COMPLETED", CANCELLED: "
 const invoiceStatuses = { DRAFT: "DRAFT", PAID: "PAID", PARTIALLY_PAID: "PARTIALLY_PAID", VOIDED: "VOIDED" };
 const tenantModule = {
     requireTenantContext: async () => ({ lakeId: "lake-1", userId: "staff-1", lakeName: "Lake" }),
-    AuthenticationError: class extends Error {}, ForbiddenError: class extends Error {},
+    AuthenticationError: class extends Error { }, ForbiddenError: class extends Error { },
 };
 const moneyModule = loadModule("../src/lib/money.ts", {});
 const invoiceTotals = loadModule("../src/lib/invoice-totals.ts", { "@/lib/money": moneyModule });
@@ -700,16 +722,16 @@ test("Expired session cards show both decisions immediately and keep the bill fr
     const card = loadModule("../src/app/sessions/session-grid-card.tsx", {
         react: React,
         "./session-countdown": { SessionCountdown: () => React.createElement("span", null, "Clock") },
-        "@/lib/ticker/session-ticker": { sessionTicker: { subscribe: () => () => {}, getNowMs: () => end } },
+        "@/lib/ticker/session-ticker": { sessionTicker: { subscribe: () => () => { }, getNowMs: () => end } },
         "@/lib/money": moneyModule,
     });
     const session = { id: "session-1", plannedEndAt: new Date(end).toISOString(), package: { name: "1 giờ", durationMinutes: 60, priceVnd: 100000, overtimeHourlyVnd: 30000 }, hutLinks: [], invoices: [{ lines: [], payments: [] }] };
     assert.equal(card.computeSessionFinancials(session, end).netBalance, 100000);
     assert.equal(card.computeSessionFinancials(session, end + 2 * 3600000).netBalance, 100000);
-    const html = renderToStaticMarkup(React.createElement(card.SessionGridCard, { session, nowMs: end, canComplete: true, onSelect() {}, onLongPress() {}, onSettlement() {}, onExtend() {} }));
+    const html = renderToStaticMarkup(React.createElement(card.SessionGridCard, { session, nowMs: end, canComplete: true, onSelect() { }, onLongPress() { }, onSettlement() { }, onExtend() { } }));
     assert.ok(html.includes("Kết thúc"));
     assert.ok(html.includes("Gia hạn thêm giờ"));
     assert.ok(html.includes("HẾT GIỜ"));
-    const active = renderToStaticMarkup(React.createElement(card.SessionGridCard, { session, nowMs: end - 1, canComplete: true, onSelect() {}, onLongPress() {}, onSettlement() {}, onExtend() {} }));
+    const active = renderToStaticMarkup(React.createElement(card.SessionGridCard, { session, nowMs: end - 1, canComplete: true, onSelect() { }, onLongPress() { }, onSettlement() { }, onExtend() { } }));
     assert.equal(active.includes("Gia hạn thêm giờ"), false);
 });

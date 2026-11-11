@@ -280,6 +280,53 @@ export function SessionsClient({
     }, []);
     const handleExtensionRequestHandled = useCallback(() => setExtensionSessionId(null), []);
 
+    // ── Nạp & dọn dẹp vé mẫu dùng thử cho chủ hồ mới ─────────────────────────
+    const [isSeedingSample, setIsSeedingSample] = useState(false);
+    const [isClearingSample, setIsClearingSample] = useState(false);
+
+    const handleSeedSampleSessions = useCallback(async () => {
+        setIsSeedingSample(true);
+        try {
+            const res = await fetch("/api/fishing-sessions/sample", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+            });
+            const data = await res.json();
+            if (data.ok) {
+                router.refresh();
+            } else {
+                alert(data.error || "Không thể nạp vé mẫu.");
+            }
+        } catch {
+            alert("Lỗi kết nối khi nạp vé mẫu.");
+        } finally {
+            setIsSeedingSample(false);
+        }
+    }, [router]);
+
+    const handleClearSampleSessions = useCallback(async () => {
+        if (!confirm("Bạn có chắc chắn muốn dọn dẹp các vé mẫu trải nghiệm không?")) {
+            return;
+        }
+        setIsClearingSample(true);
+        try {
+            const res = await fetch("/api/fishing-sessions/sample", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+            });
+            const data = await res.json();
+            if (data.ok) {
+                router.refresh();
+            } else {
+                alert(data.error || "Không thể xoá vé mẫu.");
+            }
+        } catch {
+            alert("Lỗi kết nối khi xoá vé mẫu.");
+        } finally {
+            setIsClearingSample(false);
+        }
+    }, [router]);
+
     // ── Optimistic UI Handlers (Cập nhật tức thì 0ms trước khi server phản hồi) ─
     const handleOptimisticAddProduct = useCallback(
         (product: { id: string; name: string; priceVnd: number }, quantity: number) => {
@@ -417,14 +464,29 @@ export function SessionsClient({
                             </p>
                         </div>
 
-                        {canOpenSession && (
-                            <Link
-                                href="/sessions/new"
-                                className="inline-flex min-h-13 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#1B3B2B] px-6 py-3 text-sm font-bold text-white shadow-xs transition hover:bg-[#2C5E43] active:scale-95"
+                        <div className="flex flex-wrap items-center gap-2">
+                            {canOpenSession && (
+                                <Link
+                                    href="/sessions/new"
+                                    className="inline-flex min-h-13 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#1B3B2B] px-5 py-3 text-sm font-bold text-white shadow-xs transition hover:bg-[#2C5E43] active:scale-95"
+                                >
+                                    <span>+ Mở vé câu mới</span>
+                                </Link>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={handleSeedSampleSessions}
+                                disabled={isSeedingSample}
+                                className="inline-flex min-h-13 shrink-0 items-center justify-center gap-2 rounded-lg border-2 border-[#1B3B2B] bg-[#E8F0EC] px-5 py-3 text-sm font-bold text-[#1B3B2B] shadow-xs transition hover:bg-[#D5E5DC] active:scale-95 cursor-pointer disabled:opacity-60"
                             >
-                                <span>+ Mở vé câu mới ngay</span>
-                            </Link>
-                        )}
+                                {isSeedingSample ? (
+                                    <span>Đang nạp vé mẫu...</span>
+                                ) : (
+                                    <span>✨ Nạp 2 vé mẫu dùng thử ngay</span>
+                                )}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Lưới ô chòi sẵn sàng bấm mở vé 1 chạm */}
@@ -462,6 +524,30 @@ export function SessionsClient({
                 <p role="status" className="mb-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
                     Phiên được chọn đã kết thúc hoặc không còn khả dụng trong hồ này. Chọn phiên khác hoặc <Link href="/invoices/history" className="font-bold underline">xem lịch sử vé</Link>.
                 </p>
+            )}
+            {sessions.some(
+                (s) =>
+                    s.packageNameSnapshot?.includes("(Gói mẫu)") ||
+                    s.customer?.name?.includes("VIP") ||
+                    s.customer?.name?.includes("Mẫu") ||
+                    s.customer?.name?.includes("Khách quen")
+            ) && (
+                <div className="mb-3 flex items-center justify-between rounded-xl border border-amber-300 bg-amber-50/90 px-3.5 py-2.5 text-xs text-amber-950 shadow-2xs font-serif">
+                    <div className="flex items-center gap-2">
+                        <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                        <span>
+                            Đang có <strong>vé mẫu trải nghiệm</strong> trên bàn POS. Bạn có thể bấm vào vé để thử gọi nước, cân cá cấn trừ hoặc thanh toán.
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleClearSampleSessions}
+                        disabled={isClearingSample}
+                        className="shrink-0 text-[11px] font-bold text-amber-900 hover:text-red-700 underline cursor-pointer ml-3 disabled:opacity-50"
+                    >
+                        {isClearingSample ? "Đang xoá..." : "Xoá vé mẫu"}
+                    </button>
+                </div>
             )}
             {/* ── Bảng Hướng Dẫn Trực Quan Cho Người Mới (Dễ hiểu cho học sinh lớp 5) ── */}
             <div className="mb-3 rounded-2xl border border-emerald-200/90 bg-linear-to-r from-emerald-50/80 via-white to-emerald-50/80 p-3 shadow-2xs font-serif transition-all">
