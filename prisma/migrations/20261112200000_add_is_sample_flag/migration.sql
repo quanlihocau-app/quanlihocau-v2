@@ -15,3 +15,4 @@ CREATE INDEX IF NOT EXISTS "FishingSession_lakeId_isSample_idx" ON "FishingSessi
 
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "Invoice_lakeId_isSample_idx" ON "Invoice"("lakeId", "isSample");
+

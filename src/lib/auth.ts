@@ -318,6 +318,23 @@ export const authOptions: NextAuthOptions = {
             }
             return token;
         },
+        async redirect({ url, baseUrl }) {
+            const canonicalBase = process.env.NEXTAUTH_URL || baseUrl || "https://quanlihocau.com";
+            if (url.startsWith("/")) return `${canonicalBase}${url}`;
+            try {
+                const parsed = new URL(url);
+                if (
+                    parsed.origin === canonicalBase ||
+                    parsed.hostname === "quanlihocau.com" ||
+                    parsed.hostname === "www.quanlihocau.com"
+                ) {
+                    return url;
+                }
+            } catch {
+                // fall through
+            }
+            return canonicalBase;
+        },
         async session({ session, token }) {
             if (session.user && token.id) {
                 session.user.id = token.id as string;

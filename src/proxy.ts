@@ -204,7 +204,13 @@ export async function proxy(request: NextRequest) {
   }
 
   // Nếu chưa đăng nhập, điều hướng sang /login kèm param redirect
-  const loginUrl = new URL('/login', request.url)
+  const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host')
+  const proto = request.headers.get('x-forwarded-proto') || 'https'
+  const isInternal = !forwardedHost || forwardedHost.includes('0.0.0.0') || forwardedHost.startsWith('app:')
+  const base = isInternal
+    ? (process.env.NEXTAUTH_URL || 'https://quanlihocau.com')
+    : `${proto}://${forwardedHost}`
+  const loginUrl = new URL('/login', base)
   const redirectPath = `${pathname}${request.nextUrl.search}`
   loginUrl.searchParams.set('redirect', redirectPath)
   const response = applySecurityHeaders(NextResponse.redirect(loginUrl))
