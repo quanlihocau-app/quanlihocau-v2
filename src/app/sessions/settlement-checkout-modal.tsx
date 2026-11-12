@@ -8,6 +8,7 @@ import { ModalPortal } from "@/components/ui/modal-portal";
 import { usePrinter } from "@/lib/printing/use-printer";
 import { PaymentReceiptData } from "@/lib/printing/types";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
+import { submitTicketAction } from "@/lib/offline/submit-ticket";
 import { useModalDismiss } from "@/hooks/use-modal-dismiss";
 import { PondTransferQr } from "@/components/payments/pond-transfer-qr";
 
@@ -216,11 +217,31 @@ export function SettlementCheckoutModal({
         }
 
         try {
-            const res = await fetch(`/api/fishing-sessions/${sessionId}`, {
+            const idempotencyKey = crypto.randomUUID();
+            const sent = await submitTicketAction({
+                kind: "close-session",
+                url: `/api/fishing-sessions/${sessionId}`,
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
+                idempotencyKey,
+                summary: `Đóng phiên ${sessionId.slice(0, 8)} · thu ${numCollect || 0}đ`,
+                body: payload,
+            }, { online: isOnline });
+            if (sent.queued) {
+                setSubmitError("Đã lưu lệnh đóng phiên trên máy. Sẽ gửi khi có mạng. Đừng thu thêm một lần nữa.");
+                setIsSubmitting(false);
+                return;
+            }
+            if ("blocked" in sent && sent.blocked) {
+                setSubmitError(sent.message);
+                setIsSubmitting(false);
+                return;
+            }
+            if (!("response" in sent)) {
+                setSubmitError("Không gửi được lệnh đóng phiên.");
+                setIsSubmitting(false);
+                return;
+            }
+            const res = sent.response;
 
             const result = await res.json();
 
@@ -560,7 +581,7 @@ export function SettlementCheckoutModal({
                                     <div className="rounded-xl border border-[#9E2A2B]/40 bg-[#FBEBEB] p-2.5 text-xs text-[#9E2A2B] flex items-start gap-2 font-serif">
                                         <span className="text-sm leading-none">⚠️</span>
                                         <div>
-                                            <span className="font-bold">Đang mất mạng:</span> Không thể đóng phiên hoặc thu tiền khi offline để tránh sai lệch tài chính. Vui lòng kết nối mạng để hoàn tất.
+                                            <span className="font-bold">Đang mất mạng:</span> Lệnh đóng phiên sẽ được giữ trên máy và gửi một lần khi có mạng. Đừng thu tiền thêm ở sổ tay.
                                         </div>
                                     </div>
                                 )}
@@ -587,7 +608,7 @@ export function SettlementCheckoutModal({
                                 variant="primary"
                                 isLoading={isSubmitting}
                                 loadingText="Đang đóng phiên…"
-                                disabled={isSubmitting || !isOnline}
+                                disabled={isSubmitting}
                                 onClick={() => setIsPrintConfirmOpen(true)}
                                 className={`flex-2 text-xs sm:text-sm font-bold text-white shadow-md ${
                                     preview.financials.refundVnd > 0
@@ -596,7 +617,7 @@ export function SettlementCheckoutModal({
                                 }`}
                             >
                                 {!isOnline
-                                    ? "Mất mạng — Không thể đóng"
+                                    ? "Mất mạng — lưu lệnh đóng"
                                     : preview.financials.refundVnd > 0
                                     ? `Thối ${formatVnd(preview.financials.refundVnd)} · Kết thúc`
                                     : preview.financials.netDueVnd > 0

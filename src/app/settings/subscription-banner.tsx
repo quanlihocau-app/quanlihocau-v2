@@ -75,7 +75,7 @@ export function SubscriptionBanner({
                         <button
                             type="button"
                             onClick={() => setIsModalOpen(true)}
-                            className="rounded-full bg-[#4F9D5A] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#246B38] active:scale-95 transition-all shadow-xs cursor-pointer"
+                            className="saas-purchase rounded-full bg-[#4F9D5A] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#246B38] active:scale-95 transition-all shadow-xs cursor-pointer"
                         >
                             Gia hạn / Nâng cấp
                         </button>

@@ -1,46 +1,38 @@
-export interface CapacitorConfig {
-    appId: string;
-    appName: string;
-    webDir: string;
-    backgroundColor?: string;
-    server?: {
-        androidScheme?: string;
-        cleartext?: boolean;
-        url?: string;
-    };
-    plugins?: {
-        CapacitorHttp?: {
-            enabled: boolean;
-        };
-        [key: string]: unknown;
-    };
-    android?: {
-        allowMixedContent?: boolean;
-        captureInput?: boolean;
-        webContentsDebuggingEnabled?: boolean;
-    };
-}
+import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
     appId: "com.quanlihocau.app",
-    appName: "QuanLiHoCau",
+    appName: "Quản Lý Hồ Câu",
     webDir: "public",
-    backgroundColor: "#F7F9F5",
+    backgroundColor: "#1B3B2B",
     server: {
+        url: "https://quanlihocau.com",
         androidScheme: "https",
-        cleartext: true,
+        cleartext: false,
+        allowNavigation: [
+            "quanlihocau.com",
+            "www.quanlihocau.com",
+            "accounts.google.com",
+            "appleid.apple.com",
+        ],
     },
     plugins: {
-        CapacitorHttp: {
-            // Chạy fetch/XHR thông qua Native Engine của Android/iOS (bỏ qua WebView networking)
-            // Tăng tốc độ mạng thêm ~30% và bypass các giới hạn CORS/SSL của Webview.
-            enabled: true,
+        CapacitorHttp: { enabled: true },
+        SplashScreen: {
+            launchAutoHide: true,
+            backgroundColor: "#1B3B2B",
+            showSpinner: false,
         },
     },
     android: {
-        allowMixedContent: true,
+        allowMixedContent: false,
         captureInput: true,
         webContentsDebuggingEnabled: false,
+    },
+    ios: {
+        contentInset: "automatic",
+        allowsLinkPreview: false,
+        backgroundColor: "#1B3B2B",
     },
 };
 

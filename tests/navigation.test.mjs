@@ -116,6 +116,7 @@ test("Customer-specific ticket preselects an allowed customer and isolates draft
             "@/components/ui/input": { Input: "input" }, "@/components/ui/inline-alert": { InlineAlert: "alert" },
             "@/lib/printing/use-printer": { usePrinter: () => ({}) }, "@/lib/printing/types": {},
             "@/lib/network/use-network-status": { useNetworkStatus: () => ({ isOnline: true }) },
+            "@/lib/offline/submit-ticket": { submitTicketAction: async () => ({ queued: false, blocked: false, response: { ok: true, json: async () => ({}) } }) },
             "@/components/ui/bottom-sheet": { BottomSheet: "sheet" }, "@/components/ui/toast": { useToast: () => ({}) },
             "@/hooks/use-fishing-catalog": { useFishingSpots: () => {}, useFishingPackages: () => {} },
             "@/hooks/use-modal-dismiss": { useModalDismiss: () => ({}) }, "../quick-create-actions": {},

@@ -52,7 +52,8 @@ test("4. Luồng Mở vé nhanh (Quick Open) trong open-session-form.tsx", () =>
     // Phải gửi customer mode GUEST khi mở nhanh
     assert.ok(formCode.includes('customer: { mode: "GUEST" }'), "Quick Open phải gửi customer mode GUEST");
     // Phải có Idempotency-Key chống tạo vé trùng
-    assert.ok(formCode.includes('"Idempotency-Key": idempotencyKey'), "Quick Open phải có Idempotency-Key");
+    assert.ok(formCode.includes("idempotencyKey"), "Quick Open phải có khóa chống gửi trùng");
+    assert.ok(fs.readFileSync(path.join(rootDir, "src/lib/offline/submit-ticket.ts"), "utf8").includes('"Idempotency-Key"'), "Hàng đợi phải gửi Idempotency-Key");
     // Phải có cờ inFlight và isQuickOpening chống bấm lặp
     assert.ok(formCode.includes("quickOpenInFlightRef"), "Thiếu quickOpenInFlightRef chống bấm lặp");
     assert.ok(formCode.includes("isQuickOpening"), "Thiếu state isQuickOpening");

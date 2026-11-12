@@ -2,6 +2,10 @@
 @import "../styles/brand-tokens.css";
 @import "../styles/brand-landing.css";
 
+html[data-native-platform="ios"] .saas-purchase { display: none !important; }
+.ios-account-note { display: none; }
+html[data-native-platform="ios"] .ios-account-note { display: block; }
+
 .finance-ui button, .finance-ui a { touch-action: manipulation; }
 
 /* Keep cashbook controls clear of phone notches, status bars and the bottom navigation. */

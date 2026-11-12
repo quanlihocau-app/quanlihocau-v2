@@ -1,0 +1,4 @@
+# Múi giờ container là Asia/Ho_Chi_Minh (xem Dockerfile). 00:00 là nửa đêm giờ Việt Nam.
+CRON_TZ=Asia/Ho_Chi_Minh
+0 0 * * * /scripts/subscriptions-cron.sh
+15 2 * * * /scripts/backup.sh

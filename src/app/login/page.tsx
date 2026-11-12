@@ -15,6 +15,7 @@ const OAUTH_ERRORS: Record<string, string> = {
   OAuthSignin: 'Không thể kết nối đến Google. Vui lòng thử lại.',
   OAuthCallback: 'Xác thực Google thất bại. Vui lòng thử lại sau.',
   OAuthCreateAccount: 'Không thể tạo tài khoản từ Google. Vui lòng liên hệ quản trị viên.',
+  AppleSignIn: 'Không đăng nhập được bằng Apple. Hãy dùng số điện thoại và mật khẩu.',
   Default: 'Đăng nhập không thành công. Vui lòng thử lại hoặc liên hệ quản trị viên.',
 }
 
@@ -31,13 +32,47 @@ function LoginForm() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [appleLoading, setAppleLoading] = useState(false)
   const inFlight = useRef(false)
 
   const oauthError = errorParam
     ? (OAUTH_ERRORS[errorParam] ?? OAUTH_ERRORS.Default)
     : null
 
-  // ── Google OAuth (primary) ────────────────────────────────────
+  const handleAppleSignIn = async () => {
+    if (inFlight.current) return
+    inFlight.current = true
+    setAppleLoading(true)
+    setErrorMsg('')
+    try {
+      const { signInWithAppleNative } = await import('@/lib/native/apple-sign-in')
+      const native = await signInWithAppleNative()
+      if (native?.identityToken) {
+        const result = await signIn('apple-native', {
+          redirect: false,
+          identityToken: native.identityToken,
+          name: native.name || '',
+        })
+        if (result?.error) {
+          setErrorMsg('Không đăng nhập được bằng Apple. Hãy dùng số điện thoại và mật khẩu.')
+          return
+        }
+        await fetch(`/api/auth/sync-session?next=${encodeURIComponent(safeRedirectPath(redirectUrl))}`, { credentials: "same-origin" })
+        router.push(safeRedirectPath(redirectUrl))
+        router.refresh()
+        return
+      }
+      await signIn('apple', {
+        callbackUrl: `/api/auth/sync-session?next=${encodeURIComponent(safeRedirectPath(redirectUrl))}`,
+      })
+    } catch {
+      setErrorMsg('Chưa kết nối được với Apple. Hãy dùng số điện thoại và mật khẩu.')
+    } finally {
+      inFlight.current = false
+      setAppleLoading(false)
+    }
+  }
+
   const handleGoogleSignIn = async () => {
     if (inFlight.current) return
     inFlight.current = true
@@ -223,6 +258,15 @@ function LoginForm() {
           </div>
 
           {/* ── Section 2: Google Sign In (Dành cho Chủ hồ) ────────── */}
+          <button
+            type="button"
+            id="btn-apple-signin"
+            onClick={handleAppleSignIn}
+            disabled={isLoading || appleLoading}
+            className="mb-3 flex min-h-12 w-full items-center justify-center gap-2.5 rounded-lg bg-black px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60 cursor-pointer"
+          >
+            <span>{appleLoading ? 'Đang chuyển đến Apple…' : 'Chủ hồ: Tiếp tục bằng Apple'}</span>
+          </button>
           <button
             type="button"
             id="btn-google-signin"

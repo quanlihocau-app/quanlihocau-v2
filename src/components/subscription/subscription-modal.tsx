@@ -159,7 +159,7 @@ function SubscriptionModalContent({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto modal-backdrop-animate"
+            className="saas-purchase fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto modal-backdrop-animate"
             onClick={onBackdropClick}
         >
             <div className="relative w-full max-w-lg rounded-2xl bg-white p-5 sm:p-6 shadow-2xl border border-[#D9D2C8] my-8 modal-content-animate">

@@ -69,14 +69,14 @@ export function SubscriptionAccessBanner() {
             {locked ? (
                 <span>
                     Hồ đã hết hạn và quá 3 ngày ân hạn. Chỉ xem được dữ liệu, không mở vé hay thu tiền. {ownerCopy}{" "}
-                    <Link href="/settings" className="underline font-bold">
+                    <Link href="/settings" className="saas-purchase underline font-bold">
                         Mở trang gia hạn
                     </Link>
                 </span>
             ) : (
                 <span>
                     Gói đã hết hạn. Hồ vẫn dùng được khoảng {daysLeft} ngày ân hạn, sau đó sẽ khóa ghi dữ liệu. {ownerCopy}{" "}
-                    <Link href="/settings" className="underline font-bold">
+                    <Link href="/settings" className="saas-purchase underline font-bold">
                         Gia hạn ngay
                     </Link>
                 </span>

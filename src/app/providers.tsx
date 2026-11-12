@@ -9,6 +9,8 @@ import { AutoScrollCenter } from "@/components/ui/auto-scroll-center";
 import { VirtualKeyboardHandler } from "@/components/ui/virtual-keyboard-handler";
 import { AppTour } from "@/components/tour/app-tour";
 import { SubscriptionAccessBanner } from "@/components/subscription/subscription-access-banner";
+import { useMarkIosNativePlatform } from "@/lib/platform/use-ios-native";
+import { OfflineSync } from "@/components/offline/offline-sync";
 
 function SessionCacheGuard() {
     const { data: session, status } = useSession();
@@ -34,14 +36,15 @@ function AppTourWrapper() {
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
-    // Stable client for both server rendering and browser hydration.
     const [queryClient] = useState(() => getQueryClient());
+    useMarkIosNativePlatform();
 
     const content = (
         <ToastProvider>
             <AutoScrollCenter />
             <VirtualKeyboardHandler />
             <SubscriptionAccessBanner />
+            <OfflineSync />
             {children}
         </ToastProvider>
     );

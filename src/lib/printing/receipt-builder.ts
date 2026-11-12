@@ -5,6 +5,7 @@ import {
     SessionTicketData,
     TestReceiptData,
 } from "./types";
+import { ticketQrPayload } from "../tickets/ticket-code";
 
 function formatVnd(amount: number): string {
     return new Intl.NumberFormat("vi-VN").format(amount) + "d";
@@ -58,6 +59,8 @@ export function buildSessionTicketEscPos(
     builder.bold(false);
     if (data.isReprint) line("*** BAN IN LAI ***");
     line(`Ma ve: ${data.ticketCode || data.sessionId.slice(0, 8).toUpperCase()}`);
+    builder.align("center");
+    builder.qrCode(ticketQrPayload(data.sessionId), 4);
     builder.align("left").divider("-");
 
     const huts = data.huts.map(h => h.areaName ? `${h.name} (${h.areaName})` : h.name).join(", ");
