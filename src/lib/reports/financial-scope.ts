@@ -9,12 +9,12 @@ export async function financialScope(lakeId: string, params: URLSearchParams) {
     const methodValue = params.get("paymentMethod") || params.get("method");
     const method = Object.values(PaymentMethod).find(v => v === methodValue);
     const status = Object.values(SessionStatus).find(v => v === params.get("sessionStatus"));
-    const session: Prisma.FishingSessionWhereInput = { lakeId, customerId, packageId, status };
+    const session: Prisma.FishingSessionWhereInput = { lakeId, customerId, packageId, status, isSample: false };
     if (hutId) session.hutLinks = { some: { hutId } };
     else if (areaId) session.hutLinks = { some: { hut: { areaId } } };
     const hasSessionFilter = Boolean(areaId || hutId || packageId || status);
     const hasSalesFilter = Boolean(hasSessionFilter || customerId || productId);
-    const invoice: Prisma.InvoiceWhereInput = { lakeId, customerId };
+    const invoice: Prisma.InvoiceWhereInput = { lakeId, customerId, isSample: false };
     if (hasSessionFilter) invoice.fishingSession = session;
     if (productId) invoice.lines = { some: { productId } };
     if (method) invoice.payments = { some: { method } };

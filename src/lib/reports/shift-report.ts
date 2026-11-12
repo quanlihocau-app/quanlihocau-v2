@@ -38,7 +38,7 @@ const notDraft = { financialTransactions: { none: { status: "DRAFT" as const } }
 
 export async function listOpenSessions(db: ReportDb, lakeId: string, now = new Date()) {
     const sessions = await db.fishingSession.findMany({
-        where: { lakeId, status: "ACTIVE" },
+        where: { lakeId, status: "ACTIVE", isSample: false },
         include: {
             customer: { select: { name: true } },
             hutLinks: { select: { hut: { select: { name: true } } } },
@@ -76,7 +76,7 @@ export async function listOpenSessions(db: ReportDb, lakeId: string, now = new D
 export async function measureShiftWindow(db: ReportDb, lakeId: string, start: Date, end: Date, now = new Date()) {
     const [shiftSessions, invoiceLines, payments, fishBuybacksAgg, expensesAgg, inventory, openSessions] = await Promise.all([
         db.fishingSession.findMany({
-            where: { lakeId, createdAt: { gte: start, lte: end } },
+            where: { lakeId, isSample: false, createdAt: { gte: start, lte: end } },
             select: {
                 status: true,
                 packageNameSnapshot: true,
@@ -87,7 +87,7 @@ export async function measureShiftWindow(db: ReportDb, lakeId: string, start: Da
         db.invoiceLine.findMany({
             where: {
                 createdAt: { gte: start, lte: end },
-                invoice: { lakeId, status: { not: "VOIDED" } },
+                invoice: { lakeId, status: { not: "VOIDED" }, isSample: false },
             },
             select: {
                 productId: true,
@@ -99,7 +99,12 @@ export async function measureShiftWindow(db: ReportDb, lakeId: string, start: Da
             },
         }),
         db.payment.findMany({
-            where: { lakeId, createdAt: { gte: start, lte: end }, ...notDraft },
+            where: {
+                lakeId,
+                createdAt: { gte: start, lte: end },
+                ...notDraft,
+                OR: [{ invoiceId: null }, { invoice: { isSample: false } }],
+            },
             select: { amountVnd: true, method: true, direction: true, expenseId: true, invoiceId: true },
         }),
         db.fishBuyback.aggregate({

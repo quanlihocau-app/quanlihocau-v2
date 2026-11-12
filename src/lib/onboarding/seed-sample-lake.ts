@@ -224,6 +224,7 @@ export async function createSampleSessions(
                         lakeId,
                         name: "Nguyễn Văn Tuấn (Cần thủ VIP)",
                         phoneNormalized: "+84987654321",
+                        isSample: true,
                     },
                 });
             }
@@ -234,6 +235,7 @@ export async function createSampleSessions(
                         lakeId,
                         name: "Trần Hải (Khách quen)",
                         phoneNormalized: "+84912345678",
+                        isSample: true,
                     },
                 });
             }
@@ -309,6 +311,7 @@ export async function createSampleSessions(
                 packagePriceVndSnapshot: pkg1.priceVnd,
                 overtimeHourlyVndSnapshot: pkg1.overtimeHourlyVnd,
                 paymentTiming: "POSTPAID",
+                isSample: true,
             },
         });
 
@@ -337,6 +340,7 @@ export async function createSampleSessions(
                 totalAmountVnd: total1,
                 subtotalVnd: total1,
                 balanceDueVnd: total1,
+                isSample: true,
             },
         });
 
@@ -386,6 +390,7 @@ export async function createSampleSessions(
                 packagePriceVndSnapshot: pkg2.priceVnd,
                 overtimeHourlyVndSnapshot: pkg2.overtimeHourlyVnd,
                 paymentTiming: "POSTPAID",
+                isSample: true,
             },
         });
 
@@ -411,6 +416,7 @@ export async function createSampleSessions(
                 totalAmountVnd: pkg2.priceVnd,
                 subtotalVnd: pkg2.priceVnd,
                 balanceDueVnd: pkg2.priceVnd,
+                isSample: true,
             },
         });
 
@@ -432,6 +438,9 @@ export async function createSampleSessions(
 
 /**
  * Dọn dẹp an toàn các vé mẫu trải nghiệm khi chủ hồ muốn làm sạch quầy
+ * Tuân thủ yêu cầu BƯỚC 2:
+ * - Dữ liệu mẫu có cờ isSample riêng
+ * - Xóa sạch 100%, không phụ thuộc hay lọc theo tên/SĐT
  */
 export async function clearSampleSessions(
     tx: Prisma.TransactionClient,
@@ -441,16 +450,11 @@ export async function clearSampleSessions(
         return { clearedCount: 0 };
     }
 
-    // Tìm các phiên câu đang ACTIVE gắn với khách hàng mẫu hoặc tên gói mẫu
+    // Tìm tất cả phiên câu mẫu gắn cờ isSample: true của hồ
     const sampleSessions = await tx.fishingSession.findMany({
         where: {
             lakeId,
-            status: "ACTIVE",
-            OR: [
-                { customer: { phoneNormalized: { in: ["+84987654321", "+84912345678"] } } },
-                { customer: { name: { contains: "Mẫu" } } },
-                { packageNameSnapshot: { contains: "(Gói mẫu)" } },
-            ],
+            isSample: true,
         },
         include: {
             hutLinks: true,
@@ -458,35 +462,84 @@ export async function clearSampleSessions(
         },
     });
 
-    if (sampleSessions.length === 0) {
+    // Tìm tất cả hóa đơn mẫu gắn cờ isSample: true của hồ
+    const sampleInvoices = await tx.invoice.findMany({
+        where: {
+            lakeId,
+            isSample: true,
+        },
+        select: { id: true },
+    });
+
+    const sessionIds = sampleSessions.map((s) => s.id);
+    const invoiceIds = Array.from(
+        new Set([
+            ...sampleInvoices.map((inv) => inv.id),
+            ...sampleSessions.flatMap((s) => s.invoices.map((inv) => inv.id)),
+        ]),
+    );
+
+    if (sessionIds.length === 0 && invoiceIds.length === 0) {
         return { clearedCount: 0 };
     }
 
-    const sessionIds = sampleSessions.map((s) => s.id);
-    const hutIds = sampleSessions.flatMap((s) => s.hutLinks.map((h) => h.hutId));
-
-    // 1. Cập nhật trạng thái CANCELLED cho các phiên câu mẫu
-    await tx.fishingSession.updateMany({
-        where: { id: { in: sessionIds } },
-        data: {
-            status: "CANCELLED",
-            endedAt: new Date(),
+    // 1. Giải phóng chòi về trạng thái trống
+    await tx.hut.updateMany({
+        where: {
+            lakeId,
+            currentSessionId: { in: sessionIds },
         },
+        data: { currentSessionId: null },
     });
 
-    // 2. Cập nhật hóa đơn sang VOIDED
-    await tx.invoice.updateMany({
-        where: { fishingSessionId: { in: sessionIds } },
-        data: { status: InvoiceStatus.VOIDED },
-    });
-
-    // 3. Giải phóng chòi về trạng thái trống
-    if (hutIds.length > 0) {
-        await tx.hut.updateMany({
-            where: { id: { in: hutIds } },
-            data: { currentSessionId: null },
+    // 2. Xóa các bảng phụ thuộc hóa đơn mẫu
+    if (invoiceIds.length > 0) {
+        if (tx.financialTransaction && typeof tx.financialTransaction.deleteMany === "function") {
+            await tx.financialTransaction.deleteMany({
+                where: { invoiceId: { in: invoiceIds } },
+            });
+        }
+        if (tx.debt && typeof tx.debt.deleteMany === "function") {
+            await tx.debt.deleteMany({
+                where: { invoiceId: { in: invoiceIds } },
+            });
+        }
+        if (tx.payment && typeof tx.payment.deleteMany === "function") {
+            await tx.payment.deleteMany({
+                where: { invoiceId: { in: invoiceIds } },
+            });
+        }
+        if (tx.invoiceLine && typeof tx.invoiceLine.deleteMany === "function") {
+            await tx.invoiceLine.deleteMany({
+                where: { invoiceId: { in: invoiceIds } },
+            });
+        }
+        await tx.invoice.deleteMany({
+            where: { id: { in: invoiceIds } },
         });
     }
 
-    return { clearedCount: sampleSessions.length };
+    // 3. Xóa các phiên câu mẫu
+    if (sessionIds.length > 0) {
+        if (tx.fishingSessionHut && typeof tx.fishingSessionHut.deleteMany === "function") {
+            await tx.fishingSessionHut.deleteMany({
+                where: { fishingSessionId: { in: sessionIds } },
+            });
+        }
+        await tx.fishingSession.deleteMany({
+            where: { id: { in: sessionIds } },
+        });
+    }
+
+    // 4. Xóa khách hàng mẫu
+    if (tx.customer && typeof tx.customer.deleteMany === "function") {
+        await tx.customer.deleteMany({
+            where: {
+                lakeId,
+                isSample: true,
+            },
+        });
+    }
+
+    return { clearedCount: sessionIds.length || invoiceIds.length };
 }

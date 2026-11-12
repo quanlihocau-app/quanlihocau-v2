@@ -235,6 +235,7 @@ model Customer {
   lakeId          String
   name            String
   phoneNormalized String?
+  isSample        Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
@@ -246,6 +247,7 @@ model Customer {
   financialTransactions FinancialTransaction[]
 
   @@unique([lakeId, phoneNormalized])
+  @@index([lakeId, isSample])
   @@index([lakeId, createdAt])
 }
 
@@ -323,6 +325,7 @@ model FishingSession {
   packagePriceVndSnapshot        Int
   overtimeHourlyVndSnapshot      Int
   paymentTiming                  PaymentTiming @default(POSTPAID)
+  isSample                       Boolean       @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -335,6 +338,7 @@ model FishingSession {
   hutLinks     FishingSessionHut[]
   activeInHuts Hut[]               @relation("CurrentHutSession")
 
+  @@index([lakeId, isSample])
   @@index([lakeId, status])
   @@index([lakeId, createdAt])
 }
@@ -441,6 +445,7 @@ model Invoice {
   paidAmountVnd     Int           @default(0)
   refundedAmountVnd Int           @default(0)
   balanceDueVnd     Int           @default(0)
+  isSample          Boolean       @default(false)
   createdAt         DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
@@ -453,6 +458,7 @@ model Invoice {
   financialTransactions FinancialTransaction[]
 
   @@unique([lakeId, fishingSessionId])
+  @@index([lakeId, isSample])
   @@index([lakeId, status])
   @@index([lakeId, createdAt])
 }

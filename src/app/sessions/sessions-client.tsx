@@ -527,6 +527,7 @@ export function SessionsClient({
             )}
             {sessions.some(
                 (s) =>
+                    Boolean((s as { isSample?: boolean }).isSample) ||
                     s.packageNameSnapshot?.includes("(Gói mẫu)") ||
                     s.customer?.name?.includes("VIP") ||
                     s.customer?.name?.includes("Mẫu") ||
