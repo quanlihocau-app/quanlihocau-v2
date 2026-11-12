@@ -50,7 +50,7 @@ function formatVnd(amount: number): string {
 
 export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
     const entry = isLoggedIn ? "/sessions" : "/register";
-    const entryLabel = isLoggedIn ? "Vào hồ của tôi" : `Mở hồ dùng thử ${TRIAL_DAYS} ngày`;
+    const entryLabel = isLoggedIn ? "Vào hồ của tôi" : `Dùng thử miễn phí ${TRIAL_DAYS} ngày`;
 
     // Interactive Hero Ticket State
     const [drinkCount, setDrinkCount] = useState(2);
@@ -58,8 +58,20 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
     const [extendedHours, setExtendedHours] = useState(0);
     const [secondsLeft, setSecondsLeft] = useState(582); // 09:42
 
-    // Interactive Loss & ROI Scale State
+    // Interactive Loss & ROI Scale State (Presets)
     const [pondScale, setPondScale] = useState<PondScaleKey>("medium");
+
+    // Interactive Loss Calculator State (Trước Form Đăng Ký)
+    const [anglersCount, setAnglersCount] = useState(30);
+    const [hourlyPrice, setHourlyPrice] = useState(40000);
+    const [overtimeMins, setOvertimeMins] = useState(15);
+    const [missedItems, setMissedItems] = useState(2);
+
+    const calcDailyOvertimeLoss = anglersCount * (overtimeMins / 60) * hourlyPrice;
+    const calcOvertimeLossMonthly = Math.round(calcDailyOvertimeLoss * 30);
+    const calcDailyItemsLoss = missedItems * 15000;
+    const calcItemsLossMonthly = Math.round(calcDailyItemsLoss * 30);
+    const calcTotalLossMonthly = calcOvertimeLossMonthly + calcItemsLossMonthly;
 
     useEffect(() => {
         const timer = window.setInterval(() => {
@@ -133,33 +145,39 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
             </header>
 
             <main id="noi-dung">
-                {/* HERO */}
+                {/* HERO — THE MIRROR TEXT & 1 NÚT CTA DUY NHẤT */}
                 <section className="brand-hero" aria-labelledby="brand-title">
+                    {/* TẦNG 1: BACK (Ambient Glow tạo chiều sâu không gian) */}
+                    <div className="brand-hero-ambient" aria-hidden="true" />
+
+                    {/* TẦNG 2 & 3: MIDDLE & FRONT */}
                     <div className="brand-wrap brand-hero-grid">
                         <div className="brand-hero-copy">
+                            {/* Câu 1: Dành cho ai? */}
                             <p className="brand-eyebrow">
-                                <span aria-hidden="true" /> Chuẩn sổ sách điện tử dành riêng cho chủ hồ Việt
-                            </p>
-                            <h1 id="brand-title">
-                                Hồ đông trăm cần.
-                                <br />
-                                <span>Chuẩn từng đồng cuối ca.</span>
-                            </h1>
-                            <p className="brand-lead">
-                                Thay thế hoàn toàn sổ giấy gạch xóa và trí nhớ cảm tính. Mở vé trong 3 giây, tự nhắc khi
-                                khách sắp hết giờ, cộng dồn nước ngọt — mồi câu — cấn trừ thu mua cá và tách bạch tiền mặt /
-                                VietQR ngay trên một màn hình.
+                                <span aria-hidden="true" /> Dành riêng cho chủ hồ câu dịch vụ, hồ đài &amp; câu thịt
                             </p>
 
+                            {/* Câu 2: Nhận được gì? */}
+                            <h1 id="brand-title">
+                                Tính giờ, ra vé, thu tiền chính xác từng phút.
+                                <br />
+                                <span>Chấm dứt thất thoát và ghi sổ lem mực.</span>
+                            </h1>
+                            <p className="brand-lead">
+                                Đồng hồ đếm ngược từng giây, tự động nhắc nhở khi hết ca, cộng dồn nước ngọt — mồi câu — cấn trừ cá thu mua và tách bạch tiền mặt / VietQR chuẩn từng đồng ngay trên điện thoại.
+                            </p>
+
+                            {/* Câu 3: Bấm gì? — Đúng 1 Nút CTA Duy Nhất (Quy tắc bút dạ 10%) */}
                             <div className="brand-actions">
-                                <Link href={entry} className="brand-button">
+                                <Link href={entry} className="brand-button brand-button-hero">
                                     {entryLabel}
                                     <span aria-hidden="true">↗</span>
                                 </Link>
-                                <Link href="/preview" className="brand-button-secondary">
-                                    Bấm thử quầy mẫu (Không cần đăng ký)
-                                </Link>
                             </div>
+                            <p className="brand-hero-sub-friction">
+                                ✓ Miễn phí trọn vẹn {TRIAL_DAYS} ngày • Không cần thẻ ngân hàng • Kích hoạt trong 10 giây
+                            </p>
 
                             <div className="brand-trust-pills" aria-label="Cam kết dùng thử">
                                 <div className="brand-trust-pill">
@@ -796,6 +814,205 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
                         <Link href="/huan-tran" className="brand-button-secondary">
                             Đọc câu chuyện hình thành ↗
                         </Link>
+                    </div>
+                </section>
+
+                {/* MÁY TÍNH THẤT THOÁT — INTERACTIVE VALUE TRƯỚC FORM ĐĂNG KÝ / CTA CUỐI */}
+                <section id="tinh-that-thoat" className="brand-calc-section" aria-labelledby="calc-heading">
+                    <div className="brand-wrap">
+                        <div className="brand-section-heading">
+                            <p className="brand-eyebrow">
+                                <span aria-hidden="true" /> Máy tính đối soát trực tiếp
+                            </p>
+                            <h2 id="calc-heading">
+                                Hồ anh thất thoát bao nhiêu mỗi tháng?
+                            </h2>
+                            <p>
+                                Kéo thanh trượt hoặc chọn nhanh theo số liệu thực tế tại hồ của anh để nhìn thấy số tiền đang bị rò rỉ âm thầm từ việc làm tròn sai giờ câu, khách lố giờ và quên ghi nước mồi:
+                            </p>
+                        </div>
+
+                        <div className="brand-calc-grid">
+                            {/* Cột 1: Nhập liệu tương tác (Mobile friendly, touch >= 48px) */}
+                            <div className="brand-calc-inputs">
+                                {/* Thông số 1: Số cần thủ / ngày */}
+                                <div className="brand-calc-group">
+                                    <div className="brand-calc-header">
+                                        <label htmlFor="calc-anglers" className="brand-calc-label">
+                                            1. Số cần thủ câu mỗi ngày:
+                                        </label>
+                                        <span className="brand-calc-val">{anglersCount} cần / ngày</span>
+                                    </div>
+                                    <input
+                                        id="calc-anglers"
+                                        type="range"
+                                        min={5}
+                                        max={100}
+                                        step={1}
+                                        value={anglersCount}
+                                        onChange={(e) => setAnglersCount(Number(e.target.value))}
+                                        className="brand-calc-range"
+                                        aria-label="Số cần thủ câu mỗi ngày"
+                                    />
+                                    <div className="brand-calc-chips">
+                                        {[15, 30, 50, 80].map((num) => (
+                                            <button
+                                                key={num}
+                                                type="button"
+                                                className={`brand-calc-chip ${anglersCount === num ? "is-active" : ""}`}
+                                                onClick={() => setAnglersCount(num)}
+                                            >
+                                                {num} cần
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Thông số 2: Giá giờ câu bình quân */}
+                                <div className="brand-calc-group">
+                                    <div className="brand-calc-header">
+                                        <label htmlFor="calc-rate" className="brand-calc-label">
+                                            2. Giá giờ câu trung bình của hồ:
+                                        </label>
+                                        <span className="brand-calc-val">{formatVnd(hourlyPrice)} / giờ</span>
+                                    </div>
+                                    <input
+                                        id="calc-rate"
+                                        type="range"
+                                        min={20000}
+                                        max={100000}
+                                        step={5000}
+                                        value={hourlyPrice}
+                                        onChange={(e) => setHourlyPrice(Number(e.target.value))}
+                                        className="brand-calc-range"
+                                        aria-label="Giá giờ câu trung bình"
+                                    />
+                                    <div className="brand-calc-chips">
+                                        {[30000, 40000, 50000, 70000].map((rate) => (
+                                            <button
+                                                key={rate}
+                                                type="button"
+                                                className={`brand-calc-chip ${hourlyPrice === rate ? "is-active" : ""}`}
+                                                onClick={() => setHourlyPrice(rate)}
+                                            >
+                                                {rate / 1000}k / giờ
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Thông số 3: Số phút làm tròn sai hoặc lố giờ mỗi ca */}
+                                <div className="brand-calc-group">
+                                    <div className="brand-calc-header">
+                                        <label htmlFor="calc-overtime" className="brand-calc-label">
+                                            3. Số phút làm tròn sai hoặc lố giờ mỗi lượt:
+                                        </label>
+                                        <span className="brand-calc-val">{overtimeMins} phút / lượt</span>
+                                    </div>
+                                    <input
+                                        id="calc-overtime"
+                                        type="range"
+                                        min={5}
+                                        max={45}
+                                        step={5}
+                                        value={overtimeMins}
+                                        onChange={(e) => setOvertimeMins(Number(e.target.value))}
+                                        className="brand-calc-range"
+                                        aria-label="Số phút làm tròn sai hoặc lố giờ mỗi lượt"
+                                    />
+                                    <div className="brand-calc-chips">
+                                        {[10, 15, 20, 30].map((mins) => (
+                                            <button
+                                                key={mins}
+                                                type="button"
+                                                className={`brand-calc-chip ${overtimeMins === mins ? "is-active" : ""}`}
+                                                onClick={() => setOvertimeMins(mins)}
+                                            >
+                                                {mins} phút
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Thông số 4: Nước ngọt / mồi xả quên ghi */}
+                                <div className="brand-calc-group">
+                                    <div className="brand-calc-header">
+                                        <label htmlFor="calc-items" className="brand-calc-label">
+                                            4. Nước ngọt / mồi xả quên ghi lúc đông khách:
+                                        </label>
+                                        <span className="brand-calc-val">{missedItems} món / ngày (~15k/món)</span>
+                                    </div>
+                                    <input
+                                        id="calc-items"
+                                        type="range"
+                                        min={0}
+                                        max={8}
+                                        step={1}
+                                        value={missedItems}
+                                        onChange={(e) => setMissedItems(Number(e.target.value))}
+                                        className="brand-calc-range"
+                                        aria-label="Số lon nước hoặc gói mồi quên ghi"
+                                    />
+                                    <div className="brand-calc-chips">
+                                        {[1, 2, 3, 5].map((items) => (
+                                            <button
+                                                key={items}
+                                                type="button"
+                                                className={`brand-calc-chip ${missedItems === items ? "is-active" : ""}`}
+                                                onClick={() => setMissedItems(items)}
+                                            >
+                                                {items} món
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Cột 2: Kết quả nhảy số thời gian thực & Lời mời dùng thử */}
+                            <div className="brand-calc-results">
+                                <div>
+                                    <span className="brand-calc-stat-label">
+                                        TỔNG TIỀN HỒ ANH ĐANG ĐỂ RƠI MỖI THÁNG
+                                    </span>
+                                    <div className="brand-calc-big-num">
+                                        {formatVnd(calcTotalLossMonthly)}
+                                    </div>
+                                    <p style={{ fontSize: "14px", color: "#d1e2d8", margin: "0 0 16px" }}>
+                                        Tương đương <strong style={{ color: "#ffffff" }}>{formatVnd(calcTotalLossMonthly * 12)} / năm</strong> lợi nhuận ròng bị rò rỉ âm thầm mà chủ hồ không hề hay biết.
+                                    </p>
+
+                                    <div className="brand-calc-breakdown">
+                                        <div className="brand-calc-row">
+                                            <span>Rơi rớt từ phút làm tròn / lố giờ:</span>
+                                            <strong>-{formatVnd(calcOvertimeLossMonthly)}/tháng</strong>
+                                        </div>
+                                        <div className="brand-calc-row">
+                                            <span>Quên ghi nước ngọt &amp; đồ ăn, mồi:</span>
+                                            <strong>-{formatVnd(calcItemsLossMonthly)}/tháng</strong>
+                                        </div>
+                                    </div>
+
+                                    <div className="brand-calc-comparison">
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                                            <span>Phí Quản Lý Hồ Câu (Gói Bạc):</span>
+                                            <strong style={{ color: "#ffffff" }}>129.000đ / tháng</strong>
+                                        </div>
+                                        <div style={{ fontSize: "12.5px", color: "#c1ddcd" }}>
+                                            Chỉ cần cứu đúng 1 lượt khách lố giờ hoặc ghi đủ 3 lon nước, hồ của anh đã thừa tiền dùng phần mềm cả năm.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Link href={entry} className="brand-button brand-calc-cta">
+                                        {entryLabel} (0đ) ↗
+                                    </Link>
+                                    <span className="brand-calc-disclaimer">
+                                        ✓ Dùng thử đầy đủ tính năng trong {TRIAL_DAYS} ngày • Không cần thẻ ngân hàng
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 

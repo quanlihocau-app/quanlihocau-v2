@@ -479,6 +479,11 @@
       "location": null
     },
     {
+      "target": "/api/fishing-sessions/sample",
+      "status": 405,
+      "location": null
+    },
+    {
       "target": "/api/fishing-sessions/isolated-no-such-id/extensions",
       "status": 405,
       "location": null
