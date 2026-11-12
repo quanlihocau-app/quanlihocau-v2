@@ -64,6 +64,11 @@
       "location": "/login?redirect=%2Fdashboard"
     },
     {
+      "target": "/demo",
+      "status": 200,
+      "location": null
+    },
+    {
       "target": "/dieu-khoan",
       "status": 200,
       "location": null
@@ -476,6 +481,11 @@
     {
       "target": "/api/fishing-sessions",
       "status": 401,
+      "location": null
+    },
+    {
+      "target": "/api/fishing-sessions/sample",
+      "status": 405,
       "location": null
     },
     {
