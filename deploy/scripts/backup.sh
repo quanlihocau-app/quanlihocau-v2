@@ -255,7 +255,7 @@ prune() {
         done
         return
     fi
-    rclone lsf "${RCLONE_REMOTE}/${kind}" --config "$RCLONE_CONFIG" | while IFS= read -r name; do
+    rclone lsf "${RCLONE_REMOTE}/${kind}" --config "$RCLONE_CONFIG" 2>/dev/null | while IFS= read -r name; do
         [ -n "$name" ] || continue
         file_date="$(printf '%s' "$name" | sed -n 's/.*\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\).*/\1/p')"
         if [ -n "$file_date" ] && [ "$file_date" \< "$cutoff" ]; then
