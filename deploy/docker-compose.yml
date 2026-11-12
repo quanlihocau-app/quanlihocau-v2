@@ -1,0 +1,138 @@
+# Máy iNET: Ubuntu 24.04.1, 2 vCPU, khoảng 3,8 GB RAM, 60 GB, Hà Nội.
+# SSH đang nghe cổng 24700. Agent OneDash của iNET phải được giữ nguyên.
+# Không có khối build. VPS chỉ pull APP_IMAGE, SCHEDULER_IMAGE và CADDY_IMAGE từ GHCR.
+# Postgres chỉ nằm trên mạng data (internal). Không khai báo ports cho db.
+
+services:
+  db:
+    image: postgres:18
+    restart: always
+    shm_size: 128mb
+    mem_limit: 640m
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-quanlihocau}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Đặt POSTGRES_PASSWORD trong .env}
+      POSTGRES_DB: ${POSTGRES_DB:-quanlihocau}
+      TZ: Asia/Ho_Chi_Minh
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - max_connections=40
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - effective_cache_size=512MB
+    # Postgres 18 giữ dữ liệu trong /var/lib/postgresql/18/docker.
+    # Volume phải gắn đúng /var/lib/postgresql, không phải .../data.
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - data
+
+  app:
+    image: ${APP_IMAGE:-ghcr.io/quanlihocau-app/quanlihocau-v2:unset}
+    restart: always
+    mem_limit: 896m
+    env_file:
+      - ../.env
+    environment:
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      TZ: Asia/Ho_Chi_Minh
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health/live').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 90s
+    networks:
+      - edge
+      - data
+
+  caddy:
+    image: ${CADDY_IMAGE:-ghcr.io/quanlihocau-app/quanlihocau-v2:caddy-unset}
+    restart: always
+    mem_limit: 96m
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:?Đặt ACME_EMAIL trong .env}
+      SITE_ADDRESS: ${SITE_ADDRESS:-quanlihocau.com}
+      SITE_WWW: ${SITE_WWW:-www.quanlihocau.com}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - /var/log/caddy:/var/log/caddy
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://app:3000/api/health/live"]
+      interval: 20s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    networks:
+      - edge
+
+  scheduler:
+    image: ${SCHEDULER_IMAGE:-ghcr.io/quanlihocau-app/quanlihocau-v2:scheduler-unset}
+    restart: always
+    mem_limit: 256m
+    env_file:
+      - ../.env
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      APP_BASE_URL: http://app:3000
+      BACKUP_TARGET: ${BACKUP_TARGET:-rclone}
+      RCLONE_REMOTE: ${RCLONE_REMOTE:-gdrive:quanlihocau-backups}
+      RCLONE_CONFIG: /etc/rclone/rclone.conf
+    volumes:
+      - ${RCLONE_CONFIG_PATH:-../secrets/rclone.conf}:/etc/rclone/rclone.conf:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep cron >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - edge
+      - data
+
+networks:
+  # App và lịch ra được Internet (OAuth, SMS, R2, Let's Encrypt). Postgres thì không.
+  edge: {}
+  data:
+    internal: true
+
+volumes:
+  pgdata:
+  caddy-data:
+  caddy-config:

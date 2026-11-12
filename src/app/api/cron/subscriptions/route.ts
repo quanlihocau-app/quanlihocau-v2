@@ -3,6 +3,11 @@ import { NextResponse } from "next/server";
 import { verifyWebhookSecret } from "@/lib/bank-webhook";
 import { prisma } from "@/lib/prisma";
 import { SUBSCRIPTION_GRACE_MS } from "@/lib/subscription-access";
+import {
+    GRACE_FROM_STATUSES,
+    SUSPEND_FROM_STATUSES,
+    subscriptionExpiryWindows,
+} from "@/lib/subscription-expiry";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +22,13 @@ function cronAuthorized(request: Request): boolean {
 
 async function markExpiredSubscriptions() {
     const now = new Date();
-    const graceCutoff = new Date(now.getTime() - SUBSCRIPTION_GRACE_MS);
+    const { graceCutoff } = subscriptionExpiryWindows(now, SUBSCRIPTION_GRACE_MS);
 
     const grace = await prisma.lake.updateMany({
         where: {
             deletedAt: null,
             subscriptionExpiresAt: { not: null, lt: now, gte: graceCutoff },
-            subscriptionStatus: { in: ["TRIAL", "ACTIVE"] },
+            subscriptionStatus: { in: [...GRACE_FROM_STATUSES] },
         },
         data: { subscriptionStatus: "GRACE_PERIOD" },
     });
@@ -32,7 +37,7 @@ async function markExpiredSubscriptions() {
         where: {
             deletedAt: null,
             subscriptionExpiresAt: { not: null, lt: graceCutoff },
-            subscriptionStatus: { in: ["TRIAL", "ACTIVE", "GRACE_PERIOD"] },
+            subscriptionStatus: { in: [...SUSPEND_FROM_STATUSES] },
         },
         data: { subscriptionStatus: "SUSPENDED" },
     });

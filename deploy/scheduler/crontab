@@ -1,0 +1,6 @@
+# Múi giờ container là Asia/Ho_Chi_Minh. 00:00 là nửa đêm giờ Việt Nam.
+# Job source /run/qlhc.env vì cron không kế thừa env của container.
+# Log ra stdout/stderr của PID 1 để `docker logs` thấy lỗi, không nuốt output.
+CRON_TZ=Asia/Ho_Chi_Minh
+0 0 * * * . /run/qlhc.env; /scripts/subscriptions-cron.sh >> /proc/1/fd/1 2>> /proc/1/fd/2
+15 2 * * * . /run/qlhc.env; /scripts/backup.sh >> /proc/1/fd/1 2>> /proc/1/fd/2

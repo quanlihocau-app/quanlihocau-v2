@@ -1,0 +1,44 @@
+{
+	email {$ACME_EMAIL}
+	# Không bật admin API ra ngoài localhost của container.
+	admin off
+}
+
+{$SITE_ADDRESS:quanlihocau.com}, {$SITE_WWW:www.quanlihocau.com} {
+	encode zstd gzip
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	# Chỉ HTML (kể cả index.html) và service worker. App chưa có sw.js.
+	# Trang HTML đã tự gửi no-cache. Không đè Cache-Control của /images, /icons và font.
+	@documents path_regexp (\.html$)|(^/(sw|service-worker)\.js$)
+	header @documents Cache-Control "no-cache, no-store, must-revalidate" {
+		defer
+	}
+
+	# Chỉ file đã hash trong /_next/static mới cache dài. Service worker bị loại.
+	@hashed {
+		path_regexp ^/_next/static/.+
+		not path_regexp /(sw|service-worker)\.js$
+	}
+	header @hashed Cache-Control "public, max-age=31536000, immutable" {
+		defer
+	}
+
+	# App đọc IP thật từ phần tử đầu của X-Forwarded-For.
+	reverse_proxy app:3000 {
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Real-IP {remote_host}
+	}
+}
