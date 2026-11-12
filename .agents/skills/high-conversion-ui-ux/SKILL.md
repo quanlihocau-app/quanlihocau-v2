@@ -249,30 +249,30 @@ export function HighConversionHero() {
           Tự động đếm ngược ca câu, tự cộng phụ thu khi quá giờ, và in hóa đơn tiền nước mồi ngay trên điện thoại trong 5 giây. Không cần sổ sách, không sợ cãi cọ.
         </p>
 
-        {/* LAYER 3: FRONT (10% Bút dạ CTA - Nổi bật tối đa, đổ bóng tự nhiên) */}
+        {/* LAYER 3: FRONT (10% Bút dạ CTA - Nổi bật tối đa với màu --brand-cta, đổ bóng tự nhiên) */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-          {/* Nút hành động chính - Duy nhất dùng màu tương phản cực đại */}
+          {/* Nút hành động chính - Duy nhất dùng màu --brand-cta tương phản cực đại */}
           <Link
-            href="/sessions"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 min-h-12 px-7 rounded-xl bg-[#1B3B2B] text-white text-base font-semibold shadow-[0_4px_20px_-2px_rgba(27,59,43,0.3)] hover:bg-[#142d20] hover:shadow-[0_8px_25px_-2px_rgba(27,59,43,0.4)] hover:-translate-y-0.5 active:scale-[0.98] transition-all cursor-pointer"
+            href="/register"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 min-h-12 px-7 rounded-xl bg-[#15803D] text-white text-base font-semibold shadow-[0_4px_20px_-2px_rgba(21,128,61,0.4)] hover:bg-[#166534] hover:shadow-[0_8px_25px_-2px_rgba(21,128,61,0.5)] hover:-translate-y-0.5 active:scale-[0.98] transition-all cursor-pointer"
           >
-            <span>Trải nghiệm hồ mẫu thực tế</span>
+            <span>Dùng thử miễn phí 30 ngày</span>
             <ArrowRight className="w-5 h-5" />
           </Link>
 
-          {/* Nút phụ - Thứ cấp nhã nhặn */}
+          {/* Nút phụ - Thứ cấp nhã nhặn trỏ về màn quầy mẫu xem trước */}
           <Link
-            href="/pricing"
+            href="/preview"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-xl bg-white text-[#111827] text-base font-medium border border-[#E5E7EB] hover:bg-[#F8FAF8] active:scale-[0.98] transition-all cursor-pointer"
           >
             <PlayCircle className="w-5 h-5 text-[#4B5563]" />
-            <span>Xem tính tiền tự động</span>
+            <span>Xem quầy mẫu (Không cần đăng nhập)</span>
           </Link>
         </div>
 
-        {/* Chú thích loại bỏ rào cản tâm lý (Friction Reducer) */}
+        {/* Chú thích loại bỏ rào cản tâm lý (Friction Reducer) — Đúng sự thật */}
         <p className="mt-3 text-xs sm:text-sm text-[#6B7280]">
-          ✓ Thử nghiệm tức thì trong 1 giây • Không cần tạo tài khoản • Không mất phí
+          ✓ Dùng thử miễn phí 30 ngày • Không cần thẻ ngân hàng • Kích hoạt trong 10 giây
         </p>
       </div>
     </section>

@@ -17,7 +17,8 @@ description: >
 
 | Token | Hex | Tailwind | Dùng cho |
 |-------|-----|----------|---------|
-| `--brand-primary` | `#1B3B2B` | `bg-[#1B3B2B]` | Header, nút chính, badge nổi bật |
+| `--brand-primary` | `#1B3B2B` | `bg-[#1B3B2B]` | Header, logo, tiêu đề trang, bảng số liệu |
+| `--brand-cta` | `#15803D` | `bg-[#15803D]` | Nút CTA chính (quy tắc bút dạ 10%, tương phản WCAG AA) |
 | `--brand-accent` | `#E8F0EC` | `bg-[#E8F0EC]` | Trạng thái active, nút phụ, card nhẹ |
 | `--brand-bg` | `#FFFFFF` | `bg-white` | Nền trang chính |
 | `--brand-surface` | `#F8FAF8` | `bg-[#F8FAF8]` | Nền row/card phụ |

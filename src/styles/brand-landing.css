@@ -90,7 +90,7 @@
 }
 .brand-landing .brand-nav a {
     display: inline-flex;
-    min-height: 42px;
+    min-height: 48px;
     align-items: center;
     text-decoration: none;
     color: var(--brand-ink);
@@ -105,6 +105,7 @@
     padding: 8px 16px;
     border-radius: 8px;
     font-weight: 700;
+    min-height: 48px;
     color: var(--brand-primary);
 }
 .brand-landing .brand-nav .brand-login:hover {
@@ -112,16 +113,18 @@
     background: var(--brand-secondary);
 }
 .brand-landing .brand-nav .brand-header-cta {
-    background: var(--brand-primary);
-    color: #ffffff;
+    background: transparent;
+    color: var(--brand-primary);
     padding: 8px 18px;
     border-radius: 8px;
     font-weight: 700;
+    min-height: 48px;
     border: 1px solid var(--brand-primary);
+    transition: all 0.15s ease;
 }
 .brand-landing .brand-nav .brand-header-cta:hover {
-    background: var(--brand-primary-hover);
-    color: #ffffff;
+    background: var(--brand-accent);
+    color: var(--brand-primary);
 }
 .brand-landing a:focus-visible,
 .brand-landing button:focus-visible,
@@ -220,26 +223,33 @@
     font-size: 16px;
     line-height: 1.4;
     font-weight: 700;
-    border: 1px solid var(--brand-primary);
-    background: var(--brand-primary);
-    color: #ffffff;
-    box-shadow: 0 8px 20px -6px rgba(27, 59, 43, 0.35);
+    border: 1px solid var(--brand-cta);
+    background: var(--brand-cta);
+    color: var(--brand-on-cta);
+    box-shadow: 0 10px 24px -6px rgba(21, 128, 61, 0.42), 0 4px 10px -2px rgba(21, 128, 61, 0.15);
     transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 .brand-landing .brand-button:hover {
-    background: var(--brand-primary-hover);
+    background: var(--brand-cta-hover);
+    border-color: var(--brand-cta-hover);
     transform: translateY(-1px);
+    box-shadow: 0 14px 30px -6px rgba(21, 128, 61, 0.48), 0 6px 14px -2px rgba(21, 128, 61, 0.2);
 }
 .brand-landing .brand-button-hero {
     min-height: 58px;
     padding: 16px 36px;
     font-size: 17px;
     letter-spacing: -0.01em;
-    box-shadow: 0 14px 28px -6px rgba(27, 59, 43, 0.38), 0 4px 10px -2px rgba(27, 59, 43, 0.12);
+    border: 1px solid var(--brand-cta);
+    background: var(--brand-cta);
+    color: var(--brand-on-cta);
+    box-shadow: 0 14px 32px -6px rgba(21, 128, 61, 0.45), 0 4px 12px -2px rgba(21, 128, 61, 0.18);
 }
 .brand-landing .brand-button-hero:hover {
+    background: var(--brand-cta-hover);
+    border-color: var(--brand-cta-hover);
     transform: translateY(-2px);
-    box-shadow: 0 18px 36px -6px rgba(27, 59, 43, 0.45), 0 6px 14px -2px rgba(27, 59, 43, 0.16);
+    box-shadow: 0 18px 40px -6px rgba(21, 128, 61, 0.52), 0 6px 16px -2px rgba(21, 128, 61, 0.22);
 }
 .brand-landing .brand-hero-sub-friction {
     margin: 12px 0 0;
@@ -339,7 +349,7 @@
     top: 18px;
     bottom: 18px;
     width: 2px;
-    background: #e5b8b0;
+    background: #E5E7EB;
 }
 .brand-landing .brand-book-top {
     display: flex;
@@ -368,7 +378,7 @@
     width: 6px;
     height: 6px;
     border-radius: 999px;
-    background: #16a34a;
+    background: #94A3B8;
 }
 .brand-landing .brand-book-heading {
     display: flex;
@@ -419,9 +429,9 @@
     padding: 12px 14px;
     margin: 10px 0 4px;
     border-radius: 10px;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #b45309;
+    background: #F8FAF8;
+    border: 1px solid #E5E7EB;
+    color: var(--brand-ink);
 }
 .brand-landing .brand-timer > span {
     font-size: 12.5px;
@@ -431,7 +441,7 @@
 .brand-landing .brand-timer small {
     font-size: 11px;
     font-weight: 500;
-    color: #92400e;
+    color: var(--brand-muted);
 }
 .brand-landing .brand-timer strong {
     font-size: 26px;
@@ -1233,8 +1243,12 @@
     }
     .brand-landing .brand-nav .brand-login,
     .brand-landing .brand-nav .brand-header-cta {
-        padding: 7px 12px;
-        font-size: 12.5px;
+        min-height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 14px;
+        font-size: 13px;
     }
     .brand-landing .brand-hero-grid {
         padding-block: 36px 32px;
