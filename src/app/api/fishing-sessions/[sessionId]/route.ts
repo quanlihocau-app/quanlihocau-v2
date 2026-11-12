@@ -68,6 +68,25 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         // RBAC: CANCEL requires OWNER/MANAGER; COMPLETE allows STAFF too
         const allowedRoles = action === "CANCEL" ? ROLE_CANCEL : ROLE_COMPLETE;
         const tenantContext = await requireTenantContext(allowedRoles);
+        const idempotencyKey = (
+            request.headers.get("idempotency-key") || request.headers.get("Idempotency-Key") || ""
+        ).trim();
+
+        const replayStored = async () => {
+            if (!idempotencyKey) return null;
+            const existing = await prisma.idempotencyKey.findUnique({
+                where: { lakeId_key: { lakeId: tenantContext.lakeId, key: idempotencyKey } },
+            });
+            if (!existing) return null;
+            try {
+                return NextResponse.json(JSON.parse(existing.responseBody), { status: existing.responseStatus });
+            } catch {
+                return null;
+            }
+        };
+
+        const alreadyDone = await replayStored();
+        if (alreadyDone) return alreadyDone;
 
         // Retry loop for Serializable P2034 conflicts
         for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -592,6 +611,22 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                     },
                 );
 
+                if (idempotencyKey) {
+                    try {
+                        await prisma.idempotencyKey.create({
+                            data: {
+                                lakeId: tenantContext.lakeId,
+                                key: idempotencyKey,
+                                responseStatus: 200,
+                                responseBody: JSON.stringify(result),
+                            },
+                        });
+                    } catch {
+                        const stored = await replayStored();
+                        if (stored) return stored;
+                    }
+                }
+
                 return NextResponse.json(result, { status: 200 });
             } catch (txError) {
                 // Business errors — never retry
@@ -599,6 +634,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                     txError instanceof Error &&
                     txError.message === "SESSION_NOT_ACTIVE"
                 ) {
+                    const stored = await replayStored();
+                    if (stored) return stored;
                     return NextResponse.json(
                         {
                             error: "Phiên câu không còn hoạt động hoặc không tồn tại.",

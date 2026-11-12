@@ -104,6 +104,7 @@ test("Login releases busy state after Google failure and prevents concurrent cre
                 return [initial, (value) => { states[index] = value; }];
             },
             useRef: (current) => ({ current }),
+            useEffect: () => {},
         },
         "next/navigation": {
             useRouter: () => ({ push: () => { navigations++; }, refresh() { } }),
@@ -206,6 +207,10 @@ function authModule(
         "node:crypto": crypto,
         "next/headers": { cookies: async () => ({ get: () => ({ value: cookie }), set: (_name, token) => { cookie = token; } }) },
         bcryptjs: {}, "next-auth/providers/credentials": () => ({}), "next-auth/providers/google": () => ({}),
+        "next-auth/providers/apple": () => ({}),
+        "@/lib/apple-account": { resolveAppleAccount: async () => ({ ok: false, error: "failed" }) },
+        "@/lib/apple-client-secret": { createAppleClientSecret: () => "" },
+        "@/lib/apple-identity": { fetchAppleJwks: async () => [], verifyAppleIdentityToken: () => ({ ok: false, error: "no" }) },
         zod: { z: { string: () => ({ trim() { return this; }, min() { return this; }, email() { return this; } }), object: () => ({}) } },
         "@/generated/prisma/client": { SystemRole: {}, Role: { OWNER: "OWNER" }, Prisma: {} }, "@/lib/phone": {},
         "@/lib/prisma": { prisma: prismaMock },

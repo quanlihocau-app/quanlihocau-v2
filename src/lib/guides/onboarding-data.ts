@@ -750,7 +750,7 @@ export const ONBOARDING_STEPS: GuideStep[] = [
                     label: "Đang mất mạng",
                     subLabel: "Chưa ghi vé mới",
                 },
-                annotation: "Đợi có mạng rồi thao tác lại. Không có hàng đợi đồng bộ offline.",
+                annotation: "Vé mở được giữ trên máy và gửi khi có mạng. Lệnh bị máy chủ từ chối thì hiện để xử lý, không tự mất.",
             },
             {
                 stepNumber: 3,

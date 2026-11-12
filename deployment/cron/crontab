@@ -1,0 +1,5 @@
+# Múi giờ gắn trên container (TZ=Asia/Ho_Chi_Minh), không dùng giờ UTC.
+# 00:00 mỗi ngày: gói hết hạn. 02:15: pg_dump. Khớp cron Vercel cũ 17:00 UTC.
+CRON_TZ=Asia/Ho_Chi_Minh
+0 0 * * * /cron/subscriptions-cron.sh
+15 2 * * * /cron/backup.sh

@@ -85,7 +85,7 @@ export default function FounderPage() {
             <a href="#noi-dung" className="sr-only focus:not-sr-only focus:block focus:p-4">Đến nội dung chính</a>
             <header className="border-b border-stone-200"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-6">
                 <Link href="/" className="text-lg font-bold text-emerald-900">Quản Lý Hồ Câu</Link>
-                <nav className="flex gap-6 text-sm font-semibold" aria-label="Điều hướng"><Link href="/" className="py-2 hover:underline">Trang chủ</Link><Link href="/bang-gia" className="py-2 hover:underline">Bảng giá</Link></nav>
+                <nav className="flex gap-6 text-sm font-semibold" aria-label="Điều hướng"><Link href="/" className="py-2 hover:underline">Trang chủ</Link><Link href="/bang-gia" className="saas-purchase py-2 hover:underline">Bảng giá</Link></nav>
             </div></header>
             <main id="noi-dung" className="mx-auto max-w-4xl px-5 py-12 sm:px-8 sm:py-16">
                 <nav aria-label="Đường dẫn" className="mb-10 flex gap-2 text-sm text-stone-600"><Link href="/" className="underline">Trang chủ</Link><span aria-hidden="true">/</span><span aria-current="page">Huân Trần</span></nav>
@@ -114,7 +114,7 @@ export default function FounderPage() {
                         <p>Nhận thấy sản phẩm có thể giúp các chủ hồ khác xử lý những công việc tương tự, anh Huân quyết định thương mại hóa ứng dụng. Quản Lý Hồ Câu hướng đến việc quản lý vé theo ô câu, giờ câu, hàng hóa, thu mua cá và thu chi trên điện thoại.</p>
                         <p>Định hướng của anh là phát triển sản phẩm từ nhu cầu vận hành thực tế, để chủ hồ dễ theo dõi công việc và kiểm tra từng khoản tiền.</p>
                         <ul className="list-disc space-y-2 pl-6"><li>Ghi vé theo ô câu và theo dõi thời gian từng phiên.</li><li>Ghi nhận hàng bán thêm và thu mua cá cùng với vé.</li><li>Theo dõi hóa đơn, hàng hóa, thu chi và báo cáo.</li><li>Hỗ trợ chủ hồ kiểm tra công việc trên điện thoại.</li></ul>
-                        <p>Xem <Link href="/" className="text-emerald-900 underline">tính năng Quản Lý Hồ Câu</Link>, <Link href="/bang-gia" className="text-emerald-900 underline">bảng giá và quyền lợi từng gói</Link> hoặc <Link href="/thiet-bi-may-in" className="text-emerald-900 underline">hướng dẫn máy in</Link> để đánh giá mức độ phù hợp với hồ của bạn.</p>
+                        <p>Xem <Link href="/" className="text-emerald-900 underline">tính năng Quản Lý Hồ Câu</Link>, <Link href="/bang-gia" className="saas-purchase text-emerald-900 underline">bảng giá và quyền lợi từng gói</Link> hoặc <Link href="/thiet-bi-may-in" className="text-emerald-900 underline">hướng dẫn máy in</Link> để đánh giá mức độ phù hợp với hồ của bạn.</p>
                     </section>
                     <section className="space-y-4" aria-labelledby="kenh-chinh-chu">
                         <h2 id="kenh-chinh-chu" className="text-2xl font-bold">Kết nối với Huân Trần và Hồ Câu Kim Thông</h2>

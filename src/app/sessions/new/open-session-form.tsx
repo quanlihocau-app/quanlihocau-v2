@@ -14,6 +14,7 @@ import { InlineAlert } from "@/components/ui/inline-alert";
 import { usePrinter } from "@/lib/printing/use-printer";
 import { PrintResult } from "@/lib/printing/types";
 import { useNetworkStatus } from "@/lib/network/use-network-status";
+import { submitTicketAction } from "@/lib/offline/submit-ticket";
 
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useToast } from "@/components/ui/toast";
@@ -437,6 +438,24 @@ export function OpenSessionForm({
     }
 
     // ── Luồng Mở Vé Nhanh (1 chạm chọn chòi -> 1 chạm mở vé tính giờ ngay) ──────
+    async function postSession(payload: Record<string, unknown>, summary: string) {
+        const idempotencyKey = crypto.randomUUID();
+        const sent = await submitTicketAction({
+            kind: "open-session",
+            url: "/api/fishing-sessions",
+            method: "POST",
+            idempotencyKey,
+            summary,
+            hutIds: selectedHutIds,
+            body: { ...payload, clientMutationId: idempotencyKey },
+        }, { online: isOnline });
+        if (sent.queued) return { queued: true as const };
+        if ("blocked" in sent && sent.blocked) return { queued: false as const, blocked: sent.message };
+        if (!("response" in sent)) return { queued: false as const, blocked: "Không gửi được vé." };
+        const result = await sent.response.json().catch(() => ({}));
+        return { queued: false as const, blocked: null as string | null, response: sent.response, result };
+    }
+
     async function handleQuickOpen() {
         if (isSubmitting || isQuickOpening || quickOpenInFlightRef.current) return;
 
@@ -476,25 +495,36 @@ export function OpenSessionForm({
         const loadingId = toast.loading("Đang mở vé nhanh (bắt đầu tính giờ ngay)...");
 
         try {
-            const idempotencyKey = crypto.randomUUID();
-            const response = await fetch("/api/fishing-sessions", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Idempotency-Key": idempotencyKey,
-                },
-                body: JSON.stringify({
-                    clientMutationId: idempotencyKey,
+            const sent = await postSession({
                     customerId: selectedCustomerId || null,
                     packageId: targetPackage.id,
                     hutIds: selectedHutIds,
                     customer: { mode: "GUEST" },
                     paymentTiming: "POSTPAID",
                     paymentMode: "POSTPAID",
-                }),
-            });
-
-            const result = (await response.json().catch(() => ({}))) as {
+                }, `Mở vé ${selectedHutIds.length} ô`);
+            if (sent.queued) {
+                toast.dismiss(loadingId);
+                toast.success("Đã lưu vé trên máy. Sẽ tự gửi khi có mạng. Chưa in vì chưa có mã vé.");
+                clearDraft();
+                quickOpenInFlightRef.current = false;
+                setIsQuickOpening(false);
+                setIsSubmitting(false);
+                router.push("/sessions");
+                return;
+            }
+            if (sent.blocked) {
+                toast.dismiss(loadingId);
+                toast.error(sent.blocked);
+                setFormError(sent.blocked);
+                quickOpenInFlightRef.current = false;
+                setIsQuickOpening(false);
+                setIsSubmitting(false);
+                return;
+            }
+            if (!sent.response) return;
+            const response = sent.response;
+            const result = sent.result as {
                 ok?: boolean;
                 id?: string;
                 startTime?: string;
@@ -711,14 +741,7 @@ export function OpenSessionForm({
         const loadingId = toast.loading("Đang bắt đầu phiên câu (Thu sau)...");
 
         try {
-            const idempotencyKey = crypto.randomUUID();
-            const response = await fetch("/api/fishing-sessions", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Idempotency-Key": idempotencyKey,
-                },
-                body: JSON.stringify({
+            const sent = await postSession({
                     customerId: selectedCustomerId || null,
                     ...((!selectedCustomerId && guestName.trim().length >= 2) ? {
                         customer: {
@@ -742,10 +765,25 @@ export function OpenSessionForm({
                                   quantity: it.quantity,
                               }))
                             : undefined,
-                }),
-            });
-
-            const result = (await response.json().catch(() => ({}))) as {
+                }, "Mở vé thu sau");
+            if (sent.queued) {
+                toast.dismiss(loadingId);
+                toast.success("Đã lưu vé trên máy. Sẽ tự gửi khi có mạng.");
+                clearDraft();
+                setIsSubmitting(false);
+                router.push("/sessions");
+                return;
+            }
+            if (sent.blocked) {
+                toast.dismiss(loadingId);
+                toast.error(sent.blocked);
+                setFormError(sent.blocked);
+                setIsSubmitting(false);
+                return;
+            }
+            if (!sent.response) return;
+            const response = sent.response;
+            const result = sent.result as {
                 ok?: boolean;
                 id?: string;
                 invoiceId?: string;
@@ -973,14 +1011,7 @@ export function OpenSessionForm({
         }
 
         try {
-            const idempotencyKey = crypto.randomUUID();
-            const response = await fetch("/api/fishing-sessions", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Idempotency-Key": idempotencyKey,
-                },
-                body: JSON.stringify({
+            const sent = await postSession({
                     customerId: selectedCustomerId || null,
                     ...((!selectedCustomerId && guestName.trim().length >= 2) ? {
                         customer: {
@@ -1005,10 +1036,25 @@ export function OpenSessionForm({
                                   quantity: it.quantity,
                               }))
                             : undefined,
-                }),
-            });
-
-            const result = (await response.json().catch(() => ({}))) as {
+                }, "Mở vé đã thu");
+            if (sent.queued) {
+                toast.dismiss(loadingId);
+                toast.success("Đã lưu vé trên máy. Sẽ tự gửi khi có mạng. Kiểm tra lại số tiền đã thu khi vé lên sổ.");
+                clearDraft();
+                setIsSubmitting(false);
+                router.push("/sessions");
+                return;
+            }
+            if (sent.blocked) {
+                toast.dismiss(loadingId);
+                toast.error(sent.blocked);
+                setFormError(sent.blocked);
+                setIsSubmitting(false);
+                return;
+            }
+            if (!sent.response) return;
+            const response = sent.response;
+            const result = sent.result as {
                 ok?: boolean;
                 id?: string;
                 invoiceId?: string;
@@ -1542,7 +1588,7 @@ export function OpenSessionForm({
                         {/* Nút Mở Vé Nhanh: Chiều cao chuẩn 56px-64px cho ngón tay ướt/thính */}
                         <button
                             type="button"
-                            disabled={isSubmitting || isQuickOpening || !isOnline}
+                            disabled={isSubmitting || isQuickOpening}
                             onClick={handleQuickOpen}
                             className="w-full min-h-14.5 h-15 sm:h-16 rounded-2xl bg-[#16A34A] hover:bg-[#15803D] active:bg-[#166534] text-white font-extrabold text-sm sm:text-base flex items-center justify-between px-4 sm:px-5 shadow-lg shadow-emerald-700/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none border-2 border-[#15803D]"
                         >
@@ -1869,7 +1915,7 @@ export function OpenSessionForm({
                 <div className="rounded-xl border border-rose-300 bg-rose-50 p-3 text-xs text-rose-800 flex items-start gap-2 shadow-2xs">
                     <span className="text-base leading-none">⚠️</span>
                     <div>
-                        <span className="font-bold">Đang mất kết nối mạng:</span> Thông tin vé vẫn được lưu nháp an toàn trên máy. Nút &quot;Tạo vé và mở ô&quot; tạm thời bị khóa để chống mở trùng ô và sai lệch tiền theo quy định PRD.
+                        <span className="font-bold">Đang mất mạng:</span> Vé mở sẽ được giữ trên máy này và gửi khi có mạng. Chưa in vé vì chưa có mã. Thu tiền bán lẻ vẫn cần mạng.
                     </div>
                 </div>
             )}
@@ -1883,14 +1929,13 @@ export function OpenSessionForm({
                 loadingText="Đang tạo vé…"
                 disabled={
                     isSubmitting ||
-                    !isOnline ||
                     availableHuts.length === 0 ||
                     (checkInState ? !checkInState.isValid : false)
                 }
                 className="w-full min-h-14 h-14 sm:h-16 shadow-lg shadow-emerald-700/20 font-black text-sm sm:text-base tracking-wide uppercase border-2 border-[#15803D]"
             >
                 {!isOnline
-                    ? "Mất mạng — Không thể mở vé"
+                    ? "Mất mạng — vé sẽ gửi sau"
                     : checkInState && !checkInState.isValid
                     ? "Giờ vào không hợp lệ"
                     : "Tạo vé và mở ô"}

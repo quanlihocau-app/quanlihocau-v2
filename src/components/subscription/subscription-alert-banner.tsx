@@ -67,7 +67,7 @@ export function SubscriptionAlertBanner({
                             <button
                                 type="button"
                                 onClick={() => setIsModalOpen(true)}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#8B1E1E] hover:bg-[#A8071A] text-white px-4 py-2 font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
+                                className="saas-purchase inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#8B1E1E] hover:bg-[#A8071A] text-white px-4 py-2 font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
                             >
                                 <span>⚡ Gia hạn ngay bằng VietQR</span>
                             </button>
@@ -107,7 +107,7 @@ export function SubscriptionAlertBanner({
                             <button
                                 type="button"
                                 onClick={() => setIsModalOpen(true)}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#D48806] hover:bg-[#AD6800] text-white px-4 py-2 font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
+                                className="saas-purchase inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#D48806] hover:bg-[#AD6800] text-white px-4 py-2 font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
                             >
                                 <span>Thanh toán gia hạn ngay</span>
                             </button>
@@ -154,7 +154,7 @@ export function SubscriptionAlertBanner({
                             <button
                                 type="button"
                                 onClick={() => setIsModalOpen(true)}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#2C4C3B] hover:bg-[#1E362A] text-white px-4 py-2 font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
+                                className="saas-purchase inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#2C4C3B] hover:bg-[#1E362A] text-white px-4 py-2 font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
                             >
                                 <span>Gia hạn / Nâng cấp</span>
                             </button>
@@ -187,7 +187,7 @@ export function SubscriptionAlertBanner({
                         <button
                             type="button"
                             onClick={() => setIsModalOpen(true)}
-                            className="rounded-lg bg-[#2C4C3B] hover:bg-[#1E362A] text-white px-3 py-1 font-bold text-[11px] shrink-0 cursor-pointer"
+                            className="saas-purchase rounded-lg bg-[#2C4C3B] hover:bg-[#1E362A] text-white px-3 py-1 font-bold text-[11px] shrink-0 cursor-pointer"
                         >
                             Nâng cấp gói
                         </button>

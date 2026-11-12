@@ -1,0 +1,20 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$SITE_ADDRESS:quanlihocau.com}, {$SITE_WWW:www.quanlihocau.com} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+	# Ghi đè X-Forwarded-For bằng IP kết nối thật. App đọc IP đầu chuỗi cho rate limit.
+	# Nếu sau này Cloudflare đứng trước, đổi thành {http.request.header.CF-Connecting-IP}.
+	reverse_proxy app:3000 {
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Real-IP {remote_host}
+	}
+}

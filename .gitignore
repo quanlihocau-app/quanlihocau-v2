@@ -50,6 +50,7 @@ yarn-error.log*
 .env*
 !.env.example
 !.env.production.example
+!.env.selfhost.example
 
 # vercel
 .vercel
@@ -57,5 +58,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/prisma-cli
 
 /src/generated/prisma

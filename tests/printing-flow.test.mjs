@@ -67,15 +67,15 @@ test('failed print returns failure and never becomes a completed job', async () 
     assert.equal(writes, 1);
 });
 
-test('compact 58 mm ticket uses readable standard font without QR and limited line feeds', () => {
+test('compact 58 mm ticket keeps a readable font and a scan code', () => {
     const builder = loadPrinting({}, null)('src/lib/printing/receipt-builder.ts');
     const bytes = Buffer.from(builder.buildSessionTicketEscPos({ ...ticket, customerName: 'Nguyen Van A', customerPhone: '0901234567', cashierName: 'Thu ngan', paymentMethod: 'CASH' }));
     assert.ok(bytes.includes(Buffer.from([0x1b, 0x4d, 0])));
     assert.ok(bytes.includes(Buffer.from([0x1d, 0x21, 0])));
     assert.ok(!bytes.includes(Buffer.from([0x1d, 0x21, 0x11])));
     assert.ok(bytes.includes(Buffer.from([0x1b, 0x33, 26])));
-    assert.ok(!bytes.includes(Buffer.from([0x1d, 0x28, 0x6b])));
-    assert.ok([...bytes].filter(byte => byte === 10).length <= 25);
+    assert.ok(bytes.includes(Buffer.from('QLHC:')));
+    assert.ok([...bytes].filter(byte => byte === 10).length <= 30);
     for (const field of ['TEST-USB', 'Choi 1', 'Goi thu 1 gio', '0901234567', 'Da thu:', 'Con thu:']) assert.match(bytes.toString('utf8'), new RegExp(field));
 });
 

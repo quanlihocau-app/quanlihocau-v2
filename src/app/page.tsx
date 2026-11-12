@@ -176,7 +176,7 @@ const homeJsonLd = {
                     "name": "Mất mạng có làm gián đoạn việc tạo vé không?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Khi mất mạng, ứng dụng báo offline và chặn mở vé, đóng phiên, thu tiền để tránh ghi sai. Có mạng trở lại thì thao tác bình thường. Ứng dụng không lưu vé offline để đồng bộ sau.",
+                        "text": "Khi mất mạng, vé mở và lệnh đóng phiên được giữ trên máy rồi gửi một lần khi có mạng. Nếu máy chủ từ chối, vé chờ hiện rõ để người dùng xử lý, không tự xóa.",
                     },
                 },
                 {

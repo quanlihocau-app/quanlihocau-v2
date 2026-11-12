@@ -249,6 +249,11 @@ export default function RootLayout({
         <html lang="vi" className="h-full antialiased font-serif">
             <head>
                 <meta charSet="utf-8" />
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: "(function(){try{if((navigator.userAgent||'').indexOf('QuanLiHoCauNative/ios')!==-1){document.documentElement.setAttribute('data-native-platform','ios')}}catch(e){}})();",
+                    }}
+                />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 {/* eslint-disable-next-line @next/next/no-page-custom-font */}

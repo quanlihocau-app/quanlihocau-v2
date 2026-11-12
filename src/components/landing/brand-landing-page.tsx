@@ -119,13 +119,13 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
                         <a href="#tinh-nang" className="brand-desktop-link">
                             Nghiệp vụ hồ câu
                         </a>
-                        <Link href="/bang-gia" className="brand-desktop-link">
+                        <Link href="/bang-gia" className="brand-desktop-link saas-purchase">
                             Bảng giá
                         </Link>
                         <Link href={isLoggedIn ? "/sessions" : "/login"} className="brand-login">
                             {isLoggedIn ? "Vào quầy" : "Đăng nhập"}
                         </Link>
-                        <Link href={entry} className="brand-header-cta">
+                        <Link href={entry} className="brand-header-cta saas-purchase">
                             {isLoggedIn ? "Mở bảng hồ" : "Dùng thử 0đ"} ↗
                         </Link>
                     </nav>
@@ -745,11 +745,14 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
                         <details>
                             <summary>Hết {TRIAL_DAYS} ngày dùng thử thì chi phí thế nào?</summary>
                             <p>
+                                <span className="saas-purchase">
                                 Gói Bạc chỉ 129.000đ/tháng (khoảng 4.300đ/ngày — chưa bằng 1 chai nước suối) và Gói Vàng không
-                                giới hạn là 199.000đ/tháng. Nếu bạn chưa muốn gia hạn, dữ liệu của bạn vẫn được giữ nguyên an
+                                giới hạn là 199.000đ/tháng.{" "}
+                                </span>
+                                Nếu bạn chưa muốn gia hạn, dữ liệu của bạn vẫn được giữ nguyên an
                                 toàn.
                             </p>
-                            <Link href="/bang-gia" className="brand-text-link">
+                            <Link href="/bang-gia" className="brand-text-link saas-purchase">
                                 Xem chi tiết bảng giá minh bạch ↗
                             </Link>
                         </details>
@@ -845,7 +848,7 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
                         <span>quanlihocau.com · Vận hành trên nền tảng Cloud bảo mật</span>
                     </div>
                     <nav aria-label="Thông tin dịch vụ">
-                        <Link href="/bang-gia">Bảng giá</Link>
+                        <Link href="/bang-gia" className="saas-purchase">Bảng giá</Link>
                         <Link href="/preview">Quầy mẫu</Link>
                         <Link href="/thiet-bi-may-in">Thiết bị máy in</Link>
                         <Link href="/dieu-khoan">Điều khoản</Link>

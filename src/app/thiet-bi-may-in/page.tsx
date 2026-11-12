@@ -71,7 +71,7 @@ export default function PrinterDevicesPage() {
                     <div className="flex items-center gap-3">
                         <Link
                             href="/bang-gia"
-                            className="text-xs font-semibold text-[#5A524A] hover:text-[#102A43] transition-colors"
+                            className="saas-purchase text-xs font-semibold text-[#5A524A] hover:text-[#102A43] transition-colors"
                         >
                             Bảng giá
                         </Link>
@@ -277,7 +277,7 @@ export default function PrinterDevicesPage() {
                 {/* Footer Link */}
                 <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#D9D2C8] pt-6 text-xs text-[#766F67]">
                     <div className="flex items-center gap-4">
-                        <Link href="/bang-gia" className="font-semibold text-[#8A5A20] hover:underline">
+                        <Link href="/bang-gia" className="saas-purchase font-semibold text-[#8A5A20] hover:underline">
                             Bảng giá dịch vụ
                         </Link>
                         <span>•</span>

@@ -2,11 +2,15 @@ import crypto from "crypto";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
+import AppleProvider from "next-auth/providers/apple";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { z } from "zod";
 
 import { SystemRole, Role } from "@/generated/prisma/client";
+import { resolveAppleAccount } from "@/lib/apple-account";
+import { createAppleClientSecret } from "@/lib/apple-client-secret";
+import { fetchAppleJwks, verifyAppleIdentityToken } from "@/lib/apple-identity";
 import {
     authFailureState,
     authLockMessage,
@@ -114,6 +118,29 @@ const loginSchema = z.object({
     password: z.string().min(4, { message: 'Mật khẩu phải có ít nhất 4 ký tự' }),
 });
 
+function appleOAuthProvider() {
+    const clientId = process.env.APPLE_ID?.trim();
+    if (!clientId) return null;
+    let clientSecret = process.env.APPLE_SECRET?.trim() || "";
+    if (!clientSecret && process.env.APPLE_PRIVATE_KEY && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID) {
+        try {
+            clientSecret = createAppleClientSecret({
+                teamId: process.env.APPLE_TEAM_ID,
+                keyId: process.env.APPLE_KEY_ID,
+                clientId,
+                privateKeyPem: process.env.APPLE_PRIVATE_KEY,
+            });
+        } catch (error) {
+            console.error("[auth] Apple client secret was not created:", error instanceof Error ? error.name : "unknown");
+            return null;
+        }
+    }
+    if (!clientSecret) return null;
+    return AppleProvider({ clientId, clientSecret });
+}
+
+const appleWebProvider = appleOAuthProvider();
+
 export const authOptions: NextAuthOptions = {
     session: {
         strategy: "jwt",
@@ -124,6 +151,27 @@ export const authOptions: NextAuthOptions = {
     },
     callbacks: {
         async signIn({ user, account, profile }) {
+            if (account?.provider === "apple") {
+                const appleProfile = profile as { email_verified?: unknown } | null;
+                const verified = appleProfile?.email_verified === true
+                    || appleProfile?.email_verified === "true"
+                    || Boolean(user.email);
+                const resolved = await resolveAppleAccount({
+                    sub: account.providerAccountId,
+                    email: user.email,
+                    name: user.name,
+                    emailVerified: verified,
+                });
+                if (!resolved.ok) {
+                    if (resolved.error === "staff") return "/login?error=StaffMustUseCredentials";
+                    return "/login?error=AppleSignIn";
+                }
+                user.id = resolved.user.id;
+                user.email = resolved.user.email;
+                user.name = resolved.user.name;
+                return true;
+            }
+
             if (account?.provider !== "google") return true;
 
             const email = user.email?.trim().toLowerCase();
@@ -279,7 +327,30 @@ export const authOptions: NextAuthOptions = {
             }
             return allowed;
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, account }) {
+            if (account?.provider === "apple" && account.providerAccountId) {
+                const appleUser = await prisma.user.findUnique({
+                    where: { appleSub: account.providerAccountId },
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        systemRole: true,
+                        phoneVerified: true,
+                        phone: true,
+                        isLocked: true,
+                        sessionVersion: true,
+                    },
+                });
+                if (!appleUser || appleUser.isLocked) return {};
+                token.email = appleUser.email;
+                token.name = appleUser.name;
+                token.id = appleUser.id;
+                token.systemRole = appleUser.systemRole;
+                token.phoneVerified = appleUser.phoneVerified;
+                token.phone = appleUser.phone;
+                token.sessionVersion = appleUser.sessionVersion;
+            }
             if (user) {
                 token.id = user.id;
                 token.systemRole = user.systemRole;
@@ -335,6 +406,38 @@ export const authOptions: NextAuthOptions = {
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID ?? "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+        }),
+        ...(appleWebProvider ? [appleWebProvider] : []),
+        CredentialsProvider({
+            id: "apple-native",
+            name: "Apple",
+            credentials: {
+                identityToken: { label: "Identity token", type: "text" },
+                name: { label: "Name", type: "text" },
+            },
+            async authorize(credentials) {
+                const identityToken = credentials?.identityToken;
+                if (!identityToken || typeof identityToken !== "string") return null;
+                const audiences = [process.env.APPLE_BUNDLE_ID || "com.quanlihocau.app", process.env.APPLE_ID]
+                    .filter((value): value is string => Boolean(value && value.trim()));
+                let keys;
+                try {
+                    keys = await fetchAppleJwks();
+                } catch (error) {
+                    console.error("[auth] Apple keys unavailable:", error instanceof Error ? error.name : "unknown");
+                    return null;
+                }
+                const verified = verifyAppleIdentityToken(identityToken, { audiences, keys });
+                if (!verified.ok || !verified.claims.sub) return null;
+                const resolved = await resolveAppleAccount({
+                    sub: verified.claims.sub,
+                    email: verified.claims.email,
+                    name: typeof credentials?.name === "string" ? credentials.name : null,
+                    emailVerified: verified.claims.email_verified !== false && verified.claims.email_verified !== "false",
+                });
+                if (!resolved.ok) return null;
+                return resolved.user;
+            },
         }),
         CredentialsProvider({
             id: "credentials",

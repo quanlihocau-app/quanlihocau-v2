@@ -31,7 +31,7 @@ interface AccountSettingsModalProps {
     onPhoneChange?: (newPhone: string) => void;
 }
 
-type ActiveView = "MENU" | "CHANGE_LAKE_NAME" | "CHANGE_PASSWORD" | "CHANGE_PHONE" | "DEVICES";
+type ActiveView = "MENU" | "CHANGE_LAKE_NAME" | "CHANGE_PASSWORD" | "CHANGE_PHONE" | "DEVICES" | "DELETE_ACCOUNT";
 
 export function AccountSettingsModal({
     isOpen,
@@ -53,6 +53,8 @@ export function AccountSettingsModal({
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [phoneInput, setPhoneInput] = useState("");
+    const [deletePhrase, setDeletePhrase] = useState("");
+    const [deletePassword, setDeletePassword] = useState("");
 
     const isLoading = isOpen && !accountData;
 
@@ -272,6 +274,29 @@ export function AccountSettingsModal({
         }
     };
 
+    const handleDeleteAccount = async (event: React.FormEvent) => {
+        event.preventDefault();
+        setIsSubmitting(true);
+        setMessage(null);
+        try {
+            const response = await fetch("/api/me/account", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phrase: deletePhrase.trim(), password: deletePassword }),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                setMessage({ type: "error", text: data.error || "Chưa xóa được tài khoản." });
+                return;
+            }
+            await signOut({ callbackUrl: "/login?deleted=1" });
+        } catch {
+            setMessage({ type: "error", text: "Mất mạng. Tài khoản chưa bị xóa." });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const isOwner = accountData?.user?.role === "OWNER";
     const roleTitle = isOwner ? "Chủ hồ" : accountData?.user?.role === "MANAGER" ? "Quản lý" : "Nhân viên";
 
@@ -466,6 +491,23 @@ export function AccountSettingsModal({
                                         </div>
                                     </div>
                                     <span className="text-emerald-400 text-xs font-bold mr-1">→</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setActiveView("DELETE_ACCOUNT");
+                                        setMessage(null);
+                                    }}
+                                    className="w-full min-h-12 flex items-center justify-between p-3 rounded-2xl bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 transition-all text-left cursor-pointer active:scale-[0.98]"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-900/60 text-red-200 text-sm">✕</span>
+                                        <div>
+                                            <p className="text-xs font-bold text-red-100">Xóa tài khoản</p>
+                                            <p className="text-[10px] text-red-300/80">Xóa đăng nhập. Vé và hóa đơn của hồ vẫn giữ.</p>
+                                        </div>
+                                    </div>
                                 </button>
 
                                 {/* 5. Đăng xuất */}
@@ -681,6 +723,49 @@ export function AccountSettingsModal({
                                 </button>
                             </div>
                         </div>
+                    )}
+
+                    {activeView === "DELETE_ACCOUNT" && (
+                        <form onSubmit={handleDeleteAccount} className="space-y-3">
+                            <p className="text-xs leading-relaxed text-red-100">
+                                Tên, email, số điện thoại và mật khẩu sẽ bị xóa. Bạn không đăng nhập được nữa.
+                                Vé, hóa đơn và thu chi của hồ được giữ vì là sổ sách.
+                            </p>
+                            <label className="block text-[11px] font-bold text-stone-300">
+                                Gõ XOA TAI KHOAN
+                                <input
+                                    value={deletePhrase}
+                                    onChange={(event) => setDeletePhrase(event.target.value)}
+                                    autoComplete="off"
+                                    className="mt-1 w-full min-h-12 rounded-xl border border-red-800/60 bg-red-950/40 px-3 text-sm text-white"
+                                />
+                            </label>
+                            {accountData?.user?.hasPassword && (
+                                <label className="block text-[11px] font-bold text-stone-300">
+                                    Mật khẩu hiện tại
+                                    <input
+                                        type="password"
+                                        value={deletePassword}
+                                        onChange={(event) => setDeletePassword(event.target.value)}
+                                        className="mt-1 w-full min-h-12 rounded-xl border border-red-800/60 bg-red-950/40 px-3 text-sm text-white"
+                                    />
+                                </label>
+                            )}
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="w-full min-h-12 rounded-2xl bg-red-700 text-sm font-bold text-white disabled:opacity-50"
+                            >
+                                {isSubmitting ? "Đang xóa..." : "Xóa tài khoản vĩnh viễn"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveView("MENU")}
+                                className="w-full min-h-11 rounded-xl border border-emerald-800/50 text-xs font-bold text-stone-300"
+                            >
+                                Quay lại
+                            </button>
+                        </form>
                     )}
                 </div>
             </div>

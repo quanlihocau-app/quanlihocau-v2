@@ -313,7 +313,7 @@ export function PrinterSettingsSection() {
                     Máy in nhiệt & Mẫu vé
                 </h2>
                 <p className="text-xs text-[#766F67] mt-0.5">
-                    Kết nối MP210 khổ 58 mm trên Windows và Android để gửi vé trực tiếp.
+                    Kết nối MP210 khổ 58 mm. Trên iPhone chỉ in được máy BLE hoặc Wi-Fi, không in được máy Bluetooth thường.
                 </p>
             </div>
 
