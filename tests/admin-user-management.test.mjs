@@ -1,5 +1,6 @@
 
 import assert from "node:assert/strict";
+import { resetServerRateLimits } from "./reset-rate-limit.mjs";
 import crypto from "node:crypto";
 import test, { after, before } from "node:test";
 import bcrypt from "bcryptjs";
@@ -25,6 +26,7 @@ const timestamp = Date.now();
 const testPassword = "TestPassword123!";
 
 before(async () => {
+    await resetServerRateLimits();
     const client = await pool.connect();
     try {
         const hashedPassword = await bcrypt.hash(testPassword, 10);
@@ -91,7 +93,7 @@ before(async () => {
         targetUserId = targetRes.rows[0].id;
         await client.query(
             `INSERT INTO "Membership" ("id", "userId", "lakeId", "role", "createdAt", "updatedAt")
-             VALUES (gen_random_uuid(), $1, $2, 'OWNER', NOW(), NOW())`,
+             VALUES (gen_random_uuid(), $1, $2, 'STAFF', NOW(), NOW())`,
             [targetUserId, testLakeId]
         );
 

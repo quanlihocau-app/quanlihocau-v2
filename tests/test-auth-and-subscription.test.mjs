@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { resetServerRateLimits } from "./reset-rate-limit.mjs";
 import test, { before, after } from "node:test";
 import pg from "pg";
 
@@ -19,6 +20,7 @@ let lakeId = "";
 let authCookie = "";
 
 before(async () => {
+    await resetServerRateLimits();
     // 1. Register new account
     const testIp = `10.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200) + 1}`;
     const regRes = await fetch(`${BASE_URL}/api/register`, {

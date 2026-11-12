@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { resetServerRateLimits } from "./reset-rate-limit.mjs";
 import test, { before, after } from "node:test";
 import pg from "pg";
 
@@ -73,6 +74,7 @@ async function setupOwner(suffix) {
 }
 
 before(async () => {
+    await resetServerRateLimits();
     const ownerA = await setupOwner("A");
     authCookieA = ownerA.cookie;
     testLakeIdA = ownerA.lakeId;

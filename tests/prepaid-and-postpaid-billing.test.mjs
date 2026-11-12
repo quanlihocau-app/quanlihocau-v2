@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { resetServerRateLimits } from "./reset-rate-limit.mjs";
 import test, { before, after } from "node:test";
 import pg from "pg";
 
@@ -119,6 +120,7 @@ async function setupTestLake() {
 }
 
 before(async () => {
+    await resetServerRateLimits();
     await setupTestLake();
 });
 

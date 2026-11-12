@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { resetServerRateLimits } from "./reset-rate-limit.mjs";
 import { randomInt, randomUUID } from "node:crypto";
 import test, { after, before } from "node:test";
 import pg from "pg";
@@ -35,6 +36,7 @@ async function readBusinessCounts() {
 }
 
 before(async () => {
+    await resetServerRateLimits();
     assert.ok(TEST_DATABASE_URL, "TEST_DATABASE_URL is required");
     const databaseName = new URL(TEST_DATABASE_URL).pathname.replace(/^\//, "");
     assert.notEqual(databaseName, "quanlihocau_v2", "Refusing to test against the development database");

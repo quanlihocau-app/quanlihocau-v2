@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test, { before, after } from "node:test";
+import { deleteLakeForTests } from "./cleanup-lake.mjs";
+import { resetServerRateLimits } from "./reset-rate-limit.mjs";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -65,7 +67,7 @@ async function setupOwner(lakeSuffix) {
 }
 
 before(async () => {
-    // Clear rate limit buckets for clean test runs
+    await resetServerRateLimits();
     await pool.query('DELETE FROM "RateLimitBucket"');
     const owner = await setupOwner("Phase2");
     testLakeId = owner.lakeId;
@@ -75,26 +77,7 @@ before(async () => {
 
 after(async () => {
     if (pool && testLakeId) {
-        await pool.query(`DELETE FROM "InventoryMovement" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "Product" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "FishType" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "DebtPayment" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "FinancialTransaction" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "FundTransfer" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "Debt" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "ReconciliationRecord" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "FinancialPeriod" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`UPDATE "FinancialCategory" SET "parentId" = NULL WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "FinancialCategory" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "FinancialAccount" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "PrintJob" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "Hut" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "Area" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "Package" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "AuditEvent" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "IdempotencyKey" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "Membership" WHERE "lakeId" = $1`, [testLakeId]);
-        await pool.query(`DELETE FROM "Lake" WHERE "id" = $1`, [testLakeId]);
+        await deleteLakeForTests(pool, testLakeId);
         await pool.query(`DELETE FROM "User" WHERE "id" = $1`, [testUserId]);
         await pool.end();
     }
