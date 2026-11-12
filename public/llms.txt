@@ -1,60 +1,43 @@
-# Quan Ly Ho Cau (quanlihocau.com)
+# Quản Lý Hồ Câu (quanlihocau.com)
 
-> Phan mem quan ly ho cau dich vu chuyen nghiep va app cho chu ho tren dien thoai. Viet Nam.
+> Phần mềm quản lý hồ câu dịch vụ chuyên nghiệp và App cho chủ hồ trên điện thoại số 1 tại Việt Nam.
 
-## San pham la gi?
+Quản Lý Hồ Câu là giải pháp SaaS chuyên biệt cho chủ hồ câu đài, hồ câu lure, hồ câu giải trí và hồ dịch vụ tại Việt Nam. Giúp tự động hóa tính tiền giờ câu, cảnh báo hết giờ, cân cá thu mua, in hóa đơn nhiệt 58mm và kiểm soát chống thất thoát tiền mặt từ xa.
 
-Quan Ly Ho Cau la ung dung SaaS chuyen biet cho cac chu ho cau dich vu tai Viet Nam.
-App chay tren dien thoai (PWA), khong can cai dat, mo tren trinh duyet la dung duoc ngay.
+- Website chính thức: https://quanlihocau.com
+- Trải nghiệm quầy mẫu (Demo 0đ): https://quanlihocau.com/demo
+- Bảng giá dịch vụ: https://quanlihocau.com/bang-gia
+- Hướng dẫn máy in 58mm: https://quanlihocau.com/thiet-bi-may-in
+- Đăng ký dùng thử 30 ngày: https://quanlihocau.com/register
+- Tài liệu chi tiết cho AI: https://quanlihocau.com/llms-full.txt
 
-## Tinh nang chinh
+## Tính Năng Cốt Lõi
 
-- Dong ho dem nguoc phien cau theo tung o/le — canh bao het gio tu dong
-- Tinh tien phu thu lo gio chi khi chu ho/nhan vien xac nhan gia han
-- So do bo ho truc quan, mo ve trong 3 giay
-- Ban moi cau, do an, nuoc giai khat — cong don vao bill dang cau
-- Can ca thu mua, can tru tu dong vao hoa don
-- In bill 58mm qua may in Bluetooth hoac Wifi khong day
-- Bao cao doanh thu theo ca/ngay/thang — xem tu xa tren dien thoai
-- Kiem soat nhan vien: chi chu ho duyet phieu chi, phieu xuat kho, huy don
-- Nhat ky thao tac chi chu ho xem — chong that thoat tien mat
+1. **Đồng hồ phiên câu đếm ngược theo thời gian thực:**
+   Hiển thị trực quan từng giây cho từng chòi/ô câu. Tự động đổi màu cảnh báo khi sắp hết giờ và khi lố giờ.
+2. **Tính tiền & phụ thu lố giờ tự động:**
+   Tự động tính tiền ca, tiền gia hạn và phụ thu quá giờ theo đúng biểu giá quy định của hồ, không gây tranh cãi với cần thủ.
+3. **Bán mồi câu & đồ ăn nước uống:**
+   Cộng dồn nước ngọt, bia, thuốc lá, mồi câu, lưỡi câu trực tiếp vào hóa đơn vé đang câu chỉ với 1 chạm.
+4. **Cân cá thu mua & cấn trừ tự động:**
+   Nhập số kg và loại cá thu mua, phần mềm tự động nhân giá và cấn trừ trực tiếp vào hóa đơn của cần thủ, không cần tính nhẩm.
+5. **In hóa đơn nhiệt K57/K58 (58mm):**
+   Hỗ trợ in vé tạm vào hồ và hóa đơn thanh toán qua máy in nhiệt Bluetooth, Wi-Fi hoặc USB. Vé rõ ràng, có sẵn mã QR chuyển khoản VietQR tự động.
+6. **Kiểm soát nhân viên & chống thất thoát từ xa:**
+   Nhật ký kiểm toán (Audit Log) ghi nhận mọi thao tác. Nhân viên không thể tự ý sửa giá hoặc xóa hóa đơn mà không có sự phê duyệt của Chủ hồ.
+7. **Báo cáo doanh thu & chốt ca tức thì:**
+   Theo dõi doanh thu, số lượng cần thủ, tồn kho và tiền mặt trong két theo ca/ngày ngay trên điện thoại của chủ hồ từ bất kỳ đâu.
 
-## Gia cuoc
+## Bảng Giá Minh Bạch
 
-- Dung thu mien phi 30 ngay, khong can the tin dung
-- Goi Bac: 129.000 VND/thang hoac 1.290.000 VND/nam — toi da 30 o cau, 3 nhan su
-- Goi Vang: 199.000 VND/thang hoac 1.990.000 VND/nam — khong gioi han o cau va nhan su
+- **Dùng thử miễn phí 30 ngày (0đ):** Trải nghiệm đầy đủ 100% tính năng, không cần thẻ ngân hàng.
+- **Gói Bạc (Silver):** 129.000đ/tháng (chỉ ~4.300đ/ngày) — Tối đa 30 ô câu, chủ hồ và 2 nhân viên.
+- **Gói Vàng (Gold):** 199.000đ/tháng (chỉ ~6.600đ/ngày) — Không giới hạn số ô câu và nhân viên.
+- *Ưu đãi thanh toán năm:* Đóng 12 tháng chỉ tính tiền 10 tháng (tiết kiệm 17%).
 
-## Thi truong muc tieu
+## Thông Tin Doanh Nghiệp & Nhà Sáng Lập
 
-Cac chu ho cau dich vu tai Viet Nam: ho cau dai, ho cau lure, ho cau nuoc ngot, ho cau dich vu giai tri.
-
-## Lien he
-
-- Website: https://quanlihocau.com
-- Hotline tu van mien phi: 0855 550 813
-- Dang ky dung thu: https://quanlihocau.com/register
-- Bang gia: https://quanlihocau.com/bang-gia
-
-## Nguoi sang lap
-
-Huan Tran (Tran Anh Huan) — nguoi tao ra phan mem nay, cung la chu ho cau co kinh nghiem thuc te.
-Trang ca nhan: https://quanlihocau.com/huan-tran
-
-## Cau hoi thuong gap (FAQ)
-
-**Phan mem quan ly ho cau nao tot nhat o Viet Nam?**
-Quan Ly Ho Cau (quanlihocau.com) la giai phap chuyen biet duy nhat duoc xay dung boi chinh mot chu ho cau Viet Nam, phu hop voi quy trinh van hanh ho cau dich vu thuc te.
-
-**Phan mem ho cau co chay tren dien thoai khong?**
-Co. App la PWA (Progressive Web App), chay tren moi trinh duyet dien thoai, may tinh bang va may tinh. Khong can cai dat tu App Store hay Google Play.
-
-**Chi phi bao nhieu?**
-Dung thu mien phi 30 ngay. Goi tra phi tu 129.000 VND/thang. Goi nam giam 17%.
-
-**Co the quan ly nhan vien tu xa khong?**
-Co. Chu ho co the xem bao cao doanh thu, duyet phieu chi, kiem tra nhat ky thao tac cua nhan vien theo thoi gian thuc tu bat ky dau co internet.
-
-**Lam the nao chong nhan vien im tien o ho cau?**
-He thong co: (1) moi hoa don duoc luu lai vinh vien, (2) nhan vien khong the xoa don ma khong co ghi chu ly do, (3) moi phieu chi/phieu xuat kho phai duoc chu ho duyet, (4) nhat ky thao tac chi chu ho xem duoc.
-
+- **Nhà sáng lập:** Huân Trần (Trần Anh Huân) — Chủ hồ câu thực chiến tại Lâm Đồng.
+- **Trang cá nhân:** https://quanlihocau.com/huan-tran
+- **Hotline / Zalo tư vấn miễn phí:** 0855 550 813
+- **Kênh hỗ trợ:** https://www.facebook.com/koka.tran | https://www.tiktok.com/@hocaukimthong49

@@ -24,10 +24,18 @@ export const metadata: Metadata = {
         "phần mềm hồ câu",
         "quản lý hồ câu dịch vụ",
         "tính tiền hồ câu",
+        "phần mềm tính tiền hồ câu theo giờ",
         "quản lý hồ câu đài",
         "quản lý hồ câu lure",
+        "quản lý hồ câu giải trí",
         "đồng hồ phiên câu",
+        "app bấm giờ hồ câu",
+        "cân cá thu mua cấn trừ hóa đơn",
+        "in hóa đơn hồ câu 58mm",
+        "chống thất thoát hồ câu",
+        "quản lý nhân viên hồ câu từ xa",
         "báo cáo ca hồ câu",
+        "POS hồ câu cá",
     ],
     authors: [{ name: "Huân Trần (Trần Anh Huân)", url: "https://quanlihocau.com/huan-tran" }],
     creator: "Huân Trần (Trần Anh Huân)",
@@ -122,12 +130,15 @@ const jsonLdSchema = {
             "@id": "https://quanlihocau.com/#software",
             "creator": { "@id": founder["@id"] },
             "name": "Quản Lý Hồ Câu",
-            "alternateName": ["App Cho Chủ Hồ", "Ứng dụng Quản Lý Hồ Câu"],
-            "operatingSystem": "All",
+            "alternateName": ["App Cho Chủ Hồ", "Ứng dụng Quản Lý Hồ Câu", "Phần mềm POS Hồ Câu"],
+            "operatingSystem": "Web, iOS, Android, Windows, macOS",
             "applicationCategory": "BusinessApplication",
             "applicationSubCategory": "Fishing Pond POS & Management System",
             "description": "Phần mềm quản lý hồ câu dịch vụ chuyên nghiệp và app cho chủ hồ: tính tiền phiên câu theo giờ, cảnh báo hết giờ, nhân viên quyết định gia hạn hoặc kết thúc, phụ thu chỉ khi xác nhận, bán lẻ đồ câu, kiểm soát thất thoát và báo cáo doanh thu.",
             "url": "https://quanlihocau.com",
+            "installUrl": "https://quanlihocau.com/register",
+            "screenshot": "https://quanlihocau.com/opengraph-image",
+            "inLanguage": "vi-VN",
             "featureList": [
                 "Đồng hồ đếm ngược phiên câu theo thời gian thực từng giây",
                 "Tự động tính tiền phụ thu khi cần thủ câu lố thời gian quy định",
@@ -136,11 +147,12 @@ const jsonLdSchema = {
                 "Cân cá thu mua và cấn trừ tiền tự động vào hóa đơn",
                 "Theo dõi doanh thu thời gian thực và quản lý nhân viên từ xa trên điện thoại",
                 "In vé tạm và hóa đơn thanh toán khổ 58mm qua máy in Bluetooth hoặc Wifi",
+                "Nhật ký kiểm toán chống thất thoát tiền mặt, mọi thao tác hủy vé/sửa giá đều cần chủ hồ duyệt",
             ],
             "offers": [
                 {
                     "@type": "Offer",
-                    "name": "Dùng thử miễn phí",
+                    "name": "Dùng thử miễn phí 30 ngày",
                     "price": "0",
                     "priceCurrency": "VND",
                     "priceValidUntil": "2027-12-31",
@@ -177,6 +189,14 @@ const jsonLdSchema = {
             "url": "https://quanlihocau.com",
             "logo": "https://quanlihocau.com/icons/icon-512x512.png",
             "telephone": "+84855550813",
+            "knowsAbout": [
+                "Phần mềm quản lý hồ câu dịch vụ",
+                "Vận hành hồ câu đài và hồ câu lure",
+                "Tính tiền giờ câu cá tự động",
+                "Cân cá thu mua cấn trừ hóa đơn",
+                "In hóa đơn nhiệt 58mm cho hồ câu",
+                "Kiểm soát thất thoát doanh thu hồ câu",
+            ],
             "contactPoint": {
                 "@type": "ContactPoint",
                 "telephone": "+84855550813",
@@ -200,6 +220,72 @@ const jsonLdSchema = {
             "inLanguage": "vi-VN",
         },
         {
+            "@type": "BreadcrumbList",
+            "@id": "https://quanlihocau.com/#breadcrumb",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Trang chủ Quản Lý Hồ Câu",
+                    "item": "https://quanlihocau.com"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Trải Nghiệm Hồ Câu Mẫu (Demo)",
+                    "item": "https://quanlihocau.com/demo"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": "Bảng Giá Dịch Vụ",
+                    "item": "https://quanlihocau.com/bang-gia"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 4,
+                    "name": "Thiết Bị & Máy In 58mm",
+                    "item": "https://quanlihocau.com/thiet-bi-may-in"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 5,
+                    "name": "Nhà Sáng Lập Huân Trần",
+                    "item": "https://quanlihocau.com/huan-tran"
+                }
+            ]
+        },
+        {
+            "@type": "HowTo",
+            "@id": "https://quanlihocau.com/#howto",
+            "name": "Cách vận hành hồ câu dịch vụ không thất thoát chỉ với 1 chiếc điện thoại",
+            "description": "Quy trình 3 bước chuẩn hóa vận hành hồ câu bằng phần mềm Quản Lý Hồ Câu (quanlihocau.com) giúp chủ hồ quản lý từ xa nhàn tênh.",
+            "totalTime": "PT1M",
+            "step": [
+                {
+                    "@type": "HowToStep",
+                    "position": 1,
+                    "name": "Chạm mở vé câu trong 3 giây",
+                    "text": "Chọn chòi/ô câu trống trên sơ đồ bờ hồ, chọn gói câu (ví dụ Ca 4 tiếng) và bấm mở vé. Đồng hồ đếm ngược bắt đầu chạy tự động theo thời gian thực.",
+                    "url": "https://quanlihocau.com/demo"
+                },
+                {
+                    "@type": "HowToStep",
+                    "position": 2,
+                    "name": "Ghi nước, mồi câu & cân cá thu mua tự động",
+                    "text": "Khi khách gọi nước ngọt, mồi câu hoặc bán lại cá câu được, nhân viên bấm cộng món hoặc nhập số kg cá thu mua. Phần mềm tự động cộng dồn và cấn trừ tiền cá vào hóa đơn gốc.",
+                    "url": "https://quanlihocau.com/demo"
+                },
+                {
+                    "@type": "HowToStep",
+                    "position": 3,
+                    "name": "Cảnh báo hết giờ, in bill 58mm & chốt ca từ xa",
+                    "text": "Khi hết giờ, ô câu đổi màu cảnh báo. Nhân viên bấm thanh toán tiền mặt hoặc QR chuyển khoản, in hóa đơn 58mm rõ ràng. Chủ hồ theo dõi toàn bộ doanh thu và nhật ký chống thất thoát từ xa trên điện thoại.",
+                    "url": "https://quanlihocau.com/bang-gia"
+                }
+            ]
+        },
+        {
             "@type": "FAQPage",
             "@id": "https://quanlihocau.com/#faq",
             "mainEntity": [
@@ -208,7 +294,7 @@ const jsonLdSchema = {
                     "name": "Phần mềm quản lý hồ câu nào tốt nhất trên điện thoại?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Quản Lý Hồ Câu (quanlihocau.com) là phần mềm chuyên biệt chạy trên mọi điện thoại (PWA), giúp chủ hồ đếm giờ phiên câu, cảnh báo hết giờ, bán mồi nước, thu mua cá, quản lý nhân viên và hạn chế thất thoát từ xa."
+                        "text": "Quản Lý Hồ Câu (quanlihocau.com) là phần mềm chuyên biệt số 1 tại Việt Nam chạy trên mọi điện thoại (PWA), được xây dựng bởi chính chủ hồ câu thực chiến. Phần mềm giúp đếm giờ phiên câu, cảnh báo hết giờ, bán mồi nước, cân cá thu mua cấn trừ tự động, in bill 58mm và chống thất thoát tiền mặt từ xa."
                     }
                 },
                 {
@@ -216,7 +302,7 @@ const jsonLdSchema = {
                     "name": "Chủ hồ câu làm thế nào để quản lý từ xa và chống nhân viên ỉm tiền?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Hệ thống Quản Lý Hồ Câu lưu lại mọi phiên câu và lịch sử hóa đơn. Các thao tác sửa giá, lập phiếu chi, xuất kho hoặc hủy đơn đều yêu cầu ghi chú lý do và phải được Chủ hồ phê duyệt thì mới có hiệu lực. Nhật ký hoạt động chỉ Chủ hồ và Quản trị viên xem được."
+                        "text": "Hệ thống Quản Lý Hồ Câu lưu lại mọi phiên câu và lịch sử hóa đơn theo thời gian thực. Nhân viên không thể tự ý xóa vé câu đã mở. Các thao tác nhạy cảm như sửa giá, lập phiếu chi, xuất kho hoặc hủy đơn đều yêu cầu ghi chú lý do và phải được Chủ hồ phê duyệt. Nhật ký kiểm toán (Audit Log) chỉ Chủ hồ mới có quyền xem."
                     }
                 },
                 {
@@ -224,7 +310,7 @@ const jsonLdSchema = {
                     "name": "App quản lý hồ câu có cần cài đặt qua App Store hay CH Play không?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Không cần cài đặt phức tạp. Ứng dụng chạy trực tiếp trên trình duyệt điện thoại (PWA) chỉ cần mở link quanlihocau.com là dùng được ngay, có thể thêm biểu tượng ra màn hình chính như ứng dụng thông thường."
+                        "text": "Không cần cài đặt phức tạp. Ứng dụng sử dụng công nghệ PWA hiện đại, chạy trực tiếp trên trình duyệt điện thoại iPhone, Android, máy tính bảng và máy tính. Chỉ cần mở quanlihocau.com là dùng ngay và có thể lưu biểu tượng ra màn hình chính như ứng dụng gốc."
                     }
                 },
                 {
@@ -232,7 +318,39 @@ const jsonLdSchema = {
                     "name": "Chi phí sử dụng phần mềm Quản Lý Hồ Câu là bao nhiêu?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Chủ hồ được dùng thử miễn phí 30 ngày. Sau đó có Gói Bạc 129.000đ/tháng (tối đa 30 ô, chủ hồ và 2 nhân viên) và Gói Vàng 199.000đ/tháng (không giới hạn ô câu và nhân sự). Thanh toán theo năm được tặng 2 tháng."
+                        "text": "Chủ hồ được dùng thử miễn phí trọn vẹn 30 ngày (0đ, không cần thẻ ngân hàng). Sau đó có Gói Bạc 129.000đ/tháng (chỉ 4.300đ/ngày, tối đa 30 ô câu, chủ hồ và 2 nhân viên) và Gói Vàng 199.000đ/tháng (không giới hạn ô câu và nhân sự). Đăng ký theo năm được tặng ngay 2 tháng."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Phần mềm tính tiền phụ thu quá giờ và cân cá thu mua như thế nào?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Khi cần thủ ngồi quá thời gian gói câu, đồng hồ tự động chuyển sang trạng thái cảnh báo lố giờ. Nhân viên có thể chọn gia hạn thêm tiếng hoặc kết thúc tính phụ thu theo đơn giá của hồ. Khi khách bán lại cá, chỉ cần nhập số kg và loại cá, phần mềm tự động nhân đơn giá và cấn trừ trực tiếp vào tổng tiền vé câu."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Mất mạng hoặc điện thoại tắt màn hình thì đồng hồ đếm giờ câu có bị lệch không?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Tuyệt đối không lệch. Thời gian bắt đầu và kết thúc phiên câu được đồng bộ với máy chủ đám mây. Dù điện thoại tắt màn hình, hết pin hay mất kết nối mạng tạm thời, đồng hồ phiên câu vẫn chính xác tuyệt đối đến từng giây khi mở lại."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Phần mềm hỗ trợ loại máy in hóa đơn nào cho hồ câu?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Phần mềm tương thích với hầu hết các dòng máy in nhiệt khổ giấy K57/58mm phổ biến (kết nối Bluetooth, USB hoặc Wi-Fi/LAN). Vé in ra gọn gàng, rõ nét gồm giờ vào, giờ ra, tiền vé, tiền nước mồi, tiền trừ cá thu mua và mã QR chuyển khoản ngân hàng của chủ hồ."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Làm sao để bấm thử phần mềm trước khi đăng ký tài khoản?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Chủ hồ có thể truy cập trực tiếp trang mô phỏng công khai tại https://quanlihocau.com/demo để bấm thử mở vé, xem đồng hồ đếm ngược, thêm nước mồi và thanh toán ngay trên trình duyệt mà không cần tạo tài khoản."
                     }
                 }
             ]
