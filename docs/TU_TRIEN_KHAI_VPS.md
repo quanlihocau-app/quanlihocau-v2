@@ -2,7 +2,7 @@
 
 Tài liệu này mô tả các lệnh. PR này không chạy các lệnh đó trên máy thật, không đổi DNS, không đụng dữ liệu đang chạy.
 
-Máy đang chạy: Ubuntu 24.04.1, 2 vCPU, khoảng 3,8 GB RAM, 60 GB, Hà Nội. SSH cổng 24700. Hướng dẫn vận hành nằm ở `deploy/README.md`. Ảnh ứng dụng build trên GitHub Actions. Postgres trong compose là 17.
+Máy đang chạy: Ubuntu 24.04.1, 2 vCPU, khoảng 3,8 GB RAM, 60 GB, Hà Nội. SSH cổng 24700. Hướng dẫn vận hành nằm ở `deploy/README.md`. Ảnh ứng dụng build trên GitHub Actions. Postgres trên VPS là image `postgres:18`, cùng họ với Neon 18.6. VPS không mở được TCP 5432 tới Neon; dump tạo ở máy có mạng tới Neon, restore chạy trên VPS bằng `deploy/scripts/migrate-from-neon.sh`.
 
 ## Việc làm một lần trên VPS
 
@@ -15,39 +15,29 @@ Máy đang chạy: Ubuntu 24.04.1, 2 vCPU, khoảng 3,8 GB RAM, 60 GB, Hà Nội
 
 ## Chuyển dữ liệu Neon sang Postgres trên VPS
 
-Làm khi site đang tạm ngưng ghi, không phải lúc khách đang mở vé. Giữ nguyên Neon cho đến khi đối chiếu xong. Không xóa project Neon trong đợt này.
+Neon đang là PostgreSQL 18.6, khoảng 19 MB, 28 migration đã áp, khoảng 11 nghìn dòng, kèm bảng demo `playing_with_neon`. Không lấy bảng đó.
 
-Trên một máy có mạng tới Neon (không cần là VPS):
+VPS không mở được TCP 5432 tới Neon. Máy dev cũng không. Đừng chạy dump từ hai chỗ đó.
 
-```bash
-pg_dump "$NEON_DATABASE_URL" --format=custom --no-owner --no-acl --file=quanlihocau-neon.dump
-```
-
-Đưa file lên VPS rồi nạp vào container `db` đang chạy, database còn trống:
+Trên một máy có mạng tới Neon:
 
 ```bash
-docker compose cp quanlihocau-neon.dump db:/tmp/quanlihocau-neon.dump
-docker compose exec -T db pg_restore -U quanlihocau -d quanlihocau --no-owner --no-acl --exit-on-error /tmp/quanlihocau-neon.dump
-docker compose exec -T db rm -f /tmp/quanlihocau-neon.dump
+NEON_DATABASE_URL='postgresql://...' bash deploy/scripts/migrate-from-neon.sh dump-to /tmp/neon.dump
 ```
 
-Sau đó, trong thư mục compose:
+Lệnh dùng `docker run postgres:18` cho `pg_dump` và đếm dòng. Không in URL. Sinh `/tmp/neon.dump` và `/tmp/neon.dump.counts`.
+
+Chép cả hai file lên VPS. Database Postgres 18 trên VPS còn trống:
 
 ```bash
-docker compose run --rm migrate
+bash deploy/scripts/migrate-from-neon.sh restore /tmp/neon.dump
 ```
 
-`migrate` chính là `prisma migrate deploy`. Lệnh này chỉ áp migration chưa có. Nếu dump đã chứa cả bảng `_prisma_migrations` thì trạng thái phải sạch. Kiểm tra:
+`pg_restore` chạy trong container `postgres:18`. Script đối chiếu số dòng từng bảng với file counts, bỏ `playing_with_neon`. Không `--clean`, không xóa database Neon.
 
-```bash
-docker compose run --rm migrate
-docker compose exec -T db psql -U quanlihocau -d quanlihocau -c \
-  "SELECT 'Lake' AS t, count(*) FROM \"Lake\" UNION ALL SELECT 'FishingSession', count(*) FROM \"FishingSession\" UNION ALL SELECT 'Invoice', count(*) FROM \"Invoice\" UNION ALL SELECT 'Payment', count(*) FROM \"Payment\";"
-```
+Nếu volume cũ được tạo bởi Postgres 17 thì Postgres 18 không mở được. Dùng volume mới, đừng trỏ bản dump vào volume đang có dữ liệu khách.
 
-Chạy cùng câu `SELECT` trên Neon và so từng số. Lệch thì dừng, chưa cắt DNS. Có thể chạy thêm `node scripts/check-db.mjs` với `DATABASE_URL` trỏ vào database mới. Script này chỉ đọc.
-
-Dump custom format không ghi đè dữ liệu nếu bảng đã có dòng và restore không dùng `--clean`. Không thêm `--clean` trừ khi chủ hồ yêu cầu xóa đúng database đó.
+Sau restore, app tự chạy `prisma migrate deploy` lúc khởi động. Dump đã có bảng `_prisma_migrations` thì lệnh này không thêm gì. Không dùng `--clean`.
 
 ## Cắt DNS
 

@@ -66,7 +66,12 @@ test("backup, harden, migrate Neon và workflow chỉ bấm tay", () => {
     assert.match(migrate, /pg_dump/);
     assert.match(migrate, /pg_restore/);
     assert.match(migrate, /count\(\*\)/);
+    assert.match(migrate, /postgres:18/);
+    assert.match(migrate, /exclude-table=playing_with_neon/);
     assert.doesNotMatch(migrate, /--clean|migrate reset|DROP DATABASE/);
+    const composeFile = fs.readFileSync("deploy/docker-compose.yml", "utf8");
+    assert.match(composeFile, /image: postgres:18$/m);
+    assert.doesNotMatch(composeFile, /postgres:1[67]/);
     const restore = fs.readFileSync("deploy/scripts/restore-test.sh", "utf8");
     assert.match(restore, /quanlihocau_restore_test/);
     assert.match(restore, /DROP DATABASE IF EXISTS quanlihocau_restore_test/);

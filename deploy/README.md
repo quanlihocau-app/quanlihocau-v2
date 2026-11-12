@@ -36,7 +36,7 @@ Bỏ trống đối số cổng thì dùng 24700. Script mở cổng đó, rồi
 3. Đăng nhập `ssh -p 24700 deploy@<ip>` bằng khóa. Script chỉ tắt mật khẩu SSH sau khi thấy đăng nhập khóa thành công.
 4. Copy `.env.selfhost.example` thành `/opt/quanlihocau/.env`, `chmod 600`.
 5. Chụp snapshot iNET. Chạy `bash deploy/scripts/pre-deploy-check.sh`.
-6. Nếu chuyển dữ liệu từ Neon: `bash deploy/scripts/migrate-from-neon.sh` khi database cục bộ còn trống. Script không xóa gì trên Neon.
+6. Neon là PostgreSQL 18.6. VPS không mở được cổng 5432 tới Neon, nên không dump trực tiếp trên VPS. Trên một máy có mạng tới Neon: `NEON_DATABASE_URL=... bash deploy/scripts/migrate-from-neon.sh dump-to /tmp/neon.dump` (image `postgres:18`, bỏ bảng demo `playing_with_neon`). Chép `neon.dump` và `neon.dump.counts` lên VPS. Database cục bộ còn trống thì `bash deploy/scripts/migrate-from-neon.sh restore /tmp/neon.dump`. Script đối chiếu số dòng từng bảng. Không xóa gì trên Neon.
 7. Trên GitHub, bấm workflow **Deploy VPS**. Workflow không chạy khi push. Secret `SSH_PORT` để trống thì workflow dùng 24700.
 
 `up.sh` dùng `docker compose up -d --wait --no-build`. Thiếu ảnh thì dừng, không build tại chỗ.

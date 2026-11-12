@@ -1,4 +1,4 @@
-FROM postgres:17-bookworm
+FROM postgres:18-bookworm
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl awscli gzip age cron tzdata \
     && rm -rf /var/lib/apt/lists/*

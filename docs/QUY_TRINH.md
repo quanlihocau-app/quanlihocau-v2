@@ -133,7 +133,7 @@ Trừ 1 điểm: chưa chạy container với `TZ=Asia/Ho_Chi_Minh` vì máy nà
 
 ### Bước 2 — 9/10, chấm lại sau khi biết máy iNET
 
-Máy đích là VPS iNET tại Hà Nội: Ubuntu 24.04.1, 2 vCPU, khoảng 3,8 GB RAM, 60 GB, SSH cổng 24700. Agent OneDash được giữ nguyên. Gói vận hành nằm trong `deploy/`. Compose không publish Postgres, không có khối `build`, bốn service `restart: always`, hạn mức nhớ 640/896/96/256 MB. `harden.sh` nhận cổng SSH, mặc định 24700, mở cổng đó trước khi `ufw enable`. Workflow deploy chỉ `workflow_dispatch` và SSH mặc định cổng 24700.
+Máy đích là VPS iNET tại Hà Nội: Ubuntu 24.04.1, 2 vCPU, khoảng 3,8 GB RAM, 60 GB, SSH cổng 24700. Agent OneDash được giữ nguyên. Gói vận hành nằm trong `deploy/`. Compose không publish Postgres, không có khối `build`, bốn service `restart: always`, hạn mức nhớ 640/896/96/256 MB. Database trên VPS là `postgres:18` vì Neon đang là 18.6. `harden.sh` nhận cổng SSH, mặc định 24700, mở cổng đó trước khi `ufw enable`. Workflow deploy chỉ `workflow_dispatch` và SSH mặc định cổng 24700.
 
 `npm run build` lần trước đã ra `.next/standalone/server.js` có `sharp`. Chưa build lại sau khi thêm header cache vì header nằm ở Caddy, không ở app.
 
