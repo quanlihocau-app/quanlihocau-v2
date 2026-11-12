@@ -5,11 +5,5 @@
     "deploymentEnabled": {
       "dependabot/**": false
     }
-  },
-  "crons": [
-    {
-      "path": "/api/cron/subscriptions",
-      "schedule": "0 17 * * *"
-    }
-  ]
+  }
 }

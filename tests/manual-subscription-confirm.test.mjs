@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { resetServerRateLimits } from "./reset-rate-limit.mjs";
 import test, { after, before } from "node:test";
 import bcrypt from "bcryptjs";
 import pg from "pg";
@@ -29,6 +30,7 @@ const timestamp = Date.now();
 const testPassword = "TestPassword123!";
 
 before(async () => {
+    await resetServerRateLimits();
     const client = await pool.connect();
     try {
         const hashedPassword = await bcrypt.hash(testPassword, 10);

@@ -10,21 +10,52 @@ export function removeVietnameseTones(str: string): string {
         .replace(/Đ/g, "D");
 }
 
+function wrapLine(value: string, width: number): string[] {
+    if (value.length === 0) return [""];
+    if (value.length <= width) return [value];
+    const lines: string[] = [];
+    let remaining = value;
+    while (remaining.length > width) {
+        let end = remaining.lastIndexOf(" ", width);
+        if (end <= 0) end = width;
+        lines.push(remaining.slice(0, end));
+        remaining = remaining.slice(end).replace(/^ +/, "");
+    }
+    if (remaining.length > 0) lines.push(remaining);
+    return lines;
+}
+
+/**
+ * Giữ đủ chữ. Dòng quá 32 ký tự xuống dòng, không cắt bằng dấu lửng.
+ * Giá nằm cuối dòng cuối, nếu còn chỗ.
+ */
 export function formatTwoColumns(
     left: string,
     right: string,
     width = 32,
 ): string {
-    const totalLen = left.length + right.length;
-    if (totalLen >= width) {
-        // Truncate left or return on two lines if too long
-        const availableLeft = Math.max(1, width - right.length - 1);
-        const truncatedLeft = left.length > availableLeft ? left.slice(0, availableLeft - 1) + "…" : left;
-        const spaces = Math.max(1, width - truncatedLeft.length - right.length);
-        return truncatedLeft + " ".repeat(spaces) + right;
+    const leftText = left.trim();
+    const rightText = right.trim();
+    if (rightText.length === 0) return wrapLine(leftText, width).join("\n");
+    if (rightText.length >= width) {
+        return [...wrapLine(leftText, width), ...wrapLine(rightText, width)].join("\n");
     }
-    const spaces = width - totalLen;
-    return left + " ".repeat(spaces) + right;
+    if (leftText.length + 1 + rightText.length <= width) {
+        return leftText + " ".repeat(width - leftText.length - rightText.length) + rightText;
+    }
+    const lastWidth = width - rightText.length - 1;
+    const lines: string[] = [];
+    let remaining = leftText;
+    while (remaining.length > lastWidth) {
+        const limit = remaining.length > width ? width : lastWidth;
+        let end = remaining.lastIndexOf(" ", limit);
+        if (end <= 0) end = limit;
+        lines.push(remaining.slice(0, end));
+        remaining = remaining.slice(end).replace(/^ +/, "");
+    }
+    const spaces = Math.max(1, width - remaining.length - rightText.length);
+    lines.push(remaining + " ".repeat(spaces) + rightText);
+    return lines.join("\n");
 }
 
 export function formatDivider(char = "-", width = 32): string {
@@ -143,7 +174,10 @@ export class EscPosBuilder {
         const normLeft = encoding === "ascii-normalized" ? removeVietnameseTones(left) : left;
         const normRight = encoding === "ascii-normalized" ? removeVietnameseTones(right) : right;
         const formatted = formatTwoColumns(normLeft, normRight, this.charsPerLine);
-        return this.line(formatted, { encoding: "utf-8" }); // already normalized if needed
+        for (const row of formatted.split("\n")) {
+            this.line(row, { encoding: "utf-8" });
+        }
+        return this;
     }
 
     /**

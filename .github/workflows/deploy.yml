@@ -1,0 +1,131 @@
+name: Deploy VPS
+
+# Chỉ chạy khi bấm tay trên GitHub. Không gắn push, pull_request hay schedule.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: deploy ảnh của commit này, hoặc rollback về một SHA đã build
+        required: true
+        type: choice
+        options:
+          - deploy
+          - rollback
+        default: deploy
+      image_tag:
+        description: Bắt buộc khi rollback. SHA của ảnh cũ, không thêm tiền tố.
+        required: false
+        type: string
+      build_local:
+        description: Build ảnh trên VPS (qlhc-local) khi chưa có ảnh GHCR
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: vps-deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: inputs.action == 'deploy' && inputs.build_local != true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Lowercase image name
+        id: image
+        run: echo "name=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push app
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runner
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
+
+      - name: Build and push scheduler
+        uses: docker/build-push-action@v6
+        with:
+          context: ./deploy
+          file: ./deploy/scheduler/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:scheduler-${{ github.sha }}
+            ${{ steps.image.outputs.name }}:scheduler-latest
+
+      - name: Build and push Caddy
+        uses: docker/build-push-action@v6
+        with:
+          context: ./deploy/caddy
+          file: ./deploy/caddy/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:caddy-${{ github.sha }}
+            ${{ steps.image.outputs.name }}:caddy-latest
+
+  ship:
+    needs: build
+    if: ${{ always() && (inputs.action == 'rollback' || inputs.build_local == true || needs.build.result == 'success') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Rollback needs a tag
+        if: inputs.action == 'rollback'
+        run: test -n "${{ inputs.image_tag }}"
+
+      - name: Deploy over SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          IMAGE_TAG: ${{ inputs.action == 'rollback' && inputs.image_tag || github.sha }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_HOST"
+          test -n "$SSH_USER"
+          test -n "$IMAGE_TAG"
+          image="ghcr.io/$(printf '%s' "$REPO_NAME" | tr '[:upper:]' '[:lower:]')"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "${SSH_KNOWN_HOSTS}" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            check=yes
+          else
+            check=accept-new
+          fi
+          if [ "${{ inputs.build_local }}" = "true" ]; then
+            remote_env="BUILD_LOCAL=1 DEPLOY_REF=${IMAGE_TAG}"
+          else
+            remote_env="DEPLOY_REF=${IMAGE_TAG} APP_IMAGE=${image}:${IMAGE_TAG} SCHEDULER_IMAGE=${image}:scheduler-${IMAGE_TAG} CADDY_IMAGE=${image}:caddy-${IMAGE_TAG}"
+          fi
+          ssh -i ~/.ssh/id_deploy -p "${SSH_PORT:-24700}" -o StrictHostKeyChecking="$check" \
+            "$SSH_USER@$SSH_HOST" \
+            "$remote_env bash -s" \
+            < deploy/scripts/remote-deploy.sh

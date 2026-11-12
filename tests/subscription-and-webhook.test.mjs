@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test, { before, after } from "node:test";
+import { clearLakeHuts, deleteLakeForTests } from "./cleanup-lake.mjs";
+import { resetServerRateLimits } from "./reset-rate-limit.mjs";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -68,6 +70,7 @@ async function setupOwner(lakeSuffix) {
 let testAreaId = "";
 
 before(async () => {
+    await resetServerRateLimits();
     await setupOwner("SubTest");
 
     // Create an Area for hut creation tests
@@ -87,26 +90,7 @@ after(async () => {
     const client = await pool.connect();
     try {
         if (testLakeId) {
-            await client.query(`DELETE FROM "SubscriptionOrder" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "DebtPayment" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "FinancialTransaction" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "FundTransfer" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "Debt" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "ReconciliationRecord" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "FinancialPeriod" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`UPDATE "FinancialCategory" SET "parentId" = NULL WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "FinancialCategory" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "FinancialAccount" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "PrintJob" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "InventoryMovement" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "Product" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "FishType" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "Hut" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "Area" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "Package" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "AuditEvent" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "Membership" WHERE "lakeId" = $1`, [testLakeId]);
-            await client.query(`DELETE FROM "Lake" WHERE "id" = $1`, [testLakeId]);
+            await deleteLakeForTests(client, testLakeId);
             if (testOrgId) {
                 await client.query(`DELETE FROM "Organization" WHERE "id" = $1`, [testOrgId]);
             }
@@ -308,8 +292,7 @@ test("Test 4: Idempotency chống cộng dồn thời gian khi Webhook gửi l�
 test("Test 5: Guard Enforcement: Gói Bạc chặn tối đa 30 ô câu và 2 tài khoản nhân sự, Gói Vàng không giới hạn", async () => {
     const client = await pool.connect();
     try {
-        // Clear huts to start clean
-        await client.query(`DELETE FROM "Hut" WHERE "lakeId" = $1`, [testLakeId]);
+        await clearLakeHuts(client, testLakeId);
 
         // Insert 30 huts into DB
         for (let i = 1; i <= 30; i++) {

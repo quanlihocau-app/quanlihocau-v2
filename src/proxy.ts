@@ -33,6 +33,10 @@ interface RateLimitBucket {
 }
 
 const rateLimitMap = new Map<string, RateLimitBucket>()
+
+export function resetInMemoryRateLimit(): void {
+  rateLimitMap.clear()
+}
 let lastCleanup = Date.now()
 
 function checkRateLimit(ip: string, isAuthRoute: boolean): { allowed: boolean; retryAfter: number; remaining: number; limit: number } {

@@ -1,9 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+    output: "standalone",
     compress: true,
     poweredByHeader: false,
     reactStrictMode: true,
+    outputFileTracingIncludes: {
+        "/*": ["node_modules/sharp/**/*", "node_modules/@img/**/*"],
+    },
     images: {
         formats: ["image/avif", "image/webp"],
     },

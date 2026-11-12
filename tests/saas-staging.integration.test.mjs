@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { resetServerRateLimits } from './reset-rate-limit.mjs';
 import test, { before, after } from 'node:test';
 import crypto from 'node:crypto';
 import pg from 'pg';
@@ -59,6 +60,7 @@ async function webhook(o, extra = {}) {
 }
 
 before(async () => {
+  await resetServerRateLimits();
   a = await register('a'); b = await register('b');
   const email = `saas-admin-${run}@example.test`;
   await pool.query('INSERT INTO "User" (id,email,name,"passwordHash","systemRole","updatedAt") VALUES ($1,$2,$3,$4,\'SUPER_ADMIN\',NOW())',

@@ -79,6 +79,24 @@ test('compact 58 mm ticket uses readable standard font without QR and limited li
     for (const field of ['TEST-USB', 'Choi 1', 'Goi thu 1 gio', '0901234567', 'Da thu:', 'Con thu:']) assert.match(bytes.toString('utf8'), new RegExp(field));
 });
 
+test('58mm two columns wrap a long package line at 32 characters', () => {
+    const { formatTwoColumns } = loadPrinting({}, null)('src/lib/printing/escpos.ts');
+    const left = 'Tien ca: Ca 2 tieng (Goi 2 can)';
+    const right = '80.000d';
+    const formatted = formatTwoColumns(left, right, 32);
+    const lines = formatted.split('\n');
+    for (const line of lines) assert.ok(line.length <= 32, line);
+    assert.equal(lines.at(-1).endsWith(right), true);
+    const kept = lines
+        .map((line, index) => (index === lines.length - 1 ? line.slice(0, line.lastIndexOf(right)) : line))
+        .join('')
+        .replace(/ +/g, '');
+    assert.equal(kept, left.replace(/ +/g, ''));
+    assert.match(formatted, /2 can\)/);
+    assert.doesNotMatch(formatted, /Tien ca: Ca 2 tieng \(Go$/m);
+    assert.doesNotMatch(formatted, /…/);
+});
+
 test('compact ticket wraps long customer text and preserves outstanding balance', () => {
     const builder = loadPrinting({}, null)('src/lib/printing/receipt-builder.ts');
     const note = 'abcdefghij'.repeat(7);
