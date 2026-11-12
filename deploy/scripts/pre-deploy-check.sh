@@ -6,7 +6,7 @@ ROOT="$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
 echo "1. Trên trang iNET, chụp snapshot máy trước."
-echo "2. Chạy backup database (deploy/scripts/backup.sh trong container lịch, hoặc đợi cron 02:15) và kiểm tra file đã lên R2."
+echo "2. Chạy backup database (deploy/scripts/backup.sh trong container lịch, hoặc đợi cron 02:15) và kiểm tra bản off-site (rclone/Google Drive hoặc S3/R2)."
 echo "3. Đọc migration mới trong prisma/migrations. Chỉ được prisma migrate deploy."
 echo "4. Cấm prisma migrate reset và prisma db push --accept-data-loss."
 

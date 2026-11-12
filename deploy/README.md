@@ -12,7 +12,7 @@ OneDash và Ubuntu cần phần RAM còn lại. Hạn mức container cộng kho
 |---|---|
 | Postgres | 640 MB, `shared_buffers=128MB`, tối đa 40 kết nối |
 | Next.js | 896 MB |
-| Caddy | 96 MB |
+| Caddy | 192 MB |
 | Lịch backup và cron gói | 256 MB |
 
 `harden.sh` tạo swap 2 GB nếu máy chưa có swap. Nếu swap đã có thì không tạo thêm. Swap không thay cho việc giữ hạn mức.
@@ -37,19 +37,23 @@ Bỏ trống đối số cổng thì dùng 24700. Script mở cổng đó, rồi
 4. Copy `.env.selfhost.example` thành `/opt/quanlihocau/.env`, `chmod 600`.
 5. Chụp snapshot iNET. Chạy `bash deploy/scripts/pre-deploy-check.sh`.
 6. Neon là PostgreSQL 18.6. VPS mở được cổng 5432 tới Neon, nên chạy dump ngay trên VPS: `NEON_DATABASE_URL=... bash deploy/scripts/migrate-from-neon.sh dump-to /tmp/neon.dump` (image `postgres:18`, bỏ bảng demo `playing_with_neon`). Database cục bộ còn trống thì `bash deploy/scripts/migrate-from-neon.sh restore /tmp/neon.dump`. Nếu stack đang dùng file compose phụ, đặt `COMPOSE_FILES` để lệnh này không tạo lại container database với cấu hình khác. Script đối chiếu số dòng từng bảng. Không xóa gì trên Neon. Volume Postgres 18 gắn tại `/var/lib/postgresql`, không phải `/var/lib/postgresql/data`.
-7. Trên GitHub, bấm workflow **Deploy VPS**. Workflow không chạy khi push. Secret `SSH_PORT` để trống thì workflow dùng 24700.
+7. Trên GitHub, bấm workflow **Deploy VPS**. Workflow không chạy khi push. Secret `SSH_PORT` để trống thì workflow dùng 24700. Nếu GHCR chưa có ảnh, bật input `build_local` hoặc trên VPS chạy `BUILD_LOCAL=1 bash deploy/scripts/up.sh`. Lệnh đó build bằng Dockerfile trong repo và gắn tag `qlhc-local/app:<sha>`, `qlhc-local/scheduler:<sha>`, `qlhc-local/caddy:<sha>`.
 
-`up.sh` dùng `docker compose up -d --wait --no-build`. Thiếu ảnh thì dừng, không build tại chỗ.
+`up.sh` mặc định `docker compose pull` rồi `up -d --wait --no-build`. `BUILD_LOCAL=1` là đường dự phòng khi thiếu ảnh GHCR. Compose không có khối `build`.
 
 ## Cache
 
-Caddy chỉ ép `Cache-Control: no-cache, no-store, must-revalidate` cho file `.html` (gồm `index.html`) và `sw.js` / `service-worker.js`. App hiện không có `sw.js`. Trang HTML đã tự trả no-cache. `/images`, `/icons` và font giữ header cache của app. Chỉ file trong `/_next/static/` (trừ service worker) nhận `public, max-age=31536000, immutable`.
+Trang prerender như `/login`, `/register`, `/bang-gia`, `/thiet-bi-may-in` do Next gửi `Cache-Control: s-maxage=31536000`. Caddy đè thành `private, no-cache` cho mọi đường không phải file tĩnh. `/_next/static` (trừ service worker) nhận `public, max-age=31536000, immutable`. `/images`, `/icons` và favicon giữ header cache của app.
+
+## Site và www
+
+`SITE_WWW` trống thì Caddy không khai báo host www và không xin chứng chỉ www. Thử trên IP, chưa có DNS: `SITE_ADDRESS=http://<ip-vps>` và `SITE_WWW=` (để trống) để chỉ nghe HTTP.
 
 ## Backup ra khỏi VPS
 
 Mặc định dùng rclone lên Google Drive, thư mục `quanlihocau-backups`. S3/R2 vẫn dùng được khi `BACKUP_TARGET=s3`.
 
-Giữ 14 bản ngày và 8 bản tuần. Script đối chiếu kích thước file đã tải. Dump rỗng hoặc `pg_restore --list` thất bại thì không tải lên và không xóa bản cũ. Tham số `schema=public` của Prisma được bỏ trước `pg_dump`.
+Giữ 14 bản ngày và 8 bản tuần trên remote. Mọi bản đã qua `pg_restore --list` còn nằm ở `/opt/quanlihocau/backups` 7 ngày, kể cả khi tải lên thất bại. `BACKUP_TARGET=local` thì không tải lên. Script kiểm tra mục remote trong `rclone.conf` trước khi dump. Dump rỗng hoặc `pg_restore --list` thất bại thì không tải lên và không xóa bản cũ. Tham số `schema=public` của Prisma được bỏ trước `pg_dump`.
 
 ### Cấp quyền Google Drive
 

@@ -4,7 +4,9 @@
 	admin off
 }
 
-{$SITE_ADDRESS:quanlihocau.com}, {$SITE_WWW:www.quanlihocau.com} {
+# Entrypoint của ảnh Caddy thêm site theo SITE_ADDRESS.
+# SITE_WWW trống thì không thêm www.quanlihocau.com và không xin chứng chỉ www.
+(site) {
 	encode zstd gzip
 	log {
 		output file /var/log/caddy/access.log {
@@ -20,10 +22,11 @@
 		-Server
 	}
 
-	# Chỉ HTML (kể cả index.html) và service worker. App chưa có sw.js.
-	# Trang HTML đã tự gửi no-cache. Không đè Cache-Control của /images, /icons và font.
-	@documents path_regexp (\.html$)|(^/(sw|service-worker)\.js$)
-	header @documents Cache-Control "no-cache, no-store, must-revalidate" {
+	# Trang prerender (/login, /register, /bang-gia, /thiet-bi-may-in) gửi s-maxage dài.
+	# Đè Cache-Control của mọi đường không phải file tĩnh. Giữ cache của app cho
+	# /_next/static, /images, /icons và favicon.
+	@dynamic not path /_next/static/* /images/* /icons/* /favicon.ico /favicon.svg
+	header @dynamic Cache-Control "private, no-cache" {
 		defer
 	}
 

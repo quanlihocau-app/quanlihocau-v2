@@ -1,5 +1,6 @@
 #!/bin/bash
-# Chạy trên VPS, trong checkout /opt/quanlihocau. Chỉ pull, không build.
+# Chạy trên VPS, trong checkout /opt/quanlihocau.
+# Mặc định chỉ pull ảnh GHCR. BUILD_LOCAL=1 thì build tại VPS bằng Dockerfile trong repo.
 set -euo pipefail
 
 # shellcheck disable=SC1091
@@ -17,8 +18,18 @@ set -a
 set +a
 qlhc_compose_array "$ROOT"
 
-if [[ -z "${APP_IMAGE:-}" || -z "${SCHEDULER_IMAGE:-}" || -z "${CADDY_IMAGE:-}" ]]; then
-    echo "up: thiếu APP_IMAGE, SCHEDULER_IMAGE hoặc CADDY_IMAGE" >&2
+if [[ "${BUILD_LOCAL:-0}" == "1" ]]; then
+    sha="$(git rev-parse HEAD)"
+    APP_IMAGE="qlhc-local/app:${sha}"
+    SCHEDULER_IMAGE="qlhc-local/scheduler:${sha}"
+    CADDY_IMAGE="qlhc-local/caddy:${sha}"
+    export APP_IMAGE SCHEDULER_IMAGE CADDY_IMAGE
+    echo "up: build local ${sha}"
+    docker build -f Dockerfile -t "$APP_IMAGE" "$ROOT"
+    docker build -f deploy/scheduler/Dockerfile -t "$SCHEDULER_IMAGE" "$ROOT/deploy"
+    docker build -f deploy/caddy/Dockerfile -t "$CADDY_IMAGE" "$ROOT/deploy/caddy"
+elif [[ -z "${APP_IMAGE:-}" || -z "${SCHEDULER_IMAGE:-}" || -z "${CADDY_IMAGE:-}" ]]; then
+    echo "up: thiếu APP_IMAGE, SCHEDULER_IMAGE hoặc CADDY_IMAGE. Hoặc đặt BUILD_LOCAL=1." >&2
     exit 1
 fi
 
@@ -39,7 +50,11 @@ if [[ -n "${GHCR_PULL_USER:-}" && -n "${GHCR_PULL_TOKEN:-}" ]]; then
 fi
 
 export APP_IMAGE SCHEDULER_IMAGE CADDY_IMAGE
-"${COMPOSE[@]}" pull
+if [[ "${BUILD_LOCAL:-0}" == "1" ]]; then
+    echo "up: dùng ảnh local, không pull GHCR."
+else
+    "${COMPOSE[@]}" pull
+fi
 
 secrets="${RCLONE_CONFIG_PATH:-$ROOT/secrets/rclone.conf}"
 mkdir -p "$(dirname "$secrets")"

@@ -23,7 +23,7 @@ test("compose VPS 4 GB không publish Postgres, không build, restart always và
     assert.doesNotMatch(db, /^\s*ports:/m);
     assert.match(db, /mem_limit: 640m/);
     assert.match(compose, /mem_limit: 896m/);
-    assert.match(compose, /mem_limit: 96m/);
+    assert.match(compose, /mem_limit: 192m/);
     assert.match(compose, /mem_limit: 256m/);
     assert.match(compose, /internal: true/);
     assert.match(compose, /80:80/);
@@ -33,9 +33,10 @@ test("compose VPS 4 GB không publish Postgres, không build, restart always và
     const caddy = fs.readFileSync("deploy/Caddyfile", "utf8");
     assert.match(caddy, /quanlihocau\.com/);
     assert.match(caddy, /www\.quanlihocau\.com/);
-    assert.match(caddy, /no-cache, no-store, must-revalidate/);
-    assert.match(caddy, /sw\.js/);
-    assert.match(caddy, /index\.html/);
+    assert.match(caddy, /private, no-cache/);
+    assert.match(caddy, /\/images\/\*/);
+    assert.match(caddy, /\/icons\/\*/);
+    assert.match(caddy, /favicon\.ico/);
     assert.doesNotMatch(caddy, /@not_hashed/);
     assert.match(caddy, /max-age=31536000, immutable/);
     assert.match(caddy, /X-Forwarded-For \{remote_host\}/);
@@ -49,6 +50,9 @@ test("backup, harden, migrate Neon và workflow chỉ bấm tay", () => {
     assert.match(backup, /pg_restore --list/);
     assert.match(backup, /BACKUP_TARGET/);
     assert.match(backup, /RCLONE_REMOTE/);
+    assert.match(backup, /BACKUP_LOCAL_DIR/);
+    assert.match(backup, /BACKUP_TARGET=local|local\)/);
+    assert.ok(backup.indexOf("rclone.conf không có mục") < backup.indexOf("pg_dump --dbname"));
     assert.doesNotMatch(backup, /AKIA[0-9A-Z]{16}/);
     const harden = fs.readFileSync("deploy/scripts/harden.sh", "utf8");
     assert.match(harden, /swapfile/);
@@ -95,7 +99,12 @@ test("backup, harden, migrate Neon và workflow chỉ bấm tay", () => {
     assert.doesNotMatch(header, /^\s*pull_request:/m);
     assert.doesNotMatch(header, /^\s*schedule:/m);
     assert.match(workflow, /inputs\.action == 'rollback'/);
-    assert.match(fs.readFileSync("deploy/scripts/up.sh", "utf8"), /--no-build/);
+    assert.match(workflow, /build_local/);
+    assert.match(workflow, /qlhc-local|BUILD_LOCAL/);
+    const up = fs.readFileSync("deploy/scripts/up.sh", "utf8");
+    assert.match(up, /--no-build/);
+    assert.match(up, /BUILD_LOCAL/);
+    assert.match(up, /qlhc-local\/app:/);
     assert.match(fs.readFileSync("deploy/README.md", "utf8"), /2 vCPU/);
     assert.match(fs.readFileSync("docs/CHECKLIST_SAU_DEPLOY.md", "utf8"), /NEXTAUTH_URL/);
     assert.match(fs.readFileSync("deploy/docs/CAT_DNS.md", "utf8"), /MX/);

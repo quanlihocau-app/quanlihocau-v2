@@ -71,17 +71,18 @@ services:
   caddy:
     image: ${CADDY_IMAGE:-ghcr.io/quanlihocau-app/quanlihocau-v2:caddy-unset}
     restart: always
-    mem_limit: 96m
+    mem_limit: 192m
     ports:
       - "80:80"
       - "443:443"
     environment:
       ACME_EMAIL: ${ACME_EMAIL:?Đặt ACME_EMAIL trong .env}
       SITE_ADDRESS: ${SITE_ADDRESS:-quanlihocau.com}
-      SITE_WWW: ${SITE_WWW:-www.quanlihocau.com}
+      # Trống nghĩa là không có site www. Không dùng :- vì giá trị rỗng sẽ bị thay bằng mặc định.
+      SITE_WWW: ${SITE_WWW-}
       TZ: Asia/Ho_Chi_Minh
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile:/etc/caddy/site.caddy:ro
       - caddy-data:/data
       - caddy-config:/config
       - /var/log/caddy:/var/log/caddy
@@ -111,6 +112,7 @@ services:
       RCLONE_CONFIG: /etc/rclone/rclone.conf
     volumes:
       - ${RCLONE_CONFIG_PATH:-../secrets/rclone.conf}:/etc/rclone/rclone.conf:ro
+      - ${BACKUP_LOCAL_HOST_DIR:-/opt/quanlihocau/backups}:/var/backups/quanlihocau
     depends_on:
       db:
         condition: service_healthy

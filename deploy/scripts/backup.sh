@@ -104,12 +104,31 @@ case "$TARGET" in
             echo "backup: thiếu file rclone $RCLONE_CONFIG." >&2
             exit 1
         fi
+        remote_name="${RCLONE_REMOTE%%:*}"
+        if [ -z "$remote_name" ] || [ "$remote_name" = "$RCLONE_REMOTE" ]; then
+            echo "backup: RCLONE_REMOTE phải có dạng tên:thư-mục, ví dụ gdrive:quanlihocau-backups. Không dump." >&2
+            exit 1
+        fi
+        if ! grep -Eq "^[[:space:]]*\\[${remote_name}\\][[:space:]]*$" "$RCLONE_CONFIG"; then
+            echo "backup: rclone.conf không có mục [${remote_name}]. Sửa file cấu hình trước khi dump." >&2
+            exit 1
+        fi
+        ;;
+    local)
         ;;
     *)
-        echo "backup: BACKUP_TARGET phải là rclone hoặc s3." >&2
+        echo "backup: BACKUP_TARGET phải là local, rclone hoặc s3." >&2
         exit 1
         ;;
 esac
+
+LOCAL_DIR="${BACKUP_LOCAL_DIR:-/var/backups/quanlihocau}"
+LOCAL_KEEP_DAYS="${BACKUP_LOCAL_RETENTION_DAYS:-7}"
+mkdir -p "$LOCAL_DIR"
+if [ ! -w "$LOCAL_DIR" ]; then
+    echo "backup: không ghi được thư mục local ${LOCAL_DIR}." >&2
+    exit 1
+fi
 
 DB_URL="$(sanitize_database_url "$DATABASE_URL")" || exit 1
 PREFIX="${S3_PREFIX:-quanlihocau}"
@@ -149,6 +168,23 @@ if [ "$local_size" = "0" ]; then
     exit 1
 fi
 
+cp "$WORKDIR/$NAME" "$LOCAL_DIR/$NAME"
+chmod 600 "$LOCAL_DIR/$NAME"
+cutoff="$(TZ=Asia/Ho_Chi_Minh date -d "-${LOCAL_KEEP_DAYS} days" +%Y-%m-%d)"
+for old in "$LOCAL_DIR"/daily-*; do
+    [ -e "$old" ] || continue
+    file_date="$(basename "$old" | sed -n 's/.*\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\).*/\1/p')"
+    if [ -n "$file_date" ] && [ "$file_date" \< "$cutoff" ]; then
+        rm -f "$old"
+    fi
+done
+echo "backup: đã giữ bản local ${LOCAL_DIR}/${NAME}"
+
+if [ "$TARGET" = "local" ]; then
+    echo "backup: chế độ local, không tải lên."
+    exit 0
+fi
+
 remote_size() {
     if [ "$TARGET" = "s3" ]; then
         aws s3api head-object \
@@ -172,7 +208,7 @@ upload() {
     fi
     got="$(remote_size "$key" || true)"
     if [ -z "$got" ] || [ "$got" != "$local_size" ]; then
-        echo "backup: kích thước không khớp, local=${local_size} remote=${got:-không thấy}. Không xóa bản cũ." >&2
+        echo "backup: tải lên thất bại, local=${local_size} remote=${got:-không thấy}. Bản trên đĩa vẫn ở ${LOCAL_DIR}/${NAME}." >&2
         exit 1
     fi
 }

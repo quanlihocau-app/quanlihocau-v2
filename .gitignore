@@ -62,6 +62,7 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# rclone token. Không commit.
+# rclone token và bản dump local. Không commit.
 /secrets/
 rclone.conf
+/backups/

@@ -16,6 +16,11 @@ on:
         description: Bắt buộc khi rollback. SHA của ảnh cũ, không thêm tiền tố.
         required: false
         type: string
+      build_local:
+        description: Build ảnh trên VPS (qlhc-local) khi chưa có ảnh GHCR
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -27,7 +32,7 @@ concurrency:
 
 jobs:
   build:
-    if: inputs.action == 'deploy'
+    if: inputs.action == 'deploy' && inputs.build_local != true
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -80,7 +85,7 @@ jobs:
 
   ship:
     needs: build
-    if: ${{ always() && (inputs.action == 'rollback' || needs.build.result == 'success') }}
+    if: ${{ always() && (inputs.action == 'rollback' || inputs.build_local == true || needs.build.result == 'success') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -115,7 +120,12 @@ jobs:
           else
             check=accept-new
           fi
+          if [ "${{ inputs.build_local }}" = "true" ]; then
+            remote_env="BUILD_LOCAL=1 DEPLOY_REF=${IMAGE_TAG}"
+          else
+            remote_env="DEPLOY_REF=${IMAGE_TAG} APP_IMAGE=${image}:${IMAGE_TAG} SCHEDULER_IMAGE=${image}:scheduler-${IMAGE_TAG} CADDY_IMAGE=${image}:caddy-${IMAGE_TAG}"
+          fi
           ssh -i ~/.ssh/id_deploy -p "${SSH_PORT:-24700}" -o StrictHostKeyChecking="$check" \
             "$SSH_USER@$SSH_HOST" \
-            "DEPLOY_REF=${IMAGE_TAG} APP_IMAGE=${image}:${IMAGE_TAG} SCHEDULER_IMAGE=${image}:scheduler-${IMAGE_TAG} CADDY_IMAGE=${image}:caddy-${IMAGE_TAG} bash -s" \
+            "$remote_env bash -s" \
             < deploy/scripts/remote-deploy.sh
