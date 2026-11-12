@@ -3,10 +3,16 @@
 
 :root {
     /* ── Primary Brand Colors ─────────────────────── */
-    --brand-primary:           #1B3B2B;  /* Deep Forest Green — headers, primary CTA */
+    --brand-primary:           #1B3B2B;  /* Deep Forest Green — headers, logo, titles */
     --brand-primary-hover:     #142d20;  /* Darker on hover */
     --brand-primary-active:    #0f2218;  /* Pressed state */
     --brand-on-primary:        #ffffff;  /* Text on primary bg */
+
+    /* ── CTA Accent (Quy tắc bút dạ 10% — Nổi bật nhất trang) ── */
+    --brand-cta:               #15803D;  /* Vibrant Emerald — Dành riêng cho Primary CTA */
+    --brand-cta-hover:         #166534;  /* Hover state */
+    --brand-cta-active:        #14532d;  /* Pressed state */
+    --brand-on-cta:            #ffffff;  /* Text tương phản cao WCAG AA */
 
     /* ── Accent / Tint ────────────────────────────── */
     --brand-accent:            #E8F0EC;  /* Soft Sage — active states, secondary btns */

@@ -90,7 +90,7 @@
 }
 .brand-landing .brand-nav a {
     display: inline-flex;
-    min-height: 42px;
+    min-height: 48px;
     align-items: center;
     text-decoration: none;
     color: var(--brand-ink);
@@ -105,6 +105,7 @@
     padding: 8px 16px;
     border-radius: 8px;
     font-weight: 700;
+    min-height: 48px;
     color: var(--brand-primary);
 }
 .brand-landing .brand-nav .brand-login:hover {
@@ -112,16 +113,18 @@
     background: var(--brand-secondary);
 }
 .brand-landing .brand-nav .brand-header-cta {
-    background: var(--brand-primary);
-    color: #ffffff;
+    background: transparent;
+    color: var(--brand-primary);
     padding: 8px 18px;
     border-radius: 8px;
     font-weight: 700;
+    min-height: 48px;
     border: 1px solid var(--brand-primary);
+    transition: all 0.15s ease;
 }
 .brand-landing .brand-nav .brand-header-cta:hover {
-    background: var(--brand-primary-hover);
-    color: #ffffff;
+    background: var(--brand-accent);
+    color: var(--brand-primary);
 }
 .brand-landing a:focus-visible,
 .brand-landing button:focus-visible,
@@ -133,10 +136,25 @@
 
 /* Hero */
 .brand-landing .brand-hero {
-    background: linear-gradient(180deg, #f8faf8 0%, #eff5f1 100%);
+    position: relative;
+    overflow: hidden;
+    background: #ffffff;
     border-bottom: 1px solid var(--brand-border);
 }
+.brand-landing .brand-hero-ambient {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(1200px, 100vw);
+    height: 480px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(232, 240, 236, 0.75) 0%, rgba(248, 250, 248, 0.45) 50%, transparent 80%);
+    pointer-events: none;
+    z-index: 0;
+}
 .brand-landing .brand-hero-grid {
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: 1.12fr 0.88fr;
     align-items: start;
@@ -170,9 +188,9 @@
 }
 .brand-landing h1 {
     margin: 0 0 22px;
-    font-size: clamp(40px, 4.5vw, 62px);
+    font-size: clamp(38px, 4.3vw, 58px);
     font-weight: 700;
-    line-height: 1.08;
+    line-height: 1.12;
     letter-spacing: -0.025em;
     color: var(--brand-ink);
 }
@@ -182,7 +200,7 @@
 }
 .brand-landing .brand-lead {
     max-width: 540px;
-    font-size: 18px;
+    font-size: 17.5px;
     line-height: 1.72;
     margin: 0 0 28px;
     color: #334155;
@@ -205,15 +223,40 @@
     font-size: 16px;
     line-height: 1.4;
     font-weight: 700;
-    border: 1px solid var(--brand-primary);
-    background: var(--brand-primary);
-    color: #ffffff;
-    box-shadow: 0 8px 20px -6px rgba(27, 59, 43, 0.35);
-    transition: transform 0.12s ease, background-color 0.15s ease;
+    border: 1px solid var(--brand-cta);
+    background: var(--brand-cta);
+    color: var(--brand-on-cta);
+    box-shadow: 0 10px 24px -6px rgba(21, 128, 61, 0.42), 0 4px 10px -2px rgba(21, 128, 61, 0.15);
+    transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 .brand-landing .brand-button:hover {
-    background: var(--brand-primary-hover);
+    background: var(--brand-cta-hover);
+    border-color: var(--brand-cta-hover);
     transform: translateY(-1px);
+    box-shadow: 0 14px 30px -6px rgba(21, 128, 61, 0.48), 0 6px 14px -2px rgba(21, 128, 61, 0.2);
+}
+.brand-landing .brand-button-hero {
+    min-height: 58px;
+    padding: 16px 36px;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    border: 1px solid var(--brand-cta);
+    background: var(--brand-cta);
+    color: var(--brand-on-cta);
+    box-shadow: 0 14px 32px -6px rgba(21, 128, 61, 0.45), 0 4px 12px -2px rgba(21, 128, 61, 0.18);
+}
+.brand-landing .brand-button-hero:hover {
+    background: var(--brand-cta-hover);
+    border-color: var(--brand-cta-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 18px 40px -6px rgba(21, 128, 61, 0.52), 0 6px 16px -2px rgba(21, 128, 61, 0.22);
+}
+.brand-landing .brand-hero-sub-friction {
+    margin: 12px 0 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4b5563;
+    line-height: 1.5;
 }
 .brand-landing .brand-button-secondary {
     display: inline-flex;
@@ -306,7 +349,7 @@
     top: 18px;
     bottom: 18px;
     width: 2px;
-    background: #e5b8b0;
+    background: #E5E7EB;
 }
 .brand-landing .brand-book-top {
     display: flex;
@@ -335,7 +378,7 @@
     width: 6px;
     height: 6px;
     border-radius: 999px;
-    background: #16a34a;
+    background: #94A3B8;
 }
 .brand-landing .brand-book-heading {
     display: flex;
@@ -386,9 +429,9 @@
     padding: 12px 14px;
     margin: 10px 0 4px;
     border-radius: 10px;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #b45309;
+    background: #F8FAF8;
+    border: 1px solid #E5E7EB;
+    color: var(--brand-ink);
 }
 .brand-landing .brand-timer > span {
     font-size: 12.5px;
@@ -398,7 +441,7 @@
 .brand-landing .brand-timer small {
     font-size: 11px;
     font-weight: 500;
-    color: #92400e;
+    color: var(--brand-muted);
 }
 .brand-landing .brand-timer strong {
     font-size: 26px;
@@ -686,6 +729,186 @@
 }
 .brand-landing .brand-comparison-table tr:last-child td {
     border-bottom: 0;
+}
+
+/* Interactive Loss Calculator (Trước Form Đăng Ký) */
+.brand-landing .brand-calc-section {
+    background: #ffffff;
+    border-bottom: 1px solid var(--brand-border);
+    padding-block: 76px;
+    position: relative;
+}
+.brand-landing .brand-calc-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 32px;
+    align-items: stretch;
+    margin-top: 32px;
+}
+.brand-landing .brand-calc-inputs {
+    background: #f8faf8;
+    border: 1px solid var(--brand-border);
+    border-radius: 14px;
+    padding: 30px 28px;
+    box-shadow: 0 4px 16px -2px rgba(27, 59, 43, 0.04);
+}
+.brand-landing .brand-calc-group {
+    margin-bottom: 24px;
+}
+.brand-landing .brand-calc-group:last-child {
+    margin-bottom: 0;
+}
+.brand-landing .brand-calc-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.brand-landing .brand-calc-label {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--brand-ink);
+}
+.brand-landing .brand-calc-val {
+    font-size: 16.5px;
+    font-weight: 800;
+    color: var(--brand-primary);
+    font-variant-numeric: tabular-nums;
+}
+.brand-landing .brand-calc-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    outline: none;
+    margin: 10px 0 12px;
+    cursor: pointer;
+}
+.brand-landing .brand-calc-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+.brand-landing .brand-calc-range::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+.brand-landing .brand-calc-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.brand-landing .brand-calc-chip {
+    border: 1px solid var(--brand-border);
+    background: #ffffff;
+    color: var(--brand-ink);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 40px;
+    transition: all 0.12s ease;
+    touch-action: manipulation;
+}
+.brand-landing .brand-calc-chip:hover {
+    border-color: var(--brand-primary);
+}
+.brand-landing .brand-calc-chip.is-active {
+    background: var(--brand-primary);
+    color: #ffffff;
+    border-color: var(--brand-primary);
+}
+.brand-landing .brand-calc-results {
+    background: var(--brand-primary);
+    color: #ffffff;
+    border-radius: 14px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 16px 36px -8px rgba(27, 59, 43, 0.28);
+}
+.brand-landing .brand-calc-stat-label {
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #b8d8c5;
+    margin-bottom: 6px;
+}
+.brand-landing .brand-calc-big-num {
+    font-size: clamp(34px, 4vw, 46px);
+    font-weight: 800;
+    font-family: "Times New Roman", Times, Georgia, serif;
+    line-height: 1.1;
+    color: #ffffff;
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+}
+.brand-landing .brand-calc-breakdown {
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    margin-block: 18px;
+    padding-top: 14px;
+}
+.brand-landing .brand-calc-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 13.5px;
+    color: #d1e2d8;
+}
+.brand-landing .brand-calc-row strong {
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+}
+.brand-landing .brand-calc-comparison {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #e8f0ec;
+}
+.brand-landing .brand-calc-cta {
+    width: 100%;
+    background: #ffffff;
+    color: var(--brand-primary);
+    border-color: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
+    min-height: 56px;
+    box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.35);
+}
+.brand-landing .brand-calc-cta:hover {
+    background: #f0fdf4;
+    color: #142d20;
+    transform: translateY(-1px);
+}
+.brand-landing .brand-calc-disclaimer {
+    display: block;
+    text-align: center;
+    font-size: 12px;
+    color: #b8d8c5;
+    margin-top: 10px;
 }
 
 /* Steps */
@@ -985,6 +1208,7 @@
     }
     .brand-landing .brand-hero-grid,
     .brand-landing .brand-roi-grid,
+    .brand-landing .brand-calc-grid,
     .brand-landing .brand-feature-layout,
     .brand-landing .brand-faq {
         grid-template-columns: 1fr;
@@ -1019,8 +1243,12 @@
     }
     .brand-landing .brand-nav .brand-login,
     .brand-landing .brand-nav .brand-header-cta {
-        padding: 7px 12px;
-        font-size: 12.5px;
+        min-height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 14px;
+        font-size: 13px;
     }
     .brand-landing .brand-hero-grid {
         padding-block: 36px 32px;
@@ -1070,8 +1298,17 @@
     }
 }
 @media (prefers-reduced-motion: reduce) {
-    .brand-landing * {
-        scroll-behavior: auto;
+    .brand-landing,
+    .brand-landing *,
+    .brand-landing *::before,
+    .brand-landing *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .brand-landing .brand-live-dot {
+        animation: none !important;
     }
     .brand-landing .brand-step-video video {
         display: none;
