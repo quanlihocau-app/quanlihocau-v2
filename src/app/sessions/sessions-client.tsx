@@ -465,14 +465,14 @@ export function SessionsClient({
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                            {canOpenSession && (
+                            {canOpenSession ? (
                                 <Link
                                     href="/sessions/new"
                                     className="inline-flex min-h-13 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#1B3B2B] px-5 py-3 text-sm font-bold text-white shadow-xs transition hover:bg-[#2C5E43] active:scale-95"
                                 >
                                     <span>+ Mở vé câu mới</span>
                                 </Link>
-                            )}
+                            ) : null}
 
                             <button
                                 type="button"
