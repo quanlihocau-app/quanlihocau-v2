@@ -83,7 +83,7 @@ test("backup, harden, migrate Neon và workflow chỉ bấm tay", () => {
     assert.doesNotMatch(migrate, /--clean|migrate reset|DROP DATABASE/);
     const composeFile = fs.readFileSync("deploy/docker-compose.yml", "utf8");
     assert.match(composeFile, /image: postgres:18$/m);
-    assert.match(composeFile, /pgdata:\/var\/lib\/postgresql\n/);
+    assert.match(composeFile, /pgdata:\/var\/lib\/postgresql\r?\n/);
     assert.doesNotMatch(composeFile, /\/var\/lib\/postgresql\/data/);
     assert.match(composeFile, /procps|pgrep cron/);
     assert.match(fs.readFileSync("deploy/scheduler/Dockerfile", "utf8"), /procps/);
