@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { loginUser } from '@/app/actions/auth'
 import { signIn } from 'next-auth/react'
@@ -33,7 +33,24 @@ function LoginForm() {
   const [errorMsg, setErrorMsg] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [appleLoading, setAppleLoading] = useState(false)
+  const [showApple, setShowApple] = useState(false)
   const inFlight = useRef(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const ios = navigator.userAgent.includes('QuanLiHoCauNative/ios')
+    if (ios) {
+      queueMicrotask(() => { if (!cancelled) setShowApple(true) })
+      return () => { cancelled = true }
+    }
+    fetch('/api/auth/providers')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((providers) => {
+        if (!cancelled && providers?.apple) setShowApple(true)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   const oauthError = errorParam
     ? (OAUTH_ERRORS[errorParam] ?? OAUTH_ERRORS.Default)
@@ -258,6 +275,7 @@ function LoginForm() {
           </div>
 
           {/* ── Section 2: Google Sign In (Dành cho Chủ hồ) ────────── */}
+          {showApple && (
           <button
             type="button"
             id="btn-apple-signin"
@@ -267,6 +285,7 @@ function LoginForm() {
           >
             <span>{appleLoading ? 'Đang chuyển đến Apple…' : 'Chủ hồ: Tiếp tục bằng Apple'}</span>
           </button>
+          )}
           <button
             type="button"
             id="btn-google-signin"

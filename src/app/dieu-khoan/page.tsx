@@ -71,7 +71,7 @@ export default function TermsOfServicePage() {
                     <div className="flex items-center gap-3">
                         <Link
                             href="/bang-gia"
-                            className="text-xs font-semibold text-[#5A524A] hover:text-[#102A43] transition-colors"
+                            className="saas-purchase text-xs font-semibold text-[#5A524A] hover:text-[#102A43] transition-colors"
                         >
                             Bảng giá
                         </Link>
@@ -172,7 +172,7 @@ export default function TermsOfServicePage() {
                             Chính sách bảo mật dữ liệu
                         </Link>
                         <span>•</span>
-                        <Link href="/bang-gia" className="font-semibold text-[#8A5A20] hover:underline">
+                        <Link href="/bang-gia" className="saas-purchase font-semibold text-[#8A5A20] hover:underline">
                             Bảng giá dịch vụ
                         </Link>
                     </div>

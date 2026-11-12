@@ -168,7 +168,11 @@ const FAQS = [
 
 export default function BangGiaPage() {
     return (
-        <div className="min-h-screen bg-[#F8FAF8] text-[#111827] antialiased">
+        <>
+            <p className="ios-account-note mx-auto max-w-lg px-6 py-16 text-center text-base font-semibold text-[#1B3B2B]">
+                Ứng dụng này không bán và không gia hạn gói phần mềm.
+            </p>
+            <div className="saas-purchase min-h-screen bg-[#F8FAF8] text-[#111827] antialiased">
             {/* Header */}
             <header className="sticky top-0 z-40 border-b border-[#E2E8F0] bg-white/95 backdrop-blur">
                 <div className="mx-auto flex min-h-19 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -528,5 +532,6 @@ export default function BangGiaPage() {
                 </div>
             </footer>
         </div>
+        </>
     );
 }

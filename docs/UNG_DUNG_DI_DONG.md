@@ -19,11 +19,12 @@ Android, workflow `Android release`:
 
 iOS, workflow `iOS release`, runner macOS của GitHub:
 
+- `IOS_TEAM_ID`
 - `IOS_CERTIFICATE_P12_BASE64` — chứng chỉ Distribution đã ghép với khóa riêng
 - `IOS_CERTIFICATE_PASSWORD`
 - `IOS_PROVISION_PROFILE_BASE64`
-- `IOS_TEAM_ID`
-- `IOS_KEYCHAIN_PASSWORD` — tùy chọn
+
+Workflow đọc tên profile trong file đó rồi xuất file `.ipa`. Không cần thêm secret tên profile.
 
 Tạo CSR không cần máy Mac:
 

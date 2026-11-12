@@ -5,6 +5,7 @@ import { useNetworkStatus } from "@/lib/network/use-network-status";
 import { dismissTicketJob, readTicketJobs, syncTicketJobs } from "@/lib/offline/submit-ticket";
 import type { TicketJob } from "@/lib/offline/ticket-queue";
 import { planSessionNotifications } from "@/lib/native/session-notifications";
+import { getAlarmPreferences } from "@/lib/sound/session-alarm";
 import { Capacitor } from "@capacitor/core";
 
 export function OfflineSync() {
@@ -25,7 +26,7 @@ export function OfflineSync() {
 
     useEffect(() => {
         if (!isOnline || !Capacitor.isNativePlatform()) return;
-        const lead = 10;
+        const lead = getAlarmPreferences().leadMinutes;
         fetch("/api/fishing-sessions?status=ACTIVE")
             .then((response) => (response.ok ? response.json() : []))
             .then(async (sessions: { id?: string; plannedEndAt?: string; hutLinks?: { hut?: { name?: string } }[] }[]) => {

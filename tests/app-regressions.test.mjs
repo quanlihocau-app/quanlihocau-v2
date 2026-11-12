@@ -104,6 +104,7 @@ test("Login releases busy state after Google failure and prevents concurrent cre
                 return [initial, (value) => { states[index] = value; }];
             },
             useRef: (current) => ({ current }),
+            useEffect: () => {},
         },
         "next/navigation": {
             useRouter: () => ({ push: () => { navigations++; }, refresh() { } }),

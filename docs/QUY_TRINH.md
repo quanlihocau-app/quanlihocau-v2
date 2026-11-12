@@ -139,6 +139,38 @@ Máy đích là VPS iNET tại Hà Nội: Ubuntu 24.04.1, 2 vCPU, khoảng 3,8 G
 
 Trừ 1 điểm: máy làm việc không có Docker, chưa có IP iNET, nên chưa chạy harden, chưa xin chứng chỉ, chưa dump Neon thật.
 
+### Bước 3 — 9/10
+
+Có `android/app/build.gradle`, `ios/App/App.xcodeproj`, `MainActivity` đăng ký `ThermalPrinterPlugin`, và `ios/App/App/NativePlugins.swift`. Icon và splash lấy từ `public/icons/icon-512x512.png`. Workflow `Android release` và `iOS release` chỉ có `workflow_dispatch`; workflow iOS xuất `.ipa` bằng `xcodebuild -exportArchive`. `node --test tests/mobile-release.test.mjs` pass. Secret ký không nằm trong file workflow. Danh sách secret ở `docs/UNG_DUNG_DI_DONG.md`.
+
+Trừ 1 điểm: máy này không có Android SDK và không phải Mac, nên chưa tạo được file AAB hay IPA thật.
+
+### Bước 4 — 9/10
+
+`node --test tests/offline-queue-and-native.test.mjs tests/printing-flow.test.mjs`: hàng đợi chặn ô trùng và lệnh không có khóa; 409 giữ lại thành xung đột; vé in chứa `QLHC:`. Mở vé và đóng phiên đi qua `submitTicketAction`. Thông báo local chỉ chạy khi `Capacitor.isNativePlatform()` và lấy số phút từ `getAlarmPreferences()`. Màn máy in ghi iPhone không in Bluetooth thường. Mã BLE nằm trong `NativePlugins.swift`.
+
+Trừ 1 điểm: chưa cắm máy in 58 mm, chưa chạy simulator iOS, chưa thấy thông báo local trên máy thật.
+
+### Bước 5 — 9/10
+
+`node --test tests/account-and-apple.test.mjs` pass. Nút xóa trong tài khoản đòi `XOA TAI KHOAN` và mật khẩu nếu có. Server khóa user, tăng `sessionVersion`, xóa mật khẩu và số điện thoại, đổi email, gỡ membership, không xóa hồ. Cột `appleSub` thêm bằng migration chỉ thêm cột. Nút Apple trên trang đăng nhập chỉ hiện khi app iOS hoặc khi `/api/auth/providers` có Apple. Plugin iOS `SignInWithApple` gửi identity token vào provider `apple-native`.
+
+Trừ 1 điểm: không có tài khoản Apple Developer, không đăng nhập Apple thật, không xóa một user trên database thật.
+
+### Bước 6 — 9/10
+
+`node --test tests/ios-commerce.test.mjs` pass. Hàm trả về ẩn mua gói khi platform là ios hoặc user agent có `QuanLiHoCauNative/ios`. Android và trình duyệt vẫn hiện. Nút gia hạn gói, modal giá, trang bảng giá và link `/bang-gia` có class `saas-purchase`. Script trong `layout.tsx` gắn `data-native-platform` trước khi vẽ. Nút gia hạn giờ câu trong `session-actions.tsx` không có class đó.
+
+Trừ 1 điểm: chưa mở WebView iOS để nhìn nút biến mất trên máy.
+
+### Bước 7 — 9/10
+
+`npm run lint`, `tsc --noEmit` và `npm run build` pass. `npm run test:safety`: 120/120. GitHub Actions `build-and-test` trên commit trước đã pass. Check Vercel trên PR báo "Account is blocked", đúng tình trạng tài khoản Vercel bị khóa, không phải lỗi biên dịch.
+
+Quét git: không thấy khóa tư (`BEGIN PRIVATE KEY`, `AKIA`). Các URL `postgresql://` trong repo là mẫu hoặc mật khẩu CI (`ci_password_123`), không phải chuỗi Neon production. `.env.production.example` có cụm `sk_live_bank_webhook_secret_key_change_me`, đó là chữ mẫu, không phải khóa ngân hàng thật. Không viết lại lịch sử.
+
+Trừ 1 điểm: chưa mở được check Vercel vì tài khoản bị khóa, và chưa xem log CI của đúng commit chứa điểm này.
+
 ## Việc chủ hồ phải tự làm (không làm trong PR này)
 
 Ghi ở báo cáo cuối, không thực hiện: thuê VPS, DNS, R2, Apple Developer, Google Play, tạo secret GitHub, chứng chỉ ký, tài khoản demo cho reviewer.

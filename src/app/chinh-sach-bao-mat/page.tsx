@@ -159,7 +159,7 @@ export default function PrivacyPolicyPage() {
                             Điều khoản dịch vụ
                         </Link>
                         <span>•</span>
-                        <Link href="/bang-gia" className="font-semibold text-[#8A5A20] hover:underline">
+                        <Link href="/bang-gia" className="saas-purchase font-semibold text-[#8A5A20] hover:underline">
                             Bảng giá dịch vụ
                         </Link>
                     </div>

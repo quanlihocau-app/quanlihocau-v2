@@ -88,4 +88,6 @@ test("thông báo hẹn trước giờ hết và mã vé QR", () => {
     const id = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
     assert.equal(tickets.parseTicketScan(tickets.ticketQrPayload(id))?.sessionId, id);
     assert.equal(tickets.parseTicketScan("không phải vé"), null);
+    assert.match(fs.readFileSync("src/components/offline/offline-sync.tsx", "utf8"), /Capacitor\.isNativePlatform\(\)/);
+    assert.match(fs.readFileSync("src/components/offline/offline-sync.tsx", "utf8"), /getAlarmPreferences\(\)/);
 });
