@@ -266,7 +266,7 @@ const jsonLdSchema = {
                     "@type": "HowToStep",
                     "position": 1,
                     "name": "Chạm mở vé câu trong 3 giây",
-                    "text": "Chọn chòi/ô câu trống trên sơ đồ bờ hồ, chọn gói câu (ví dụ Ca 4 tiếng) và bấm mở vé. Đồng hồ đếm ngược bắt đầu chạy tự động theo thời gian thực.",
+                    "text": "Chọn ô số câu trống trên sơ đồ bờ hồ, chọn gói câu (ví dụ Ca 4 tiếng) và bấm mở vé. Đồng hồ đếm ngược bắt đầu chạy tự động theo thời gian thực.",
                     "url": "https://quanlihocau.com/demo"
                 },
                 {

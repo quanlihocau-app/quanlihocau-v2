@@ -241,7 +241,7 @@ function SubscriptionModalContent({
                                             Hồ vừa &amp; nhỏ
                                         </span>
                                     </div>
-                                    <p className="text-xs text-[#66716A] mt-1">Phù hợp hồ có dưới 30 chòi/ô câu</p>
+                                    <p className="text-xs text-[#66716A] mt-1">Phù hợp hồ có dưới 30 ô số câu</p>
                                 </div>
                                 <div className="text-right">
                                     <div className="text-lg font-black text-[#246B38]">{silverQuote.amountVnd.toLocaleString("vi-VN")} đ</div>

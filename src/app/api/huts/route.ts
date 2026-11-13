@@ -11,7 +11,7 @@ import {
 import { withLakeQuota } from "@/lib/subscription-guard";
 
 const createHutSchema = z.object({
-    name: z.string().trim().min(2, "Tên chòi tối thiểu 2 ký tự").max(100, "Tên chòi tối đa 100 ký tự"),
+    name: z.string().trim().min(2, "Tên ô số tối thiểu 2 ký tự").max(100, "Tên ô số tối đa 100 ký tự"),
     areaId: z.string().trim().min(1, "Vui lòng chọn khu vực"),
 });
 

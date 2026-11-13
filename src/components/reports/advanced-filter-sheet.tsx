@@ -112,14 +112,14 @@ function AdvancedFilterSheetContent({
                             </select>
                         </div>
                         <div>
-                            <label className="font-semibold text-slate-700 block mb-1">Ô câu / Chòi</label>
+                            <label className="font-semibold text-slate-700 block mb-1">Ô số câu</label>
                             <select
-                                aria-label="Ô câu hoặc chòi"
+                                aria-label="Ô số câu"
                                 value={localFilters.hutId || ""}
                                 onChange={(e) => setLocalFilters({ ...localFilters, hutId: e.target.value || undefined })}
                                 className="w-full min-h-12 rounded-lg border border-slate-200 bg-slate-50 px-2.5 font-medium text-slate-800"
                             >
-                                <option value="">-- Tất cả ô câu --</option>
+                                <option value="">-- Tất cả ô số --</option>
                                 {filteredHuts.map((h) => (
                                     <option key={h.id} value={h.id}>{h.name} ({h.areaName})</option>
                                 ))}

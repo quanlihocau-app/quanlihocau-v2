@@ -133,7 +133,7 @@ export default function RegisterPage() {
                         Mở hồ câu của bạn trong 10 giây
                     </h1>
                     <p className="mt-1.5 text-sm leading-relaxed text-[#475569]">
-                        Hệ thống tự động tạo sẵn <strong>6 chòi mẫu, gói câu 4 giờ, nước ngọt &amp; mồi câu</strong> để
+                        Hệ thống tự động tạo sẵn <strong>6 ô số mẫu, gói câu 4 giờ, nước ngọt &amp; mồi câu</strong> để
                         bạn bấm thử vé đầu tiên ngay lập tức.
                     </p>
 
@@ -310,7 +310,7 @@ export default function RegisterPage() {
                                     1
                                 </span>
                                 <span>
-                                    <strong>Sơ đồ 6 chòi câu mẫu (Chòi 1 → Chòi 6):</strong> Chạm vào chòi trống bất kỳ
+                                    <strong>Sơ đồ 6 ô số câu mẫu (Ô số 1 → Ô số 6):</strong> Chạm vào ô số trống bất kỳ
                                     là mở được vé câu đầu tiên trong 3 giây.
                                 </span>
                             </li>
@@ -356,7 +356,7 @@ export default function RegisterPage() {
                             <span className="text-[#1B3B2B] tabular-nums">0855 550 813</span>
                         </div>
                         <p className="mt-1 leading-relaxed">
-                            Nếu bạn muốn đội ngũ kỹ thuật nhập sẵn đúng số chòi và bảng giá hồ của bạn miễn phí, hãy
+                            Nếu bạn muốn đội ngũ kỹ thuật nhập sẵn đúng số lượng ô số và bảng giá hồ của bạn miễn phí, hãy
                             nhắn Zalo bất cứ lúc nào.
                         </p>
                     </div>

@@ -185,7 +185,7 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
                                     <span>Mở tài khoản trong 10 giây, không yêu cầu thẻ ngân hàng.</span>
                                 </div>
                                 <div className="brand-trust-pill">
-                                    <strong>Tạo sẵn 6 chòi mẫu</strong>
+                                    <strong>Tạo sẵn 6 ô số mẫu</strong>
                                     <span>Có sẵn gói câu 4h, nước suối, mồi câu để bấm thử ngay.</span>
                                 </div>
                                 <div className="brand-trust-pill">
@@ -489,7 +489,7 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
                                 <tbody>
                                     <tr>
                                         <td>
-                                            <strong>Đếm ngược giờ câu theo từng chòi</strong>
+                                            <strong>Đếm ngược giờ câu theo từng ô số</strong>
                                         </td>
                                         <td>Phải tự nhẩm giờ, dễ quên khi đông</td>
                                         <td>Chỉ tính tiền theo bàn/phút cố định</td>
@@ -557,7 +557,7 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
                             </span>
                             <h3>Chạm ô trống · Mở vé trong 3 giây</h3>
                             <p>
-                                Sơ đồ hồ hiển thị rõ chòi nào đang trống, chòi nào đang câu. Bấm 1 chạm để mở vé nhanh hoặc
+                                Sơ đồ hồ hiển thị rõ ô số nào đang trống, ô nào đang câu. Bấm 1 chạm để mở vé nhanh hoặc
                                 chọn gói câu 3h, 4h, cả ngày.
                             </p>
                             <Link href={entry} className="brand-text-link">
@@ -756,7 +756,7 @@ export function BrandLandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean 
                         <details>
                             <summary>Tôi đang ghi sổ giấy giữa chừng, chuyển sang app có phức tạp không?</summary>
                             <p>
-                                Rất nhẹ nhàng: khi vừa tạo tài khoản, hệ thống đã tạo sẵn 6 chòi mẫu và các gói câu phổ biến.
+                                Rất nhẹ nhàng: khi vừa tạo tài khoản, hệ thống đã tạo sẵn 6 ô số mẫu và các gói câu phổ biến.
                                 Bạn có thể bấm mở vé ngay cho khách tiếp theo bước vào hồ mà không cần nhập lại sổ cũ.
                             </p>
                         </details>

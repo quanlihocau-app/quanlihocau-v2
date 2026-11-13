@@ -110,9 +110,9 @@ export default async function FishBuybacksPage() {
         const huts = session?.hutLinks?.map((hl) => hl.hut.name).filter(Boolean).join(", ");
         let customerName = "Khách vãng lai";
         if (customer?.name) {
-            customerName = huts ? `${customer.name} (Chòi ${huts})` : customer.name;
+            customerName = huts ? `${customer.name} (Ô số ${huts})` : customer.name;
         } else if (huts) {
-            customerName = `Chòi ${huts}`;
+            customerName = `Ô số ${huts}`;
         }
 
         return {

@@ -46,7 +46,7 @@ const PRESET_TEMPLATES: Array<{
     {
         name: "Nhân viên trực hồ & Cân cá",
         baseRole: Role.STAFF,
-        description: "Mở vé, đổi chòi, phục vụ nước/mồi tại chòi và cân cá thu mua lại.",
+        description: "Mở vé, đổi ô số, phục vụ nước/mồi tại ô câu và cân cá thu mua lại.",
         permissions: [
             "SESSION_OPEN_CLOSE",
             "SESSION_EXTEND_TRANSFER",

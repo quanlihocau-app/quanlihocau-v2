@@ -85,7 +85,7 @@ export function SubscriptionBanner({
                 {/* Quota breakdown */}
                 <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#E3E8E3] pt-3 text-xs">
                     <div className="rounded-xl bg-[#F7F9F5] p-2.5 border border-[#E3E8E3]">
-                        <span className="text-[#66716A] block text-[11px]">Số ô câu (Chòi)</span>
+                        <span className="text-[#66716A] block text-[11px]">Số ô số câu</span>
                         <span className="font-bold text-[#17201A]">
                             {spotsCount} {plan === "SILVER" ? "/ 30 ô" : "ô (Không giới hạn)"}
                         </span>

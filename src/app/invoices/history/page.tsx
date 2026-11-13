@@ -277,7 +277,7 @@ export default async function InvoiceHistoryPage({
 
     const hutsMap: Record<string, string> = {};
     for (const h of huts) {
-        hutsMap[h.id] = h.name.startsWith("Chòi") || h.name.startsWith("Ô") ? h.name : `Chòi ${h.name}`;
+        hutsMap[h.id] = h.name.startsWith("Ô") ? h.name : `Ô số ${h.name}`;
     }
 
     const productsMap: Record<string, string> = {};

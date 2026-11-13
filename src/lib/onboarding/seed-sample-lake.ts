@@ -51,11 +51,11 @@ export async function seedSampleLakeData(
         },
     });
 
-    // 3. Tạo 10 chòi mẫu: "Chòi 1" đến "Chòi 10"
+    // 3. Tạo 10 ô số mẫu: "Ô số 1" đến "Ô số 10"
     const hutData = Array.from({ length: 10 }, (_, i) => ({
         lakeId,
         areaId: sampleArea.id,
-        name: `Chòi ${i + 1}`,
+        name: `Ô số ${i + 1}`,
         currentSessionId: null,
     }));
 
@@ -256,7 +256,7 @@ export async function createSampleSessions(
     });
 
     if (emptyHuts.length === 0) {
-        return { count: 0, error: "Hồ hiện không còn chòi nào trống để mở vé mẫu." };
+        return { count: 0, error: "Hồ hiện không còn ô số nào trống để mở vé mẫu." };
     }
 
     const hut1 = emptyHuts.find((h) => h.name.includes("2")) || emptyHuts[0];

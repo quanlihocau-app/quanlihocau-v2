@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = {
     ...privateRouteMetadata,
-    title: "Khu vực & Chòi câu",
+    title: "Khu vực & Ô số câu",
 };
 
 export default async function FacilitiesPage() {
@@ -82,7 +82,7 @@ export default async function FacilitiesPage() {
     return (
         <main className="mx-auto min-h-screen max-w-5xl bg-[#F8F6F0] px-4 pb-24 pt-6 sm:px-6">
             <PageHeader
-                title="Quản lý Khu vực & Chòi câu"
+                title="Quản lý Khu vực & Ô số câu"
                 subtitle={`Hồ câu: ${tenantContext.lakeName} (${tenantContext.organizationName})`}
                 backHref="/settings"
                 backLabel="Cài đặt"
@@ -121,7 +121,7 @@ export default async function FacilitiesPage() {
                                         {area.name}
                                     </span>
                                     <span className="rounded-lg bg-[#102A43]/10 px-2.5 py-1 text-[11px] font-bold text-[#102A43]">
-                                        {area._count.huts} chòi
+                                        {area._count.huts} ô số
                                     </span>
                                 </li>
                             ))}
@@ -132,13 +132,13 @@ export default async function FacilitiesPage() {
                 <Card className="p-5 sm:p-6 space-y-4">
                     <div className="border-b border-[#E2DDD2] pb-3">
                         <h2 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
-                            Danh sách Chòi câu ({huts.length})
+                            Danh sách Ô số ({huts.length})
                         </h2>
                     </div>
 
                     {huts.length === 0 ? (
                         <p className="py-6 text-center text-xs text-slate-500 font-medium">
-                            Chưa có chòi câu nào.
+                            Chưa có ô số nào.
                         </p>
                     ) : (
                         <ul className="divide-y divide-[#E2DDD2]">

@@ -180,7 +180,7 @@ export async function registerUser(input: RegisterInput) {
         }
       })
 
-      // Khởi tạo bộ dữ liệu mẫu (10 chòi, 3 món nước, 2 loại thính, 1 bảng giá) cho tài khoản mới
+      // Khởi tạo bộ dữ liệu mẫu (10 ô số, 3 món nước, 2 loại thính, 1 bảng giá) cho tài khoản mới
       await seedSampleLakeData(tx, lake.id, name.trim(), user.id)
 
       return {

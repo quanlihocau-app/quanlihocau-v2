@@ -128,7 +128,7 @@ const homeJsonLd = {
                     "name": "App cho chủ hồ câu trên điện thoại giúp quản lý những gì từ xa?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "Dù ở nhà hay đi công việc xa, chủ hồ chỉ cần mở app trên điện thoại là xem được: số lượng ô/chòi đang có khách câu, khách câu được mấy tiếng, tổng tiền thu hôm nay phân tách tiền mặt và chuyển khoản, cùng nhật ký chi tiết từng thao tác của nhân viên tại hồ.",
+                        "text": "Dù ở nhà hay đi công việc xa, chủ hồ chỉ cần mở app trên điện thoại là xem được: số lượng ô số đang có khách câu, khách câu được mấy tiếng, tổng tiền thu hôm nay phân tách tiền mặt và chuyển khoản, cùng nhật ký chi tiết từng thao tác của nhân viên tại hồ.",
                     },
                 },
                 {

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
     title: "Đăng nhập quầy thu ngân",
     description:
-        "Đăng nhập vào hệ thống Quản Lý Hồ Câu để quản lý phiên câu, chòi câu, hóa đơn bán lẻ và chốt ca tiền mặt nhanh chóng.",
+        "Đăng nhập vào hệ thống Quản Lý Hồ Câu để quản lý phiên câu, ô số câu, hóa đơn bán lẻ và chốt ca tiền mặt nhanh chóng.",
     alternates: {
         canonical: "https://quanlihocau.com/login",
     },

@@ -375,7 +375,7 @@ export function SessionActions({
                             Xác nhận hủy phiên câu này?
                         </p>
                         <p className="text-xs text-[#555555] mt-0.5">
-                            Thao tác hủy không thể hoàn tác. Chòi câu sẽ được giải phóng lập tức.
+                            Thao tác hủy không thể hoàn tác. Ô số câu sẽ được giải phóng lập tức.
                         </p>
                     </div>
                     <div className="flex items-center gap-2">

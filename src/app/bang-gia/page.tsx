@@ -35,7 +35,7 @@ const PLANS = [
         name: `Dùng Thử ${TRIAL_DAYS} Ngày`,
         priceMonthly: "0đ",
         priceSub: `Trọn vẹn ${TRIAL_DAYS} ngày đầu tiên · Không cần thẻ ngân hàng`,
-        dailyNote: "Tự động tạo sẵn 6 chòi mẫu & bảng giá để bấm thử ngay",
+        dailyNote: "Tự động tạo sẵn 6 ô số mẫu & bảng giá để bấm thử ngay",
         description:
             "Trải nghiệm đầy đủ quy trình mở vé, đếm giờ, gọi nước, cân cá cấn trừ và chốt ca thực tế tại hồ trước khi quyết định.",
         ctaLabel: `Mở hồ dùng thử ${TRIAL_DAYS} ngày`,
@@ -45,14 +45,14 @@ const PLANS = [
             "Đầy đủ tính năng Mở vé, Đếm ngược & Cảnh báo hết giờ",
             "Thêm nước ngọt, mồi câu, dịch vụ & Cân cá thu mua cấn trừ",
             "Tạo mã VietQR tự động theo đúng số tiền từng vé",
-            "Tối đa 15 ô / chòi câu · Phù hợp kiểm thử thực tế",
+            "Tối đa 15 ô số câu · Phù hợp kiểm thử thực tế",
             "Báo cáo doanh thu ca trực (Tiền mặt vs Chuyển khoản)",
             "Hỗ trợ in hóa đơn nhiệt khổ 58mm / 80mm",
         ],
     },
     {
         code: "SILVER",
-        badge: "Phổ biến nhất cho hồ 10–20 chòi",
+        badge: "Phổ biến nhất cho hồ 10–20 ô số",
         name: "Gói Bạc (Tiêu Chuẩn)",
         priceMonthly: "129.000đ",
         pricePeriod: "/ tháng",
@@ -64,7 +64,7 @@ const PLANS = [
         ctaHref: "/register?plan=silver",
         featured: true,
         features: [
-            "Quản lý tối đa 20 ô / chòi câu hoạt động cùng lúc",
+            "Quản lý tối đa 20 ô số câu hoạt động cùng lúc",
             "Tối đa 3 tài khoản (1 Chủ hồ + 2 Nhân viên thu ngân)",
             "Quản lý tồn kho nước ngọt, mồi câu, bia, thuốc lá",
             "Sổ thu chi vận hành (Nhập cá bồi, tiền điện, lương)",
@@ -81,12 +81,12 @@ const PLANS = [
         priceYearly: "Gói năm: 1.990.000đ/năm (Tiết kiệm 2 tháng — tặng 60 ngày)",
         dailyNote: "Chỉ 6.600đ / ngày — kiểm soát toàn diện từ xa 24/7",
         description:
-            "Không giới hạn số lượng chòi và nhân viên. Đầy đủ phân tích lợi nhuận chuyên sâu và lưu trữ lịch sử kiểm toán trọn đời.",
+            "Không giới hạn số lượng ô số và nhân viên. Đầy đủ phân tích lợi nhuận chuyên sâu và lưu trữ lịch sử kiểm toán trọn đời.",
         ctaLabel: "Bắt đầu với 30 ngày miễn phí",
         ctaHref: "/register?plan=gold",
         featured: false,
         features: [
-            "Không giới hạn số lượng ô / chòi câu và khu vực hồ",
+            "Không giới hạn số lượng ô số câu và khu vực hồ",
             "Không giới hạn tài khoản Quản lý & Nhân viên ca trực",
             "Báo cáo phân tích lợi nhuận ròng, khung giờ vàng & khách VIP",
             "Quản lý công nợ khách quen và lịch sử trả nợ chi tiết",
@@ -98,7 +98,7 @@ const PLANS = [
 
 const COMPARISON_ROWS = [
     {
-        feature: "Số lượng ô / chòi câu quản lý",
+        feature: "Số lượng ô số câu quản lý",
         trial: "Tối đa 15 ô",
         silver: "Tối đa 20 ô",
         gold: "Không giới hạn",
@@ -110,7 +110,7 @@ const COMPARISON_ROWS = [
         gold: "Không giới hạn",
     },
     {
-        feature: "Mở vé nhanh 1 chạm & Đồng hồ đếm ngược từng chòi",
+        feature: "Mở vé nhanh 1 chạm & Đồng hồ đếm ngược từng ô số",
         trial: "Có sẵn",
         silver: "Có sẵn",
         gold: "Có sẵn",
@@ -154,14 +154,14 @@ const FAQS = [
     },
     {
         q: "Hết 30 ngày dùng thử mà tôi chưa kịp gia hạn thì dữ liệu có bị xóa không?",
-        a: "Tuyệt đối không. Toàn bộ danh sách chòi, bảng giá, khách quen và lịch sử hóa đơn của hồ vẫn được bảo toàn nguyên vẹn. Bạn có thể kích hoạt Gói Bạc hoặc Gói Vàng bất cứ lúc nào để tiếp tục mở vé mới.",
+        a: "Tuyệt đối không. Toàn bộ danh sách ô số, bảng giá, khách quen và lịch sử hóa đơn của hồ vẫn được bảo toàn nguyên vẹn. Bạn có thể kích hoạt Gói Bạc hoặc Gói Vàng bất cứ lúc nào để tiếp tục mở vé mới.",
     },
     {
         q: "Thanh toán gia hạn gói cước bằng cách nào?",
         a: "Ngay trong mục Cài đặt Gói cước của ứng dụng, hệ thống tạo sẵn mã VietQR chính xác theo gói bạn chọn. Ngay khi bạn quét mã chuyển khoản thành công, hệ thống tự động cộng thêm ngày sử dụng trong vòng vài giây mà không cần chờ duyệt thủ công.",
     },
     {
-        q: "Tôi có thể đổi từ Gói Bạc lên Gói Vàng khi mở rộng thêm chòi câu không?",
+        q: "Tôi có thể đổi từ Gói Bạc lên Gói Vàng khi mở rộng thêm ô số câu không?",
         a: "Được ngay lập tức. Hệ thống cho phép nâng cấp bất kỳ lúc nào và tự động cộng dồn thời hạn sử dụng còn lại của bạn một cách minh bạch.",
     },
 ];
@@ -399,7 +399,7 @@ export default function BangGiaPage() {
                                 className="mt-2 text-2xl font-bold text-[#111827] sm:text-3xl"
                                 style={{ fontFamily: '"Times New Roman", Times, Georgia, serif' }}
                             >
-                                Chọn gói phù hợp với số lượng chòi tại hồ của bạn
+                                Chọn gói phù hợp với số lượng ô số tại hồ của bạn
                             </h2>
                         </div>
 
@@ -477,7 +477,7 @@ export default function BangGiaPage() {
                                     Tạo hồ câu của bạn và bấm thử vé đầu tiên ngay bây giờ
                                 </h3>
                                 <p className="mt-1.5 text-sm text-[#D1E2D8]">
-                                    Miễn phí {TRIAL_DAYS} ngày · Đã tạo sẵn 6 chòi mẫu &amp; gói câu · Hỗ trợ trực tiếp qua
+                                    Miễn phí {TRIAL_DAYS} ngày · Đã tạo sẵn 6 ô số mẫu &amp; gói câu · Hỗ trợ trực tiếp qua
                                     Zalo: 0855 550 813
                                 </p>
                             </div>

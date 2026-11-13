@@ -167,12 +167,12 @@ function formatEntityTitle(
         const sess = maps.sessionsMap?.[ev.entityId];
         let hutPart = "";
         if (sess?.huts) {
-            hutPart = sess.huts.startsWith("Chòi") || sess.huts.startsWith("Ô") ? sess.huts : `Chòi ${sess.huts}`;
+            hutPart = sess.huts.startsWith("Ô") ? sess.huts : `Ô số ${sess.huts}`;
         } else if (payload?.hutIds && Array.isArray(payload.hutIds)) {
             const hutNames = (payload.hutIds as string[])
                 .map((hid) => maps.hutsMap?.[hid] || hid.slice(0, 4))
                 .join(", ");
-            hutPart = hutNames.startsWith("Chòi") || hutNames.startsWith("Ô") ? hutNames : `Chòi ${hutNames}`;
+            hutPart = hutNames.startsWith("Ô") ? hutNames : `Ô số ${hutNames}`;
         }
 
         let custPart = "";
@@ -344,8 +344,8 @@ function formatPayloadKey(key: string): string {
         customerName: "Khách hàng",
         packageId: "Gói câu",
         packageName: "Gói câu",
-        hutIds: "Chòi / Vị trí câu",
-        hutId: "Chòi / Vị trí câu",
+        hutIds: "Ô số / Vị trí câu",
+        hutId: "Ô số / Vị trí câu",
         startAt: "Bắt đầu",
         plannedEndAt: "Dự kiến kết thúc",
         endedAt: "Kết thúc lúc",
@@ -394,12 +394,12 @@ function formatPayloadValue(key: string, value: unknown, maps?: LookupMaps): str
     if (key === "hutIds" || key === "hutId") {
         if (Array.isArray(value)) {
             const list = value
-                .map((id) => (typeof id === "string" && maps?.hutsMap?.[id] ? maps.hutsMap[id] : (typeof id === "string" && (id.includes("-") || id.startsWith("#")) ? "Chòi câu" : String(id))))
+                .map((id) => (typeof id === "string" && maps?.hutsMap?.[id] ? maps.hutsMap[id] : (typeof id === "string" && (id.includes("-") || id.startsWith("#")) ? "Ô số câu" : String(id))))
                 .filter(Boolean);
             return list.length > 0 ? list.join(", ") : "Chưa chọn ô";
         }
         if (typeof value === "string") {
-            return maps?.hutsMap?.[value] || (value.includes("-") || value.startsWith("#") ? "Chòi câu hồ" : value);
+            return maps?.hutsMap?.[value] || (value.includes("-") || value.startsWith("#") ? "Ô số câu hồ" : value);
         }
     }
     if (key === "productId" && typeof value === "string") {
@@ -408,7 +408,7 @@ function formatPayloadValue(key: string, value: unknown, maps?: LookupMaps): str
     if ((key === "sessionId" || key === "fishingSessionId") && typeof value === "string") {
         const sess = maps?.sessionsMap?.[value];
         if (sess) {
-            return `${sess.huts ? `Chòi ${sess.huts}` : "Phiên câu"}${sess.customerName ? ` (${sess.customerName})` : ""}`;
+            return `${sess.huts ? `Ô số ${sess.huts}` : "Phiên câu"}${sess.customerName ? ` (${sess.customerName})` : ""}`;
         }
         return "Phiên câu hồ";
     }
@@ -521,14 +521,14 @@ function getAuditHumanSummary(
     if (ev.action === "INVOICE_CREATED") {
         const total = typeof payload.totalAmountVnd === "number" ? formatVnd(payload.totalAmountVnd) : "";
         const sess = payload.fishingSessionId ? maps.sessionsMap?.[String(payload.fishingSessionId)] : null;
-        const hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
+        const hutStr = sess?.huts ? ` ô số ${sess.huts}` : "";
         const custStr = sess?.customerName && sess.customerName !== "Khách vãng lai" ? ` (${sess.customerName})` : "";
         return `Tạo hóa đơn tạm tính${hutStr}${custStr}${total ? ` · Số tiền: ${total}` : ""}`;
     }
 
     if (ev.action === "FISHING_SESSION_OPENED" || ev.action === "SESSION_OPENED" || ev.action === "SESSION_CREATED") {
         const sess = maps.sessionsMap?.[ev.entityId];
-        let hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
+        let hutStr = sess?.huts ? ` ô số ${sess.huts}` : "";
         if (!hutStr && payload.hutIds && Array.isArray(payload.hutIds)) {
             const hNames = (payload.hutIds as string[]).map((h) => maps.hutsMap?.[h]).filter(Boolean).join(", ");
             if (hNames) hutStr = ` ${hNames}`;
@@ -549,7 +549,7 @@ function getAuditHumanSummary(
 
     if (ev.action === "FISHING_SESSION_EXTENDED") {
         const sess = maps.sessionsMap?.[ev.entityId];
-        const hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
+        const hutStr = sess?.huts ? ` ô số ${sess.huts}` : "";
         const custStr = sess?.customerName && sess.customerName !== "Khách vãng lai" ? ` (${sess.customerName})` : "";
         const mins = payload.addedMinutes || payload.extraMinutes ? `${payload.addedMinutes || payload.extraMinutes} phút` : "";
         const price = typeof payload.priceVnd === "number" ? formatVnd(payload.priceVnd) : "";
@@ -558,7 +558,7 @@ function getAuditHumanSummary(
 
     if (ev.action === "FISHING_SESSION_COMPLETED" || ev.action === "SESSION_COMPLETED") {
         const sess = maps.sessionsMap?.[ev.entityId];
-        const hutStr = sess?.huts ? ` chòi ${sess.huts}` : "";
+        const hutStr = sess?.huts ? ` ô số ${sess.huts}` : "";
         const custStr = sess?.customerName && sess.customerName !== "Khách vãng lai" ? ` (${sess.customerName})` : "";
         const settlement = payload.settlement as Record<string, unknown> | undefined;
         if (settlement) {
@@ -853,7 +853,7 @@ export function HistoryView({
                     {/* Filters */}
                     <Card className="p-3 space-y-2.5 border-[#CCCCCC] bg-white rounded-xs">
                         <Input
-                            placeholder="Tìm theo tên khách, số chòi, mã đơn..."
+                            placeholder="Tìm theo tên khách, ô số, mã đơn..."
                             value={orderSearch}
                             onChange={(e) => setOrderSearch(e.target.value)}
                         />
@@ -919,7 +919,7 @@ export function HistoryView({
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="font-bold text-xs text-[#1A1A1A]">
                                                         {isTicket
-                                                            ? `Chòi ${huts || "—"}`
+                                                            ? `Ô số ${huts || "—"}`
                                                             : "Bán lẻ độc lập"}
                                                     </span>
                                                     <InvoiceStatusBadge status={invoice.status} />

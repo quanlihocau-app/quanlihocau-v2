@@ -122,7 +122,7 @@ export function CreateHutForm({ areas }: { areas: AreaOption[] }) {
             const result = (await response.json()) as { error?: string };
 
             if (!response.ok) {
-                setError(result.error ?? "Không thể tạo chòi.");
+                setError(result.error ?? "Không thể tạo ô số.");
                 setIsSubmitting(false);
                 return;
             }
@@ -141,10 +141,10 @@ export function CreateHutForm({ areas }: { areas: AreaOption[] }) {
         return (
             <Card className="p-5 sm:p-6 space-y-2">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
-                    Thêm chòi câu mới
+                    Thêm ô số mới
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                    Bạn cần tạo ít nhất một khu vực trước khi thêm chòi.
+                    Bạn cần tạo ít nhất một khu vực trước khi thêm ô số.
                 </p>
             </Card>
         );
@@ -154,10 +154,10 @@ export function CreateHutForm({ areas }: { areas: AreaOption[] }) {
         <Card className="p-5 sm:p-6 space-y-4">
             <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider text-[#102A43]">
-                    Thêm chòi câu mới
+                    Thêm ô số mới
                 </h3>
                 <p className="mt-0.5 text-xs text-slate-500 font-medium">
-                    Ví dụ: Chòi 01, Chòi VIP 1...
+                    Ví dụ: Ô 01, Ô 02, Ô VIP 1...
                 </p>
             </div>
 
@@ -177,19 +177,19 @@ export function CreateHutForm({ areas }: { areas: AreaOption[] }) {
                 </Select>
 
                 <Input
-                    label="Tên chòi *"
+                    label="Tên ô số *"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                     minLength={2}
                     maxLength={100}
-                    placeholder="Nhập tên chòi câu"
+                    placeholder="Nhập tên ô số (Ví dụ: Ô 01, Ô 02...)"
                 />
 
                 {error ? <InlineAlert type="error" message={error} /> : null}
                 {success ? (
-                    <InlineAlert type="success" message="Đã thêm chòi thành công!" />
+                    <InlineAlert type="success" message="Đã thêm ô số thành công!" />
                 ) : null}
 
                 <Button
@@ -200,7 +200,7 @@ export function CreateHutForm({ areas }: { areas: AreaOption[] }) {
                     loadingText="Đang thêm…"
                     className="w-full"
                 >
-                    Tạo chòi
+                    Tạo ô số
                 </Button>
             </form>
         </Card>

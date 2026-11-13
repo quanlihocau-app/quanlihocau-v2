@@ -248,9 +248,9 @@ export async function GET(request: NextRequest) {
 
                 let customerName = "Khách vãng lai";
                 if (customer?.name) {
-                    customerName = huts ? `${customer.name} (Chòi ${huts})` : customer.name;
+                    customerName = huts ? `${customer.name} (Ô số ${huts})` : customer.name;
                 } else if (huts) {
-                    customerName = `Chòi ${huts}`;
+                    customerName = `Ô số ${huts}`;
                 }
 
                 return {
@@ -451,8 +451,8 @@ export async function GET(request: NextRequest) {
                     code: s.id.substring(0, 8).toUpperCase(),
                     dateTime: formatVnDateTimeDisplay(s.startAt),
                     customerName: s.customer?.name
-                        ? (spots ? `${s.customer.name} (Chòi ${spots})` : s.customer.name)
-                        : (spots ? `Cần thủ (Chòi ${spots})` : "Khách vãng lai"),
+                        ? (spots ? `${s.customer.name} (Ô số ${spots})` : s.customer.name)
+                        : (spots ? `Cần thủ (Ô số ${spots})` : "Khách vãng lai"),
                     staffName: "Nhân viên trực hồ",
                     content: `Gói [${s.packageNameSnapshot}] - Ô: ${spots}`,
                     amountVnd: s.packagePriceVndSnapshot,

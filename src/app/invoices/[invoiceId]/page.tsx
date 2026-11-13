@@ -436,7 +436,7 @@ export default async function InvoiceDetailPage({
                                     {invoice.fishingSession.packageNameSnapshot}
                                 </p>
                                 <p className="text-[#766F67]">
-                                    Chòi:{" "}
+                                    Ô số:{" "}
                                     <span className="font-semibold text-[#27231F]">
                                         {invoice.fishingSession.hutLinks
                                             .map(

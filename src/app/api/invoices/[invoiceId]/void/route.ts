@@ -120,7 +120,7 @@ export async function POST(request: Request, { params }: RouteParams) {
                 return NextResponse.json({ error: "Hoá đơn này đã được huỷ trước đó." }, { status: 409 });
             }
             if (error.message === "SESSION_STILL_OPEN") {
-                return NextResponse.json({ error: "Phiên câu vẫn đang mở. Hãy huỷ phiên để hoàn tiền và trả chòi." }, { status: 409 });
+                return NextResponse.json({ error: "Phiên câu vẫn đang mở. Hãy huỷ phiên để hoàn tiền và trả ô số." }, { status: 409 });
             }
             if (error.message === "NOT_CLOSABLE") {
                 return NextResponse.json({ error: "Chỉ huỷ được hoá đơn đã thu hoặc của phiên đã kết thúc." }, { status: 409 });

@@ -44,7 +44,7 @@ export const PERMISSION_CATEGORIES: Array<{
     {
         key: "OPERATIONS",
         title: "1. Vận hành phiên câu & Bán hàng tại hồ",
-        subtitle: "Các thao tác mở vé, chuyển chòi, bán nước/mồi và cân cá thu mua lại.",
+        subtitle: "Các thao tác mở vé, chuyển ô số, bán nước/mồi và cân cá thu mua lại.",
     },
     {
         key: "BILLING_SHIFT",
@@ -69,15 +69,15 @@ export const APP_PERMISSIONS: readonly PermissionDefinition[] = [
         key: "SESSION_OPEN_CLOSE",
         category: "OPERATIONS",
         label: "Mở vé mới & Kết thúc phiên câu",
-        description: "Tạo phiên câu mới, gán ô/chòi và kết thúc phiên khi khách nghỉ câu.",
+        description: "Tạo phiên câu mới, gán ô số câu và kết thúc phiên khi khách nghỉ câu.",
         defaultStaff: true,
         defaultManager: true,
     },
     {
         key: "SESSION_EXTEND_TRANSFER",
         category: "OPERATIONS",
-        label: "Gia hạn giờ câu & Đổi chòi câu",
-        description: "Mua thêm giờ câu hoặc chuyển khách sang ô/chòi khác đang trống.",
+        label: "Gia hạn giờ câu & Đổi ô số câu",
+        description: "Mua thêm giờ câu hoặc chuyển khách sang ô số khác đang trống.",
         defaultStaff: true,
         defaultManager: true,
     },
@@ -194,8 +194,8 @@ export const APP_PERMISSIONS: readonly PermissionDefinition[] = [
     {
         key: "CATALOG_MANAGE",
         category: "CATALOG_REPORTS",
-        label: "Cấu hình Chòi câu, Gói câu & Bảng giá",
-        description: "Thêm mới, sửa giá gói câu, khu vực chòi, mặt hàng dịch vụ và đơn giá thu mua cá.",
+        label: "Cấu hình Ô số câu, Gói câu & Bảng giá",
+        description: "Thêm mới, sửa giá gói câu, khu vực ô số, mặt hàng dịch vụ và đơn giá thu mua cá.",
         defaultStaff: false,
         defaultManager: true,
     },

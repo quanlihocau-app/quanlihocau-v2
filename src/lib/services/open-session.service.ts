@@ -14,12 +14,12 @@ export const openSessionSchema = z.object({
     clientMutationId: z.string().uuid("clientMutationId không hợp lệ.").optional(),
     packageId: z.string().uuid("ID gói câu không hợp lệ."),
     hutIds: z
-        .array(z.string().uuid("ID chòi không hợp lệ."))
-        .min(1, "Phải chọn ít nhất 1 chòi.")
-        .max(10, "Tối đa 10 chòi mỗi phiên.")
+        .array(z.string().uuid("ID ô số không hợp lệ."))
+        .min(1, "Phải chọn ít nhất 1 ô số.")
+        .max(10, "Tối đa 10 ô số mỗi phiên.")
         .refine(
             (ids) => new Set(ids).size === ids.length,
-            "Danh sách chòi không được trùng lặp.",
+            "Danh sách ô số không được trùng lặp.",
         ),
     customer: z
         .object({

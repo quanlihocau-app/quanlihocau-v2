@@ -18,7 +18,7 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
     { name: "Tiền điện, nước, Internet", code: "CHI_TIEN_ICH", icon: "Zap", color: "#84cc16", displayOrder: 4 },
     { name: "Lương và thưởng nhân viên", code: "CHI_LUONG", icon: "Users", color: "#06b6d4", displayOrder: 5 },
     { name: "Thuê mặt bằng hồ", code: "CHI_MAT_BANG", icon: "Home", color: "#6366f1", displayOrder: 6 },
-    { name: "Sửa chữa, bảo trì chòi hồ", code: "CHI_SUA_CHUA", icon: "Wrench", color: "#a855f7", displayOrder: 7 },
+    { name: "Sửa chữa, bảo trì ô câu & hồ", code: "CHI_SUA_CHUA", icon: "Wrench", color: "#a855f7", displayOrder: 7 },
     { name: "Mua sắm thiết bị, máy móc", code: "CHI_THIET_BI", icon: "Cpu", color: "#d946ef", displayOrder: 8 },
     { name: "Quảng cáo, marketing", code: "CHI_MARKETING", icon: "Megaphone", color: "#f43f5e", displayOrder: 9 },
     { name: "Thanh toán nhà cung cấp", code: "CHI_TRA_NCC", icon: "Truck", color: "#0ea5e9", displayOrder: 10 },

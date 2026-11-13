@@ -457,10 +457,10 @@ export function SessionsClient({
                             <h2 className="mt-2 text-xl font-bold text-[#111827] sm:text-2xl">
                                 {initialSessionId
                                     ? "Phiên được chọn đã kết thúc hoặc không còn khả dụng"
-                                    : "Chạm vào chòi trống bất kỳ để mở vé đầu tiên"}
+                                    : "Chạm vào ô số trống bất kỳ để mở vé đầu tiên"}
                             </h2>
                             <p className="mt-1 text-xs text-[#475569] sm:text-sm">
-                                Hệ thống đã chuẩn bị sẵn các ô câu và bảng giá. Bấm mở vé để trải nghiệm đồng hồ đếm ngược, thêm nước ngọt và cân cá cấn trừ.
+                                Hệ thống đã chuẩn bị sẵn các ô số câu và bảng giá. Bấm mở vé để trải nghiệm đồng hồ đếm ngược, thêm nước ngọt và cân cá cấn trừ.
                             </p>
                         </div>
 
@@ -489,10 +489,10 @@ export function SessionsClient({
                         </div>
                     </div>
 
-                    {/* Lưới ô chòi sẵn sàng bấm mở vé 1 chạm */}
+                    {/* Lưới ô số sẵn sàng bấm mở vé 1 chạm */}
                     {canOpenSession && (
                         <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-                            {["Chòi 1", "Chòi 2", "Chòi 3", "Chòi 4", "Chòi 5", "Chòi 6"].map((spotName) => (
+                            {["Ô số 1", "Ô số 2", "Ô số 3", "Ô số 4", "Ô số 5", "Ô số 6"].map((spotName) => (
                                 <Link
                                     key={spotName}
                                     href="/sessions/new"
@@ -574,7 +574,7 @@ export function SessionsClient({
                                     <span>Khách mới vào</span>
                                 </div>
                                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                                    - Bấm nút <strong>&quot;+ Tạo vé&quot;</strong> ở góc trên để chọn chòi và gói giờ.
+                                    - Bấm nút <strong>&quot;+ Tạo vé&quot;</strong> ở góc trên để chọn ô số và gói giờ.
                                 </p>
                             </div>
 

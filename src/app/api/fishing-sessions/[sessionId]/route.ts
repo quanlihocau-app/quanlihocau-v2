@@ -633,7 +633,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                 ) {
                     return NextResponse.json(
                         {
-                            error: "Dữ liệu chòi không nhất quán. Không thể đóng phiên an toàn. Vui lòng liên hệ quản trị viên.",
+                            error: "Dữ liệu ô số không nhất quán. Không thể đóng phiên an toàn. Vui lòng liên hệ quản trị viên.",
                         },
                         { status: 409 },
                     );
@@ -653,7 +653,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                 if (isSerializationConflict) {
                     return NextResponse.json(
                         {
-                            error: "Dữ liệu chòi vừa thay đổi bởi người khác. Vui lòng tải lại trang và thử lại.",
+                            error: "Dữ liệu ô số vừa thay đổi bởi người khác. Vui lòng tải lại trang và thử lại.",
                         },
                         { status: 409 },
                     );

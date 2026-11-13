@@ -423,8 +423,8 @@ export default function PreviewPage() {
 
                                             <div className="grid grid-cols-3 gap-2.5 mb-3">
                                                 {[
-                                                    { id: "A01", label: "Chòi A01", status: "Trống" },
-                                                    { id: "A02", label: "Chòi A02", status: "Trống" },
+                                                    { id: "A01", label: "Ô số A01", status: "Trống" },
+                                                    { id: "A02", label: "Ô số A02", status: "Trống" },
                                                     { id: "B01", label: "Bờ B01", status: "Trống" },
                                                 ].map((spot) => (
                                                     <button
