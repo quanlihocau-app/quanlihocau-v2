@@ -415,21 +415,33 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
                     currentRangeLabel={analyticsData?.timeWindow?.label || "Đang tải khoảng thời gian..."}
                 />
 
-                {/* Quick Shift Report Nav Notice */}
+                {/* Quick Navigation Links */}
                 <div className="w-full px-3 pt-2">
-                    <div className="flex items-center justify-between rounded-2xl bg-linear-to-r from-[#F0FDF4] via-white to-[#F0FDF4] border border-emerald-200/90 px-3.5 py-2.5 text-xs text-slate-700 shadow-2xs font-serif">
-                        <span>Cần xem hoặc chốt sổ ca trực hiện tại?</span>
+                    <div className="grid grid-cols-2 gap-2 font-sans">
                         <button
                             type="button"
                             onClick={() => router.push("/reports/daily")}
-                            className="font-bold text-[#16A34A] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                            className="flex items-center justify-between rounded-xl border border-emerald-200/90 bg-[#F0FDF4] px-3.5 py-2.5 text-xs font-bold text-[#166534] hover:bg-emerald-100/70 transition-colors shadow-2xs cursor-pointer"
                         >
-                            Sổ ca trực ngày →
+                            <span className="flex items-center gap-2">
+                                <span className="text-sm">📋</span>
+                                <span>Sổ ca trực ngày</span>
+                            </span>
+                            <span className="text-[11px] font-semibold text-emerald-700">Chốt ca →</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => router.push(cashbookHref())}
+                            className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-[#102A43] hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                        >
+                            <span className="flex items-center gap-2">
+                                <span className="text-sm">💳</span>
+                                <span>Sổ quỹ thu chi</span>
+                            </span>
+                            <span className="text-[11px] font-semibold text-slate-500">Tiền mặt &amp; CK →</span>
                         </button>
                     </div>
                 </div>
-
-                <div className="px-3 pt-2"><button type="button" onClick={() => router.push(cashbookHref())} className="w-full rounded-xl border bg-white p-3 text-sm font-bold text-[#102A43]">Sổ thu chi · Tiền mặt và chuyển khoản →</button></div>
                 {/* Main Content Area */}
                 <main className="w-full px-3 pt-3 space-y-4 font-serif">
                     <div role="status" className="flex items-center justify-between text-xs text-slate-500">
@@ -471,219 +483,225 @@ export function ReportsView({ lakeName, lakeId, userRole: initialUserRole }: Rep
 
                     {/* Optimistic UI Wrapper: Dữ liệu cũ được giữ hiển thị và làm mờ nhẹ trong lúc tải */}
                     <div className={`space-y-4 transition-opacity duration-200 ${isOptimisticActive ? "opacity-60" : "opacity-100"}`}>
-                        {/* 1. EXECUTIVE KPI SUMMARY CARDS (Clickable for Drilldown) */}
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        {/* Total Revenue */}
-                        <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalRevenue"); } }} onClick={() => openDrilldown("totalRevenue")}
-                            title={`Doanh thu tổng: ${formatVnd(s?.totalRevenue ?? 0)}`} className="cursor-pointer rounded-2xl border border-emerald-700 bg-linear-to-br from-[#1B3224] to-[#244632] p-3 text-white shadow-2xs transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
-                                <span>
-                                    Doanh thu tổng</span>
-                                <span>🔍</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold font-serif sm:text-lg tabular-nums">
-                                {formatVnd(s?.totalRevenue ?? 0)}
-                            </div>
-                            {renderDelta(d?.totalRevenue)}
-                        </div>
-
-                        {/* Net Profit */}
-                        <div
-                            role="button" tabIndex={0}
-                            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setActiveTab("revenue"); } }}
-                            onClick={() => setActiveTab("revenue")}
-                            title="Doanh thu trừ chi và thu cá. Không phải tiền trong két. Bấm để xem chi tiết dòng tiền."
-                            className="cursor-pointer rounded-2xl border border-slate-800 bg-[#0F172A] p-3 text-white shadow-2xs hover:border-slate-600 transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-                                <span>Doanh thu trừ chi và thu cá</span>
-                                <span>📊</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold font-serif sm:text-lg tabular-nums">
-                                {formatVnd(s?.netProfit ?? 0)}
-                            </div>
-                            {renderDelta(d?.netProfit)}
-                        </div>
-
-                        {/* Ticket Revenue */}
-                        <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("ticketRevenue"); } }} onClick={() => openDrilldown("ticketRevenue")}
-                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>
-                                    Doanh thu vé</span>
-                                <span>🔍</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
-                                {formatVnd(s?.ticketRevenue ?? 0)}
-                            </div>
-                            {renderDelta(d?.ticketRevenue)}
-                        </div>
-
-                        {/* Retail / Product Revenue */}
-                        <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("productRevenue"); } }} onClick={() => openDrilldown("productRevenue")}
-                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>
-                                    Tiền sản phẩm (RBM)</span>
-                                <span>🔍</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
-                                {formatVnd(s?.productRevenue ?? 0)}
-                            </div>
-                            {renderDelta(d?.productRevenue)}
-                        </div>
-                        {/* Product Report Card */}
-                        <div
-                            role="button" tabIndex={0}
-                            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("productReport"); } }}
-                            onClick={() => openDrilldown("productReport")}
-                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>Báo cáo sản phẩm</span>
-                                <span>🔍</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
-                                {formatVnd(s?.productRevenue ?? 0)}
-                            </div>
-                            {renderDelta(d?.productRevenue)}
-                        </div>
-
-                        {/* Overtime Revenue */}
-                        <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("overtimeRevenue"); } }} onClick={() => openDrilldown("overtimeRevenue")}
-                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>
-                                    Doanh thu thêm giờ</span>
-                                <span>🔍</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold font-serif text-[#D48806] tabular-nums">
-                                {formatVnd(s?.overtimeRevenue ?? 0)}
-                            </div>
-                            {renderDelta(d?.overtimeRevenue)}
-                        </div>
-
-                        {/* Fish Buyback */}
-                        <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalFishBuyback"); } }} onClick={() => openDrilldown("totalFishBuyback")}
-                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>
-                                    Tiền thu mua cá</span>
-                                <span>🔍</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
-                                {formatVnd(s?.totalFishBuyback ?? 0)}
-                            </div>
-                            {renderDelta(d?.totalFishBuyback)}
-                        </div>
-
-                        {/* Total Expenses */}
-                        <div
-                            role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalExpense"); } }} onClick={() => openDrilldown("totalExpense")}
-                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>
-                                    Tổng phiếu chi</span>
-                                <span>🔍</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold font-serif text-[#9E2A2B] tabular-nums">
-                                {formatVnd(s?.totalExpense ?? 0)}
-                            </div>
-                            {renderDelta(d?.totalExpense)}
-                        </div>
-
-                    {/* Receivable Debt */}
-                    <div
-                        role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalReceivableDebt"); } }} onClick={() => openDrilldown("totalReceivableDebt")}
-                        className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs hover:border-emerald-300 hover:shadow-sm transition-all active:scale-98"
-                    >
-                        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                            <span>
-                                    Công nợ chưa thu</span>
-                            <span>🔍</span>
-                        </div>
-                        <div className="mt-1 text-base font-bold text-amber-600 sm:text-lg">
-                            {formatVnd(s?.totalReceivableDebt ?? 0)}
-                        </div>
-                    </div>
-                
-                        {/* KPI: Số khách hàng */}
-                        <div
-                            role="button" tabIndex={0}
-                            onClick={() => router.push("/customers")}
-                            title="Bấm để mở danh sách khách hàng"
-                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs hover:border-emerald-300 transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>👥 Số khách hàng</span>
-                                <span className="text-emerald-600 font-normal">Xem →</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold text-slate-800 tabular-nums">{s?.totalCustomers ?? 0} khách</div>
-                        </div>
-
-                        {/* KPI: Tổng số lần mua cá */}
-                        <div
-                            role="button" tabIndex={0}
-                            onClick={() => router.push("/fish-buybacks")}
-                            title="Bấm để mở sổ thu mua cá"
-                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs hover:border-emerald-300 transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>🐟 Số lượt mua cá</span>
-                                <span className="text-emerald-600 font-normal">Xem →</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold text-slate-800 tabular-nums">{s?.totalFishCount ?? 0} lượt</div>
-                        </div>
-
-                        {/* KPI: Tổng kg cá */}
-                        <div
-                            role="button" tabIndex={0}
-                            onClick={() => router.push("/fish-buybacks")}
-                            title="Bấm để mở sổ thu mua cá"
-                            className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs hover:border-emerald-300 transition-all active:scale-98"
-                        >
-                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                <span>⚖️ Tổng cân nặng cá</span>
-                                <span className="text-emerald-600 font-normal">Xem →</span>
-                            </div>
-                            <div className="mt-1 text-base font-bold text-slate-800 tabular-nums">
-                                {((s?.totalFishWeight ?? 0)).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} kg
-                            </div>
-                        </div>
-
-                        {/* KPI: Top cá theo cân nặng */}
-                        {s?.topFish && s.topFish.length > 0 && (
-                            <div
-                                role="button" tabIndex={0}
-                                onClick={() => router.push("/fish-buybacks")}
-                                title="Bấm để xem lịch sử thu mua cá"
-                                className="col-span-2 cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs hover:border-emerald-300 transition-all active:scale-98"
-                            >
-                                <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                                    <span>🏆 Top cá theo cân nặng</span>
-                                    <span className="text-emerald-600 font-normal">Sổ mua cá →</span>
+                        {/* 1. EXECUTIVE KPI SUMMARY CARDS */}
+                        <div className="space-y-3">
+                            {/* Nhóm 1: Tài chính cốt lõi (4 chỉ số quan trọng nhất) */}
+                            <div>
+                                <div className="mb-1.5 flex items-center justify-between px-1">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">
+                                        Tài chính cốt lõi
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-sans">
+                                        Bấm vào ô để xem phân tích chi tiết
+                                    </span>
                                 </div>
-                                <div className="space-y-1">
-                                    {s.topFish.map((f, i) => (
-                                        <div key={f.name} className="flex items-center justify-between text-xs">
-                                            <span className="text-slate-600">{i + 1}. {f.name}</span>
-                                            <span className="font-bold text-slate-800">{f.weight.toLocaleString("vi-VN", { maximumFractionDigits: 1 })} kg</span>
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    {/* Doanh thu tổng */}
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalRevenue"); } }}
+                                        onClick={() => openDrilldown("totalRevenue")}
+                                        title={`Doanh thu tổng: ${formatVnd(s?.totalRevenue ?? 0)}`}
+                                        className="cursor-pointer rounded-2xl border border-emerald-700 bg-linear-to-br from-[#1B3224] to-[#244632] p-3 text-white shadow-2xs transition-all active:scale-98"
+                                    >
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-emerald-200 uppercase tracking-wider">
+                                            <span>Doanh thu tổng</span>
+                                            <span>🔍</span>
                                         </div>
-                                    ))}
+                                        <div className="mt-1 text-base font-bold font-serif sm:text-lg tabular-nums">
+                                            {formatVnd(s?.totalRevenue ?? 0)}
+                                        </div>
+                                        <div className="mt-0.5 text-[10px] text-emerald-300/80 truncate">
+                                            Vé câu, thêm giờ &amp; dịch vụ
+                                        </div>
+                                        {renderDelta(d?.totalRevenue)}
+                                    </div>
+
+                                    {/* Lợi nhuận thực tế (Doanh thu trừ chi và thu cá) */}
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setActiveTab("revenue"); } }}
+                                        onClick={() => setActiveTab("revenue")}
+                                        title="Lợi nhuận thực tế = Doanh thu trừ tổng chi phí và tiền thu mua cá. Bấm để xem chi tiết dòng tiền."
+                                        className="cursor-pointer rounded-2xl border border-slate-800 bg-[#0F172A] p-3 text-white shadow-2xs hover:border-slate-600 transition-all active:scale-98"
+                                    >
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                                            <span>Lợi nhuận thực tế</span>
+                                            <span>📊</span>
+                                        </div>
+                                        <div className="mt-1 text-base font-bold font-serif sm:text-lg tabular-nums">
+                                            {formatVnd(s?.netProfit ?? 0)}
+                                        </div>
+                                        <div className="mt-0.5 text-[10px] text-slate-400 truncate">
+                                            Doanh thu trừ chi &amp; cá
+                                        </div>
+                                        {renderDelta(d?.netProfit)}
+                                    </div>
+
+                                    {/* Tổng chi phí & Thu cá */}
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalExpense"); } }}
+                                        onClick={() => openDrilldown("totalExpense")}
+                                        title={`Tổng tiền chi ra: ${formatVnd((s?.totalExpense ?? 0) + (s?.totalFishBuyback ?? 0))}`}
+                                        className="cursor-pointer rounded-2xl border border-rose-200 bg-white p-3 hover:border-rose-400 shadow-2xs transition-all active:scale-98"
+                                    >
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-rose-800 uppercase tracking-wider">
+                                            <span>Tổng chi &amp; Thu cá</span>
+                                            <span>🔍</span>
+                                        </div>
+                                        <div className="mt-1 text-base font-bold font-serif text-[#9E2A2B] sm:text-lg tabular-nums">
+                                            {formatVnd((s?.totalExpense ?? 0) + (s?.totalFishBuyback ?? 0))}
+                                        </div>
+                                        <div className="mt-0.5 text-[10px] text-slate-500 truncate">
+                                            Chi: {formatVnd(s?.totalExpense ?? 0)} · Cá: {formatVnd(s?.totalFishBuyback ?? 0)}
+                                        </div>
+                                        {renderDelta(d?.totalExpense)}
+                                    </div>
+
+                                    {/* Công nợ chưa thu */}
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalReceivableDebt"); } }}
+                                        onClick={() => openDrilldown("totalReceivableDebt")}
+                                        title={`Công nợ chưa thu: ${formatVnd(s?.totalReceivableDebt ?? 0)}`}
+                                        className="cursor-pointer rounded-2xl border border-amber-200 bg-white p-3 hover:border-amber-400 shadow-2xs transition-all active:scale-98"
+                                    >
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+                                            <span>Công nợ chưa thu</span>
+                                            <span>🔍</span>
+                                        </div>
+                                        <div className="mt-1 text-base font-bold font-serif text-amber-600 sm:text-lg tabular-nums">
+                                            {formatVnd(s?.totalReceivableDebt ?? 0)}
+                                        </div>
+                                        <div className="mt-0.5 text-[10px] text-slate-500 truncate">
+                                            Tiền khách nợ chưa trả
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        )}
+
+                            {/* Nhóm 2: Nguồn thu & Vận hành hồ */}
+                            <div>
+                                <div className="mb-1.5 flex items-center justify-between px-1">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-sans">
+                                        Nguồn thu &amp; Vận hành
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    {/* Tiền vé câu & thêm giờ */}
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("ticketRevenue"); } }}
+                                        onClick={() => openDrilldown("ticketRevenue")}
+                                        title={`Tiền vé & giờ câu: ${formatVnd((s?.ticketRevenue ?? 0) + (s?.overtimeRevenue ?? 0))}`}
+                                        className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
+                                    >
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                            <span>Tiền vé &amp; Giờ câu</span>
+                                            <span>🔍</span>
+                                        </div>
+                                        <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
+                                            {formatVnd((s?.ticketRevenue ?? 0) + (s?.overtimeRevenue ?? 0))}
+                                        </div>
+                                        <div className="mt-0.5 text-[10px] text-slate-500 truncate">
+                                            Vé: {formatVnd(s?.ticketRevenue ?? 0)} · Giờ: {formatVnd(s?.overtimeRevenue ?? 0)}
+                                        </div>
+                                        {renderDelta(d?.ticketRevenue)}
+                                    </div>
+
+                                    {/* Tiền dịch vụ & Sản phẩm (Loại bỏ thẻ Báo cáo sản phẩm trùng lặp và bỏ chữ RBM) */}
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("productRevenue"); } }}
+                                        onClick={() => openDrilldown("productRevenue")}
+                                        title={`Tiền dịch vụ & sản phẩm: ${formatVnd(s?.productRevenue ?? 0)}`}
+                                        className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
+                                    >
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                            <span>Dịch vụ &amp; Sản phẩm</span>
+                                            <span>🔍</span>
+                                        </div>
+                                        <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
+                                            {formatVnd(s?.productRevenue ?? 0)}
+                                        </div>
+                                        <div className="mt-0.5 text-[10px] text-slate-500 truncate">
+                                            Nước, mồi câu, đồ ăn...
+                                        </div>
+                                        {renderDelta(d?.productRevenue)}
+                                    </div>
+
+                                    {/* Khách hàng */}
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => router.push("/customers")}
+                                        title="Bấm để mở danh sách khách hàng"
+                                        className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
+                                    >
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                            <span>Số khách hàng</span>
+                                            <span className="text-emerald-600 font-semibold text-[10px]">Xem →</span>
+                                        </div>
+                                        <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
+                                            {s?.totalCustomers ?? 0} khách
+                                        </div>
+                                        <div className="mt-0.5 text-[10px] text-slate-500 truncate">
+                                            Khách đến câu trong kỳ
+                                        </div>
+                                    </div>
+
+                                    {/* Thu mua cá (Gộp số lượt + cân nặng + tiền cá) */}
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDrilldown("totalFishBuyback"); } }}
+                                        onClick={() => openDrilldown("totalFishBuyback")}
+                                        title="Bấm để xem chi tiết thu mua cá"
+                                        className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 hover:border-emerald-400 shadow-2xs transition-all active:scale-98"
+                                    >
+                                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                            <span>Thu mua cá</span>
+                                            <span className="text-emerald-600 font-semibold text-[10px]">Chi tiết →</span>
+                                        </div>
+                                        <div className="mt-1 text-base font-bold font-serif text-[#0F172A] tabular-nums">
+                                            {((s?.totalFishWeight ?? 0)).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} kg
+                                        </div>
+                                        <div className="mt-0.5 text-[10px] text-slate-500 truncate">
+                                            {s?.totalFishCount ?? 0} lượt · Chi: {formatVnd(s?.totalFishBuyback ?? 0)}
+                                        </div>
+                                        {renderDelta(d?.totalFishBuyback)}
+                                    </div>
+                                </div>
+                            </div>
+                            {/* KPI: Top cá theo cân nặng nếu có */}
+                            {s?.topFish && s.topFish.length > 0 && (
+                                <div
+                                    role="button" tabIndex={0}
+                                    onClick={() => router.push("/fish-buybacks")}
+                                    title="Bấm để xem lịch sử thu mua cá"
+                                    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-3 shadow-2xs hover:border-emerald-300 transition-all active:scale-98"
+                                >
+                                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                        <span>🏆 Top cá theo cân nặng</span>
+                                        <span className="text-emerald-600 font-normal">Sổ mua cá →</span>
+                                    </div>
+                                    <div className="space-y-1">
+                                        {s.topFish.map((f, i) => (
+                                            <div key={f.name} className="flex items-center justify-between text-xs">
+                                                <span className="text-slate-600">{i + 1}. {f.name}</span>
+                                                <span className="font-bold text-slate-800">{f.weight.toLocaleString("vi-VN", { maximumFractionDigits: 1 })} kg</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                 {/* 2. DYNAMIC TREND CHART */}
