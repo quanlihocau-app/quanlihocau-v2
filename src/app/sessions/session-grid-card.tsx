@@ -191,11 +191,25 @@ function SessionGridCardComponent({
     const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
     const didLongPressRef = useRef<boolean>(false);
     const plannedEndMs = new Date(s.plannedEndAt).getTime();
-    const isExpired = useSyncExternalStore(
+    const timeState = useSyncExternalStore(
         subscribeTicker,
-        () => sessionTicker.getNowMs() >= plannedEndMs,
-        () => nowMs >= plannedEndMs,
+        () => {
+            const currentMs = sessionTicker.getNowMs();
+            const diffMs = plannedEndMs - currentMs;
+            if (diffMs <= 0) return "overtime";
+            if (diffMs <= 15 * 60 * 1000) return "ending_soon";
+            return "normal";
+        },
+        () => {
+            const diffMs = plannedEndMs - nowMs;
+            if (diffMs <= 0) return "overtime";
+            if (diffMs <= 15 * 60 * 1000) return "ending_soon";
+            return "normal";
+        },
     );
+    const isOvertime = timeState === "overtime";
+    const isEndingSoon = timeState === "ending_soon";
+    const isExpired = isOvertime;
 
     const hutLabel = s.hutLinks.map((hl) => hl.hut.name).join(" + ") || "—";
     const {
@@ -203,9 +217,11 @@ function SessionGridCardComponent({
         extensionHours,
         liveOvertimeMinutes,
         liveOvertimeVnd,
+        fishBuybackTotal,
         netBalance,
         elapsedOvertimeMs,
     } = computeSessionFinancials(s, nowMs);
+    const hasFish = fishBuybackTotal > 0;
     const balanceView = sessionBalancePresentation({
         netBalanceVnd: netBalance,
         elapsedOvertimeMs,
@@ -261,7 +277,13 @@ function SessionGridCardComponent({
             }}
             className={`group relative flex flex-col justify-between rounded-xl p-2 sm:p-2.5 text-left transition-all select-none cursor-pointer border font-serif ${isSelected
                 ? "border-2 border-[#16A34A] bg-[#F0FDF4] ring-2 ring-[#16A34A]/20 shadow-md"
-                : "border-slate-200/90 bg-white hover:border-[#16A34A]/60 hover:bg-slate-50/40 shadow-2xs"
+                : isOvertime
+                    ? "border-2 border-[#DC2626] bg-[#FEF2F2] ring-2 ring-[#DC2626]/20 shadow-sm"
+                    : isEndingSoon
+                        ? "border-2 border-[#EA580C] bg-[#FFF7ED] ring-2 ring-[#EA580C]/20 shadow-xs"
+                        : hasFish
+                            ? "border-2 border-[#059669] bg-[#F0FDF4] ring-1 ring-[#059669]/30 shadow-xs"
+                            : "border-slate-200/90 bg-white hover:border-[#16A34A]/60 hover:bg-slate-50/40 shadow-2xs"
                 }`}
         >
             {/* Top row: Hut label, Payment status, Package duration */}
@@ -290,38 +312,62 @@ function SessionGridCardComponent({
                 <p className="text-[11px] font-semibold text-[#1A1A1A] truncate mb-1">
                     {s.customer?.name ?? <span className="font-normal text-slate-400">Khách lẻ</span>}
                 </p>
-            </div>
 
-            {/* Middle: Countdown timer */}
-            <div className="my-0.5">
-                <SessionCountdown plannedEndAt={s.plannedEndAt} />
-                {isPriceFreezed && (
-                    <div className="mt-1 flex items-center gap-1 rounded-xs border border-red-300 bg-red-50 px-1 py-0.5">
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500 animate-pulse" />
-                        <span className="text-[9px] font-bold text-red-700 leading-tight truncate">
-                            HẾT GIỜ — Chờ kết thúc/gia hạn
+                {/* Badge thu cá nổi bật (xanh đậm sang trọng) */}
+                {hasFish && (
+                    <div className="flex items-center gap-1 rounded bg-[#064E3B] text-white px-1.5 py-0.5 shadow-xs mb-1 w-fit">
+                        <span className="text-[10px]">🐟</span>
+                        <span className="text-[10px] font-bold tracking-tight">
+                            ĐÃ THU CÁ: -{formatVnd(fishBuybackTotal)}
                         </span>
                     </div>
                 )}
             </div>
 
+            {/* Middle: Countdown timer & 2-tone status alert */}
+            <div className="my-0.5">
+                <SessionCountdown plannedEndAt={s.plannedEndAt} />
+                {isOvertime ? (
+                    <div className="mt-1 flex items-center justify-between gap-1 rounded border border-[#DC2626] bg-[#DC2626] px-1.5 py-0.5 text-white animate-pulse shadow-xs">
+                        <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black tracking-tight">
+                            <span className="text-xs">🚨</span>
+                            <span>ĐÃ QUÁ GIỜ</span>
+                        </span>
+                        {liveOvertimeMinutes > 0 && (
+                            <span className="text-[9px] sm:text-[10px] font-black">+{formatOvertimeDuration(liveOvertimeMinutes)}</span>
+                        )}
+                    </div>
+                ) : isEndingSoon ? (
+                    <div className="mt-1 flex items-center justify-between gap-1 rounded border border-[#FB923C] bg-[#FFEDD5] px-1.5 py-0.5 text-[#9A3412]">
+                        <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-extrabold tracking-tight">
+                            <span className="text-xs">⏳</span>
+                            <span>SẮP HẾT GIỜ (&lt;15p)</span>
+                        </span>
+                    </div>
+                ) : null}
+            </div>
+
             {/* Bottom: Financial summary & mini tags */}
             <div className="mt-1 pt-1 border-t border-slate-100/90">
                 <div
-                    className={`rounded-xs px-1.5 py-0.5 border flex items-center justify-between font-serif text-[11px] ${balanceView.kind === "refund"
-                        ? "bg-[#FBEBEB] border-[#E9B6B7] text-[#9E2A2B]"
-                        : balanceView.kind === "due"
-                            ? "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
-                            : balanceView.kind === "unbilled-overtime"
+                    className={`rounded-xs px-1.5 py-0.5 border flex items-center justify-between font-serif text-[11px] ${hasFish
+                        ? "bg-[#ECFDF5] border-[#059669] text-[#064E3B]"
+                        : balanceView.kind === "refund"
+                            ? "bg-[#FBEBEB] border-[#E9B6B7] text-[#9E2A2B]"
+                            : balanceView.kind === "due"
                                 ? "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
-                                : "bg-[#EAEFEA] border-[#B8CEB8] text-[#2C4C3B]"
+                                : balanceView.kind === "unbilled-overtime"
+                                    ? "bg-[#FDF7EB] border-[#E8D1A3] text-[#8C5C00]"
+                                    : "bg-[#EAEFEA] border-[#B8CEB8] text-[#2C4C3B]"
                         }`}
                 >
                     <span className="text-[10px] font-bold">
-                        {balanceView.label}
+                        {hasFish
+                            ? (netBalance < 0 ? "🐟 Trả khách tiền cá" : "🐟 Đã trừ tiền cá")
+                            : balanceView.label}
                     </span>
                     {balanceView.showAmount && (
-                        <span className="font-bold">
+                        <span className="font-extrabold">
                             {netBalance < 0
                                 ? `-${formatVnd(Math.abs(netBalance))}`
                                 : `+${formatVnd(netBalance)}`}
@@ -329,9 +375,14 @@ function SessionGridCardComponent({
                     )}
                 </div>
 
-                {/* Mini chips if items, extension, or overtime exist */}
-                {(productCount > 0 || extensionHours > 0 || liveOvertimeVnd > 0) && (
+                {/* Mini chips if items, extension, overtime, or fish exist */}
+                {(productCount > 0 || extensionHours > 0 || liveOvertimeVnd > 0 || hasFish) && (
                     <div className="flex flex-wrap gap-1 mt-1">
+                        {hasFish && (
+                            <span className="inline-flex items-center rounded-xs bg-[#ECFDF5] border border-[#A7F3D0] px-1 py-0.2 text-[9px] font-bold text-[#065F46]">
+                                🐟 Thu {formatVnd(fishBuybackTotal)}
+                            </span>
+                        )}
                         {liveOvertimeVnd > 0 && (
                             <span className="inline-flex items-center rounded-xs bg-[#FDF7EB] border border-[#E8D1A3] px-1 py-0.2 text-[9px] font-bold text-[#8C5C00]">
                                 ⏱️ +{formatOvertimeDuration(liveOvertimeMinutes)}

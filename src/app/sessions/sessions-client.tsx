@@ -601,18 +601,22 @@ export function SessionsClient({
 
                         {/* Mẹo xem màu sắc trực quan */}
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 border-t border-emerald-200/60 text-[11px] text-slate-600">
-                            <span className="font-bold text-slate-700">🎨 Mẹo nhìn màu ô câu:</span>
+                            <span className="font-bold text-slate-700">🎨 Nhận diện màu ô câu:</span>
                             <span className="inline-flex items-center gap-1">
                                 <span className="h-2.5 w-2.5 rounded-full bg-[#16A34A] ring-2 ring-emerald-200" />
-                                <span>Xanh lá = Còn nhiều giờ</span>
+                                <span>Xanh lá = Đang câu bình thường</span>
                             </span>
                             <span className="inline-flex items-center gap-1">
-                                <span className="h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-amber-200" />
-                                <span>Vàng = Sắp hết giờ (&lt;15 phút)</span>
+                                <span className="h-2.5 w-2.5 rounded-full bg-[#059669] ring-2 ring-emerald-400" />
+                                <span className="font-bold text-[#065F46]">🐟 Xanh ngọc đậm = Đã thu cá từ cần thủ</span>
                             </span>
                             <span className="inline-flex items-center gap-1">
-                                <span className="h-2.5 w-2.5 rounded-full bg-rose-600 ring-2 ring-rose-200" />
-                                <span>Đỏ = Đã hết giờ (đang tính phụ thu)</span>
+                                <span className="h-2.5 w-2.5 rounded-full bg-[#EA580C] ring-2 ring-orange-200" />
+                                <span className="font-bold text-[#C2410C]">⏳ Cam san hô = Sắp hết giờ (&lt;15p)</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                                <span className="h-2.5 w-2.5 rounded-full bg-[#DC2626] ring-2 ring-red-200 animate-pulse" />
+                                <span className="font-black text-[#DC2626]">🚨 Đỏ thẫm = Đã quá giờ</span>
                             </span>
                         </div>
                     </div>
@@ -910,15 +914,18 @@ export function SessionsClient({
 
                                         {/* Thu mua cá */}
                                         {fishBuybackLines.length > 0 && (
-                                            <div className="rounded-xs bg-white p-3 border border-[#E0E0E0] space-y-1 font-serif">
-                                                <h4 className="font-bold text-[#9E2A2B] flex justify-between border-b border-[#E0E0E0] pb-1">
-                                                    <span>Thu cá từ cần thủ</span>
-                                                    <span className="font-serif font-bold text-[#9E2A2B]">-{formatVnd(fishBuybackTotal)}</span>
+                                            <div className="rounded-xs bg-[#ECFDF5] p-3 border border-[#A7F3D0] space-y-1 font-serif">
+                                                <h4 className="font-bold text-[#064E3B] flex justify-between border-b border-[#A7F3D0] pb-1">
+                                                    <span className="flex items-center gap-1">
+                                                        <span>🐟</span>
+                                                        <span>Thu cá từ cần thủ</span>
+                                                    </span>
+                                                    <span className="font-serif font-extrabold text-[#064E3B]">-{formatVnd(fishBuybackTotal)}</span>
                                                 </h4>
                                                 {fishBuybackLines.map((l) => (
-                                                    <div key={l.id} className="flex justify-between py-0.5 text-[#9E2A2B]">
+                                                    <div key={l.id} className="flex justify-between py-0.5 text-[#065F46] text-xs font-semibold">
                                                         <span>{l.name} {l.fishBuyback ? `(${l.fishBuyback.weight} kg)` : ""}</span>
-                                                        <span className="font-serif font-medium">-{formatVnd(Math.abs(l.totalVnd))}</span>
+                                                        <span className="font-serif font-bold">-{formatVnd(Math.abs(l.totalVnd))}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -937,9 +944,9 @@ export function SessionsClient({
                                                 </div>
                                             )}
                                             {fishBuybackTotal > 0 && (
-                                                <div className="flex justify-between text-xs text-[#9E2A2B]">
-                                                    <span>Tiền thu mua cá từ khách:</span>
-                                                    <span className="font-serif font-medium">-{formatVnd(fishBuybackTotal)}</span>
+                                                <div className="flex justify-between text-xs text-[#065F46] font-semibold">
+                                                    <span>🐟 Tiền thu mua cá từ khách:</span>
+                                                    <span className="font-serif font-bold text-[#064E3B]">-{formatVnd(fishBuybackTotal)}</span>
                                                 </div>
                                             )}
                                             <div className="border-t border-[#CCCCCC] pt-2 flex items-center justify-between">
@@ -952,9 +959,9 @@ export function SessionsClient({
                                                     return (
                                                         <>
                                                 <div>
-                                                    <p className="text-xs font-bold text-[#1A1A1A]">
+                                                    <p className={`text-xs font-bold ${netBalance < 0 && fishBuybackTotal > 0 ? "text-[#064E3B]" : "text-[#1A1A1A]"}`}>
                                                         {balanceView.kind === "refund"
-                                                            ? "HỒ THỐI LẠI TIỀN CHO KHÁCH"
+                                                            ? (fishBuybackTotal > 0 ? "🐟 HỒ TRẢ LẠI TIỀN CHO KHÁCH (THU CÁ)" : "HỒ THỐI LẠI TIỀN CHO KHÁCH")
                                                             : balanceView.kind === "due"
                                                             ? "CẦN THU THÊM CỦA KHÁCH"
                                                             : balanceView.label}
@@ -965,7 +972,9 @@ export function SessionsClient({
                                                 </div>
                                                 {balanceView.showAmount && (
                                                 <span className={`text-base font-bold font-serif ${
-                                                    netBalance < 0 ? "text-[#9E2A2B]" : "text-[#8C5C00]"
+                                                    netBalance < 0
+                                                        ? (fishBuybackTotal > 0 ? "text-[#064E3B]" : "text-[#9E2A2B]")
+                                                        : "text-[#8C5C00]"
                                                 }`}>
                                                     {netBalance < 0
                                                         ? `-${formatVnd(Math.abs(netBalance))}`

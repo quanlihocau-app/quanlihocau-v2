@@ -453,7 +453,9 @@ export function SettlementCheckoutModal({
                                 <div
                                     className={`rounded-2xl p-4 text-center border shadow-xs ${
                                         preview.financials.refundVnd > 0
-                                            ? "border-[#E9B6B7] bg-[#FBEBEB] text-[#9E2A2B]"
+                                            ? (preview.financials.fishBuybackTotalVnd ?? 0) > 0
+                                                ? "border-[#059669] bg-[#ECFDF5] text-[#064E3B]"
+                                                : "border-[#E9B6B7] bg-[#FBEBEB] text-[#9E2A2B]"
                                             : preview.financials.netDueVnd > 0
                                             ? "border-[#B7EB8F] bg-[#F6FFED] text-[#2C4C3B]"
                                             : "border-[#CCCCCC] bg-[#FAFAF7] text-[#1A1A1A]"
@@ -461,7 +463,9 @@ export function SettlementCheckoutModal({
                                 >
                                     <span className="text-[11px] font-bold uppercase tracking-wider block">
                                         {preview.financials.refundVnd > 0
-                                            ? "Số tiền cần thối lại khách"
+                                            ? (preview.financials.fishBuybackTotalVnd ?? 0) > 0
+                                                ? "🐟 Số tiền trả khách thu cá"
+                                                : "Số tiền cần thối lại khách"
                                             : preview.financials.netDueVnd > 0
                                             ? "Số tiền cần thu thêm"
                                             : "Phiên câu đã thanh toán đủ"}

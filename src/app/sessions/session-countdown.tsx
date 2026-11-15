@@ -45,10 +45,12 @@ export const SessionCountdown = memo(function SessionCountdown({ plannedEndAt }:
 
     return (
         <span
-            className={`font-mono text-base font-bold tracking-tight tabular-nums ${
-                timeInfo.isEndingSoon || timeInfo.isOvertime
-                    ? "text-rose-600 animate-pulse"
-                    : "text-emerald-700"
+            className={`font-mono text-base tracking-tight tabular-nums ${
+                timeInfo.isOvertime
+                    ? "text-[#DC2626] font-black animate-pulse"
+                    : timeInfo.isEndingSoon
+                    ? "text-[#EA580C] font-extrabold"
+                    : "text-emerald-700 font-bold"
             }`}
         >
             {timeInfo.label}
