@@ -419,17 +419,31 @@ const ACTION_LABELS: Record<string, string> = {
     FISHING_SESSION_SPOT_CHANGED: "Đổi ô số câu",
     FISH_BUYBACK_CREATED: "Thu cá / trừ bill",
     INVOICE_CREATED: "Tạo hóa đơn",
-    INVOICE_PREPAID: "Thu trước",
+    INVOICE_PREPAID: "Thu tiền trước",
     INVOICE_PRODUCT_LINE_ADDED: "Sửa bill (thêm món)",
     INVOICE_PRODUCT_LINE_REMOVED: "Sửa bill (xóa món)",
     INVOICE_VOIDED: "Hủy hóa đơn",
+    RECEIPT_CREATED: "Tạo phiếu thu tiền",
+    RECEIPT_UPDATED: "Sửa phiếu thu tiền",
+    EXPENSE_CREATED: "Tạo phiếu chi tiền",
+    EXPENSE_UPDATED: "Sửa phiếu chi tiền",
     PRODUCT_UPDATED: "Sửa giá / sản phẩm",
     PACKAGE_UPDATED: "Sửa giá / gói câu",
-    EXPENSE_CREATED: "Tạo phiếu chi tiền",
-    PAYMENT_REVERSED: "Hoàn / đảo tiền",
+    PAYMENT_REVERSED: "Hoàn / đảo tiền thanh toán",
     RETAIL_SALE_COMPLETED: "Bán lẻ dịch vụ",
     PAYMENT_RECORDED: "Thu tiền hóa đơn",
     SHIFT_CLOSED: "Chốt ca bàn giao quỹ",
+    SHIFT_OPENED: "Mở ca trực mới",
+    INVENTORY_MOVEMENT_CREATED: "Xuất / nhập kho",
+    INVENTORY_OUT: "Xuất kho sản phẩm",
+    INVENTORY_IN: "Nhập kho sản phẩm",
+    STOCK_ADJUSTED: "Điều chỉnh tồn kho",
+    APPROVAL_REQUESTED: "Gửi yêu cầu phê duyệt",
+    APPROVAL_REVIEWED: "Xử lý duyệt yêu cầu",
+    REQUEST_EXPENSE: "Yêu cầu duyệt chi tiền",
+    REQUEST_INVOICE_VOID: "Yêu cầu duyệt hủy đơn",
+    REQUEST_PRICE_OVERRIDE: "Yêu cầu duyệt sửa giá",
+    REQUEST_INVENTORY_OUT: "Yêu cầu duyệt xuất kho",
     MEMBER_CREATED: "Tạo tài khoản nhân sự",
     MEMBER_ROLE_UPDATED: "Đổi phân quyền nhân sự",
     MEMBER_DEACTIVATED: "Vô hiệu hóa nhân sự",
@@ -441,7 +455,8 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 export function actionLabel(action: string): string {
-    return ACTION_LABELS[action] ?? action.replaceAll("_", " ");
+    const normalized = action.trim().toUpperCase().replaceAll(" ", "_");
+    return ACTION_LABELS[normalized] ?? ACTION_LABELS[action] ?? action.replaceAll("_", " ");
 }
 
 export function presentAuditEntry(row: {

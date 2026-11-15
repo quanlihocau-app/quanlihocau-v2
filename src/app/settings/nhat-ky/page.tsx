@@ -275,8 +275,8 @@ export default async function StaffAuditPage({
                                                     <span className="font-mono text-[#66716A]">{formatWhen(entry.createdAt)}</span>
                                                 </div>
                                             </div>
-                                            <span className="shrink-0 rounded-full bg-[#F0F4F0] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-[#546257]">
-                                                {entry.entityType}
+                                            <span className="shrink-0 rounded-full bg-[#EBF3ED] px-2.5 py-0.5 text-[11px] font-bold text-[#1B3B2B]">
+                                                {entityLabel(entry.entityType)}
                                             </span>
                                         </div>
 
@@ -318,37 +318,98 @@ export default async function StaffAuditPage({
     );
 }
 
+// ---- Nhãn tiếng Việt cho các thực thể đối tượng ----
+const ENTITY_LABELS: Record<string, string> = {
+    Invoice: "Hóa đơn",
+    FishingSession: "Phiên câu",
+    Receipt: "Phiếu thu",
+    Expense: "Phiếu chi",
+    Shift: "Ca trực",
+    Product: "Sản phẩm",
+    Package: "Gói câu",
+    Hut: "Ô số câu",
+    Area: "Khu vực",
+    User: "Tài khoản",
+    Membership: "Nhân viên",
+    FishBuyback: "Thu mua cá",
+    ApprovalRequest: "Phê duyệt",
+};
+
+function entityLabel(type: string): string {
+    return ENTITY_LABELS[type] ?? type;
+}
+
+// Các ID kỹ thuật không cần hiển thị rối mắt
+const HIDDEN_KEYS = new Set([
+    "receiptId",
+    "shiftId",
+    "shiftCloseId",
+    "productId",
+    "packageId",
+    "lineId",
+    "sessionId",
+    "lakeId",
+    "idempotencyKey",
+    "token",
+    "raw",
+]);
+
 // ---- Nhãn tiếng Việt cho các trường dữ liệu ----
 const FIELD_LABELS: Record<string, string> = {
     status: "Trạng thái",
     totalAmountVnd: "Tổng tiền",
     paidAmountVnd: "Đã thanh toán",
     balanceDueVnd: "Còn nợ",
-    priceVnd: "Giá (VNĐ)",
+    priceVnd: "Giá",
     price: "Giá",
     quantity: "Số lượng",
     name: "Tên",
-    amountVnd: "Số tiền (VNĐ)",
+    amountVnd: "Số tiền",
     method: "Hình thức",
     direction: "Chiều giao dịch",
     note: "Ghi chú",
     reason: "Lý do",
-    packageId: "Mã gói câu",
+    packageId: "Gói câu",
     packageName: "Tên gói câu",
-    addedMinutes: "Thêm thời gian (phút)",
+    addedMinutes: "Thời gian thêm (phút)",
     previousPlannedEndAt: "Giờ kết thúc cũ",
     newPlannedEndAt: "Giờ kết thúc mới",
     startAt: "Giờ bắt đầu",
-    plannedEndAt: "Giờ dự kiến kết thúc",
+    plannedEndAt: "Giờ dự kiến ra",
     endedAt: "Giờ kết thúc thực tế",
-    hutIds: "Lều / Chỗ ngồi",
-    customerId: "Mã khách hàng",
-    refundedVnd: "Hoàn tiền (VNĐ)",
+    hutIds: "Ô số câu",
+    customerId: "Khách hàng",
+    refundedVnd: "Hoàn tiền",
     settlement: "Thanh toán kết ca",
     paymentMethod: "Phương thức thanh toán",
     weight: "Cân nặng (kg)",
-    totalVnd: "Tổng tiền (VNĐ)",
+    totalVnd: "Tổng tiền",
     fishTypeId: "Loại cá",
+    description: "Nội dung",
+    category: "Phân loại",
+    lineName: "Tên món",
+    lineTotalVnd: "Thành tiền",
+    unitPrice: "Đơn giá",
+    isNegativeStock: "Cảnh báo kho âm",
+    remainingStock: "Tồn kho còn",
+    productName: "Tên sản phẩm",
+    newTotalAmountVnd: "Tổng tiền mới",
+    refunds: "Khoản hoàn trả",
+    account: "Tài khoản đăng nhập",
+    result: "Kết quả",
+    // Ca trực
+    totalRevenueVnd: "Tổng doanh thu",
+    totalExpenseVnd: "Tổng chi phí",
+    totalCashVnd: "Tiền mặt thu",
+    totalTransferVnd: "Chuyển khoản thu",
+    fishBuybackVnd: "Chi thu mua cá",
+    otherExpenseVnd: "Chi phí khác",
+    actualCashVnd: "Tiền mặt kiểm đếm",
+    cashDifferenceVnd: "Chênh lệch tiền mặt",
+    differenceReason: "Lý do chênh lệch",
+    closedBy: "Người chốt ca",
+    startTime: "Giờ mở ca",
+    endTime: "Giờ đóng ca",
 };
 
 function fieldLabel(key: string): string {
@@ -365,31 +426,111 @@ function DiffView({
     after: JsonObject | null;
     legacy: JsonObject | null;
 }) {
-    const keys = [...new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})])];
+    const keys = [...new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})])].filter(
+        (k) => !HIDDEN_KEYS.has(k)
+    );
+
     if (keys.length === 0) {
         if (!legacy) return null;
-        return <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg bg-[#F8FAF8] p-2 text-[11px] text-[#66716A]">{JSON.stringify(legacy, null, 2)}</pre>;
-    }
-    return (
-        <dl className="mt-2 space-y-1 rounded-lg bg-[#F8FAF8] p-2">
-            {keys.map((key) => (
-                <div key={key} className="text-[11px] leading-5 text-[#17201A]">
-                    <dt className="inline font-semibold text-[#3A3A3A]">{fieldLabel(key)}: </dt>
-                    <dd className="inline break-all">
-                        <span className="text-[#8A938D] line-through">{showValue(before?.[key])}</span>
-                        <span className="mx-1 text-[#8A938D]">&#8594;</span>
-                        <span className="font-medium text-[#246B38]">{showValue(after?.[key])}</span>
-                    </dd>
+        const visibleLegacyKeys = Object.keys(legacy).filter((k) => !HIDDEN_KEYS.has(k));
+        if (visibleLegacyKeys.length === 0) return null;
+
+        return (
+            <div className="mt-2 rounded-xl border border-[#E3E8E3] bg-[#F7F9F7] p-2.5">
+                <div className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2">
+                    {visibleLegacyKeys.map((key) => (
+                        <div key={key} className="text-xs leading-5">
+                            <span className="font-semibold text-[#546257]">{fieldLabel(key)}: </span>
+                            <span className="font-bold text-[#17201A]">{showValue(legacy[key], key)}</span>
+                        </div>
+                    ))}
                 </div>
-            ))}
-        </dl>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-2 rounded-xl border border-[#E3E8E3] bg-[#F7F9F7] p-2.5">
+            <dl className="space-y-1.5">
+                {keys.map((key) => (
+                    <div key={key} className="text-xs leading-5 flex flex-wrap items-baseline gap-1.5">
+                        <dt className="font-semibold text-[#546257]">{fieldLabel(key)}:</dt>
+                        <dd className="break-all">
+                            <span className="text-[#8A938D] line-through">{showValue(before?.[key], key)}</span>
+                            <span className="mx-1 font-bold text-[#546257]">➔</span>
+                            <span className="font-bold text-[#246B38]">{showValue(after?.[key], key)}</span>
+                        </dd>
+                    </div>
+                ))}
+            </dl>
+        </div>
     );
 }
 
-function showValue(value: unknown): string {
-    if (value === undefined || value === null) return "(trống)";
-    if (typeof value === "string") return value;
-    return JSON.stringify(value);
+function showValue(value: unknown, key?: string): string {
+    if (value === undefined || value === null || value === "") return "(trống)";
+
+    // Định dạng ngày giờ chuẩn Việt Nam nếu là chuỗi ISO
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)) {
+        try {
+            return new Intl.DateTimeFormat("vi-VN", {
+                timeZone: "Asia/Ho_Chi_Minh",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            }).format(new Date(value));
+        } catch {
+            return value;
+        }
+    }
+
+    // Định dạng tiền tệ nếu là trường tiền
+    if (typeof value === "number") {
+        if (key && (key.endsWith("Vnd") || /amount|price|revenue|expense|total|balance|refund/i.test(key))) {
+            return new Intl.NumberFormat("vi-VN").format(value) + " đ";
+        }
+        return new Intl.NumberFormat("vi-VN").format(value);
+    }
+
+    // Việt hóa các giá trị trạng thái tiếng Anh phổ biến
+    if (typeof value === "string") {
+        const ENUM_MAP: Record<string, string> = {
+            ACTIVE: "Đang hoạt động",
+            COMPLETED: "Đã hoàn thành",
+            CANCELLED: "Đã hủy",
+            VOIDED: "Đã hủy",
+            CASH: "Tiền mặt",
+            BANK_TRANSFER: "Chuyển khoản",
+            PAID: "Đã thanh toán",
+            PARTIALLY_PAID: "Thanh toán một phần",
+            DRAFT: "Bản nháp",
+            PENDING: "Chờ xử lý",
+            IN: "Thu vào",
+            OUT: "Chi ra",
+            success: "Thành công",
+            failure: "Thất bại",
+            true: "Có",
+            false: "Không",
+        };
+        return ENUM_MAP[value] ?? value;
+    }
+
+    if (typeof value === "boolean") {
+        return value ? "Có" : "Không";
+    }
+
+    if (Array.isArray(value)) {
+        return value.map((v) => showValue(v, key)).join(", ");
+    }
+
+    try {
+        return JSON.stringify(value);
+    } catch {
+        return String(value);
+    }
 }
 
 function formatWhen(iso: string): string {
@@ -408,7 +549,7 @@ function roleLabel(role: string | null | undefined): string {
     if (role === "OWNER") return "Chủ hồ";
     if (role === "MANAGER") return "Quản lý";
     if (role === "STAFF") return "Nhân viên";
-    return role || "---";
+    return "Nhân sự";
 }
 
 function shortId(value: string): string {
