@@ -210,3 +210,51 @@ test("a failed audit insert can be swallowed by the caller", async () => {
         after: { result: "failure" },
     }, { bestEffort: true }));
 });
+
+test("suspicious actions are detected and create notifications", async () => {
+    let createdNotif = null;
+    const db = {
+        auditEvent: {
+            create: async () => {},
+        },
+        notification: {
+            create: async ({ data }) => {
+                createdNotif = data;
+            },
+        },
+    };
+
+    // Staff voiding an invoice
+    await writeStaffAudit(db, {
+        lakeId: LAKE_A,
+        action: "INVOICE_VOIDED",
+        entityType: "Invoice",
+        entityId: "inv-12345678",
+        createdBy: "staff-1",
+        actorName: "Nhân viên Tuấn",
+        actorRole: "STAFF",
+        before: { totalAmountVnd: 500000 },
+        after: { status: "VOIDED" },
+    });
+
+    assert.ok(createdNotif);
+    assert.equal(createdNotif.lakeId, LAKE_A);
+    assert.match(createdNotif.title, /Cảnh báo/);
+    assert.match(createdNotif.body, /Nhân viên Tuấn/);
+
+    // Normal owner action should NOT create notification
+    createdNotif = null;
+    await writeStaffAudit(db, {
+        lakeId: LAKE_A,
+        action: "FISHING_SESSION_OPENED",
+        entityType: "FishingSession",
+        entityId: "sess-12345678",
+        createdBy: "owner-1",
+        actorName: "Chủ hồ",
+        actorRole: "OWNER",
+        before: null,
+        after: { status: "ACTIVE" },
+    });
+    assert.equal(createdNotif, null);
+});
+

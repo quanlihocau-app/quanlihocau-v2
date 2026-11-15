@@ -11,6 +11,7 @@ import { useNetworkStatus } from "@/lib/network/use-network-status";
 import { useOutdoorMode } from "@/hooks/use-outdoor-mode";
 import { HeaderClock } from "./header-clock";
 import { AccountSettingsModal } from "./account-settings-modal";
+import { NotificationBell } from "./notification-bell";
 
 interface DesktopNavItem {
     label: string;
@@ -310,8 +311,11 @@ export function MobileAppHeader({
                             )}
                         </div>
 
-                        {/* Outdoor Mode & Help Buttons */}
+                        {/* Notification Bell, Outdoor Mode & Help Buttons */}
                         <div className="flex items-center gap-1.5">
+                            {/* Notification Bell */}
+                            <NotificationBell theme={isOutdoorMode ? "light" : "dark"} />
+
                             {/* Outdoor Mode Button */}
                             <button
                                 type="button"

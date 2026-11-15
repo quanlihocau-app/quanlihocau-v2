@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { Role } from "@/generated/prisma/client";
+import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -87,6 +88,31 @@ export async function PATCH(request: Request, { params }: RouteParams) {
             data: parsed.data,
         });
 
+        const meta = await readRequestMeta();
+        await writeStaffAudit(prisma, {
+            lakeId: tenantContext.lakeId,
+            entityType: "Package",
+            entityId: packageId,
+            action: "PACKAGE_UPDATED",
+            createdBy: tenantContext.userId,
+            actorName: tenantContext.userName,
+            actorRole: tenantContext.role,
+            before: {
+                name: existingPackage.name,
+                durationMinutes: existingPackage.durationMinutes,
+                priceVnd: existingPackage.priceVnd,
+                overtimeHourlyVnd: existingPackage.overtimeHourlyVnd,
+            },
+            after: {
+                name: updatedPackage.name,
+                durationMinutes: updatedPackage.durationMinutes,
+                priceVnd: updatedPackage.priceVnd,
+                overtimeHourlyVnd: updatedPackage.overtimeHourlyVnd,
+            },
+            ip: meta.ip,
+            userAgent: meta.userAgent,
+        }, { bestEffort: true });
+
         return NextResponse.json(updatedPackage, { status: 200 });
     } catch (error) {
         if (error instanceof AuthenticationError) {
@@ -130,6 +156,30 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
                 deletedAt: new Date(),
             },
         });
+
+        const meta = await readRequestMeta();
+        await writeStaffAudit(prisma, {
+            lakeId: tenantContext.lakeId,
+            entityType: "Package",
+            entityId: packageId,
+            action: "PACKAGE_UPDATED",
+            createdBy: tenantContext.userId,
+            actorName: tenantContext.userName,
+            actorRole: tenantContext.role,
+            before: {
+                name: existingPackage.name,
+                durationMinutes: existingPackage.durationMinutes,
+                priceVnd: existingPackage.priceVnd,
+            },
+            after: {
+                deletedAt: new Date().toISOString(),
+            },
+            extra: {
+                reason: "Vô hiệu hóa / Xóa gói câu",
+            },
+            ip: meta.ip,
+            userAgent: meta.userAgent,
+        }, { bestEffort: true });
 
         return NextResponse.json(
             { message: "Đã vô hiệu hóa gói câu thành công." },

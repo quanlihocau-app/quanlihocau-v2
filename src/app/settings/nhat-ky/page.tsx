@@ -36,6 +36,7 @@ type Search = {
     to?: string;
     entity?: string;
     page?: string;
+    risk?: string;
 };
 
 export default async function StaffAuditPage({
@@ -107,7 +108,13 @@ export default async function StaffAuditPage({
     ]);
 
     const hasNext = rows.length > AUDIT_PAGE_SIZE;
-    const entries = rows.slice(0, AUDIT_PAGE_SIZE).map(presentAuditEntry);
+    const isSuspiciousOnly = params.risk === "SUSPICIOUS" || params.action === "SUSPICIOUS_ONLY";
+    const rawEntries = rows.slice(0, AUDIT_PAGE_SIZE).map(presentAuditEntry);
+    const suspiciousCount = rawEntries.filter((e) => e.riskLevel === "SUSPICIOUS").length;
+    const entries = isSuspiciousOnly
+        ? rawEntries.filter((e) => e.riskLevel === "SUSPICIOUS")
+        : rawEntries;
+
     const names = new Map(members.map((member) => [member.userId, member.user.name]));
     const filters = {
         actor: query.where.createdBy ?? "",
@@ -115,6 +122,7 @@ export default async function StaffAuditPage({
         from: query.from,
         to: query.to,
         entity: params.entity ?? "",
+        risk: params.risk ?? "",
     };
     const csvHref = buildHref(filters, 1, true);
 
@@ -124,11 +132,41 @@ export default async function StaffAuditPage({
                 <MobileAppHeader lakeName={tenant.lakeName} isSupportMode={tenant.isSupportMode} />
                 <main className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
                     <div>
-                        <h1 className="text-lg font-bold text-[#17201A]">Nhật ký thao tác</h1>
+                        <h1 className="text-lg font-bold text-[#17201A]">Nhật ký thao tác & Chống thất thoát</h1>
                         <p className="mt-1 text-xs leading-5 text-[#66716A]">
-                            Ai làm gì, lúc nào, đối tượng nào. Chỉ xem, không sửa và không xóa.
-                            Nên giữ khoảng {AUDIT_RETENTION_DAYS} ngày; khi cần dọn, làm tay sau giờ bán và báo trước cho hồ.
+                            Ai làm gì, lúc nào, đối tượng nào. Hệ thống tự động phát hiện hành động đáng nghi và cảnh báo cho chủ hồ.
                         </p>
+                    </div>
+
+                    {/* Quick Filter Pill Tabs */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                            href="/settings/nhat-ky"
+                            className={`inline-flex h-9 items-center rounded-xl px-3.5 text-xs font-bold transition-all ${
+                                !isSuspiciousOnly
+                                    ? "bg-[#1B3B2B] text-white shadow-xs"
+                                    : "border border-[#E3E8E3] bg-white text-[#66716A] hover:bg-[#F0F4F0]"
+                            }`}
+                        >
+                            Tất cả thao tác
+                        </Link>
+                        <Link
+                            href="/settings/nhat-ky?risk=SUSPICIOUS"
+                            className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-xs font-bold transition-all ${
+                                isSuspiciousOnly
+                                    ? "bg-red-600 text-white shadow-xs"
+                                    : "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                            }`}
+                        >
+                            <span>⚠️ Chỉ xem Đáng nghi / Cảnh báo</span>
+                            {suspiciousCount > 0 && (
+                                <span className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
+                                    isSuspiciousOnly ? "bg-white text-red-600" : "bg-red-600 text-white"
+                                }`}>
+                                    {suspiciousCount}
+                                </span>
+                            )}
+                        </Link>
                     </div>
 
                     <form method="get" className="grid grid-cols-1 gap-2 rounded-2xl border border-[#E3E8E3] bg-white p-3 sm:grid-cols-2">
@@ -164,9 +202,9 @@ export default async function StaffAuditPage({
                             <input name="entity" defaultValue={filters.entity} placeholder="UUID" className="mt-1 h-10 w-full rounded-xl border border-[#E3E8E3] px-3 text-sm" />
                         </label>
                         <div className="flex gap-2 sm:col-span-2">
-                            <button type="submit" className="h-10 flex-1 rounded-full bg-[#4F9D5A] text-sm font-semibold text-white">Lọc</button>
-                            <Link href="/settings/nhat-ky" className="inline-flex h-10 items-center rounded-full border border-[#E3E8E3] px-4 text-sm">Xóa lọc</Link>
-                            <a href={csvHref} className="inline-flex h-10 items-center rounded-full border border-[#E3E8E3] px-4 text-sm">CSV</a>
+                            <button type="submit" className="h-10 flex-1 rounded-full bg-[#4F9D5A] text-sm font-semibold text-white cursor-pointer active:scale-95 transition-all">Lọc</button>
+                            <Link href="/settings/nhat-ky" className="inline-flex h-10 items-center rounded-full border border-[#E3E8E3] px-4 text-sm text-[#17201A]">Xóa lọc</Link>
+                            <a href={csvHref} className="inline-flex h-10 items-center rounded-full border border-[#E3E8E3] px-4 text-sm text-[#17201A]">CSV</a>
                         </div>
                     </form>
 
@@ -176,26 +214,84 @@ export default async function StaffAuditPage({
 
                     {entries.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-[#E3E8E3] bg-white px-4 py-8 text-center text-sm text-[#66716A]">
-                            Không có dòng nào trong khoảng này.
+                            {isSuspiciousOnly ? "Không phát hiện hành động đáng nghi nào trong khoảng này." : "Không có dòng nào trong khoảng này."}
                         </p>
                     ) : (
-                        <ol className="space-y-2">
+                        <ol className="space-y-3">
                             {entries.map((entry) => {
                                 const name = entry.actorName || names.get(entry.actorId) || shortId(entry.actorId);
+                                const isSuspicious = entry.riskLevel === "SUSPICIOUS";
+                                const isAttention = entry.riskLevel === "ATTENTION";
+
                                 return (
-                                    <li key={entry.id} className="rounded-2xl border border-[#E3E8E3] bg-white p-3">
+                                    <li
+                                        key={entry.id}
+                                        className={`rounded-2xl border p-3.5 transition-shadow ${
+                                            isSuspicious
+                                                ? "border-red-400 bg-red-50/50 shadow-xs ring-1 ring-red-300/60"
+                                                : isAttention
+                                                ? "border-amber-300 bg-amber-50/40"
+                                                : "border-[#E3E8E3] bg-white shadow-xs"
+                                        }`}
+                                    >
+                                        {/* Suspicious or Attention Banner */}
+                                        {isSuspicious && (
+                                            <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-red-600 px-2.5 py-1 text-white shadow-xs">
+                                                <span className="flex items-center gap-1.5 text-xs font-bold">
+                                                    <span>⚠️</span>
+                                                    <span>CẢNH BÁO ĐÁNG NGHI:</span>
+                                                    <span className="font-medium">{entry.riskReason || "Hành động nhạy cảm"}</span>
+                                                </span>
+                                                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                                    Cần kiểm tra
+                                                </span>
+                                            </div>
+                                        )}
+                                        {isAttention && !isSuspicious && (
+                                            <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-900">
+                                                <span>LƯU Ý:</span>
+                                                <span className="font-medium">{entry.riskReason}</span>
+                                            </div>
+                                        )}
+
+                                        {/* Top Row: Action & Entity */}
                                         <div className="flex items-start justify-between gap-3">
                                             <div>
-                                                <p className="text-sm font-semibold text-[#17201A]">{entry.actionLabel}</p>
-                                                <p className="mt-0.5 text-xs text-[#66716A]">
-                                                    {name} ({roleLabel(entry.actorRole)}) - {formatWhen(entry.createdAt)}
+                                                <p className={`text-sm font-bold ${isSuspicious ? "text-red-900" : "text-[#17201A]"}`}>
+                                                    {entry.actionLabel}
                                                 </p>
+                                                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                                                    <span className="font-bold text-[#17201A]">{name}</span>
+                                                    <span className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                                                        entry.actorRole === "OWNER"
+                                                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                                            : entry.actorRole === "MANAGER"
+                                                            ? "bg-purple-100 text-purple-800 border border-purple-300"
+                                                            : "bg-slate-100 text-slate-700 border border-slate-300"
+                                                    }`}>
+                                                        {roleLabel(entry.actorRole)}
+                                                    </span>
+                                                    <span className="text-[#8A938D]">•</span>
+                                                    <span className="font-mono text-[#66716A]">{formatWhen(entry.createdAt)}</span>
+                                                </div>
                                             </div>
-                                            <span className="shrink-0 rounded-full bg-[#F0F4F0] px-2 py-0.5 font-mono text-[10px] text-[#8A938D]">{entry.entityType}</span>
+                                            <span className="shrink-0 rounded-full bg-[#F0F4F0] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-[#546257]">
+                                                {entry.entityType}
+                                            </span>
                                         </div>
-                                        <p className="mt-1 break-all font-mono text-[11px] text-[#8A938D]">{entry.entityId}</p>
+
+                                        <p className="mt-1.5 font-mono text-[11px] text-[#8A938D]">
+                                            Mã: <span className="select-all font-semibold text-[#546257]">{entry.entityId}</span>
+                                        </p>
+
+                                        {/* Diff View */}
                                         <DiffView before={entry.before} after={entry.after} legacy={entry.legacy} />
-                                        {entry.ip ? <p className="mt-1 text-[11px] text-[#8A938D]">IP: {entry.ip}</p> : null}
+
+                                        {entry.ip && (
+                                            <p className="mt-2 text-[11px] text-[#8A938D]">
+                                                IP: <span className="font-mono">{entry.ip}</span>
+                                            </p>
+                                        )}
                                     </li>
                                 );
                             })}
@@ -301,6 +397,7 @@ function formatWhen(iso: string): string {
         timeZone: "Asia/Ho_Chi_Minh",
         hour: "2-digit",
         minute: "2-digit",
+        second: "2-digit",
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -324,13 +421,14 @@ function clampPage(value: string | undefined): number {
     return Math.min(200, Math.floor(page));
 }
 
-function buildHref(filters: { actor: string; action: string; from: string; to: string; entity: string }, page: number, csv: boolean): string {
+function buildHref(filters: { actor: string; action: string; from: string; to: string; entity: string; risk?: string }, page: number, csv: boolean): string {
     const params = new URLSearchParams();
     if (filters.actor) params.set("actor", filters.actor);
     if (filters.action && filters.action !== "ALL") params.set("action", filters.action);
     if (filters.from) params.set("from", filters.from);
     if (filters.to) params.set("to", filters.to);
     if (filters.entity) params.set("entity", filters.entity);
+    if (filters.risk) params.set("risk", filters.risk);
     if (!csv && page > 1) params.set("page", String(page));
     if (csv) {
         params.set("format", "csv");

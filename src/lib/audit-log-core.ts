@@ -134,7 +134,83 @@ type AuditClient = {
     auditEvent: {
         create: (args: { data: AuditEventRow }) => Promise<unknown>;
     };
+    notification?: {
+        create: (args: { data: { lakeId?: string | null; title?: string | null; body?: string | null; read?: boolean } }) => Promise<unknown>;
+    };
 };
+
+export type AuditRiskLevel = "NORMAL" | "ATTENTION" | "SUSPICIOUS";
+
+export function assessAuditRisk(input: {
+    action: string;
+    actorRole?: string | null;
+    createdAt?: Date | string | null;
+    before?: JsonObject | null;
+    after?: JsonObject | null;
+    extra?: JsonObject | null;
+}): { level: AuditRiskLevel; reason: string | null } {
+    const role = (input.actorRole ?? "").toUpperCase();
+    const action = input.action;
+
+    let isNightTime = false;
+    if (input.createdAt) {
+        try {
+            const date = new Date(input.createdAt);
+            const vnHour = (date.getUTCHours() + 7) % 24;
+            if (vnHour >= 23 || vnHour < 5) {
+                isNightTime = true;
+            }
+        } catch {}
+    }
+
+    if (action === "INVOICE_VOIDED") {
+        if (role === "STAFF" || role === "MANAGER") {
+            return { level: "SUSPICIOUS", reason: "Nhân viên hủy hóa đơn đã tạo" };
+        }
+        if (isNightTime) {
+            return { level: "SUSPICIOUS", reason: "Hủy hóa đơn ngoài giờ hoạt động" };
+        }
+        return { level: "ATTENTION", reason: "Hủy hóa đơn" };
+    }
+
+    if (action === "INVOICE_PRODUCT_LINE_REMOVED") {
+        if (role === "STAFF") {
+            return { level: "SUSPICIOUS", reason: "Nhân viên xóa món / gỡ sản phẩm khỏi bill" };
+        }
+        return { level: "ATTENTION", reason: "Gỡ sản phẩm khỏi hóa đơn" };
+    }
+
+    if (action === "FISHING_SESSION_CANCELLED") {
+        if (role === "STAFF" || role === "MANAGER") {
+            return { level: "SUSPICIOUS", reason: "Hủy phiên câu đang diễn ra" };
+        }
+        return { level: "ATTENTION", reason: "Hủy phiên câu" };
+    }
+
+    if (action === "EXPENSE_CREATED") {
+        if (role === "STAFF") {
+            return { level: "SUSPICIOUS", reason: "Nhân viên tự tạo phiếu chi rút tiền két" };
+        }
+        return { level: "NORMAL", reason: null };
+    }
+
+    if (action === "PAYMENT_REVERSED") {
+        return { level: "SUSPICIOUS", reason: "Hoàn / đảo tiền thanh toán" };
+    }
+
+    if (action === "PRODUCT_UPDATED" || action === "PACKAGE_UPDATED") {
+        if (role === "STAFF") {
+            return { level: "SUSPICIOUS", reason: "Nhân viên sửa biểu giá niêm yết" };
+        }
+        return { level: "ATTENTION", reason: "Thay đổi biểu giá niêm yết" };
+    }
+
+    if (action === "LOGIN_FAILED") {
+        return { level: "ATTENTION", reason: "Đăng nhập thất bại" };
+    }
+
+    return { level: "NORMAL", reason: null };
+}
 
 /**
  * One insert. A payload mistake returns before any query, so a surrounding
@@ -157,6 +233,29 @@ export async function writeStaffAudit(
 
     try {
         await db.auditEvent.create({ data });
+
+        const risk = assessAuditRisk({
+            action: input.action,
+            actorRole: input.actorRole,
+            before: input.before,
+            after: input.after,
+            extra: input.extra,
+        });
+
+        if (risk.level === "SUSPICIOUS" && input.lakeId && db.notification) {
+            try {
+                await db.notification.create({
+                    data: {
+                        lakeId: input.lakeId,
+                        title: `⚠️ Cảnh báo: ${risk.reason ?? actionLabel(input.action)}`,
+                        body: `${input.actorName || "Nhân viên"} (${input.actorRole || "STAFF"}) vừa ${actionLabel(input.action).toLowerCase()} trên ${input.entityType} #${input.entityId.slice(0, 8)}`,
+                        read: false,
+                    },
+                });
+            } catch (notifErr) {
+                console.error("[audit] auto notification skipped:", notifErr);
+            }
+        }
     } catch (error) {
         console.error("[audit] write", input.action, error instanceof Error ? error.message : "failed");
         if (!options?.bestEffort) throw error;
@@ -308,18 +407,26 @@ export type PresentedAudit = {
     legacy: JsonObject | null;
     ip: string | null;
     userAgent: string | null;
+    riskLevel?: AuditRiskLevel;
+    riskReason?: string | null;
 };
 
 const ACTION_LABELS: Record<string, string> = {
     FISHING_SESSION_OPENED: "Mở phiên",
     FISHING_SESSION_COMPLETED: "Đóng phiên",
-    FISHING_SESSION_CANCELLED: "Hủy phiên",
-    FISHING_SESSION_EXTENDED: "Gia hạn",
+    FISHING_SESSION_CANCELLED: "Hủy phiên câu",
+    FISHING_SESSION_EXTENDED: "Gia hạn giờ câu",
+    FISHING_SESSION_SPOT_CHANGED: "Đổi ô số câu",
     FISH_BUYBACK_CREATED: "Thu cá / trừ bill",
     INVOICE_CREATED: "Tạo hóa đơn",
     INVOICE_PREPAID: "Thu trước",
-    INVOICE_PRODUCT_LINE_ADDED: "Sửa bill (thêm dòng)",
-    INVOICE_PRODUCT_LINE_REMOVED: "Sửa bill (xóa dòng)",
+    INVOICE_PRODUCT_LINE_ADDED: "Sửa bill (thêm món)",
+    INVOICE_PRODUCT_LINE_REMOVED: "Sửa bill (xóa món)",
+    INVOICE_VOIDED: "Hủy hóa đơn",
+    PRODUCT_UPDATED: "Sửa giá / sản phẩm",
+    PACKAGE_UPDATED: "Sửa giá / gói câu",
+    EXPENSE_CREATED: "Tạo phiếu chi tiền",
+    PAYMENT_REVERSED: "Hoàn / đảo tiền",
     RETAIL_SALE_COMPLETED: "Bán lẻ dịch vụ",
     PAYMENT_RECORDED: "Thu tiền hóa đơn",
     SHIFT_CLOSED: "Chốt ca bàn giao quỹ",
@@ -372,6 +479,16 @@ export function presentAuditEntry(row: {
         legacy[key] = value;
     }
 
+    const actorRole = typeof actor?.role === "string" ? actor.role : null;
+    const risk = assessAuditRisk({
+        action: row.action,
+        actorRole,
+        createdAt: row.createdAt,
+        before,
+        after,
+        extra: legacy,
+    });
+
     return {
         id: row.id,
         createdAt: row.createdAt.toISOString(),
@@ -381,12 +498,14 @@ export function presentAuditEntry(row: {
         entityId: row.entityId,
         actorId: typeof actor?.id === "string" ? actor.id : row.createdBy,
         actorName: typeof actor?.name === "string" ? actor.name : null,
-        actorRole: typeof actor?.role === "string" ? actor.role : null,
+        actorRole,
         before,
         after,
         legacy: Object.keys(legacy).length > 0 ? legacy : null,
         ip: typeof parsed.ip === "string" ? parsed.ip : null,
         userAgent: typeof parsed.ua === "string" ? parsed.ua : null,
+        riskLevel: risk.level,
+        riskReason: risk.reason,
     };
 }
 
@@ -438,14 +557,17 @@ export function generateAuditReadToken(): string {
 
 export const AUDIT_ACTION_OPTIONS = [
     { value: "ALL", label: "Mọi thao tác" },
+    { value: "SUSPICIOUS_ONLY", label: "⚠️ Chỉ xem đáng nghi / Cảnh báo" },
+    { value: "INVOICE_VOIDED", label: "Hủy hóa đơn" },
+    { value: "INVOICE_PRODUCT_LINE_REMOVED", label: "Xóa món trên bill" },
+    { value: "INVOICE_PRODUCT_LINE_ADDED", label: "Thêm món vào bill" },
+    { value: "FISHING_SESSION_CANCELLED", label: "Hủy phiên câu" },
     { value: "FISHING_SESSION_OPENED", label: "Mở phiên" },
     { value: "FISHING_SESSION_COMPLETED", label: "Đóng phiên" },
-    { value: "FISHING_SESSION_CANCELLED", label: "Hủy phiên" },
     { value: "FISHING_SESSION_EXTENDED", label: "Gia hạn" },
+    { value: "EXPENSE_CREATED", label: "Phiếu chi tiền" },
+    { value: "PRODUCT_UPDATED", label: "Sửa giá / sản phẩm" },
+    { value: "PACKAGE_UPDATED", label: "Sửa giá / gói câu" },
     { value: "FISH_BUYBACK_CREATED", label: "Thu cá / trừ bill" },
-    { value: "INVOICE_PRODUCT_LINE_ADDED", label: "Sửa bill (thêm)" },
-    { value: "INVOICE_PRODUCT_LINE_REMOVED", label: "Sửa bill (xóa dòng)" },
-    { value: "INVOICE_CREATED", label: "Tạo hóa đơn" },
-    { value: "LOGIN_SUCCEEDED", label: "Đăng nhập thành công" },
     { value: "LOGIN_FAILED", label: "Đăng nhập thất bại" },
 ] as const;

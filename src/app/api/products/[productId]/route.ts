@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { Role } from "@/generated/prisma/client";
+import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -151,26 +152,27 @@ export async function PATCH(request: Request, { params }: RouteParams) {
                     },
                 });
 
-                await tx.auditEvent.create({
-                    data: {
-                        lakeId: tenantContext.lakeId,
-                        entityType: "Product",
-                        entityId: prod.id,
-                        action: "PRODUCT_UPDATED",
-                        payload: JSON.stringify({
-                            before: {
-                                name: existing.name,
-                                priceVnd: existing.priceVnd,
-                                sku: existing.sku,
-                            },
-                            after: {
-                                name: prod.name,
-                                priceVnd: prod.priceVnd,
-                                sku: prod.sku,
-                            },
-                        }),
-                        createdBy: tenantContext.userId,
+                const meta = await readRequestMeta();
+                await writeStaffAudit(tx, {
+                    lakeId: tenantContext.lakeId,
+                    entityType: "Product",
+                    entityId: prod.id,
+                    action: "PRODUCT_UPDATED",
+                    createdBy: tenantContext.userId,
+                    actorName: tenantContext.userName,
+                    actorRole: tenantContext.role,
+                    before: {
+                        name: existing.name,
+                        priceVnd: existing.priceVnd,
+                        sku: existing.sku,
                     },
+                    after: {
+                        name: prod.name,
+                        priceVnd: prod.priceVnd,
+                        sku: prod.sku,
+                    },
+                    ip: meta.ip,
+                    userAgent: meta.userAgent,
                 });
 
                 return prod;
@@ -253,20 +255,28 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
             });
 
             if (updateResult.count === 1) {
-                await tx.auditEvent.create({
-                    data: {
-                        lakeId: tenantContext.lakeId,
-                        entityType: "Product",
-                        entityId: existing.id,
-                        action: "PRODUCT_DEACTIVATED",
-                        payload: JSON.stringify({
-                            name: existing.name,
-                            sku: existing.sku,
-                            priceVnd: existing.priceVnd,
-                            deactivatedAt: now.toISOString(),
-                        }),
-                        createdBy: tenantContext.userId,
+                const meta = await readRequestMeta();
+                await writeStaffAudit(tx, {
+                    lakeId: tenantContext.lakeId,
+                    entityType: "Product",
+                    entityId: existing.id,
+                    action: "PRODUCT_UPDATED",
+                    createdBy: tenantContext.userId,
+                    actorName: tenantContext.userName,
+                    actorRole: tenantContext.role,
+                    before: {
+                        name: existing.name,
+                        sku: existing.sku,
+                        priceVnd: existing.priceVnd,
                     },
+                    after: {
+                        deletedAt: now.toISOString(),
+                    },
+                    extra: {
+                        reason: "Vô hiệu hóa sản phẩm",
+                    },
+                    ip: meta.ip,
+                    userAgent: meta.userAgent,
                 });
             }
         });

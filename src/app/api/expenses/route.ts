@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { Role } from "@/generated/prisma/client";
+import { readRequestMeta, writeStaffAudit } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import {
     AuthenticationError,
@@ -253,21 +254,26 @@ export async function POST(request: Request) {
                         });
 
                         // Record AuditEvent
-                        await tx.auditEvent.create({
-                            data: {
-                                lakeId,
-                                entityType: "Expense",
-                                entityId: createdExpense.id,
-                                action: "EXPENSE_CREATED",
-                                payload: JSON.stringify({
-                                    expenseId: createdExpense.id,
-                                    description: fullDescription,
-                                    amountVnd,
-                                    category: category ?? null,
-                                    paymentMethod: paymentMethod ?? null,
-                                }),
-                                createdBy: tenantContext.userId,
+                        const meta = await readRequestMeta();
+                        await writeStaffAudit(tx, {
+                            lakeId,
+                            entityType: "Expense",
+                            entityId: createdExpense.id,
+                            action: "EXPENSE_CREATED",
+                            createdBy: tenantContext.userId,
+                            actorName: tenantContext.userName,
+                            actorRole: tenantContext.role,
+                            before: null,
+                            after: {
+                                description: fullDescription,
+                                amountVnd,
+                                paymentMethod,
                             },
+                            extra: {
+                                category: category ?? null,
+                            },
+                            ip: meta.ip,
+                            userAgent: meta.userAgent,
                         });
 
                         const responsePayload = {
