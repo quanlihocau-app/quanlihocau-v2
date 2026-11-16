@@ -78,7 +78,7 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'SAMEORIGIN')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), serial=(self), usb=(self)')
   response.headers.set('X-XSS-Protection', '1; mode=block')
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups')
 
@@ -87,13 +87,14 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   }
 
   // Content-Security-Policy (CSP) bảo vệ chống XSS, Script Injection và Clickjacking
+  // Lưu ý: Cần mở kết nối tới loopback (127.0.0.1/localhost) để giao tiếp với bộ hỗ trợ in PrintBridge (cổng 17858)
   const csp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https: https://img.vietqr.io https://*.googleusercontent.com",
-    "connect-src 'self' https://accounts.google.com https://*.googleapis.com https://api.vietqr.io wss: ws:",
+    "connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:* https://accounts.google.com https://*.googleapis.com https://api.vietqr.io wss: ws:",
     "frame-src 'self' https://accounts.google.com",
     "frame-ancestors 'self'",
     "object-src 'none'",
