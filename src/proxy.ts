@@ -79,9 +79,28 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('X-Frame-Options', 'SAMEORIGIN')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups')
+
   if (process.env.NODE_ENV === 'production') {
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
   }
+
+  // Content-Security-Policy (CSP) bảo vệ chống XSS, Script Injection và Clickjacking
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "img-src 'self' data: blob: https: https://img.vietqr.io https://*.googleusercontent.com",
+    "connect-src 'self' https://accounts.google.com https://*.googleapis.com https://api.vietqr.io wss: ws:",
+    "frame-src 'self' https://accounts.google.com",
+    "frame-ancestors 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+  ].join('; ')
+  response.headers.set('Content-Security-Policy', csp)
+
   return response
 }
 
@@ -134,7 +153,45 @@ export async function proxy(request: NextRequest) {
     })
   }
 
-  // 2. Rate Limiting cho API routes
+  // 2. Chống tấn công CSRF cho các yêu cầu thay đổi dữ liệu (POST, PUT, PATCH, DELETE) tới API
+  const method = request.method.toUpperCase()
+  const isStateChanging = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
+  if (isStateChanging && pathname.startsWith('/api')) {
+    // Miễn trừ Webhook ngân hàng bên ngoài và các endpoint xác thực
+    const isWebhookOrAuth = pathname.startsWith('/api/webhooks') || pathname.startsWith('/api/auth')
+    if (!isWebhookOrAuth) {
+      const origin = request.headers.get('origin')
+      if (origin) {
+        try {
+          const originHost = new URL(origin).host.toLowerCase()
+          const hostHeader = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '').toLowerCase().split(',')[0].trim()
+
+          const isDevOrTest = originHost.includes('localhost') || originHost.includes('127.0.0.1') || originHost.includes('isolated.local')
+          const isMatch = originHost === hostHeader || isDevOrTest
+
+          if (!isMatch) {
+            return new NextResponse(
+              JSON.stringify({ error: 'Yêu cầu bị từ chối: Nguồn gốc không hợp lệ (Cross-Origin Mutation Forbidden).' }),
+              {
+                status: 403,
+                headers: { 'Content-Type': 'application/json' },
+              }
+            )
+          }
+        } catch {
+          return new NextResponse(
+            JSON.stringify({ error: 'Nguồn gốc yêu cầu không hợp lệ.' }),
+            {
+              status: 403,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          )
+        }
+      }
+    }
+  }
+
+  // 3. Rate Limiting cho API routes
   if (pathname.startsWith('/api')) {
     // Miễn áp dụng rate limit cho Webhook thanh toán và Health check ping
     const isExempt = pathname.startsWith('/api/webhooks') || pathname === '/api/ping'
@@ -207,8 +264,11 @@ export async function proxy(request: NextRequest) {
   const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host')
   const proto = request.headers.get('x-forwarded-proto') || 'https'
   const isInternal = !forwardedHost || forwardedHost.includes('0.0.0.0') || forwardedHost.startsWith('app:')
+  const nextOrigin = request.nextUrl?.origin
   const base = isInternal
-    ? (process.env.NEXTAUTH_URL || 'https://quanlihocau.com')
+    ? (nextOrigin && !nextOrigin.includes('0.0.0.0') && !nextOrigin.startsWith('app:')
+        ? nextOrigin
+        : (process.env.NEXTAUTH_URL || 'https://quanlihocau.com'))
     : `${proto}://${forwardedHost}`
   const loginUrl = new URL('/login', base)
   const redirectPath = `${pathname}${request.nextUrl.search}`

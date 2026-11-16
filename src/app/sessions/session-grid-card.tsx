@@ -331,7 +331,7 @@ function SessionGridCardComponent({
                     <div className="mt-1 flex items-center justify-between gap-1 rounded border border-[#DC2626] bg-[#DC2626] px-1.5 py-0.5 text-white animate-pulse shadow-xs">
                         <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-black tracking-tight">
                             <span className="text-xs">🚨</span>
-                            <span>ĐÃ QUÁ GIỜ</span>
+                            <span>HẾT GIỜ — ĐÃ QUÁ GIỜ</span>
                         </span>
                         {liveOvertimeMinutes > 0 && (
                             <span className="text-[9px] sm:text-[10px] font-black">+{formatOvertimeDuration(liveOvertimeMinutes)}</span>

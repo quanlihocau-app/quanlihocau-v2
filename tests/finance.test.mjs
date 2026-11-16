@@ -55,6 +55,34 @@ function routeHarness(path) {
             if (!roles.includes(state.role)) throw new ForbiddenError();
             return { lakeId: "lake-1", userId: "user-1" };
         } },
+        "@/lib/audit-log": {
+            readRequestMeta: async () => ({ ip: "127.0.0.1" }),
+            writeStaffAudit: async (tx, entry) => {
+                const payloadObj = {
+                    ...(entry.extra || {}),
+                    ...(entry.after || {}),
+                    before: entry.before,
+                    after: entry.after,
+                    actor: { id: entry.createdBy, name: entry.actorName, role: entry.actorRole },
+                };
+                const row = await tx.auditEvent.create({
+                    data: {
+                        lakeId: entry.lakeId,
+                        entityType: entry.entityType,
+                        entityId: entry.entityId,
+                        action: entry.action,
+                        payload: JSON.stringify(payloadObj),
+                        createdBy: entry.createdBy,
+                    },
+                });
+                return row;
+            },
+        },
+        "@/lib/audit-log-core": {
+            AUDIT_ACTIONS: {},
+            detectSuspiciousAction: () => null,
+            createSuspiciousNotification: async () => {},
+        },
     });
     const post = (body, requestKey = key) => route.POST(new Request("http://localhost/api/finance", {
         method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": requestKey }, body: JSON.stringify(body),
